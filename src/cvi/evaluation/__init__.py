@@ -13,9 +13,39 @@ from cvi.evaluation._legacy import (
     zero_event_exact_upper_bound,
     required_zero_event_trials,
 )
-from cvi.evaluation.verification import compute_verification_metrics
-from cvi.evaluation.retrieval import compute_retrieval_metrics
-from cvi.evaluation.calibration import compute_calibration_metrics
+from cvi.evaluation.verification import (
+    EvaluationError,
+    LengthMismatchError,
+    InvalidLabelError,
+    NonFiniteScoreError,
+    EmptyInputError,
+    SingleClassError,
+    VerificationCurve,
+    OperatingThreshold,
+    compute_verification_curve,
+    select_threshold_at_far,
+    evaluate_at_threshold,
+    compute_verification_metrics,
+)
+from cvi.evaluation.retrieval import (
+    RetrievalError,
+    EmbeddingNormError,
+    NonFiniteEmbeddingError,
+    MissingGalleryIdentityError,
+    ClosedSetViolation,
+    compute_retrieval_metrics,
+)
+from cvi.evaluation.calibration import (
+    CalibrationError,
+    InvalidProbabilityError,
+    fit_isotonic_calibration,
+    compute_probability_calibration_metrics,
+)
+from cvi.evaluation.open_set import (
+    OpenSetError,
+    OpenSetResult,
+    evaluate_open_set,
+)
 
 __all__ = [
     "ClusterBootstrapConfig",
@@ -31,7 +61,29 @@ __all__ = [
     "cluster_bootstrap_rate",
     "zero_event_exact_upper_bound",
     "required_zero_event_trials",
+    "EvaluationError",
+    "LengthMismatchError",
+    "InvalidLabelError",
+    "NonFiniteScoreError",
+    "EmptyInputError",
+    "SingleClassError",
+    "VerificationCurve",
+    "OperatingThreshold",
+    "compute_verification_curve",
+    "select_threshold_at_far",
+    "evaluate_at_threshold",
     "compute_verification_metrics",
+    "RetrievalError",
+    "EmbeddingNormError",
+    "NonFiniteEmbeddingError",
+    "MissingGalleryIdentityError",
+    "ClosedSetViolation",
     "compute_retrieval_metrics",
-    "compute_calibration_metrics",
+    "CalibrationError",
+    "InvalidProbabilityError",
+    "fit_isotonic_calibration",
+    "compute_probability_calibration_metrics",
+    "OpenSetError",
+    "OpenSetResult",
+    "evaluate_open_set",
 ]
