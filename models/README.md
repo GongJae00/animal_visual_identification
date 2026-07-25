@@ -29,22 +29,18 @@ models/
 
 ```bash
 # 사용 가능한 모델 확인
-python tools/download_models.py --list
+uv run python tools/download_models.py --list
+
+# 전체 다운로드
+uv run python tools/download_models.py
 
 # 개별 다운로드
-python tools/download_models.py --model superanimal    # ✅ 공개 (다운로드 완료)
-python tools/download_models.py --model miewid         # ⚠️ HF 토큰 필요
-python tools/download_models.py --model dogflw-landmark # ❌ 레포 미생성
+uv run python tools/download_models.py --model superanimal     # SuperAnimal 랜드마크 (39 kpts)
+uv run python tools/download_models.py --model miewid          # MiewID 비문 (공개/MIT, 자동 ONNX 변환)
 ```
 
-### MiewID 토큰 발급 방법
-
-MiewID는 HuggingFace gated repo라 인증이 필요합니다:
-
-1. https://huggingface.co/james-burgess/miewid 접속 → "Access repository" → 라이선스 동의
-2. https://huggingface.co/settings/tokens → "Create new token" → Fine-grained, `james-burgess/miewid` 선택, Read 권한
-3. 환경변수 설정: `export HF_TOKEN=hf_xxxxxxxxxxxxxxxx`
-4. 다운로드: `python tools/download_models.py --model miewid`
+> `uv run`은 프로젝트 가상환경(`.venv`) 내에서 실행합니다.  
+> 모든 모델은 `~/.cache/cvi/models/` (또는 `$CVI_MODELS_DIR`)에 저장됩니다.
 
 ## 백본 사전학습 가중치
 

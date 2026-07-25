@@ -33,10 +33,12 @@ uv sync --extra cpu
 
 > `uv`가 설치되어 있지 않다면: `curl -LsSf https://astral.sh/uv/install.sh | sh`
 
-### 모델 다운로드
+### 모델 & 데이터 준비
 
 ```bash
-python tools/download_models.py --model miewid --hf-token $HF_TOKEN
+uv run python tools/download_datasets.py    # 공개 데이터셋 다운로드
+uv run python tools/download_models.py      # 추론 모델 다운로드
+uv run bash scripts/check_env.sh            # 환경 전수 점검
 ```
 
 ## 빠른 시작
@@ -106,7 +108,7 @@ for r in results:
 평가 프레임워크를 통한 채널별 독립 성능 분석:
 
 ```bash
-python tools/evaluate_multichannel.py \
+uv run python tools/evaluate_multichannel.py \
     --evidence-config configs/evidence/multi.json \
     --query-pairs data/registry/val_pairs.json \
     --output report.json

@@ -1,12 +1,11 @@
-"""Download and prepare all public datasets for CVI training.
+"""Download and prepare public datasets for CVI training.
 
-Downloads verified public datasets to the data directory and converts
-them to the oracle-crop format expected by the training pipeline.
+Downloads verified public datasets to the data directory.
 
 Usage:
-    python tools/download_datasets.py                    # download all available
-    python tools/download_datasets.py --dataset dogfacenet  # single dataset
-    python tools/download_datasets.py --list                # show status
+    uv run python tools/download_datasets.py                    # download all available
+    uv run python tools/download_datasets.py --dataset dogfacenet  # single dataset
+    uv run python tools/download_datasets.py --list                # show status
 
 Data root resolution (in priority order):
     1. --data-root CLI argument
@@ -14,11 +13,15 @@ Data root resolution (in priority order):
     3. ~/cvi_data (symlink or directory)
     4. data/ in project root
 
-Supported datasets (verified working):
+Public datasets:
     dogfacenet  — DogFaceNet_224resize from HuggingFace (8,363 imgs, 1,393 dogs)
                   Public, no auth needed.
-    dogfacenet-large — DogFaceNet_large from HuggingFace (more images)
-                       Public, no auth needed.
+    yt-bb-dog   — YT-BB-Dog from LIRMM (27,036 imgs, 2,723 dogs)
+                  Public, direct download.
+    sibetan     — SiBeTan from LIRMM (1,755 imgs, 59 dogs)
+                  Public, direct download.
+    mpdd        — MPetDoorDataset from Mendeley (1,657 imgs)
+                  Requires signed license agreement — manual download.
 """
 
 from __future__ import annotations
@@ -29,26 +32,31 @@ import os
 import time
 from pathlib import Path
 
-from cvi.model_paths import DATA_DIR, DATA_RAW_DIR, SUPPORTED_DATASETS
+import requests
+from cvi.model_paths import DATA_DIR, DATASETS_DIR, SUPPORTED_DATASETS
 
 
 def _resolve_data_root(cli_root: str | None) -> Path:
-    """Resolve the data root directory."""
     if cli_root:
         return Path(cli_root)
     return DATA_DIR
 
 
+def _download_url(url: str, dest: Path, desc: str = "") -> None:
+    dest.mkdir(parents=True, exist_ok=True)
+    if dest.exists() and any(dest.iterdir()):
+        print(f"  [OK] {desc} -- already exists")
+        return
+    print(f"  [DOWN] {desc}")
+    print(f"    URL: {url}")
+    print(f"    수동 다운로드 후 압축해제: {dest}")
+    print(f"    (자동 다운로드는 추후 지원 예정)")
+
+
 def _dogfacenet_download(output_dir: Path, *, variant: str = "224resize") -> None:
-    """Download DogFaceNet from HuggingFace and convert to oracle crop layout.
-
-    Creates: {output_dir}/dogfacenet/{dog_id}/{idx}.jpg
-    """
     import io
-
-    import numpy as np
     import pyarrow.parquet as pq
-    from huggingface_hub import hf_hub_download, list_repo_files
+    from huggingface_hub import hf_hub_download
     from PIL import Image
 
     repo_map = {
@@ -59,9 +67,8 @@ def _dogfacenet_download(output_dir: Path, *, variant: str = "224resize") -> Non
         ]),
     }
     repo_id, files = repo_map[variant]
-    dest = output_dir / "dogfacenet" if variant == "224resize" else output_dir / "dogfacenet_large"
+    dest = output_dir
 
-    # Check if already downloaded (count .jpg files)
     existing = list(dest.rglob("*.jpg")) if dest.exists() else []
     if existing:
         print(f"  [OK] DogFaceNet ({variant}) — already {len(existing)} images in {dest}")
@@ -81,15 +88,12 @@ def _dogfacenet_download(output_dir: Path, *, variant: str = "224resize") -> Non
             img_info = images_col[i].as_py()
             label = labels_col[i].as_py()
 
-            # Extract image bytes from HF Image struct
             img_bytes = img_info["bytes"]
             img_path_rel = img_info["path"]
 
-            # Save as JPEG under dest/{label}/{idx}.jpg
             dog_dir = dest / str(label)
             dog_dir.mkdir(parents=True, exist_ok=True)
 
-            # Use original path as filename if possible, else index
             if img_path_rel and img_path_rel != "None":
                 fname = Path(img_path_rel).name
                 if not fname.lower().endswith((".jpg", ".jpeg", ".png")):
@@ -110,7 +114,6 @@ def _dogfacenet_download(output_dir: Path, *, variant: str = "224resize") -> Non
                 print(f"    [WARN] skip {i}: {e}")
 
     print(f"    {total_saved} images saved to {dest}")
-    # Write a summary
     summary = {
         "dataset": f"DogFaceNet ({variant})",
         "source": repo_id,
@@ -136,16 +139,49 @@ _DATASET_HANDLERS: dict[str, dict] = {
         "desc": "DogFaceNet large (more images)",
         "auth": False,
     },
+    "yt-bb-dog": {
+        "fn": lambda dest: _download_url(
+            "https://www.lirmm.fr/YT-BB-Dog_Sibetan/",
+            dest,
+            "YT-BB-Dog (27,036 images)",
+        ),
+        "kwargs": {},
+        "desc": "YT-BB-Dog short-term re-id (27,036 imgs, 2,723 dogs)",
+        "auth": False,
+    },
+    "sibetan": {
+        "fn": lambda dest: _download_url(
+            "https://www.lirmm.fr/YT-BB-Dog_Sibetan/",
+            dest,
+            "SiBeTan long-term re-id (1,755 imgs, 59 dogs)",
+        ),
+        "kwargs": {},
+        "desc": "SiBeTan cross-camera long-term re-id (1,755 imgs, 59 dogs)",
+        "auth": False,
+    },
+    "mpdd": {
+        "fn": lambda dest: _download_url(
+            "https://github.com/hacilab/MPDD",
+            dest,
+            "MPetDoorDataset (1,657 imgs) — 라이선스 동의 필요",
+        ),
+        "kwargs": {},
+        "desc": "MPetDoorDataset (1,657 imgs) — 라이선스 동의 필요",
+        "auth": True,
+    },
 }
 
 
 def _list_datasets(data_root: Path) -> None:
     for name, info in _DATASET_HANDLERS.items():
-        dest = data_root / "raw" / name.replace("-large", "_large")
+        dataset_info = SUPPORTED_DATASETS.get(name)
+        if not dataset_info:
+            continue
+        dest = data_root / "datasets" / dataset_info["dir"]
         count = len(list(dest.rglob("*.jpg"))) if dest.exists() else 0
-        auth = "token 필요" if info["auth"] else "공개"
+        auth = "token" if info["auth"] else "공개"
         status = f"{count} images" if count else "미다운로드"
-        print(f"  {name:20s}  [{auth}]  {info['desc']:50s}  {status}")
+        print(f"  {name:20s}  [{auth:5s}]  {info['desc']:55s}  {status}")
 
 
 def download_dataset(name: str, data_root: Path) -> None:
@@ -154,9 +190,13 @@ def download_dataset(name: str, data_root: Path) -> None:
         print(f"Unknown dataset: {name}")
         print(f"Available: {list(_DATASET_HANDLERS)}")
         return
-    raw_dir = data_root / "raw"
-    raw_dir.mkdir(parents=True, exist_ok=True)
-    info["fn"](raw_dir, **info["kwargs"])
+    dataset_info = SUPPORTED_DATASETS.get(name)
+    if not dataset_info:
+        print(f"Dataset '{name}' not in SUPPORTED_DATASETS mapping")
+        return
+    dest = data_root / "datasets" / dataset_info["dir"]
+    dest.mkdir(parents=True, exist_ok=True)
+    info["fn"](dest, **info["kwargs"])
 
 
 def main() -> None:
