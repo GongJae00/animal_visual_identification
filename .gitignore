@@ -1,0 +1,86 @@
+# ── Python ──
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+*.egg
+dist/
+build/
+.eggs/
+*.so
+*.dylib
+
+# ── Virtual environment ──
+.venv/
+venv/
+env/
+.virtualenvs/
+
+# ── Models & Weights (large binaries) ──
+models/backbones/*.pt
+models/backbones/*.pth
+models/backbones/*.bin
+models/backbones/*.safetensors
+models/onnx/*.onnx
+models/pretrained/*.pt
+models/pretrained/*.pth
+models/pretrained/*.onnx
+models/checkpoints/*.pt
+models/checkpoints/*.pth
+models/checkpoints/*.tar
+models/checkpoints/*.ckpt
+
+# ── Data ──
+data/raw/**
+data/processed/**
+data/registry/**
+!data/*/.gitkeep
+!data/**/.gitkeep
+
+# ── Outputs & Logs ──
+outputs/
+logs/
+*.log
+runs/
+wandb/
+mlruns/
+
+# ── IDE & Editor ──
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ── Environment & Secrets ──
+.env
+.env.*
+*.secret
+secrets/
+
+# ── Jupyter ──
+.ipynb_checkpoints/
+*.ipynb
+
+# ── Cache ──
+.cache/
+*.cache
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ── Tool outputs ──
+/tmp/
+/node_modules/
+
+# ── Research artifacts (not tracked in public repo) ──
+workspace/
+paper/
+
+# ── Docker ──
+docker-compose.override.yml
+
+# ── UV lock (keep pyproject.toml only) ──
+uv.lock

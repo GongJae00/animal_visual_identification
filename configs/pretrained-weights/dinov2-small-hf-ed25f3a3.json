@@ -1,0 +1,20 @@
+{
+  "schema_version": "cvi.pretrained_weight_source_contract.v1",
+  "source_model_id": "facebook/dinov2-small",
+  "source_revision": "ed25f3a31f01632728cabb09d1542f84ab7b0056",
+  "source_model_page_url": "https://huggingface.co/facebook/dinov2-small",
+  "source_file_url": "https://huggingface.co/facebook/dinov2-small/resolve/ed25f3a31f01632728cabb09d1542f84ab7b0056/model.safetensors",
+  "weight_filename": "model.safetensors",
+  "license_id": "Apache-2.0",
+  "license_url": "https://www.apache.org/licenses/LICENSE-2.0.txt",
+  "license_snapshot_sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+  "license_usage_lane": "DEPLOYMENT_CANDIDATE",
+  "training_description": "DINOv2 ViT-S/14 feature encoder. Upstream model card declares LVD-142M training; absence of overlap with public canine images is not asserted.",
+  "training_description_url": "https://raw.githubusercontent.com/facebookresearch/dinov2/7764ea0f912e53c92e82eb78a2a1631e92725fc8/MODEL_CARD.md",
+  "training_description_snapshot_sha256": "70ca59606bee0a5fbb1baec80e7e29a93cd7cfbe26ca1910c52a852c4aab09d0",
+  "expected_file_bytes": 88249960,
+  "expected_sha256": "ae1e99fcefd534ed978cdeb8326f08030c96e28b7a81ffcbc98a857c84d14be1",
+  "checksum_authority": "PUBLISHED_SHA256",
+  "target_lane": "DEPLOYMENT_CANDIDATE",
+  "file_format": "SAFETENSORS"
+}
