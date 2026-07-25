@@ -81,7 +81,7 @@ class MiewIDNoseExtractor(AbstractEvidencer):
         if not onnx_path.exists():
             raise FileNotFoundError(
                 f"MiewID ONNX model not found: {onnx_path}\n"
-                f"다운로드: python tools/download_models.py --model miewid --hf-token $HF_TOKEN"
+                f"  다운로드: python tools/download_models.py --model miewid"
             )
         self._sess = ort.InferenceSession(str(onnx_path))
         self._input_name = self._sess.get_inputs()[0].name

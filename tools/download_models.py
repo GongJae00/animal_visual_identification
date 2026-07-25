@@ -21,6 +21,7 @@ from cvi.model_paths import (
     DOGFLW_LANDMARK_MD5,
     DOGFLW_LANDMARK_PATH,
     DOGFLW_LANDMARK_URL,
+    MIEWID_MSV3_HF_REPO,
     MIEWID_NOSE_ONNX_PATH,
     MODELS_DIR,
     SUPERANIMAL_ONNX_PATH,
@@ -43,9 +44,8 @@ _MODELS: dict[str, dict] = {
     },
     "miewid": {
         "path": MIEWID_NOSE_ONNX_PATH,
-        "repo": "james-burgess/miewid",
-        "filename": "miewid.onnx",
-        "desc": "MiewID re-ID ONNX model (2152-d embedding)",
+        "repo_hf": MIEWID_MSV3_HF_REPO,
+        "desc": "MiewID-msv3 PyTorch (공개/MIT) → ONNX export",
     },
 }
 
@@ -82,16 +82,14 @@ def _download_url(url: str, dest: Path, expected_md5: str | None = None,
             raise RuntimeError(f"MD5 mismatch: expected {expected_md5}, got {actual}")
 
 
-def _download_hf(repo: str, filename: str, dest: Path, desc: str = "",
-                 token: str | None = None) -> None:
+def _download_hf(repo: str, filename: str, dest: Path, desc: str = "") -> None:
     dest.parent.mkdir(parents=True, exist_ok=True)
     if dest.exists():
         print(f"  [OK] {desc} -- already cached")
         return
     print(f"  [DOWN] {desc} (repo: {repo})")
     t0 = time.time()
-    downloaded = hf_hub_download(repo, filename, token=token,
-                                  local_dir=dest.parent,
+    downloaded = hf_hub_download(repo, filename, local_dir=dest.parent,
                                   local_dir_use_symlinks=False)
     if Path(downloaded) != dest:
         Path(downloaded).rename(dest)
@@ -135,16 +133,89 @@ def _convert_superanimal_to_onnx(pt_path: Path, onnx_path: Path) -> None:
     print(f"  [OK] SuperAnimal ONNX: {onnx_path}")
 
 
-def download_model(name: str, token: str | None = None) -> None:
+def _download_miewid_msv3() -> None:
+    if MIEWID_NOSE_ONNX_PATH.exists():
+        print(f"  [OK] MiewID-msv3 ONNX -- already cached")
+        return
+    import torch
+    import timm
+    from safetensors.torch import load_file as st_load_file
+    from huggingface_hub import hf_hub_download
+
+    print(f"  [DOWN] MiewID-msv3 safetensors (repo: {MIEWID_MSV3_HF_REPO})")
+    t0 = time.time()
+
+    sd_path = hf_hub_download(MIEWID_MSV3_HF_REPO, "model.safetensors")
+    sd = st_load_file(sd_path)
+    elapsed_dl = time.time() - t0
+    print(f"    safetensors loaded in {elapsed_dl:.1f}s ({len(sd)} keys)")
+
+    # timm EfficientNetV2-M backbone 생성
+    backbone = timm.create_model("efficientnetv2_rw_m", pretrained=False, num_classes=0)
+    # backbone feature dim = 2152, classifier 제거됨 (num_classes=0)
+
+    # MiewID wrapper: backbone → BN → L2 normalize
+    class MiewIDWrapper(torch.nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.backbone = backbone
+            self.bn = torch.nn.BatchNorm1d(2152)
+
+        def forward(self, x):
+            x = self.backbone(x)           # (B, 2152)
+            x = self.bn(x)
+            x = torch.nn.functional.normalize(x, p=2, dim=1)
+            return x
+
+    model = MiewIDWrapper()
+
+    # state dict 로드: safetensors keys에서 'backbone.' prefix 매핑 + 'bn.*' 그대로
+    backbone_sd = {}
+    bn_sd = {}
+    for k, v in sd.items():
+        if k.startswith("backbone."):
+            backbone_sd[k[len("backbone."):]] = v  # timm은 backbone. prefix 없음
+        elif k.startswith("bn."):
+            bn_sd[k[3:]] = v
+
+    # backbone과 bn에 각각 로드
+    msg_b = model.backbone.load_state_dict(backbone_sd, strict=False)
+    msg_bn = model.bn.load_state_dict(bn_sd, strict=True)
+    print(f"    backbone: {msg_b}")
+    print(f"    bn: {msg_bn}")
+
+    model.eval()
+    elapsed = time.time() - t0
+    print(f"    model built in {elapsed:.1f}s")
+
+    print(f"  [CONV] MiewID-msv3 -> ONNX ...")
+    dummy = torch.randn(1, 3, 440, 440)
+    t0 = time.time()
+    torch.onnx.export(
+        model, dummy, str(MIEWID_NOSE_ONNX_PATH),
+        input_names=["pixel_values"],
+        output_names=["embedding"],
+        dynamic_axes={"pixel_values": {0: "batch"}, "embedding": {0: "batch"}},
+        opset_version=18,
+    )
+    elapsed = time.time() - t0
+    size_mb = MIEWID_NOSE_ONNX_PATH.stat().st_size / 2**20
+    print(f"    {size_mb:.0f} MiB in {elapsed:.1f}s")
+    print(f"  [OK] MiewID-msv3 ONNX: {MIEWID_NOSE_ONNX_PATH}")
+    print(f"  Tip: 완료되었습니다. 다음 추론 시 바로 사용 가능.")
+
+
+def download_model(name: str) -> None:
     info = _MODELS.get(name)
     if info is None:
         print(f"Unknown: {name}. Available: {list(_MODELS)}")
         return
-    if "url" in info:
+    if "repo_hf" in info:
+        _download_miewid_msv3()
+    elif "url" in info:
         _download_url(info["url"], info["path"], info.get("md5"), info["desc"])
     elif "repo" in info:
-        _download_hf(info["repo"], info["filename"], info["path"], info["desc"],
-                     token=token)
+        _download_hf(info["repo"], info["filename"], info["path"], info["desc"])
     if name == "superanimal" and SUPERANIMAL_QUADRUPED_PATH.exists():
         _convert_superanimal_to_onnx(SUPERANIMAL_QUADRUPED_PATH, SUPERANIMAL_ONNX_PATH)
 
@@ -161,13 +232,9 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--model", choices=list(_MODELS) + ["all"], default="all")
     parser.add_argument("--list", action="store_true")
-    parser.add_argument("--hf-token", default=None,
-                        help="HuggingFace token for gated models (or HF_TOKEN env)")
     args = parser.parse_args()
 
     MODELS_DIR.mkdir(parents=True, exist_ok=True)
-
-    token = args.hf_token or os.environ.get("HF_TOKEN")
 
     if args.list:
         list_models()
@@ -175,7 +242,7 @@ def main() -> None:
 
     names = list(_MODELS) if args.model == "all" else [args.model]
     for name in names:
-        download_model(name, token=token)
+        download_model(name)
 
     total = sum(f.stat().st_size for f in MODELS_DIR.rglob("*") if f.is_file())
     print(f"\nCache: {MODELS_DIR}")
