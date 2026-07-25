@@ -1,0 +1,16 @@
+{
+  "expected_sample_period_ns": 200000000,
+  "maximum_cage_bar_occlusion_fraction": 0.4,
+  "maximum_defocus_blur_score": 0.5,
+  "maximum_hold_periods": 2.0,
+  "maximum_ir_saturation_fraction": 0.2,
+  "maximum_motion_blur_score": 0.5,
+  "maximum_occlusion_fraction": 0.5,
+  "minimum_dog_height_px": 224,
+  "minimum_face_min_edge_px": 96,
+  "minimum_head_long_edge_px": 128,
+  "minimum_localization_confidence": 0.5,
+  "minimum_usable_tracklet_duration_ns": 2000000000,
+  "minimum_visible_fraction": 0.5,
+  "name": "initial-engineering-coverage-v1"
+}

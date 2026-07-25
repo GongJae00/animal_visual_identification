@@ -1,0 +1,20 @@
+{
+  "absolute_tolerance": 0.0,
+  "maximum_anchor_temporary_bytes": 1073741824,
+  "maximum_artifact_evaluations": 10000,
+  "maximum_artifacts": 64,
+  "maximum_backend_calls": 1024,
+  "maximum_comparison_values": 100000000,
+  "maximum_cosine_drift": 0.0,
+  "maximum_input_bytes_hashed": 17179869184,
+  "maximum_normalized_l2_drift": 0.0,
+  "maximum_provenance_bytes_hashed": 1073741824,
+  "maximum_raw_l2_drift": 0.0,
+  "maximum_raw_norm_drift": 0.0,
+  "maximum_vector_dimension": 65536,
+  "padding_policy": "FORBIDDEN",
+  "relative_floor": 1e-12,
+  "relative_tolerance": 0.0,
+  "require_repeated_composition_exact": true,
+  "schema_version": "cvi.batch_invariance_policy.v1"
+}

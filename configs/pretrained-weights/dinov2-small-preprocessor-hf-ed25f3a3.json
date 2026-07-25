@@ -1,0 +1,17 @@
+{
+  "schema_version": "cvi.pretrained_supporting_asset_source_contract.v1",
+  "source_model_id": "facebook/dinov2-small",
+  "source_revision": "ed25f3a31f01632728cabb09d1542f84ab7b0056",
+  "source_model_page_url": "https://huggingface.co/facebook/dinov2-small",
+  "source_file_url": "https://huggingface.co/facebook/dinov2-small/resolve/ed25f3a31f01632728cabb09d1542f84ab7b0056/preprocessor_config.json",
+  "asset_filename": "preprocessor_config.json",
+  "asset_kind": "PREPROCESSOR_CONFIG",
+  "expected_file_bytes": 436,
+  "expected_sha256": "14e780d86fa1861f8751f868d7f45425b5feb55c38ca26f152ca5097ab30f828",
+  "license_id": "Apache-2.0",
+  "license_url": "https://www.apache.org/licenses/LICENSE-2.0.txt",
+  "license_snapshot_sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+  "license_usage_lane": "DEPLOYMENT_CANDIDATE",
+  "associated_pretrained_weight_receipt_sha256": "5c9ef4247c7b04daf90de2d0b44136145275d5163c5a5cb4961cb206b9a59e92",
+  "target_lane": "DEPLOYMENT_CANDIDATE"
+}

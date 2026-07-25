@@ -1,0 +1,20 @@
+{
+  "schema_version": "cvi.pretrained_weight_source_contract.v1",
+  "source_model_id": "timm/mobilenetv4_conv_small.e1200_r224_in1k",
+  "source_revision": "c9f31ac64483d7f0590db9edccb4418392a96eea",
+  "source_model_page_url": "https://huggingface.co/timm/mobilenetv4_conv_small.e1200_r224_in1k",
+  "source_file_url": "https://huggingface.co/timm/mobilenetv4_conv_small.e1200_r224_in1k/resolve/c9f31ac64483d7f0590db9edccb4418392a96eea/model.safetensors",
+  "weight_filename": "model.safetensors",
+  "license_id": "Apache-2.0",
+  "license_url": "https://www.apache.org/licenses/LICENSE-2.0.txt",
+  "license_snapshot_sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+  "license_usage_lane": "DEPLOYMENT_CANDIDATE",
+  "training_description": "timm MobileNetV4 Conv Small feature backbone trained on ImageNet-1k; absence of overlap with public canine images is not asserted.",
+  "training_description_url": "https://huggingface.co/timm/mobilenetv4_conv_small.e1200_r224_in1k/resolve/c9f31ac64483d7f0590db9edccb4418392a96eea/README.md",
+  "training_description_snapshot_sha256": "0a29b4f27c62512cf6afb3433767cfe444d23a87bd01699f3fd544f35e9218dc",
+  "expected_file_bytes": 15223016,
+  "expected_sha256": "5a2ef04d419ce6d1bf27bfa735bb200d3f8d8997c3ac36320f5bf30382f6b43c",
+  "checksum_authority": "PUBLISHED_SHA256",
+  "target_lane": "DEPLOYMENT_CANDIDATE",
+  "file_format": "SAFETENSORS"
+}

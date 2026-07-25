@@ -1,0 +1,3 @@
+frame=   60 fps=0.0 q=-0.0 Lsize=N/A time=00:00:01.96 bitrate=N/A speed= 137x
+bench: utime=0.030s stime=0.005s rtime=0.014s
+bench: maxrss=84104kB

@@ -1,0 +1,14 @@
+{
+  "maximum_worker_result_bytes": 67108864,
+  "maximum_snapshot_bytes": 68719476736,
+  "maximum_code_snapshot_bytes": 16777216,
+  "schema_version": "cvi.embedding_worker_execution_policy.v2",
+  "supervisor": {
+    "maximum_stderr_bytes": 1048576,
+    "maximum_stdout_bytes": 65536,
+    "poll_interval_seconds": 0.05,
+    "schema_version": "cvi.process_supervisor_policy.v1",
+    "termination_grace_seconds": 5.0,
+    "timeout_seconds": 3600.0
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "operational_context": {
+    "cage_id": "cage-01",
+    "camera_id": "cam-01",
+    "expected_dog_id": "dog-001"
+  },
+  "state": {
+    "conflict_status": "NONE",
+    "evidence_status": "USABLE",
+    "occupancy_status": "SINGLE_DOG",
+    "status": "KNOWN",
+    "stream_status": "STREAM_OK",
+    "visual_identity_status": "KNOWN"
+  },
+  "timestamp_ns": 150,
+  "visual_result": {
+    "camera_id": "cam-01",
+    "evidence_frames": [
+      {
+        "camera_id": "cam-01",
+        "frame_detection_id": "det-10",
+        "modality": "RGB",
+        "timestamp_ns": 100
+      },
+      {
+        "camera_id": "cam-01",
+        "frame_detection_id": "det-12",
+        "modality": "RGB",
+        "timestamp_ns": 120
+      }
+    ],
+    "gallery_version": "gallery-sha256:def",
+    "input_quality": 0.82,
+    "modality": "RGB",
+    "model_version": "model-sha256:abc",
+    "predicted_dog_id": "dog-001",
+    "session_id": "session-01",
+    "top1_top2_score_margin": 0.18,
+    "top_k_candidates": [
+      {
+        "registered_dog_id": "dog-001",
+        "score": 0.91
+      },
+      {
+        "registered_dog_id": "dog-002",
+        "score": 0.73
+      }
+    ],
+    "track_id": "track-01"
+  }
+}

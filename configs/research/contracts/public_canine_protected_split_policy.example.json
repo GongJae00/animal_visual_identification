@@ -1,0 +1,50 @@
+{
+  "bootstrap_draws": 10000,
+  "dogface_calibration_identities": 125,
+  "dogface_development_identities": 125,
+  "dogface_fit_identities": 1004,
+  "dogface_test_identities": 139,
+  "dogface_train_identities": 1254,
+  "external_result_boundary": "STRICT_EXTERNAL_DOMAIN_ZERO_SHOT",
+  "development_reuse_policy": "PROHIBITED_AFTER_MARGIN_SELECTION",
+  "mpdd_external_gallery_size": 64,
+  "mpdd_open_known_identities": 64,
+  "mpdd_open_unknown_identities": 32,
+  "mpdd_test_identities": 96,
+  "mpdd_train_identities": 95,
+  "diagnostic_shot_counts": [
+    5
+  ],
+  "schema_version": "cvi.protected_public_split_policy.v2",
+  "shot_counts": [
+    1,
+    3
+  ],
+  "sibetan_cross_sequence_identities": 39,
+  "sibetan_external_gallery_size": 39,
+  "sibetan_identities": 59,
+  "sibetan_unknown_identities": 20,
+  "threshold_selection": "YT_CALIBRATION_ONLY_EXACT_ORDER_STATISTIC",
+  "yt_calibration_known_identities": 300,
+  "yt_calibration_gallery_sizes": [
+    39,
+    64,
+    100,
+    300
+  ],
+  "yt_calibration_unknown_identities": 300,
+  "yt_development_identities": 200,
+  "yt_development_episode_identities": 100,
+  "yt_guard_components": 1,
+  "yt_minimum_component_gap": 2,
+  "yt_minimum_eligible_train_identities": 1800,
+  "yt_minimum_fit_identities": 1000,
+  "yt_minimum_raw_frame_gap": 2,
+  "yt_official_test_identities": 723,
+  "yt_official_train_identities": 2000,
+  "yt_primary_open_set_gallery_size": 300,
+  "yt_primary_open_set_shot": 3,
+  "yt_requested_fit_identities": 1200,
+  "yt_test_known_identities": 300,
+  "yt_test_unknown_identities": 423
+}

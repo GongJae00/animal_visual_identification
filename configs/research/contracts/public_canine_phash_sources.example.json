@@ -1,0 +1,45 @@
+{
+  "schema_version": "cvi.public_canine_phash_source_spec.v1",
+  "sources": [
+    {
+      "archive_path": "/ABSOLUTE/PATH/DogFaceNet_224resized.zip",
+      "archive_receipt_path": "/ABSOLUTE/PATH/dogfacenet-archive-receipt.json",
+      "dataset_name": "dogfacenet224",
+      "dogface_classes_test_path": "/ABSOLUTE/PATH/classes_test.txt",
+      "dogface_classes_train_path": "/ABSOLUTE/PATH/classes_train.txt",
+      "image_content_receipt_path": "/ABSOLUTE/PATH/dogfacenet-image-content.json",
+      "schema_version": "cvi.public_canine_phash_source.v1",
+      "semantic_receipt_path": "/ABSOLUTE/PATH/dogfacenet-semantic.json"
+    },
+    {
+      "archive_path": "/ABSOLUTE/PATH/MPDD.zip",
+      "archive_receipt_path": "/ABSOLUTE/PATH/mpdd-archive-receipt.json",
+      "dataset_name": "mpdd",
+      "dogface_classes_test_path": null,
+      "dogface_classes_train_path": null,
+      "image_content_receipt_path": "/ABSOLUTE/PATH/mpdd-image-content.json",
+      "schema_version": "cvi.public_canine_phash_source.v1",
+      "semantic_receipt_path": "/ABSOLUTE/PATH/mpdd-semantic.json"
+    },
+    {
+      "archive_path": "/ABSOLUTE/PATH/Sibetan.zip",
+      "archive_receipt_path": "/ABSOLUTE/PATH/sibetan-archive-receipt.json",
+      "dataset_name": "sibetan",
+      "dogface_classes_test_path": null,
+      "dogface_classes_train_path": null,
+      "image_content_receipt_path": "/ABSOLUTE/PATH/sibetan-image-content.json",
+      "schema_version": "cvi.public_canine_phash_source.v1",
+      "semantic_receipt_path": "/ABSOLUTE/PATH/sibetan-semantic.json"
+    },
+    {
+      "archive_path": "/ABSOLUTE/PATH/YT-BB-dog.zip",
+      "archive_receipt_path": "/ABSOLUTE/PATH/yt-archive-receipt.json",
+      "dataset_name": "yt-bb-dog",
+      "dogface_classes_test_path": null,
+      "dogface_classes_train_path": null,
+      "image_content_receipt_path": "/ABSOLUTE/PATH/yt-image-content.json",
+      "schema_version": "cvi.public_canine_phash_source.v1",
+      "semantic_receipt_path": "/ABSOLUTE/PATH/yt-semantic.json"
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "maximum_worker_result_bytes": 67108864,
+  "schema_version": "cvi.batch_worker_execution_policy.v1",
+  "supervisor": {
+    "maximum_stderr_bytes": 1048576,
+    "maximum_stdout_bytes": 65536,
+    "poll_interval_seconds": 0.05,
+    "schema_version": "cvi.process_supervisor_policy.v1",
+    "termination_grace_seconds": 5.0,
+    "timeout_seconds": 900.0
+  }
+}

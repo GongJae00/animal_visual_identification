@@ -1,0 +1,164 @@
+{
+  "archive_filename": "ThreatExchange-baefb4ed67b6cdc1d4c82dbaef858d50866ac424.tar.gz.partial",
+  "archive_root": "ThreatExchange-baefb4ed67b6cdc1d4c82dbaef858d50866ac424",
+  "codeload_url": "https://codeload.github.com/facebook/ThreatExchange/tar.gz/baefb4ed67b6cdc1d4c82dbaef858d50866ac424",
+  "commit_api_url": "https://api.github.com/repos/facebook/ThreatExchange/commits/baefb4ed67b6cdc1d4c82dbaef858d50866ac424",
+  "commit_sha": "baefb4ed67b6cdc1d4c82dbaef858d50866ac424",
+  "forbidden_selected_paths": [
+    "pdq/cpp/CImg.h",
+    "pdq/cpp/io"
+  ],
+  "license_bytes": 1522,
+  "license_classification": "MANUALLY_CLASSIFIED_EXACT_ROOT_LICENSE_BSD_3_CLAUSE",
+  "license_content_sha256": "68ecc6aafbd2a205a1077f86127030898f03091b7dae9d9017325a8702d8668f",
+  "license_git_blob_sha1": "9406c626400cf7167750c03101f628a31bfe478d",
+  "license_id": "BSD-3-Clause",
+  "license_path": "LICENSE",
+  "official_repository_url": "https://github.com/facebook/ThreatExchange",
+  "policy": {
+    "maximum_api_snapshot_bytes": 4000000,
+    "maximum_archive_bytes": 500000000,
+    "maximum_expansion_ratio": 20.0,
+    "maximum_member_uncompressed_bytes": 50000000,
+    "maximum_members": 5000,
+    "maximum_path_depth": 24,
+    "maximum_path_utf8_bytes": 1024,
+    "maximum_total_path_utf8_bytes": 5000000,
+    "maximum_total_uncompressed_bytes": 1000000000,
+    "read_chunk_bytes": 1048576,
+    "schema_version": "cvi.pdq_source_intake_policy.v1"
+  },
+  "repository": "facebook/ThreatExchange",
+  "require_verified_commit": true,
+  "schema_version": "cvi.pdq_source_contract.v1",
+  "selected_members": [
+    {
+      "content_sha256": "68ecc6aafbd2a205a1077f86127030898f03091b7dae9d9017325a8702d8668f",
+      "expected_bytes": 1522,
+      "git_blob_sha1": "9406c626400cf7167750c03101f628a31bfe478d",
+      "relative_path": "LICENSE"
+    },
+    {
+      "content_sha256": "2f047049969b07351c935e41da1b4c7000af19a354929a3df28d9c4f22b99b4b",
+      "expected_bytes": 495,
+      "git_blob_sha1": "c6d3a3e685cc2333503ee3ebeeee159bc6b6bc91",
+      "relative_path": "pdq/cpp/common/pdqbasetypes.h"
+    },
+    {
+      "content_sha256": "91864deda101e7e0b4405b6ce050cb8a945f644c3fe9815bcf08474cd89ef1af",
+      "expected_bytes": 898932,
+      "git_blob_sha1": "a59911fdb396976edee70b669e558e246a208a7e",
+      "relative_path": "pdq/cpp/common/pdqhamming.cpp"
+    },
+    {
+      "content_sha256": "c3314937e3edc01a7d20531e9baf4007049d6ea06a93ec25b6457025aaa84c62",
+      "expected_bytes": 2068,
+      "git_blob_sha1": "9d91670dce0a369e196b8bf67e6fa4a6ea10e8ff",
+      "relative_path": "pdq/cpp/common/pdqhamming.h"
+    },
+    {
+      "content_sha256": "8c5712de136d2fdcde15d165c2bca982015ffd5bc089393c010662f690ae48a3",
+      "expected_bytes": 4861,
+      "git_blob_sha1": "7e6114c709f78f14829645edee429e8495483ed4",
+      "relative_path": "pdq/cpp/common/pdqhashtypes.cpp"
+    },
+    {
+      "content_sha256": "06ae688a78cdb17fc0aeb88fec2abdf1cb35d73a38ed49a629af03bf07ae8d72",
+      "expected_bytes": 5199,
+      "git_blob_sha1": "02051b96eb2d5f38be282a1d97c5acb1a9d48cae",
+      "relative_path": "pdq/cpp/common/pdqhashtypes.h"
+    },
+    {
+      "content_sha256": "4f7cc18baaebf27650166b4c1569ef8b3faf615abc861d18250573995ba91688",
+      "expected_bytes": 15855,
+      "git_blob_sha1": "03a62e3bbc8a1b4d53bfa0a9616e4a117c11a7ab",
+      "relative_path": "pdq/cpp/downscaling/downscaling.cpp"
+    },
+    {
+      "content_sha256": "1238e00188a29035b3440d4405f64fdbe933c5a042cdfef572e8a5ef07e5923a",
+      "expected_bytes": 5399,
+      "git_blob_sha1": "e3eb14b3322171c6080b753a4daab6858ec34715",
+      "relative_path": "pdq/cpp/downscaling/downscaling.h"
+    },
+    {
+      "content_sha256": "2013379e258d8d0eb19c46049498aa72705db7a79014d3312b1f11b247fc0c51",
+      "expected_bytes": 15546,
+      "git_blob_sha1": "82c5e7132c51ae6c7bb73ac645b3903f88b155e1",
+      "relative_path": "pdq/cpp/hashing/pdqhashing.cpp"
+    },
+    {
+      "content_sha256": "2c9abab5bb03119d3c17410570d13ab0a3e496118a28849196a8c079dac3e6c4",
+      "expected_bytes": 5078,
+      "git_blob_sha1": "edb64172f6038ed8b166288aaca450d16ee3e70a",
+      "relative_path": "pdq/cpp/hashing/pdqhashing.h"
+    },
+    {
+      "content_sha256": "64f1e95edb168a2e07216fae2f7da2f64b3246f6d8c752657eead3142353f09e",
+      "expected_bytes": 1388,
+      "git_blob_sha1": "ae1d059596b9b6f367f647fe1899ee8bd9ae1142",
+      "relative_path": "pdq/cpp/hashing/torben.cpp"
+    },
+    {
+      "content_sha256": "d58b25e10d30de4137e53ea869008f911687851a19b5d25c091e56ec5030acf3",
+      "expected_bytes": 626,
+      "git_blob_sha1": "acb06097f2aa48259b8f7fc86043ee034c1c59a3",
+      "relative_path": "pdq/cpp/hashing/torben.h"
+    },
+    {
+      "content_sha256": "a911dd0f5b8795268bf2eae94e8a6089e7d52d2a52b8f132e273444e789863d7",
+      "expected_bytes": 6579378,
+      "git_blob_sha1": "dba71badecc789538cb43c828c8d7e59a5061106",
+      "relative_path": "pdq/cpp/reg_test/expected/out"
+    },
+    {
+      "content_sha256": "b5b0799616df52d475a3968dc7e54f1d0724c912244ffa6175bc786375dd7298",
+      "expected_bytes": 361182,
+      "git_blob_sha1": "66ad092df7cd508634dbea49cc5362df50c69da5",
+      "relative_path": "pdq/data/reg-test-input/dih/bridge-1-original.jpg"
+    },
+    {
+      "content_sha256": "a4ec0b39cf38469e3c5e16869a5ea1f23995b42a4b5de15d223e905b87788317",
+      "expected_bytes": 373855,
+      "git_blob_sha1": "66fe14bdba738b3769b747b462aef9a4dd693320",
+      "relative_path": "pdq/data/reg-test-input/dih/bridge-2-rotate-90.jpg"
+    },
+    {
+      "content_sha256": "fc9073d9b08f7b4d90e0fbdb4693fa7c58a9746dfc4c339fce5b3320905a3b3b",
+      "expected_bytes": 356813,
+      "git_blob_sha1": "e0a931c7d7d5d14e2f071ac23018cc72e9541824",
+      "relative_path": "pdq/data/reg-test-input/dih/bridge-3-rotate-180.jpg"
+    },
+    {
+      "content_sha256": "ed7769b97c8eab168eefe5cc5a49a1372d25cfecb354e457153a8e45f208daa5",
+      "expected_bytes": 357530,
+      "git_blob_sha1": "e78786a0ae2182f60c6f21ede44a868a2cf126be",
+      "relative_path": "pdq/data/reg-test-input/dih/bridge-4-rotate-270.jpg"
+    },
+    {
+      "content_sha256": "3069d9eb8d9de760229cf99ddcc5a7834f08e3924b37c080c2df8bc5836737fb",
+      "expected_bytes": 356799,
+      "git_blob_sha1": "c6458b162afe635235cacddf2431739c4f1a74a9",
+      "relative_path": "pdq/data/reg-test-input/dih/bridge-5-flipx.jpg"
+    },
+    {
+      "content_sha256": "c2225164ee53418ec001fa33bf9a4cf95a73514f493c87f676a1af9f9624d19b",
+      "expected_bytes": 372851,
+      "git_blob_sha1": "4d8a88241fcaef6451711b6dd842b210e767d931",
+      "relative_path": "pdq/data/reg-test-input/dih/bridge-6-flipy.jpg"
+    },
+    {
+      "content_sha256": "355dd5a4ccef6e205ed705c73bce8676981f9f943a06453a2f68d9d8bba3f7f1",
+      "expected_bytes": 373862,
+      "git_blob_sha1": "73f6bfe028ceeca355bae8275a236a540adaab37",
+      "relative_path": "pdq/data/reg-test-input/dih/bridge-7-flip-plus-1.jpg"
+    },
+    {
+      "content_sha256": "092bfe6026946f3b9322662d010fb16dabf3da7ece9f0cbaad99772fdf16a30e",
+      "expected_bytes": 357443,
+      "git_blob_sha1": "1187b5d249775a75fae843ba585dfb58b27a89d5",
+      "relative_path": "pdq/data/reg-test-input/dih/bridge-8-flip-minus-1.jpg"
+    }
+  ],
+  "tree_api_url": "https://api.github.com/repos/facebook/ThreatExchange/git/trees/fd19aaa19d4503fe8f5107ae36116fe216d27c24?recursive=1",
+  "tree_sha": "fd19aaa19d4503fe8f5107ae36116fe216d27c24"
+}

@@ -1,0 +1,70 @@
+[project]
+name = "canine-video-identity"
+version = "0.2.0"
+description = "Multi-evidence canine identity search — FAISS GPU, ONNX, ArcFace/MagFace"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "numpy>=2.5,<3",
+    "pillow>=12.3,<13",
+    "scikit-learn>=1.9.0",
+    "huggingface-hub>=1.24.0",
+    "opencv-python-headless>=4.13",
+]
+
+[project.optional-dependencies]
+cpu = [
+    "faiss-cpu>=1.9.0",
+    "onnxruntime>=1.27,<1.28",
+    "torch>=2.7,<3",
+    "torchvision>=0.22,<1",
+]
+cuda = [
+    "faiss-gpu>=1.7.4",
+    "onnxruntime-gpu>=1.27,<1.28",
+    "torch>=2.7,<3",
+    "torchvision>=0.22,<1",
+    "transformers>=4.55",
+]
+training = [
+    "ultralytics>=8.3",
+    "scipy>=1.15",
+    "tensorboard>=2.19",
+]
+all = [
+    "canine-video-identity[cpu,cuda,training]",
+]
+
+[project.scripts]
+cvi-setup-cuda = "scripts.setup_cuda:main"
+cvi-train = "tools.train_embedding_model:main"
+cvi-evaluate = "tools.evaluate_multichannel:main"
+cvi-search = "tools.search_identity:main"
+cvi-download-models = "tools.download_models:main"
+
+[[tool.uv.index]]
+name = "pytorch-cu128"
+url = "https://download.pytorch.org/whl/cu128"
+explicit = true
+
+[tool.uv.sources]
+torch = [
+    { index = "pytorch-cu128", extra = "cuda" },
+]
+torchvision = [
+    { index = "pytorch-cu128", extra = "cuda" },
+]
+
+[build-system]
+requires = ["uv_build>=0.11.25,<0.12"]
+build-backend = "uv_build"
+
+[tool.uv]
+package = true
+
+[tool.uv.build-backend]
+module-name = "cvi"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
