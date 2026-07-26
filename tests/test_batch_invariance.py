@@ -52,7 +52,10 @@ from cvi.runtime_library_provenance import (
     RuntimeLibraryPhase,
     RuntimeLibraryPolicy,
 )
-from cvi.worker_environment import build_sanitized_worker_environment
+from cvi.worker_environment import (
+    ISOLATED_WORKER_BOOTSTRAP,
+    build_sanitized_worker_environment,
+)
 
 
 def digest(payload: bytes) -> str:
@@ -593,9 +596,10 @@ class BatchInvarianceTests(unittest.TestCase):
             )
             supervised = SupervisedProcessResult(
                 command=(
-                    sys.executable, "-I", "-B", "-m",
-                    "cvi.batch_invariance_worker", "--request", "/tmp/request",
-                    "--result", "/tmp/result",
+                    sys.executable, "-I", "-B", "-c",
+                    ISOLATED_WORKER_BOOTSTRAP,
+                    "cvi.batch_invariance_worker", "/tmp/request",
+                    "--request", "/tmp/request", "--result", "/tmp/result",
                 ),
                 policy_sha256=worker_policy.supervisor.policy_sha256,
                 status=SupervisedProcessStatus.COMPLETED,
@@ -796,9 +800,10 @@ class BatchInvarianceTests(unittest.TestCase):
             )
             supervised = SupervisedProcessResult(
                 command=(
-                    sys.executable, "-I", "-B", "-m",
-                    "cvi.batch_invariance_worker", "--request", "/tmp/request",
-                    "--result", "/tmp/result",
+                    sys.executable, "-I", "-B", "-c",
+                    ISOLATED_WORKER_BOOTSTRAP,
+                    "cvi.batch_invariance_worker", "/tmp/request",
+                    "--request", "/tmp/request", "--result", "/tmp/result",
                 ),
                 policy_sha256=execution_policy.supervisor.policy_sha256,
                 status=SupervisedProcessStatus.COMPLETED,

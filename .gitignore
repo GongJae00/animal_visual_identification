@@ -17,6 +17,7 @@ env/
 .virtualenvs/
 
 # ── Models & Weights (large binaries) ──
+models/
 models/backbones/*.pt
 models/backbones/*.pth
 models/backbones/*.bin
@@ -31,6 +32,9 @@ models/checkpoints/*.tar
 models/checkpoints/*.ckpt
 
 # ── Data ──
+data/
+datasets/
+checkpoints/
 data/raw/**
 data/processed/**
 data/registry/**
@@ -39,6 +43,8 @@ data/registry/**
 
 # ── Outputs & Logs ──
 outputs/
+results/
+artifacts/
 logs/
 *.log
 runs/
@@ -82,5 +88,4 @@ paper/
 # ── Docker ──
 docker-compose.override.yml
 
-# ── UV lock (keep pyproject.toml only) ──
-uv.lock
+# `uv.lock` is tracked to reproduce the validated dependency graph.

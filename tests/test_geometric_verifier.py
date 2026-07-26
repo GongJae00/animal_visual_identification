@@ -32,6 +32,12 @@ try:
 except ImportError:
     BACKEND_AVAILABLE = False
 
+BACKEND_SUPPORTED = (
+    BACKEND_AVAILABLE
+    and cv2.__version__ == GeometricVerifierPolicy().opencv_reference_version
+    and np.__version__ == GeometricVerifierPolicy().numpy_reference_version
+)
+
 
 def _token(value: int) -> str:
     return f"{value:064x}"
@@ -166,7 +172,9 @@ class GeometricVerifierContractTests(unittest.TestCase):
         )
         self.assertEqual(dict(evidence.backend)["availability"], "UNSUPPORTED_VERSION")
 
-    @unittest.skipUnless(BACKEND_AVAILABLE, "optional numerical backend unavailable")
+    @unittest.skipUnless(
+        BACKEND_SUPPORTED, "frozen OpenCV/NumPy reference backend unavailable"
+    )
     def test_pixel_binding_mismatch_fails_before_a_decision(self) -> None:
         images = [np.zeros((96, 96, 3), np.uint8), np.zeros((96, 96, 3), np.uint8)]
         request = _request(images)
@@ -337,7 +345,9 @@ class GeometricVerifierContractTests(unittest.TestCase):
         self.assertFalse(metrics["spatial_pass"])
 
 
-@unittest.skipUnless(BACKEND_AVAILABLE, "optional numerical backend unavailable")
+@unittest.skipUnless(
+    BACKEND_SUPPORTED, "frozen OpenCV/NumPy reference backend unavailable"
+)
 class GeometricVerifierSyntheticTests(unittest.TestCase):
     @staticmethod
     def _texture(seed: int = 7) -> object:

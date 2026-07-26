@@ -24,6 +24,7 @@ SANITIZED_WORKER_ENVIRONMENT_NAMES = tuple(sorted({
     "PYTHONSTARTUP", "PYTHONWARNINGS", "PYTHONBREAKPOINT", "PYTHONMALLOC",
     "PYTHONASYNCIODEBUG", "OMP_NUM_THREADS", "OMP_DYNAMIC",
     "OMP_WAIT_POLICY", "MKL_NUM_THREADS", "MKL_DYNAMIC",
+    "KMP_DUPLICATE_LIB_OK", "KMP_INIT_AT_FORK",
     "OPENBLAS_NUM_THREADS", "NUMEXPR_NUM_THREADS",
     "VECLIB_MAXIMUM_THREADS", "BLIS_NUM_THREADS",
     "ORT_CUDA_TUNABLE_OP_ENABLE", "ORT_CUDA_TUNABLE_OP_TUNING_ENABLE",
@@ -31,6 +32,33 @@ SANITIZED_WORKER_ENVIRONMENT_NAMES = tuple(sorted({
 }))
 
 ISOLATED_PYTHON_FLAGS = ("-I", "-B")
+ISOLATED_WORKER_BOOTSTRAP = """
+import json
+import importlib.util
+import os
+import runpy
+import sys
+import types
+
+module_name = sys.argv.pop(1)
+request_path = sys.argv.pop(1)
+with open(request_path, encoding="utf-8") as stream:
+    request = json.load(stream)
+expected = dict(
+    request["worker_environment_identity"]["environment_entries"]
+)
+if dict(os.environ) != expected:
+    raise RuntimeError("protected worker initial environment differs from allowlist")
+package_spec = importlib.util.find_spec("cvi")
+if package_spec is None or package_spec.submodule_search_locations is None:
+    raise RuntimeError("protected worker package location is unavailable")
+package = types.ModuleType("cvi")
+package.__package__ = "cvi"
+package.__path__ = list(package_spec.submodule_search_locations)
+package.__spec__ = package_spec
+sys.modules["cvi"] = package
+runpy.run_module(module_name, run_name="__main__", alter_sys=True)
+""".strip()
 
 
 def _fixed_worker_environment() -> dict[str, str]:
@@ -42,6 +70,8 @@ def _fixed_worker_environment() -> dict[str, str]:
         "LANG": "C.UTF-8",
         "LC_ALL": "C.UTF-8",
         "MALLOC_ARENA_MAX": "2",
+        "KMP_DUPLICATE_LIB_OK": "True",
+        "KMP_INIT_AT_FORK": "FALSE",
         "MKL_DYNAMIC": "FALSE",
         "MKL_NUM_THREADS": "1",
         "NUMEXPR_NUM_THREADS": "1",

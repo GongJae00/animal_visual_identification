@@ -24,7 +24,7 @@ It does not claim canine ReID accuracy or complete video/service deployment.
 ### CVI-P0-001
 
 - Severity: P0
-- Status: MITIGATED_PENDING_TEST
+- Status: FIXED
 - Evidence Status: REPRODUCED
 - File/Symbol: `src/cvi/evidence/miewid.py::MiewIDReIDExtractor`
 - Observed Evidence: legacy runtime defaulted to 160 while the ONNX contract is
@@ -44,8 +44,8 @@ It does not claim canine ReID accuracy or complete video/service deployment.
 ### CVI-P0-002 / CVI-P1-002
 
 - Severity: P0
-- Status: MITIGATED_PENDING_EXPORT_PARITY
-- Evidence Status: OBSERVED
+- Status: FIXED
+- Evidence Status: REPRODUCED
 - File/Symbol: `tools/download_models.py::_download_miewid_msv3`
 - Observed Evidence: exporter retained timm AvgPool and loaded backbone with
   `strict=False`; upstream replaces global pooling with GeM.
@@ -62,8 +62,8 @@ It does not claim canine ReID accuracy or complete video/service deployment.
 ### CVI-P0-003
 
 - Severity: P0
-- Status: MITIGATED_PENDING_TEST
-- Evidence Status: OBSERVED
+- Status: FIXED
+- Evidence Status: REPRODUCED
 - File/Symbol: `src/cvi/evidence/miewid.py::MiewIDReIDExtractor`
 - Observed Evidence: upstream describes wildlife ReID across fins, flukes,
   flanks, and faces; it does not describe nose biometrics.
@@ -79,8 +79,8 @@ It does not claim canine ReID accuracy or complete video/service deployment.
 ### CVI-P0-004 / CVI-P0-005 / CVI-P0-006 / CVI-P0-010
 
 - Severity: P0
-- Status: MITIGATED_PENDING_TEST
-- Evidence Status: OBSERVED
+- Status: FIXED
+- Evidence Status: REPRODUCED
 - File/Symbol: `cvi.backbones.get_backbone`, `DNPMask`,
   `LandmarkEvidencer`, `MultiEvidencePipeline.extract_with_uncertainty`
 - Observed Evidence: untrained CNN/UNet/GNN paths and constant uncertainty
@@ -99,7 +99,7 @@ It does not claim canine ReID accuracy or complete video/service deployment.
 ### CVI-P0-015
 
 - Severity: P0
-- Status: MITIGATED_PENDING_TEST
+- Status: FIXED
 - Evidence Status: REPRODUCED
 - File/Symbol: `src/cvi/trainer.py::ArcFaceModel.forward_train`
 - Observed Evidence: validation set `eval()` then applied cross entropy to the

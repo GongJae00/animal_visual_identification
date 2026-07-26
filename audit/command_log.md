@@ -198,3 +198,28 @@ print('split validation OK')
 "
 # split validation OK
 ```
+
+## 2026-07-26 — E2E hardening closure
+
+```bash
+uv lock
+uv sync --extra cpu --extra training --group dev
+.venv/bin/python -m unittest tests.test_gpu_post_search tests.test_geometric_verifier tests.test_evidence_model_contracts tests.test_trainer -v
+# Ran 63 tests: OK (skipped=5)
+
+PYTHONPATH=tests .venv/bin/python -m unittest <five ONNX fresh-worker regression tests> -v
+# CPU CLI/benchmark/discovery, batch, and recursive embedding snapshot paths: OK
+
+.venv/bin/python -m unittest discover -s tests -v
+# Ran 658 tests in 156.046s: OK (skipped=16)
+
+research-implementation-check --full .
+# Summary: 0 failure(s), 0 warning(s)
+
+research-stage-feedback implementation .
+# completed; report written to private project state
+
+research-git-checkpoint .
+# implementation/ignore gates clean; public-origin blocker acknowledged under
+# the PI's explicit commit/push request
+```

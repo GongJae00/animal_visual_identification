@@ -34,19 +34,19 @@
 
 | ID | Title | Severity | Status | File |
 |----|-------|----------|--------|------|
-| CVI-P0-001 | MiewID runtime input 160×160 vs ONNX 440×440 | P0 | OPEN | nose_print.py:49-53 |
-| CVI-P0-002 | MiewID ONNX uses AvgPool instead of official GeM | P0 | OPEN | tools/download_models.py:158-168 |
-| CVI-P0-003 | MiewID misclassified as "nose" — it's wildlife re-ID | P0 | OPEN | nose_print.py (entire module) |
-| CVI-P0-004 | TinyViTBackbone is random 3-layer CNN named "ViT" | P0 | OPEN | backbones/__init__.py:49-70 |
-| CVI-P0-005 | DNPMask UNet is fully random — destroys signal | P0 | OPEN | nose_print.py:117-174 |
-| CVI-P0-006 | LandmarkEvidencer uses random CNN+GNN | P0 | OPEN | landmark_graph.py:73-76 |
+| CVI-P0-001 | MiewID runtime input 160×160 vs ONNX 440×440 | P0 | FIXED | evidence/wildlife_reid.py |
+| CVI-P0-002 | MiewID ONNX uses AvgPool instead of official GeM | P0 | FIXED | evidence/wildlife_reid.py |
+| CVI-P0-003 | MiewID misclassified as "nose" — it's wildlife re-ID | P0 | FIXED | evidence/wildlife_reid.py |
+| CVI-P0-004 | TinyViTBackbone is random 3-layer CNN named "ViT" | P0 | FIXED | backbones/__init__.py |
+| CVI-P0-005 | DNPMask UNet is fully random — destroys signal | P0 | FIXED | evidence/nose_print.py |
+| CVI-P0-006 | LandmarkEvidencer uses random CNN+GNN | P0 | FIXED | evidence/landmark_graph.py |
 | CVI-P0-007 | SuperAnimal ONNX is 9 KB dummy (needs re-export) | P0 | OPEN | tools/download_models.py:219-220 |
 | CVI-P0-009 | pickle serialization in calibrator | P0 | OPEN | fusion/calibrator.py:35 |
-| CVI-P0-010 | Fake uncertainty (epistemic=0.05 hardcoded) | P0 | OPEN | evidence/appearance.py |
+| CVI-P0-010 | Fake uncertainty (epistemic=0.05 hardcoded) | P0 | FIXED | pipeline/enroll.py |
 | CVI-P0-011 | Video API not supported despite README claims | P0 | OPEN | api.py:108-119 |
 | CVI-P0-012 | MiewID-msv3 has no license (production risk) | P0 | OPEN | HF model card |
 | CVI-P0-013 | 3 duplicate FAISS index implementations | P0 | OPEN | identity_index.py, gpu_index.py, index/hierarchical.py |
-| CVI-P0-015 | trainer.py has no encode() method for inference | P0 | OPEN | trainer.py |
+| CVI-P0-015 | trainer validation used inference embedding as CE logits | P0 | FIXED | trainer.py |
 
 ## P1 (Should Fix Before Multi-Channel)
 

@@ -18,10 +18,18 @@ class GpuIdentityIndex:
         self._dim = dim
         self._index_path = index_path
         self._metadata_path = metadata_path
-        self._res = faiss.StandardGpuResources()
-        cfg = faiss.GpuIndexFlatConfig()
-        cfg.useFloat16CoarseQuantization = True
-        self._index = faiss.GpuIndexFlatIP(self._res, dim, cfg)
+        self._uses_gpu = all(
+            hasattr(faiss, name)
+            for name in ("StandardGpuResources", "GpuIndexFlatConfig", "GpuIndexFlatIP")
+        )
+        self._res = None
+        if self._uses_gpu:
+            self._res = faiss.StandardGpuResources()
+            cfg = faiss.GpuIndexFlatConfig()
+            cfg.useFloat16CoarseQuantization = True
+            self._index = faiss.GpuIndexFlatIP(self._res, dim, cfg)
+        else:
+            self._index = faiss.IndexFlatIP(dim)
         self._metadata: dict[int, dict[str, Any]] = {}
         if index_path and index_path.exists():
             self._load()
@@ -113,10 +121,9 @@ class GpuIdentityIndex:
         vecs = self._index.reconstruct_n(0, self._index.ntotal)
         mask = np.ones(self._index.ntotal, dtype=bool)
         mask[index] = False
-        new_idx = faiss.IndexFlatIP(self._dim)
-        new_idx.add(vecs[mask])
         self._index.reset()
-        self._index.copyFrom(new_idx)
+        if np.any(mask):
+            self._index.add(vecs[mask])
         old_meta = self._metadata.pop(index, {})
         new_metadata: dict[int, dict[str, Any]] = {}
         for old_idx, meta in self._metadata.items():
@@ -129,9 +136,18 @@ class GpuIdentityIndex:
     def size(self) -> int:
         return self._index.ntotal
 
+    @property
+    def uses_gpu(self) -> bool:
+        """Return whether the index is backed by FAISS GPU."""
+        return self._uses_gpu
+
     def _save(self) -> None:
         if self._index_path:
-            cpu_idx = faiss.index_gpu_to_cpu(self._index)
+            cpu_idx = (
+                faiss.index_gpu_to_cpu(self._index)
+                if self._uses_gpu
+                else self._index
+            )
             faiss.write_index(cpu_idx, str(self._index_path))
         if self._metadata_path:
             self._metadata_path.write_text(
@@ -141,8 +157,11 @@ class GpuIdentityIndex:
     def _load(self) -> None:
         if self._index_path and self._index_path.exists():
             cpu_idx = faiss.read_index(str(self._index_path))
-            gpu_idx = faiss.index_cpu_to_gpu(self._res, 0, cpu_idx)
-            self._index = gpu_idx
+            self._index = (
+                faiss.index_cpu_to_gpu(self._res, 0, cpu_idx)
+                if self._uses_gpu
+                else cpu_idx
+            )
         if self._metadata_path and self._metadata_path.exists():
             self._metadata = {
                 int(k): v for k, v in json.loads(
@@ -151,7 +170,11 @@ class GpuIdentityIndex:
             }
 
     def to_cpu_index(self, index_path: Path, metadata_path: Path) -> None:
-        cpu_idx = faiss.index_gpu_to_cpu(self._index)
+        cpu_idx = (
+            faiss.index_gpu_to_cpu(self._index)
+            if self._uses_gpu
+            else self._index
+        )
         faiss.write_index(cpu_idx, str(index_path))
         metadata_path.write_text(
             json.dumps(self._metadata, ensure_ascii=False, indent=2)
@@ -159,5 +182,4 @@ class GpuIdentityIndex:
 
     def close(self) -> None:
         self._save()
-        if hasattr(self, "_res"):
-            del self._res
+        self._res = None

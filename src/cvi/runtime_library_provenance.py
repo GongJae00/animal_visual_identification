@@ -56,7 +56,7 @@ class RuntimeLibraryPolicy:
     discovery_binary_set_sha256: str | None = None
     maximum_maps_bytes: int = 8_388_608
     maximum_maps_lines: int = 100_000
-    maximum_executable_identities: int = 128
+    maximum_executable_identities: int = 256
     maximum_individual_binary_bytes: int = 2_147_483_648
     maximum_total_binary_bytes: int = 8_589_934_592
     hash_chunk_bytes: int = 1_048_576
