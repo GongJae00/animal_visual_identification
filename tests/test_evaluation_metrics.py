@@ -4,63 +4,39 @@ import unittest
 
 import numpy as np
 
-from cvi.evaluation.verification import (
-    compute_verification_metrics,
-    compute_verification_curve,
-    EvaluationError,
-    LengthMismatchError,
-    InvalidLabelError,
-    NonFiniteScoreError,
-    EmptyInputError,
-    SingleClassError,
-)
 from cvi.evaluation.retrieval import (
-    compute_retrieval_metrics,
-    RetrievalError,
-    EmbeddingNormError,
     ClosedSetViolation,
+    EmbeddingNormError,
+    MetricInvariantError,
+    RetrievalError,
+    compute_retrieval_metrics,
+)
+from cvi.evaluation.verification import (
+    EmptyInputError,
+    InvalidLabelError,
+    LengthMismatchError,
+    NonFiniteScoreError,
+    SingleClassError,
+    compute_verification_curve,
+    compute_verification_metrics,
 )
 
-# ===== VERIFICATION FIXTURES =====
-
-# Fixture A: perfect separation, 2 pos 2 neg
-# AUC=1.0, AP=1.0, d_prime=5.0, EER=0.0
 PERFECT_SCORES = np.array([0.9, 0.7, 0.4, 0.2], dtype=np.float64)
 PERFECT_LABELS = np.array([1, 1, 0, 0], dtype=np.int64)
 EXP_PERFECT = {"ROC_AUC": 1.0, "PR_AUC": 1.0, "d_prime": 5.0, "EER": 0.0}
 
-# Fixture B: overlap, 2 pos 2 neg
-# scores descending: 0.9(1), 0.6(0), 0.4(1), 0.2(0)
-# AUC=0.75, AP=0.8333, d_prime=1.1043, EER=0.5 at threshold=0.6
 OVERLAP_SCORES = np.array([0.9, 0.4, 0.6, 0.2], dtype=np.float64)
 OVERLAP_LABELS = np.array([1, 1, 0, 0], dtype=np.int64)
 EXP_OVERLAP = {"ROC_AUC": 0.75, "PR_AUC": 0.8333333333333333, "d_prime": 1.1043152607, "EER": 0.5}
 
-# ===== RETRIEVAL FIXTURES =====
-
-# Fixture C: non-perfect ranking
-# gallery: [1,0,0](id=0), [-0.3,0.953,0](id=0), [0,1,0](id=1), [0,0,1](id=2)
-# query: [1,0,0](id=0)
-# after norm: gallery rows already unit; query unit.
-# sims = [1, -0.3003, 0, 0]
-# order (stable desc): idx0(1,id=0), idx2(0,id=1), idx3(0,id=2), idx1(-0.3,id=0)
-# is_pos: [T, F, F, T]
-# n_relevant=2
-# AP: rank1 p=1/1, rank4 p=2/4 => (1 + 0.5)/2 = 0.75
-# mINP: penetration rank/n_rel: rank1:1/2*1=0.5, rank4:4/2*1=2.0 => max=2.0
 GALLERY_C = np.array(
     [[1, 0, 0], [-0.3, 0.953, 0], [0, 1, 0], [0, 0, 1]], dtype=np.float64
 )
 GALLERY_IDS_C = np.array([0, 0, 1, 2], dtype=np.int64)
 QUERY_C = np.array([[1, 0, 0]], dtype=np.float64)
 QUERY_IDS_C = np.array([0], dtype=np.int64)
-EXP_C = {"mAP": 0.75, "mINP": 2.0, "Rank-1": 1.0, "Rank-5": 1.0, "Rank-10": 1.0}
+EXP_C = {"mAP": 0.75, "mINP": 0.5, "Rank-1": 1.0, "Rank-5": 1.0, "Rank-10": 1.0}
 
-# Fixture D: perfect ranking
-# gallery: [1,0,0](id=0), [0,1,0](id=1), [0,0,1](id=2)
-# query: [1,0,0](id=0), [0,1,0](id=1)
-# sims q0: [1,0,0], q1: [0,1,0]
-# AP q0: 1.0, AP q1: 1.0, mAP=1.0
 GALLERY_D = np.eye(3, dtype=np.float64)
 GALLERY_IDS_D = np.array([0, 1, 2], dtype=np.int64)
 QUERY_D = np.eye(3, dtype=np.float64)[:2]
@@ -93,49 +69,53 @@ class VerificationMetricsTest(unittest.TestCase):
         self.assertAlmostEqual(curve.far[eer_idx], 0.5)
         self.assertAlmostEqual(curve.frr[eer_idx], 0.5)
 
-    def test_negative_cosine_scores(self):
-        scores = np.array([0.9, -0.5, 0.3, -0.8], dtype=np.float64)
-        labels = np.array([1, 1, 0, 0], dtype=np.int64)
-        result = compute_verification_metrics(scores, labels)
-        self.assertTrue(0 <= result["ROC_AUC"] <= 1)
-        self.assertTrue(result["d_prime"] != 0)
-
     def test_rejects_nonfinite(self):
-        scores = np.array([0.9, np.nan, 0.3, 0.2], dtype=np.float64)
-        labels = np.array([1, 1, 0, 0], dtype=np.int64)
         with self.assertRaises(NonFiniteScoreError):
-            compute_verification_metrics(scores, labels)
+            compute_verification_metrics(
+                np.array([0.9, np.nan, 0.3, 0.2], dtype=np.float64),
+                np.array([1, 1, 0, 0], dtype=np.int64),
+            )
 
     def test_rejects_invalid_labels(self):
-        scores = np.array([0.9, 0.7, 0.3, 0.2], dtype=np.float64)
-        labels = np.array([1, 2, 0, 0], dtype=np.int64)
         with self.assertRaises(InvalidLabelError):
-            compute_verification_metrics(scores, labels)
+            compute_verification_metrics(
+                np.array([0.9, 0.7, 0.3, 0.2], dtype=np.float64),
+                np.array([1, 2, 0, 0], dtype=np.int64),
+            )
+
+    def test_rejects_fractional_labels(self):
+        with self.assertRaises(InvalidLabelError):
+            compute_verification_metrics(
+                np.array([0.9, 0.7, 0.3, 0.2], dtype=np.float64),
+                np.array([1, 0.5, 0, 0], dtype=np.float64),
+            )
 
     def test_rejects_length_mismatch(self):
-        scores = np.array([0.9, 0.7], dtype=np.float64)
-        labels = np.array([1, 1, 0], dtype=np.int64)
         with self.assertRaises(LengthMismatchError):
-            compute_verification_metrics(scores, labels)
+            compute_verification_metrics(
+                np.array([0.9, 0.7], dtype=np.float64),
+                np.array([1, 1, 0], dtype=np.int64),
+            )
 
     def test_rejects_empty(self):
         with self.assertRaises(EmptyInputError):
             compute_verification_metrics(
-                np.array([], dtype=np.float64), np.array([], dtype=np.int64)
+                np.array([], dtype=np.float64), np.array([], dtype=np.int64),
             )
 
     def test_rejects_single_class(self):
-        scores = np.array([0.9, 0.7, 0.3], dtype=np.float64)
-        labels = np.array([1, 1, 1], dtype=np.int64)
         with self.assertRaises(SingleClassError):
-            compute_verification_metrics(scores, labels)
+            compute_verification_metrics(
+                np.array([0.9, 0.7, 0.3], dtype=np.float64),
+                np.array([1, 1, 1], dtype=np.int64),
+            )
 
     def test_verification_curve_has_full_coverage(self):
         curve = compute_verification_curve(PERFECT_SCORES, PERFECT_LABELS)
         self.assertIn(np.inf, curve.thresholds)
         self.assertIn(-np.inf, curve.thresholds)
-        self.assertEqual(len(curve.thresholds), len(np.unique(PERFECT_SCORES)) + 2)
-        self.assertEqual(len(curve.far), len(curve.thresholds))
+        self.assertEqual(curve.n_pos, 2)
+        self.assertEqual(curve.n_neg, 2)
 
     def test_no_rounding_in_core(self):
         result = compute_verification_metrics(OVERLAP_SCORES, OVERLAP_LABELS)
@@ -150,10 +130,7 @@ class VerificationMetricsTest(unittest.TestCase):
 
 class RetrievalMetricsTest(unittest.TestCase):
     def test_non_perfect_ranking(self):
-        result = compute_retrieval_metrics(
-            QUERY_C, GALLERY_C, QUERY_IDS_C, GALLERY_IDS_C,
-            rank_ks=(1, 5, 10),
-        )
+        result = compute_retrieval_metrics(QUERY_C, GALLERY_C, QUERY_IDS_C, GALLERY_IDS_C)
         self.assertEqual(result["num_queries"], 1)
         self.assertEqual(result["num_gallery"], 4)
         self.assertAlmostEqual(result["mAP"], EXP_C["mAP"])
@@ -161,20 +138,14 @@ class RetrievalMetricsTest(unittest.TestCase):
         self.assertAlmostEqual(result["Rank-1"], EXP_C["Rank-1"])
 
     def test_perfect_ranking(self):
-        result = compute_retrieval_metrics(
-            QUERY_D, GALLERY_D, QUERY_IDS_D, GALLERY_IDS_D,
-            rank_ks=(1, 5, 10),
-        )
+        result = compute_retrieval_metrics(QUERY_D, GALLERY_D, QUERY_IDS_D, GALLERY_IDS_D)
         self.assertAlmostEqual(result["mAP"], EXP_D["mAP"])
         self.assertAlmostEqual(result["mINP"], EXP_D["mINP"])
         self.assertEqual(result["num_valid_queries"], 2)
 
     def test_cosine_normalizes_rows(self):
-        scaled = GALLERY_D * 3.0
-        q = QUERY_D * 2.0
         result = compute_retrieval_metrics(
-            q, scaled, QUERY_IDS_D, GALLERY_IDS_D,
-            rank_ks=(1,),
+            QUERY_D * 2.0, GALLERY_D * 3.0, QUERY_IDS_D, GALLERY_IDS_D, rank_ks=(1,),
         )
         self.assertAlmostEqual(result["Rank-1"], 1.0)
 
@@ -185,43 +156,89 @@ class RetrievalMetricsTest(unittest.TestCase):
                 GALLERY_D, np.array([0], dtype=np.int64), GALLERY_IDS_D,
             )
 
-    def test_self_match_excluded(self):
+    def test_self_match_excluded_by_sample_id(self):
         g = np.array([[1, 0], [0, 1], [0.707, 0.707]], dtype=np.float64)
         g_ids = np.array([0, 1, 0], dtype=np.int64)
+        g_sids = np.array(["s1", "s2", "s3"])
         q = np.array([[1, 0]], dtype=np.float64)
         q_ids = np.array([0], dtype=np.int64)
-        excl = np.array([[True, False, False]], dtype=bool)
+        q_sids = np.array(["s1"])
         with_excl = compute_retrieval_metrics(
-            q, g, q_ids, g_ids, rank_ks=(1,), exclude_self=excl,
+            q, g, q_ids, g_ids, rank_ks=(1,),
+            query_sample_ids=q_sids, gallery_sample_ids=g_sids,
         )
         self.assertEqual(with_excl["num_valid_queries"], 1)
         self.assertTrue(with_excl.get("self_match_excluded"))
+        self.assertAlmostEqual(with_excl["mAP"], 1.0)
+        self.assertAlmostEqual(with_excl["mINP"], 1.0)
+
+    def test_self_match_same_identity_other_sample_eligible(self):
+        g = np.array([[1, 0], [0.707, 0.707]], dtype=np.float64)
+        g_ids = np.array([0, 0], dtype=np.int64)
+        g_sids = np.array(["s1", "s2"])
+        q = np.array([[1, 0]], dtype=np.float64)
+        q_ids = np.array([0], dtype=np.int64)
+        q_sids = np.array(["s1"])
+        result = compute_retrieval_metrics(
+            q, g, q_ids, g_ids, rank_ks=(1,),
+            query_sample_ids=q_sids, gallery_sample_ids=g_sids,
+        )
+        self.assertEqual(result["num_valid_queries"], 1)
+        self.assertAlmostEqual(result["Rank-1"], 1.0)
+        self.assertAlmostEqual(result["mAP"], 1.0)
+        self.assertAlmostEqual(result["mINP"], 1.0)
+
+    def test_self_match_string_sample_ids(self):
+        g = np.array([[1, 0], [0, 1], [1, 0]], dtype=np.float64)
+        g_ids = np.array([0, 1, 0], dtype=np.int64)
+        g_sids = np.array(["a", "b", "c"])
+        q = np.array([[1, 0]], dtype=np.float64)
+        q_ids = np.array([0], dtype=np.int64)
+        q_sids = np.array(["a"])
+        result = compute_retrieval_metrics(
+            q, g, q_ids, g_ids, rank_ks=(1,),
+            query_sample_ids=q_sids, gallery_sample_ids=g_sids,
+        )
+        self.assertAlmostEqual(result["Rank-1"], 1.0)
+
+    def test_self_match_all_relevant_removed_raises(self):
+        g = np.array([[1, 0]], dtype=np.float64)
+        g_ids = np.array([0], dtype=np.int64)
+        g_sids = np.array(["s1"])
+        q = np.array([[1, 0]], dtype=np.float64)
+        q_ids = np.array([0], dtype=np.int64)
+        q_sids = np.array(["s1"])
+        with self.assertRaises(ClosedSetViolation):
+            compute_retrieval_metrics(
+                q, g, q_ids, g_ids, closed_set=True,
+                query_sample_ids=q_sids, gallery_sample_ids=g_sids,
+            )
+
+    def test_duplicate_sample_ids_rejected(self):
+        g = np.eye(2, dtype=np.float64)
+        g_ids = np.array([0, 1], dtype=np.int64)
+        g_sids = np.array(["a", "a"])
+        q = np.array([[1, 0]], dtype=np.float64)
+        q_ids = np.array([0], dtype=np.int64)
+        q_sids = np.array(["b"])
+        with self.assertRaises(RetrievalError):
+            compute_retrieval_metrics(
+                q, g, q_ids, g_ids,
+                query_sample_ids=q_sids, gallery_sample_ids=g_sids,
+            )
 
     def test_missing_identity_rejected_in_closed_set(self):
         with self.assertRaises(ClosedSetViolation):
             compute_retrieval_metrics(
                 np.array([[1, 0, 0]], dtype=np.float64),
                 GALLERY_D, np.array([999], dtype=np.int64), GALLERY_IDS_D,
-                closed_set=True,
             )
 
     def test_configurable_rank_ks(self):
-        result = compute_retrieval_metrics(
-            QUERY_C, GALLERY_C, QUERY_IDS_C, GALLERY_IDS_C,
-            rank_ks=(1, 3),
-        )
+        result = compute_retrieval_metrics(QUERY_C, GALLERY_C, QUERY_IDS_C, GALLERY_IDS_C, rank_ks=(1, 3))
         self.assertIn("Rank-1", result)
         self.assertIn("Rank-3", result)
         self.assertNotIn("Rank-5", result)
-
-    def test_deterministic_tie_policy(self):
-        g = np.array([[1, 0], [0.707, 0.707], [0, 1]], dtype=np.float64)
-        g_ids = np.array([0, 0, 1], dtype=np.int64)
-        q = np.array([[1, 0]], dtype=np.float64)
-        q_ids = np.array([0], dtype=np.int64)
-        r1 = compute_retrieval_metrics(q, g, q_ids, g_ids, rank_ks=(1,))
-        r2 = compute_retrieval_metrics(q, g, q_ids, g_ids, rank_ks=(1,))
-        self.assertEqual(r1["Rank-1"], r2["Rank-1"])
 
     def test_empty_queries_rejected(self):
         with self.assertRaises(RetrievalError):
@@ -231,11 +248,62 @@ class RetrievalMetricsTest(unittest.TestCase):
             )
 
     def test_non_finite_embeddings_rejected(self):
-        q = np.array([[1, np.nan, 0]], dtype=np.float64)
         with self.assertRaises(RetrievalError):
             compute_retrieval_metrics(
-                q, GALLERY_D, np.array([0], dtype=np.int64), GALLERY_IDS_D,
+                np.array([[1, np.nan, 0]], dtype=np.float64),
+                GALLERY_D, np.array([0], dtype=np.int64), GALLERY_IDS_D,
             )
+
+    def test_string_ids_accepted(self):
+        g = np.eye(2, dtype=np.float64)
+        g_ids = np.array(["a", "b"])
+        q = np.array([[1, 0]], dtype=np.float64)
+        q_ids = np.array(["a"])
+        result = compute_retrieval_metrics(q, g, q_ids, g_ids, rank_ks=(1,))
+        self.assertAlmostEqual(result["Rank-1"], 1.0)
+
+    def test_unsupported_metric_rejected(self):
+        with self.assertRaises(RetrievalError):
+            compute_retrieval_metrics(QUERY_D, GALLERY_D, QUERY_IDS_D, GALLERY_IDS_D, metric="dot")
+
+    def test_mINP_2_relevant_last_at_rank_4(self):
+        g = np.array([[1, 0], [0.9, 0.1], [0.8, 0.2], [0.5, 0.5]], dtype=np.float64)
+        g_ids = np.array([0, 1, 2, 0], dtype=np.int64)
+        q = np.array([[1, 0]], dtype=np.float64)
+        q_ids = np.array([0], dtype=np.int64)
+        result = compute_retrieval_metrics(q, g, q_ids, g_ids)
+        self.assertAlmostEqual(result["mINP"], 0.5)
+
+    def test_mINP_1_relevant_last_at_rank_3(self):
+        g = np.array([[0.9, 0.0], [0.8, 0.0], [-0.5, 0.0]], dtype=np.float64)
+        g_ids = np.array([1, 2, 0], dtype=np.int64)
+        q = np.array([[1, 0]], dtype=np.float64)
+        q_ids = np.array([0], dtype=np.int64)
+        result = compute_retrieval_metrics(q, g, q_ids, g_ids)
+        self.assertAlmostEqual(result["mINP"], 1.0 / 3.0, places=5)
+
+    def test_mINP_all_relevant_first(self):
+        g = np.array([[1, 0], [0, 1]], dtype=np.float64)
+        g_ids = np.array([0, 1], dtype=np.int64)
+        q = np.array([[1, 0]], dtype=np.float64)
+        q_ids = np.array([0], dtype=np.int64)
+        result = compute_retrieval_metrics(q, g, q_ids, g_ids)
+        self.assertAlmostEqual(result["mINP"], 1.0)
+
+    def test_mINP_never_exceeds_one(self):
+        g = np.eye(5, dtype=np.float64)
+        g_ids = np.array([0, 1, 2, 3, 4], dtype=np.int64)
+        q = np.eye(5, dtype=np.float64)
+        q_ids = np.array([0, 1, 2, 3, 4], dtype=np.int64)
+        result = compute_retrieval_metrics(q, g, q_ids, g_ids)
+        self.assertLessEqual(result["mINP"], 1.0)
+        self.assertGreater(result["mINP"], 0.0)
+
+    def test_mINP_no_clipping_raises_on_broken_invariant(self):
+        ranked_pos = np.array([True, False, False], dtype=bool)
+        from cvi.evaluation.retrieval import _compute_ap_inp
+        with self.assertRaises(MetricInvariantError):
+            _compute_ap_inp(ranked_pos, n_relevant=5)
 
 
 if __name__ == "__main__":

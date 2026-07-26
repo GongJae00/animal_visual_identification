@@ -21,7 +21,14 @@
 | CVI-EVAL-012 | Rounding inside core metric functions | P1 | FIXED | evaluation/verification.py |
 | CVI-EVAL-013 | select_threshold_at_far returns sentinel -1 values | P1 | OPEN | evaluation/verification.py |
 | CVI-EVAL-014 | OSCR not implemented in open_set.py | P1 | OPEN | evaluation/open_set.py |
-| CVI-EVAL-015 | CLI report schema v2 needs formal validation file | P2 | OPEN | evaluate_multichannel.py |
+| CVI-EVAL-015 | CLI report schema v2 needs formal validation file | P2 | FIXED | evaluate_multichannel.py |
+| CVI-EVAL-024 | Report Schema v2 with formal JSON Schema validation | P2 | IMPLEMENTED | schemas/cvi.evaluation.report.v2.schema.json |
+| CVI-EVAL-025 | CLI smoke test framework for evaluation pipeline | P2 | IMPLEMENTED | tests/test_evaluate_multichannel_cli.py |
+| CVI-EVAL-026 | Full provenance tracking with file/config SHA256 hashes | P2 | IMPLEMENTED | tools/evaluate_multichannel.py |
+| CVI-EVAL-027 | Split leakage enforced as fatal error (not warning) | P1 | IMPLEMENTED | tools/evaluate_multichannel.py |
+| CVI-EVAL-028 | Bootstrap confidence intervals for FAR/TAR and retrieval | P2 | IMPLEMENTED | tools/evaluate_multichannel.py |
+| CVI-EVAL-029 | Metric invariant enforcement in retrieval (mINP/invariance guards) | P1 | IMPLEMENTED | evaluation/retrieval.py |
+| CVI-EVAL-030 | Open-set DIR with detection vs identification separation | P1 | IMPLEMENTED | evaluation/open_set.py |
 
 ## P0 (Must Fix Before Any Experiment)
 
