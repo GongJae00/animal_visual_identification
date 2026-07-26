@@ -46,17 +46,19 @@ class CVIDeploymentCUDA:
         )
 
     def _build_evidence(self) -> dict[str, AbstractEvidencer]:
-        from cvi.evidence.nose_print import MiewIDNoseExtractor
-        from cvi.evidence.landmark_graph import LandmarkEvidencer
+        from cvi.evidence.miewid import MiewIDReIDExtractor
         from cvi.evidence.appearance import Dinov2WithUncertainty
 
         evidence: dict[str, AbstractEvidencer] = {}
         for name, spec in self._config.get("channels", {}).items():
             kind = spec.get("type", "")
-            if kind == "miewid":
-                evidence[name] = MiewIDNoseExtractor(Path(spec["path"]))
+            if kind in ("miewid", "miewid_reid", "wildlife_reid"):
+                evidence[name] = MiewIDReIDExtractor(Path(spec["path"]))
             elif kind == "landmark":
-                evidence[name] = LandmarkEvidencer()
+                raise ValueError(
+                    "landmark channel is disabled until trained heatmap and "
+                    "graph artifacts have a verified loading contract"
+                )
             elif kind == "dinov2" or kind == "appearance":
                 evidence[name] = Dinov2WithUncertainty()
         return evidence

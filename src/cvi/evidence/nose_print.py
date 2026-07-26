@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import warnings
 
 import cv2
 import numpy as np
@@ -10,27 +11,18 @@ import torch.nn.functional as F
 from PIL import Image
 
 from cvi.evidence.base import AbstractEvidencer
+from cvi.evidence.miewid import MiewIDReIDExtractor
 
 
 class TinyViTBackbone(nn.Module):
     def __init__(self, embedding_dim: int = 512):
-        super().__init__()
-        self._conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=2, padding=1)
-        self._bn1 = nn.BatchNorm2d(64)
-        self._conv2 = nn.Conv2d(64, 128, kernel_size=3, stride=2, padding=1)
-        self._bn2 = nn.BatchNorm2d(128)
-        self._conv3 = nn.Conv2d(128, 256, kernel_size=3, stride=2, padding=1)
-        self._bn3 = nn.BatchNorm2d(256)
-        self._pool = nn.AdaptiveAvgPool2d(1)
-        self._fc = nn.Linear(256, embedding_dim)
+        raise RuntimeError(
+            "TinyViTBackbone is disabled: the implementation was an untrained "
+            "three-layer CNN, not TinyViT. Select a checkpoint-backed backbone."
+        )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        x = F.relu(self._bn1(self._conv1(x)))
-        x = F.relu(self._bn2(self._conv2(x)))
-        x = F.relu(self._bn3(self._conv3(x)))
-        x = self._pool(x).flatten(1)
-        x = self._fc(x)
-        return F.normalize(x, p=2, dim=1)
+        raise RuntimeError("TinyViTBackbone is disabled")
 
 
 class MagFaceNoseHead(nn.Module):
@@ -72,29 +64,19 @@ class NoseEnhancer:
         return resized
 
 
-class MiewIDNoseExtractor(AbstractEvidencer):
-    name = "miewid"
-    output_dim = 2152
+class MiewIDNoseExtractor(MiewIDReIDExtractor):
+    """Deprecated compatibility alias for the former incorrect channel name."""
 
-    def __init__(self, onnx_path: Path, input_size: int = 160):
-        import onnxruntime as ort
-        if not onnx_path.exists():
-            raise FileNotFoundError(
-                f"MiewID ONNX model not found: {onnx_path}\n"
-                f"  다운로드: python tools/download_models.py --model miewid"
-            )
-        self._sess = ort.InferenceSession(str(onnx_path))
-        self._input_name = self._sess.get_inputs()[0].name
-        self._input_size = input_size
-
-    def extract(self, image: Image.Image) -> np.ndarray:
-        img = image.resize((self._input_size, self._input_size))
-        arr = np.array(img, dtype=np.float32).transpose(2, 0, 1)[None] / 255.0
-        out = self._sess.run(None, {self._input_name: arr})[0][0]
-        return out / max(np.linalg.norm(out), 1e-8)
-
-    def extract_batch(self, images: list[Image.Image]) -> np.ndarray:
-        return np.stack([self.extract(img) for img in images])
+    def __init__(self, onnx_path: Path, input_size: int = 440):
+        if input_size != 440:
+            raise ValueError("MiewID-msv3 only supports its official 440x440 input")
+        warnings.warn(
+            "MiewIDNoseExtractor is deprecated; use MiewIDReIDExtractor. "
+            "MiewID is a whole-crop wildlife ReID model, not a nose biometric.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        super().__init__(onnx_path)
 
 
 class YoloNoseDetector:
@@ -106,8 +88,7 @@ class YoloNoseDetector:
 
     def detect(self, image: Image.Image) -> tuple[int, int, int, int] | None:
         if self._model is None:
-            w, h = image.size
-            return (w // 4, h // 3, 3 * w // 4, 2 * h // 3)
+            return None
         img_np = np.array(image)
         blob = cv2.dnn.blobFromImage(img_np, 1/255, (416, 416), swapRB=True)
         self._model.setInput(blob)
@@ -132,8 +113,8 @@ class YoloNoseDetector:
 
 
 class DNPMask:
-    def __init__(self):
-        self._model = self._build_unet()
+    def __init__(self, model: nn.Module | None = None):
+        self._model = model
 
     def _build_unet(self) -> nn.Module:
         class UNet(nn.Module):
@@ -184,6 +165,8 @@ class DNPMask:
 
     def apply(self, nose_crop: np.ndarray) -> np.ndarray:
         import cv2
+        if self._model is None:
+            return nose_crop.astype(np.uint8, copy=True)
         h, w = nose_crop.shape[:2]
         if h < 16 or w < 16:
             return nose_crop.astype(np.uint8)

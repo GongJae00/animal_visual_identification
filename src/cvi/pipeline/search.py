@@ -76,7 +76,10 @@ class IdentitySearchPipeline:
                 break
 
         if self._open_set and results:
-            aggr_uncertainty = np.mean(list(uncertainties.values())) if uncertainties else 0.0
+            aggr_uncertainty = (
+                float(np.mean(list(uncertainties.values())))
+                if uncertainties else None
+            )
             rej, reason = self._open_set.reject(
                 (0, results[0].similarity, {}),
                 [(i, r.similarity, {}) for i, r in enumerate(results)],

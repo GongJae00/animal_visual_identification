@@ -303,7 +303,10 @@ def cmd_verification(args: argparse.Namespace) -> None:
         if kind == "dinov2":
             ev_map[name] = Dinov2WithUncertainty()
         elif kind == "landmark":
-            ev_map[name] = LandmarkEvidencer()
+            raise ValueError(
+                "landmark evaluation is disabled until trained heatmap and "
+                "graph artifacts have a verified loading contract"
+            )
     active = list(ev_map.keys())
     if not active:
         print(json.dumps({"error": "no active evidence channels"}))

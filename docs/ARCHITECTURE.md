@@ -1,8 +1,16 @@
-# CVI Architecture — Four-Layer Multi-Evidence Identity Search
+# CVI Architecture — Target and Current Runtime
+
+> Status: this document contains a target architecture, not measured system
+> capability. The canonical runtime is currently image-crop appearance
+> enrollment/search. MiewID-msv3 is a 440×440 general wildlife ReID benchmark
+> candidate, not a nose-print model. Random TinyViT, DNP mask, landmark graph,
+> and fabricated uncertainty paths are disabled. No nose, landmark, fusion,
+> open-set, video, edge, or service performance claim is supported yet.
 
 ## Design Principles
 
-1. **Biometric hierarchy**: nose print > skeletal landmarks > appearance
+1. **Evidence earns inclusion**: appearance is the baseline; every added
+   channel requires calibrated ablation evidence and compute justification
 2. **Search-space reduction**: species → breed → color → individual
 3. **Invariance-first**: each layer uses biologically invariant features
 4. **Uncertainty-gated fusion**: low-confidence channels are suppressed, not averaged
@@ -78,8 +86,9 @@ Goal: species → breed → color → filter search space 10x–100x
 - Hierarchical softmax: family → genus → species → breed → color
 - Inference: top-3 breed filter → downstream only searches within those breeds
 
-### Phase 2 — Nose Print Pipeline
-Goal: 99.8% Rank-1 biometric (matching DNNetV2)
+### Phase 2 — Nose Print Candidate
+Goal: determine whether a licensed, trained nose-specific channel improves the
+frozen appearance baseline under the same leakage-controlled protocol
 - YOLOv8-nose detector (from Nose-to-ID, 2025)
 - Super-resolution enhancer for low-res crops
 - UNet DNPMask segmentation (noise reduction)

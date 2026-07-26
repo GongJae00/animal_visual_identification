@@ -35,9 +35,10 @@ class Dinov2WithUncertainty(AbstractEvidencer):
         for p in self._backbone.parameters():
             p.requires_grad = False
         if self._evidential_checkpoint:
-            from cvi.heads import EvidentialHead
-            self._evidential = EvidentialHead(self._embedding_dim)
-            self._evidential.eval()
+            raise RuntimeError(
+                "Evidential uncertainty is disabled: no strict, calibrated "
+                "checkpoint-loading contract is implemented."
+            )
         self._loaded = True
 
     def extract(self, image: Image.Image) -> np.ndarray:
@@ -69,20 +70,5 @@ class Dinov2WithUncertainty(AbstractEvidencer):
         return embs_np / np.maximum(norms, 1e-8)
 
     def extract_with_uncertainty(self, image: Image.Image
-                                 ) -> tuple[np.ndarray, float, float]:
-        self._ensure_loaded()
-        import torch
-        img = np.array(image.resize((224, 224)))
-        tensor = torch.from_numpy(img).permute(2, 0, 1).float().unsqueeze(0) / 255.0
-        mean = torch.tensor([0.485, 0.456, 0.406]).view(1, 3, 1, 1)
-        std = torch.tensor([0.229, 0.224, 0.225]).view(1, 3, 1, 1)
-        tensor = (tensor - mean) / std
-        with torch.no_grad():
-            emb = self._backbone(tensor)
-            if self._evidential is not None:
-                epistemic, aleatoric = self._evidential(emb)
-            else:
-                epistemic, aleatoric = 0.0, torch.zeros_like(emb)
-        emb_np = emb.squeeze(0).numpy()
-        emb_np = emb_np / max(np.linalg.norm(emb_np), 1e-8)
-        return emb_np, float(epistemic), float(aleatoric[0].mean())
+                                 ) -> tuple[np.ndarray, None, None]:
+        return self.extract(image), None, None
