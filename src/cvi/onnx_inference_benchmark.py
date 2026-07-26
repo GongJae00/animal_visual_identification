@@ -33,6 +33,7 @@ from cvi.runtime_library_provenance import (
     RuntimeLibraryTracker,
 )
 from cvi.worker_environment import (
+    ISOLATED_WORKER_BOOTSTRAP,
     WorkerEnvironmentIdentity,
     build_sanitized_worker_environment,
     validate_current_worker_environment,
@@ -664,8 +665,10 @@ def benchmark_onnx_inference(
                     sys.executable,
                     "-I",
                     "-B",
-                    "-m",
+                    "-c",
+                    ISOLATED_WORKER_BOOTSTRAP,
                     "cvi.onnx_inference_benchmark",
+                    str(request_path),
                     "--worker-request",
                     str(request_path),
                     "--worker-result",
@@ -1629,15 +1632,19 @@ def _validate_summary_aggregation(
             raise ValueError("worker supervisor policy binding differs")
         command = supervisor.command
         if (
-            len(command) != 9
+            len(command) != 11
             or command[0] != (
                 summary.worker_environment_identity
                 .python_executable_invocation_path
             )
-            or command[1:5]
-            != ("-I", "-B", "-m", "cvi.onnx_inference_benchmark")
-            or command[5] != "--worker-request"
-            or command[7] != "--worker-result"
+            or command[1:6]
+            != (
+                "-I", "-B", "-c", ISOLATED_WORKER_BOOTSTRAP,
+                "cvi.onnx_inference_benchmark",
+            )
+            or command[6] != command[8]
+            or command[7] != "--worker-request"
+            or command[9] != "--worker-result"
         ):
             raise ValueError("worker command differs from benchmark module")
         _validate_worker_result(

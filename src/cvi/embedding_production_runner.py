@@ -48,11 +48,24 @@ _PROVENANCE_NAMES = (
 )
 _CODE_SOURCE_DIRECTORY = Path(__file__).resolve().parent
 _CODE_SOURCE_NAMES = tuple(
-    sorted(path.name for path in _CODE_SOURCE_DIRECTORY.glob("*.py"))
+    sorted(
+        path.relative_to(_CODE_SOURCE_DIRECTORY).as_posix()
+        for path in _CODE_SOURCE_DIRECTORY.rglob("*.py")
+    )
 )
 EMBEDDING_WORKER_BOOTSTRAP = (
-    "import runpy,sys;"
-    "sys.path.insert(0,sys.argv.pop(1));"
+    "import json,os,runpy,sys,types;"
+    "code_root=sys.argv.pop(1);"
+    "request_path=sys.argv[2];"
+    "request=json.load(open(request_path,encoding='utf-8'));"
+    "expected=dict(request['worker_environment_identity']['environment_entries']);"
+    "assert dict(os.environ)==expected,"
+    "'protected worker initial environment differs from allowlist';"
+    "sys.path.insert(0,code_root);"
+    "package=types.ModuleType('cvi');"
+    "package.__package__='cvi';"
+    "package.__path__=[code_root+'/cvi'];"
+    "sys.modules['cvi']=package;"
     "runpy.run_module('cvi.embedding_production_worker',"
     "run_name='__main__',alter_sys=True)"
 )
@@ -1049,7 +1062,12 @@ def _code_source_bindings() -> tuple[tuple[str, str, int], ...]:
 def _code_source_bindings_at(
     root: Path,
 ) -> tuple[tuple[str, str, int], ...]:
-    observed_names = tuple(sorted(path.name for path in root.glob("*.py")))
+    observed_names = tuple(
+        sorted(
+            path.relative_to(root).as_posix()
+            for path in root.rglob("*.py")
+        )
+    )
     if observed_names != _CODE_SOURCE_NAMES:
         raise RuntimeError("embedding Python source inventory changed")
     result: list[tuple[str, str, int]] = []
@@ -1092,6 +1110,7 @@ def _snapshot_code_sources(
         try:
             before = os.fstat(source_fd)
             target = destination_root / name
+            target.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
             target_fd = os.open(
                 target,
                 os.O_WRONLY | os.O_CREAT | os.O_EXCL,

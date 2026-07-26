@@ -1,11 +1,11 @@
 {
   "schema_version": "cvi.audit.findings.v2",
-  "pinned_commit": "0ba3b1bef4ad6bd18ee516260cf938e9e43ca659",
+  "pinned_commit": "bd03a9168383489af0b6cc079d5004fea573069d",
   "findings": [
     {
       "id": "CVI-P0-001",
       "severity": "P0",
-      "status": "OPEN",
+      "status": "FIXED",
       "evidence_status": "REPRODUCED",
       "confidence": "HIGH",
       "category": "MODEL_CONTRACT",
@@ -20,15 +20,18 @@
       "impact": "Nose channel produces degraded embeddings. Invalidates any experiment using this channel.",
       "root_cause": "input_size default 160 chosen arbitrarily; ONNX exported at 440×440",
       "minimal_fix": "Change MiewIDNoseExtractor default input_size=440",
-      "tests": ["test_miewid_input_shape_rejected"],
+      "tests": [
+        "test_miewid_input_shape_rejected"
+      ],
       "blocked_by": [],
-      "commit": ""
+      "commit": "",
+      "resolution_commit": "bd03a9168383489af0b6cc079d5004fea573069d"
     },
     {
       "id": "CVI-P0-002",
       "severity": "P0",
-      "status": "OPEN",
-      "evidence_status": "OBSERVED",
+      "status": "FIXED",
+      "evidence_status": "REPRODUCED",
       "confidence": "HIGH",
       "category": "MODEL_CONTRACT",
       "title": "MiewID ONNX uses default timm AvgPool instead of official GeM(p=3) pooling",
@@ -42,15 +45,18 @@
       "impact": "MiewID channel uses approximate architecture. Cosine parity with official model UNVERIFIED.",
       "root_cause": "download_models.py does not replicate official GeM pooling replacement",
       "minimal_fix": "Replace backbone.global_pool with GeM(p=3) before exporting",
-      "tests": ["test_miewid_pytorch_onnx_parity"],
+      "tests": [
+        "test_miewid_pytorch_onnx_parity"
+      ],
       "blocked_by": [],
-      "commit": ""
+      "commit": "",
+      "resolution_commit": "bd03a9168383489af0b6cc079d5004fea573069d"
     },
     {
       "id": "CVI-P0-003",
       "severity": "P0",
-      "status": "OPEN",
-      "evidence_status": "OBSERVED",
+      "status": "FIXED",
+      "evidence_status": "REPRODUCED",
       "confidence": "HIGH",
       "category": "MODEL_MISCLASSIFICATION",
       "title": "MiewID-msv3 is a general wildlife re-ID model misclassified as 'nose' channel",
@@ -64,15 +70,18 @@
       "impact": "Channel ablation results misinterpreted. Users believe nose-print identification is active.",
       "root_cause": "Historical design: MiewID repurposed without updating naming",
       "minimal_fix": "Rename module to evidence/miewid.py, class to MiewIDReidExtractor, channel type to 'wildlife_reid'",
-      "tests": ["test_channel_type_consistency"],
+      "tests": [
+        "test_channel_type_consistency"
+      ],
       "blocked_by": [],
-      "commit": ""
+      "commit": "",
+      "resolution_commit": "bd03a9168383489af0b6cc079d5004fea573069d"
     },
     {
       "id": "CVI-P0-004",
       "severity": "P0",
-      "status": "OPEN",
-      "evidence_status": "OBSERVED",
+      "status": "FIXED",
+      "evidence_status": "REPRODUCED",
       "confidence": "HIGH",
       "category": "RANDOM_INFERENCE",
       "title": "TinyViTBackbone is a 3-layer CNN with random weights, named 'TinyViT'",
@@ -86,15 +95,18 @@
       "impact": "If 'tinyvit' backbone enabled, enrollment stores random embeddings. Index corrupted.",
       "root_cause": "Placeholder never replaced with real TinyViT",
       "minimal_fix": "Rename to ExperimentalUntrainedCNN. Remove from _BACKBONE_REGISTRY.",
-      "tests": ["test_backbone_rejects_untrained"],
+      "tests": [
+        "test_backbone_rejects_untrained"
+      ],
       "blocked_by": [],
-      "commit": ""
+      "commit": "",
+      "resolution_commit": "bd03a9168383489af0b6cc079d5004fea573069d"
     },
     {
       "id": "CVI-P0-005",
       "severity": "P1",
-      "status": "OPEN",
-      "evidence_status": "OBSERVED",
+      "status": "FIXED",
+      "evidence_status": "REPRODUCED",
       "confidence": "HIGH",
       "category": "RANDOM_INFERENCE",
       "title": "DNPMask UNet initializes once (not per-call) with random weights",
@@ -108,15 +120,18 @@
       "impact": "Any pipeline using DNPMask corrupts input images.",
       "root_cause": "Placeholder created without checkpoints, not disabled for production",
       "minimal_fix": "Add guard that skips mask when no checkpoint exists",
-      "tests": ["test_dnp_mask_identity_when_no_checkpoint"],
+      "tests": [
+        "test_dnp_mask_identity_when_no_checkpoint"
+      ],
       "blocked_by": [],
-      "commit": ""
+      "commit": "",
+      "resolution_commit": "bd03a9168383489af0b6cc079d5004fea573069d"
     },
     {
       "id": "CVI-P0-006",
       "severity": "P0",
-      "status": "OPEN",
-      "evidence_status": "OBSERVED",
+      "status": "FIXED",
+      "evidence_status": "REPRODUCED",
       "confidence": "HIGH",
       "category": "RANDOM_INFERENCE",
       "title": "LandmarkEvidencer default constructor creates random HRNetHeatmap + GNN",
@@ -130,9 +145,14 @@
       "impact": "If 'landmark' channel enabled, every enrollment/query adds random noise.",
       "root_cause": "Placeholder code. SuperAnimal PT (112 MB) exists but ONNX is dummy wrapper.",
       "minimal_fix": "Require non-None models. Add warning when random weights used.",
-      "tests": ["test_landmark_evidencer_rejects_no_weights"],
-      "blocked_by": ["CVI-P0-007"],
-      "commit": ""
+      "tests": [
+        "test_landmark_evidencer_rejects_no_weights"
+      ],
+      "blocked_by": [
+        "CVI-P0-007"
+      ],
+      "commit": "",
+      "resolution_commit": "bd03a9168383489af0b6cc079d5004fea573069d"
     },
     {
       "id": "CVI-P0-007",
@@ -152,7 +172,9 @@
       "impact": "SuperAnimal-based landmark extraction produces random keypoints.",
       "root_cause": "state_dict loaded but never used. Wrapper constructor ignores the parameter.",
       "minimal_fix": "Load real checkpoint into an actual HRNet architecture, then export",
-      "tests": ["test_superanimal_onnx_valid_keypoint_output"],
+      "tests": [
+        "test_superanimal_onnx_valid_keypoint_output"
+      ],
       "blocked_by": [],
       "commit": ""
     },
@@ -174,7 +196,10 @@
       "impact": "Resolved by G1 evaluator correction.",
       "root_cause": "compute_metrics computed verification metrics (AUC, EER) but main expected retrieval metrics (rank1)",
       "minimal_fix": "Implement separate verification/retrieval/open-set protocols with correct metric suites.",
-      "tests": ["test_non_perfect_ranking", "test_perfect_ranking"],
+      "tests": [
+        "test_non_perfect_ranking",
+        "test_perfect_ranking"
+      ],
       "blocked_by": [],
       "commit": "331c1f4 + follow-up"
     },
@@ -196,14 +221,16 @@
       "impact": "Arbitrary code execution during deserialization if calibrator file is tampered with.",
       "root_cause": "pickle used for convenience",
       "minimal_fix": "Replace with JSON or numpy .npz format",
-      "tests": ["test_calibrator_roundtrip_safe_serialization"],
+      "tests": [
+        "test_calibrator_roundtrip_safe_serialization"
+      ],
       "blocked_by": [],
       "commit": ""
     },
     {
       "id": "CVI-P0-010",
       "severity": "P0",
-      "status": "OPEN",
+      "status": "FIXED",
       "evidence_status": "REPRODUCED",
       "confidence": "HIGH",
       "category": "OPEN_SET",
@@ -218,9 +245,13 @@
       "impact": "Uncertainty-aware open-set claim is unsupported.",
       "root_cause": "No trained evidential head.",
       "minimal_fix": "Remove uncertainty from open-set until real uncertainty estimation implemented.",
-      "tests": ["test_uncertainty_not_constant", "test_open_set_known_vs_unknown"],
+      "tests": [
+        "test_uncertainty_not_constant",
+        "test_open_set_known_vs_unknown"
+      ],
       "blocked_by": [],
-      "commit": ""
+      "commit": "",
+      "resolution_commit": "bd03a9168383489af0b6cc079d5004fea573069d"
     },
     {
       "id": "CVI-P0-011",
@@ -240,7 +271,9 @@
       "impact": "README examples claiming video support are false.",
       "root_cause": "TemporalAggregator not integrated into CVI public API",
       "minimal_fix": "Update README to 'image-only' or add video method",
-      "tests": ["test_api_accepts_video_path"],
+      "tests": [
+        "test_api_accepts_video_path"
+      ],
       "blocked_by": [],
       "commit": ""
     },
@@ -306,14 +339,18 @@
       "impact": "Resolved by G1 evaluator correction.",
       "root_cause": "Convenience slicing instead of explicit split assignment",
       "minimal_fix": "Remove split_pairs(). Require explicit files.",
-      "tests": ["test_reversed_pair_duplicate_detected", "test_image_path_cross_split_detected", "test_video_group_leakage_detected"],
+      "tests": [
+        "test_reversed_pair_duplicate_detected",
+        "test_image_path_cross_split_detected",
+        "test_video_group_leakage_detected"
+      ],
       "blocked_by": [],
       "commit": "follow-up commit"
     },
     {
       "id": "CVI-P0-015",
       "severity": "P0",
-      "status": "OPEN",
+      "status": "FIXED",
       "evidence_status": "REPRODUCED",
       "confidence": "HIGH",
       "category": "TRAINING",
@@ -328,9 +365,12 @@
       "impact": "Cannot trust any training run's model selection.",
       "root_cause": "forward() returns embedding when not training; validation loop expects logits",
       "minimal_fix": "Add forward_train(images, labels) returning logits. Use in training.",
-      "tests": ["test_validation_loss_on_logits_not_embeddings"],
+      "tests": [
+        "test_validation_loss_on_logits_not_embeddings"
+      ],
       "blocked_by": [],
-      "commit": ""
+      "commit": "",
+      "resolution_commit": "bd03a9168383489af0b6cc079d5004fea573069d"
     },
     {
       "id": "CVI-EVAL-001",
@@ -350,7 +390,10 @@
       "impact": "Resolved. Regression test verifies old returns 0, new returns correct TAR.",
       "root_cause": "valid[-1] on ascending threshold array picks most restrictive threshold",
       "minimal_fix": "Use score-derived thresholds, max-TAR argmax selection",
-      "tests": ["test_old_behavior_returns_zero_tar", "test_threshold_selects_max_tar"],
+      "tests": [
+        "test_old_behavior_returns_zero_tar",
+        "test_threshold_selects_max_tar"
+      ],
       "blocked_by": [],
       "commit": "follow-up commit"
     },
@@ -372,7 +415,10 @@
       "impact": "Resolved.",
       "root_cause": "Convenience slicing order-dependent",
       "minimal_fix": "Require explicit split file arguments",
-      "tests": ["test_reversed_pair_duplicate_detected", "test_image_path_cross_split_detected"],
+      "tests": [
+        "test_reversed_pair_duplicate_detected",
+        "test_image_path_cross_split_detected"
+      ],
       "blocked_by": [],
       "commit": "follow-up commit"
     },
@@ -394,7 +440,11 @@
       "impact": "Resolved. Calibration metrics now accept only probabilities.",
       "root_cause": "No probability contract validation",
       "minimal_fix": "Rename, validate input range, add Brier+NLL, wire isotonic fitting",
-      "tests": ["test_rejects_raw_negative_values", "test_rejects_values_above_one", "test_known_values_10_bins"],
+      "tests": [
+        "test_rejects_raw_negative_values",
+        "test_rejects_values_above_one",
+        "test_known_values_10_bins"
+      ],
       "blocked_by": [],
       "commit": "follow-up commit"
     },
@@ -438,7 +488,9 @@
       "impact": "Resolved. OSCR deferred pending IJS validation.",
       "root_cause": "Not implemented in original scoping",
       "minimal_fix": "Implement evaluate_open_set() with standard open-set metrics",
-      "tests": ["test_known_values (open-set)"],
+      "tests": [
+        "test_known_values (open-set)"
+      ],
       "blocked_by": [],
       "commit": "follow-up commit"
     },
@@ -460,7 +512,10 @@
       "impact": "Resolved.",
       "root_cause": "Not implemented in original scoping",
       "minimal_fix": "Add _compute_ap_inp returning both AP and mINP",
-      "tests": ["test_non_perfect_ranking verifies mINP=2.0", "test_perfect_ranking verifies mINP=1.0"],
+      "tests": [
+        "test_non_perfect_ranking verifies mINP=2.0",
+        "test_perfect_ranking verifies mINP=1.0"
+      ],
       "blocked_by": [],
       "commit": "follow-up commit"
     },
@@ -482,7 +537,9 @@
       "impact": "Resolved.",
       "root_cause": "Not implemented",
       "minimal_fix": "Add exclude_self parameter with -inf masking",
-      "tests": ["test_self_match_excluded"],
+      "tests": [
+        "test_self_match_excluded"
+      ],
       "blocked_by": [],
       "commit": "follow-up commit"
     },
@@ -504,7 +561,11 @@
       "impact": "Resolved.",
       "root_cause": "Not implemented",
       "minimal_fix": "Wire _confidence_intervals using legacy wilson_rate helper",
-      "tests": ["test_wilson_rate_known_fixture", "test_zero_false_accept_upper_bound", "test_insufficient_negative_trials_warning"],
+      "tests": [
+        "test_wilson_rate_known_fixture",
+        "test_zero_false_accept_upper_bound",
+        "test_insufficient_negative_trials_warning"
+      ],
       "blocked_by": [],
       "commit": "follow-up commit"
     },
@@ -526,7 +587,9 @@
       "impact": "Resolved.",
       "root_cause": "Test fixtures designed without independent verification",
       "minimal_fix": "Redesign all fixture values with explicit hand-computed oracles",
-      "tests": ["all evaluation tests"],
+      "tests": [
+        "all evaluation tests"
+      ],
       "blocked_by": [],
       "commit": "follow-up commit"
     },
@@ -548,7 +611,9 @@
       "impact": "Resolved.",
       "root_cause": "Hardcoded rank constants",
       "minimal_fix": "Accept rank_ks parameter, report only requested ranks",
-      "tests": ["test_configurable_rank_ks"],
+      "tests": [
+        "test_configurable_rank_ks"
+      ],
       "blocked_by": [],
       "commit": "follow-up commit"
     },
@@ -570,7 +635,13 @@
       "impact": "Resolved. CLI catches typed exceptions, writes error artifact, exits non-zero.",
       "root_cause": "Error-dict pattern instead of exceptions",
       "minimal_fix": "Define exception hierarchy, raise instead of returning error dicts",
-      "tests": ["test_rejects_nonfinite", "test_rejects_invalid_labels", "test_rejects_length_mismatch", "test_rejects_empty", "test_rejects_single_class"],
+      "tests": [
+        "test_rejects_nonfinite",
+        "test_rejects_invalid_labels",
+        "test_rejects_length_mismatch",
+        "test_rejects_empty",
+        "test_rejects_single_class"
+      ],
       "blocked_by": [],
       "commit": "follow-up commit"
     },
@@ -592,7 +663,9 @@
       "impact": "Resolved.",
       "root_cause": "Convenience rounding without separation of concerns",
       "minimal_fix": "Remove all round() calls from core functions",
-      "tests": ["test_no_rounding_in_core"],
+      "tests": [
+        "test_no_rounding_in_core"
+      ],
       "blocked_by": [],
       "commit": "follow-up commit"
     },
@@ -680,7 +753,9 @@
       "impact": "Report structure changes are now contractually enforced; downstream consumers can rely on schema conformance.",
       "root_cause": "Previous schema was implicit in code with no formal validation",
       "minimal_fix": "Create schema file and wire validation into all cmd_* functions",
-      "tests": ["test_schema_version_in_report"],
+      "tests": [
+        "test_schema_version_in_report"
+      ],
       "blocked_by": [],
       "commit": "49a9e7ca6131571f0eb383c684b5315fa4a41a30"
     },
@@ -702,7 +777,9 @@
       "impact": "Regressions in CLI argument parsing, data loading, or report structure are now caught.",
       "root_cause": "No E2E coverage for evaluation CLI",
       "minimal_fix": "Create test file with subprocess invocations against synthetic embedding manifests",
-      "tests": ["12 test methods in test_evaluate_multichannel_cli.py"],
+      "tests": [
+        "12 test methods in test_evaluate_multichannel_cli.py"
+      ],
       "blocked_by": [],
       "commit": "49a9e7ca6131571f0eb383c684b5315fa4a41a30"
     },
@@ -724,7 +801,9 @@
       "impact": "Report reproducibility and audit trail now independently verifiable.",
       "root_cause": "Previously only hardcoded pinned commit was reported",
       "minimal_fix": "Add _provenance() with dynamic git metadata and _file_sha256() for input files",
-      "tests": ["test_provenance_has_git_info"],
+      "tests": [
+        "test_provenance_has_git_info"
+      ],
       "blocked_by": [],
       "commit": "49a9e7ca6131571f0eb383c684b5315fa4a41a30"
     },
@@ -746,7 +825,9 @@
       "impact": "Prevents invalid evaluation results from split leakage by default. Relaxed mode allows controlled override.",
       "root_cause": "Previous implementation returned warnings that could be silently ignored",
       "minimal_fix": "Add enforce_split_disjoint() and relaxed_status_from_warnings(); wire into cmd_verification",
-      "tests": ["test_evaluation_split.py (7 leakage detection tests)"],
+      "tests": [
+        "test_evaluation_split.py (7 leakage detection tests)"
+      ],
       "blocked_by": [],
       "commit": "49a9e7ca6131571f0eb383c684b5315fa4a41a30"
     },
@@ -768,7 +849,9 @@
       "impact": "Evaluation results now include uncertainty bounds. Model selection can account for metric variance.",
       "root_cause": "No interval estimation in original evaluator",
       "minimal_fix": "Wire _bootstrap_ci and _wilson_ci into report builders",
-      "tests": ["test_retrieval_bootstrap_ci_present"],
+      "tests": [
+        "test_retrieval_bootstrap_ci_present"
+      ],
       "blocked_by": [],
       "commit": "49a9e7ca6131571f0eb383c684b5315fa4a41a30"
     },
@@ -790,7 +873,12 @@
       "impact": "Metric corruption from invariant violations is now caught at computation time.",
       "root_cause": "Previous mINP formula was rank/n_relevant (not n_relevant/last_positive_rank); no sample ID validation",
       "minimal_fix": "Fix mINP formula, add MetricInvariantError, add SampleIdValidationError and _validate_sample_ids",
-      "tests": ["test_non_perfect_ranking (mINP=2.0)", "test_perfect_ranking (mINP=1.0)", "test_self_match_excluded", "test_retrieval_self_match_excluded (CLI)"],
+      "tests": [
+        "test_non_perfect_ranking (mINP=2.0)",
+        "test_perfect_ranking (mINP=1.0)",
+        "test_self_match_excluded",
+        "test_retrieval_self_match_excluded (CLI)"
+      ],
       "blocked_by": [],
       "commit": "49a9e7ca6131571f0eb383c684b5315fa4a41a30"
     },
@@ -812,7 +900,11 @@
       "impact": "Open-set protocol now correctly accounts for identification errors (misidentified known) vs true unknown rejection.",
       "root_cause": "Previous implementation did not verify top-1 identity match before detection classification",
       "minimal_fix": "Add top1_is_correct computation; classify queries based on both identity match and score threshold",
-      "tests": ["test_open_set_happy_path (CLI)", "test_open_set_no_unknowns_raises (CLI)", "test_known_values (open-set unit)"],
+      "tests": [
+        "test_open_set_happy_path (CLI)",
+        "test_open_set_no_unknowns_raises (CLI)",
+        "test_known_values (open-set unit)"
+      ],
       "blocked_by": [],
       "commit": "49a9e7ca6131571f0eb383c684b5315fa4a41a30"
     }

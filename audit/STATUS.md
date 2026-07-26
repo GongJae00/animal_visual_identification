@@ -1,7 +1,9 @@
 # CVI Audit — STATUS
 
 ## Current Phase
-**Phase 0: G1 EVALUATION PASS** — all evaluation gate fixes verified; P0 model-level findings remain open
+**Phase 0: MODEL-CONTRACT HARDENING COMPLETE** — evaluation gates and the
+pre-experiment model/runtime safety slice are verified. Canine ReID performance
+is not yet established.
 
 ## Gate Progress
 - **G0** (Truth and reproducibility): FAIL — corrections in progress
@@ -33,22 +35,22 @@
 | CVI-EVAL-023 | Confidence intervals incomplete (no bootstrap) | P2 | PARTIAL (basic bootstrap CI added) |
 | CVI-EVAL-014 | OSCR not implemented in open_set.py | P1 | DEFERRED (requires gallery≥2 per identity, post-G1) |
 
-## Remaining Open P0 (unchanged from prior pass)
+## Model-contract P0 disposition
 | ID | Title | Status |
 |----|-------|--------|
-| CVI-P0-001 | MiewID runtime input 160×160 vs ONNX 440×440 | OPEN |
-| CVI-P0-002 | MiewID ONNX uses AvgPool instead of official GeM | OPEN |
-| CVI-P0-003 | MiewID misclassified as "nose" — it's wildlife re-ID | OPEN |
-| CVI-P0-004 | TinyViTBackbone is random 3-layer CNN named "ViT" | OPEN |
-| CVI-P0-005 | DNPMask UNet is fully random — destroys signal | OPEN |
-| CVI-P0-006 | LandmarkEvidencer uses random CNN+GNN | OPEN |
+| CVI-P0-001 | MiewID input contract unified at 440×440 | FIXED |
+| CVI-P0-002 | MiewID official GeM pooling restored; ONNX parity reproduced | FIXED |
+| CVI-P0-003 | MiewID classified as wildlife ReID; deprecated nose alias retained | FIXED |
+| CVI-P0-004 | Random TinyViT execution path disabled | FIXED |
+| CVI-P0-005 | Random DNPMask execution path disabled | FIXED |
+| CVI-P0-006 | Random Landmark execution path disabled | FIXED |
 | CVI-P0-007 | SuperAnimal ONNX is 9 KB dummy (needs re-export) | OPEN |
 | CVI-P0-009 | pickle serialization in calibrator | OPEN |
-| CVI-P0-010 | Fake uncertainty (epistemic=0.05 hardcoded) | OPEN |
+| CVI-P0-010 | Fabricated uncertainty removed; unavailable is explicit | FIXED |
 | CVI-P0-011 | Video API not supported despite README claims | OPEN |
 | CVI-P0-012 | MiewID-msv3 has no license (production risk) | OPEN |
 | CVI-P0-013 | 3 duplicate FAISS index implementations | OPEN |
-| CVI-P0-015 | trainer.py has no encode() method for inference | OPEN |
+| CVI-P0-015 | `encode()` and `forward_train()` paths separated | FIXED |
 
 ## Blocked Items (unchanged)
 - MiewID license UNVERIFIED (needs upstream repo inspection)

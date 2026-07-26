@@ -23,6 +23,7 @@ from cvi.process_supervisor import (
 from cvi.provenance import content_sha256
 from cvi.runtime_library_provenance import RuntimeLibraryManifest
 from cvi.worker_environment import (
+    ISOLATED_WORKER_BOOTSTRAP,
     WorkerEnvironmentIdentity,
     build_sanitized_worker_environment,
 )
@@ -118,10 +119,13 @@ class BatchFreshWorkerReceipt:
         ):
             raise ValueError("batch worker process did not complete")
         command = self.supervised_process_result.command
-        if len(command) != 9 or command[:5] != (
+        if len(command) != 11 or command[:6] != (
             self.worker_environment_identity.python_executable_invocation_path,
-            "-I", "-B", "-m", "cvi.batch_invariance_worker",
-        ) or command[5] != "--request" or command[7] != "--result":
+            "-I", "-B", "-c", ISOLATED_WORKER_BOOTSTRAP,
+            "cvi.batch_invariance_worker",
+        ) or command[6] != command[8] or command[7] != (
+            "--request"
+        ) or command[9] != "--result":
             raise ValueError("batch worker command differs")
         if (
             self.supervised_process_result.stdout_bytes != 0
@@ -254,10 +258,13 @@ class BatchFreshWorkerDiscovery:
         ):
             raise ValueError("batch discovery supervisor policy differs")
         command = self.supervised_process_result.command
-        if len(command) != 9 or command[:5] != (
+        if len(command) != 11 or command[:6] != (
             self.worker_environment_identity.python_executable_invocation_path,
-            "-I", "-B", "-m", "cvi.batch_invariance_worker",
-        ) or command[5] != "--request" or command[7] != "--result":
+            "-I", "-B", "-c", ISOLATED_WORKER_BOOTSTRAP,
+            "cvi.batch_invariance_worker",
+        ) or command[6] != command[8] or command[7] != (
+            "--request"
+        ) or command[9] != "--result":
             raise ValueError("batch discovery worker command differs")
         if (
             self.supervised_process_result.stdout_bytes != 0
@@ -391,8 +398,10 @@ def run_batch_invariance_fresh_worker(
             environment_identity.python_executable_invocation_path,
             "-I",
             "-B",
-            "-m",
+            "-c",
+            ISOLATED_WORKER_BOOTSTRAP,
             "cvi.batch_invariance_worker",
+            str(request_path),
             "--request",
             str(request_path),
             "--result",
