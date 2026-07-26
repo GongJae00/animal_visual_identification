@@ -1,16 +1,16 @@
 # Canine Video Identity (CVI)
 
-다중 증거(multi-evidence) 기반 개체 식별 시스템.
-코 프린트(비문) + 얼굴 랜드마크 + 외형 특징을 조합하여 개별 개를 식별합니다.
+영상 기반 개체 식별 시스템을 목표로 하는 초기 연구·구현 저장소입니다.
+현재 검증 가능한 recognizer 경로는 단일 appearance baseline 준비 단계이며,
+비문·랜드마크·불확실성 채널은 학습 artifact와 성능 증거가 없어 기본 비활성화됩니다.
 
 ## 개요
 
 ```
-입력 영상 → [개 검출] → [3채널 특징 추출] → [Fusion] → [FAISS 검색] → 결과
-                  │                  │                │            │
-              YOLO                비문 2152d     concatenate   cosine sim
-                                  랜드마크 256d   L2 정규화    + 증거분해
-                                  외형 384d
+현재: 이미지 crop → appearance embedding → exact cosine gallery search
+
+목표: 영상 decode → 검출 → tracking → quality frame selection
+      → 검증된 evidence → track aggregation → calibration/open-set → identity event
 ```
 
 ## 설치
@@ -89,15 +89,15 @@ for r in results:
 | 디렉토리 | 설명 |
 |----------|------|
 | `src/cvi/` | 핵심 패키지 |
-| `src/cvi/backbones/` | 백본 모델 (DINOv2, ConvNeXt, TinyViT) |
+| `src/cvi/backbones/` | 백본 후보 (DINOv2, ConvNeXt; 가짜 TinyViT 비활성화) |
 | `src/cvi/heads/` | 학습 헤드 (ArcFace, MagFace, Evidential) |
-| `src/cvi/evidence/` | 증거 추출기 (비문, 랜드마크, 외형) |
+| `src/cvi/evidence/` | evidence 추출기와 fail-closed 모델 계약 |
 | `src/cvi/fusion/` | 점수 융합 + 보정 + Open-Set 판정 |
 | `src/cvi/index/` | FAISS 검색 인덱스 |
 | `src/cvi/pipeline/` | 등록/검색 파이프라인 |
 | `src/cvi/deployment/` | 배포 (CUDA/CPU 분기) |
 | `tools/` | 학습/평가/다운로드 CLI 도구 |
-| `tests/` | 단위 테스트 (77개) |
+| `tests/` | 단위·계약·CLI 회귀 테스트 |
 | `models/` | 모델 가중치 (Git 미포함) |
 | `data/` | 데이터셋 (Git 미포함) |
 | `configs/` | 설정 파일 |
@@ -114,7 +114,9 @@ uv run python tools/evaluate_multichannel.py \
     --output report.json
 ```
 
-산출 지표: AUC, EER, TAR@FAR, d' (분리도), mean positive/negative sim
+산출 지표에는 verification, retrieval, calibration, open-set 지표가 포함됩니다.
+OSCR은 아직 DEFERRED이며, 실제 negative trial 수가 지지하지 않는 FAR는
+성능 주장에 사용하지 않습니다.
 
 ## 학술 인용
 
@@ -122,5 +124,6 @@ uv run python tools/evaluate_multichannel.py \
 
 ## 라이선스
 
-코드: MIT (또는 Apache 2.0, 결정 중)
-사전학습 모델 가중치: 각 출처의 라이선스 따름 (MiewID, DINOv2, ConvNeXt 등)
+저장소 코드 라이선스: UNVERIFIED (루트 LICENSE 미확정)
+사전학습 모델은 code/weight/dataset 라이선스를 별도로 검증해야 합니다.
+MiewID-msv3 code와 weight의 상업 이용·재배포 상태는 현재 UNVERIFIED입니다.

@@ -48,34 +48,23 @@ class ConvNeXtBackbone(nn.Module):
 
 
 class TinyViTBackbone(nn.Module):
-    """Lightweight backbone for nose print embedding.  3-layer CNN → 512-d."""
+    """Disabled alias for a former untrained CNN incorrectly named TinyViT."""
 
     def __init__(self, embedding_dim: int = 512,
                  use_gradient_checkpointing: bool = False):
-        super().__init__()
-        self._conv1 = nn.Conv2d(3, 64, 3, stride=2, padding=1)
-        self._bn1 = nn.BatchNorm2d(64)
-        self._conv2 = nn.Conv2d(64, 128, 3, stride=2, padding=1)
-        self._bn2 = nn.BatchNorm2d(128)
-        self._conv3 = nn.Conv2d(128, 256, 3, stride=2, padding=1)
-        self._bn3 = nn.BatchNorm2d(256)
-        self._pool = nn.AdaptiveAvgPool2d(1)
-        self._fc = nn.Linear(256, embedding_dim)
+        raise RuntimeError(
+            "tinyvit is disabled: the implementation was an untrained "
+            "three-layer CNN, not a TinyViT architecture."
+        )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        x = F.relu(self._bn1(self._conv1(x)))
-        x = F.relu(self._bn2(self._conv2(x)))
-        x = F.relu(self._bn3(self._conv3(x)))
-        x = self._pool(x).flatten(1)
-        x = self._fc(x)
-        return F.normalize(x, p=2, dim=1)
+        raise RuntimeError("tinyvit is disabled")
 
 
 _BACKBONE_REGISTRY: dict[str, type[nn.Module]] = {
     "dinov2-small": Dinov2Backbone,
     "dinov2-base": Dinov2Backbone,
     "convnext-base": ConvNeXtBackbone,
-    "tinyvit": TinyViTBackbone,
 }
 
 

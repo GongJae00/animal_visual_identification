@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import json
 import os
 import time
 from pathlib import Path
@@ -22,7 +23,9 @@ from cvi.model_paths import (
     DOGFLW_LANDMARK_PATH,
     DOGFLW_LANDMARK_URL,
     MIEWID_MSV3_HF_REPO,
-    MIEWID_NOSE_ONNX_PATH,
+    MIEWID_MSV3_REVISION,
+    MIEWID_MSV3_WEIGHTS_SHA256,
+    MIEWID_REID_ONNX_PATH,
     MODELS_DIR,
     SUPERANIMAL_ONNX_PATH,
     SUPERANIMAL_QUADRUPED_PATH,
@@ -43,15 +46,23 @@ _MODELS: dict[str, dict] = {
         "desc": "SuperAnimal-Quadruped HRNet-W32 PyTorch (39 kpts)",
     },
     "miewid": {
-        "path": MIEWID_NOSE_ONNX_PATH,
+        "path": MIEWID_REID_ONNX_PATH,
         "repo_hf": MIEWID_MSV3_HF_REPO,
-        "desc": "MiewID-msv3 PyTorch (공개/MIT) → ONNX export",
+        "desc": "MiewID-msv3 wildlife ReID (license UNVERIFIED) -> ONNX",
     },
 }
 
 
 def _md5(path: Path) -> str:
     return hashlib.md5(path.read_bytes()).hexdigest()
+
+
+def _sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def _download_url(url: str, dest: Path, expected_md5: str | None = None,
@@ -134,9 +145,20 @@ def _convert_superanimal_to_onnx(pt_path: Path, onnx_path: Path) -> None:
 
 
 def _download_miewid_msv3() -> None:
-    if MIEWID_NOSE_ONNX_PATH.exists():
-        print(f"  [OK] MiewID-msv3 ONNX -- already cached")
-        return
+    manifest_path = MIEWID_REID_ONNX_PATH.with_suffix(".manifest.json")
+    if MIEWID_REID_ONNX_PATH.exists() and manifest_path.exists():
+        manifest = json.loads(manifest_path.read_text())
+        if (
+            manifest.get("source_revision") == MIEWID_MSV3_REVISION
+            and manifest.get("weights_sha256") == MIEWID_MSV3_WEIGHTS_SHA256
+            and manifest.get("pooling") == "GeM(p=3)"
+            and manifest.get("input_shape") == ["batch", 3, 440, 440]
+        ):
+            print(f"  [OK] MiewID-msv3 ONNX -- verified cached export")
+            return
+        raise RuntimeError(
+            f"Refusing unverified MiewID export at {MIEWID_REID_ONNX_PATH}"
+        )
     import torch
     import timm
     from safetensors.torch import load_file as st_load_file
@@ -145,14 +167,36 @@ def _download_miewid_msv3() -> None:
     print(f"  [DOWN] MiewID-msv3 safetensors (repo: {MIEWID_MSV3_HF_REPO})")
     t0 = time.time()
 
-    sd_path = hf_hub_download(MIEWID_MSV3_HF_REPO, "model.safetensors")
+    sd_path = hf_hub_download(
+        MIEWID_MSV3_HF_REPO,
+        "model.safetensors",
+        revision=MIEWID_MSV3_REVISION,
+    )
+    actual_sha256 = _sha256(Path(sd_path))
+    if actual_sha256 != MIEWID_MSV3_WEIGHTS_SHA256:
+        raise RuntimeError(
+            "MiewID weight SHA256 mismatch: "
+            f"expected {MIEWID_MSV3_WEIGHTS_SHA256}, got {actual_sha256}"
+        )
     sd = st_load_file(sd_path)
     elapsed_dl = time.time() - t0
     print(f"    safetensors loaded in {elapsed_dl:.1f}s ({len(sd)} keys)")
 
-    # timm EfficientNetV2-M backbone 생성
     backbone = timm.create_model("efficientnetv2_rw_m", pretrained=False, num_classes=0)
-    # backbone feature dim = 2152, classifier 제거됨 (num_classes=0)
+
+    class GeM(torch.nn.Module):
+        def __init__(self, p: float = 3.0, eps: float = 1e-6):
+            super().__init__()
+            self.p = torch.nn.Parameter(torch.ones(1) * p)
+            self.eps = eps
+
+        def forward(self, x):
+            return torch.nn.functional.avg_pool2d(
+                x.clamp(min=self.eps).pow(self.p),
+                (x.size(-2), x.size(-1)),
+            ).pow(1.0 / self.p)
+
+    backbone.global_pool = GeM()
 
     # MiewID wrapper: backbone → BN → L2 normalize
     class MiewIDWrapper(torch.nn.Module):
@@ -162,7 +206,7 @@ def _download_miewid_msv3() -> None:
             self.bn = torch.nn.BatchNorm1d(2152)
 
         def forward(self, x):
-            x = self.backbone(x)           # (B, 2152)
+            x = self.backbone(x).view(x.shape[0], -1)
             x = self.bn(x)
             x = torch.nn.functional.normalize(x, p=2, dim=1)
             return x
@@ -179,10 +223,8 @@ def _download_miewid_msv3() -> None:
             bn_sd[k[3:]] = v
 
     # backbone과 bn에 각각 로드
-    msg_b = model.backbone.load_state_dict(backbone_sd, strict=False)
-    msg_bn = model.bn.load_state_dict(bn_sd, strict=True)
-    print(f"    backbone: {msg_b}")
-    print(f"    bn: {msg_bn}")
+    model.backbone.load_state_dict(backbone_sd, strict=True)
+    model.bn.load_state_dict(bn_sd, strict=True)
 
     model.eval()
     elapsed = time.time() - t0
@@ -192,17 +234,29 @@ def _download_miewid_msv3() -> None:
     dummy = torch.randn(1, 3, 440, 440)
     t0 = time.time()
     torch.onnx.export(
-        model, dummy, str(MIEWID_NOSE_ONNX_PATH),
+        model, dummy, str(MIEWID_REID_ONNX_PATH),
         input_names=["pixel_values"],
         output_names=["embedding"],
         dynamic_axes={"pixel_values": {0: "batch"}, "embedding": {0: "batch"}},
         opset_version=18,
     )
     elapsed = time.time() - t0
-    size_mb = MIEWID_NOSE_ONNX_PATH.stat().st_size / 2**20
+    size_mb = MIEWID_REID_ONNX_PATH.stat().st_size / 2**20
     print(f"    {size_mb:.0f} MiB in {elapsed:.1f}s")
-    print(f"  [OK] MiewID-msv3 ONNX: {MIEWID_NOSE_ONNX_PATH}")
-    print(f"  Tip: 완료되었습니다. 다음 추론 시 바로 사용 가능.")
+    manifest_path.write_text(json.dumps({
+        "schema_version": "cvi.miewid_export.v1",
+        "source_repo": MIEWID_MSV3_HF_REPO,
+        "source_revision": MIEWID_MSV3_REVISION,
+        "weights_sha256": MIEWID_MSV3_WEIGHTS_SHA256,
+        "pooling": "GeM(p=3)",
+        "preprocessing": "RGB resize 440x440; ImageNet mean/std",
+        "input_shape": ["batch", 3, 440, 440],
+        "output_dimension": 2152,
+        "embedding_normalization": "L2",
+        "code_license_status": "UNVERIFIED",
+        "weight_license_status": "UNVERIFIED",
+    }, sort_keys=True, indent=2) + "\n")
+    print(f"  [OK] MiewID-msv3 ONNX: {MIEWID_REID_ONNX_PATH}")
 
 
 def download_model(name: str) -> None:

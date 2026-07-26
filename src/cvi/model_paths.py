@@ -97,6 +97,12 @@ SUPERANIMAL_QUADRUPED_URL = (
 SUPERANIMAL_QUADRUPED_PATH = MODELS_DIR / "superanimal_quadruped_hrnet_w32.pt"
 SUPERANIMAL_ONNX_PATH = MODELS_DIR / "superanimal_quadruped.onnx"
 
-# ── MiewID 모델 (비문/코주름, 공개 MIT) ──
+# ── MiewID-msv3 wildlife ReID model (not a nose-print model) ──
+MIEWID_REID_ONNX_PATH = MODELS_DIR / "miewid_msv3_reid.onnx"
+# Legacy artifact path retained for discovery only; it is not canonical.
 MIEWID_NOSE_ONNX_PATH = MODELS_DIR / "miewid_nose.onnx"
 MIEWID_MSV3_HF_REPO = "conservationxlabs/miewid-msv3"
+MIEWID_MSV3_REVISION = "4f1d7f2b521149e5fe34bb85f377248ce9971a7d"
+MIEWID_MSV3_WEIGHTS_SHA256 = (
+    "adff92b39678f37eb74861c6399a741639a8907ec2382738e903d6120727b348"
+)

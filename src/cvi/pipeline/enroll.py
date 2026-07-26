@@ -1,15 +1,10 @@
 from __future__ import annotations
 
-from pathlib import Path
-from typing import Any
-
 import numpy as np
 from PIL import Image
 
 from cvi.evidence.base import AbstractEvidencer
 from cvi.evidence.appearance import Dinov2WithUncertainty
-from cvi.evidence.nose_print import MiewIDNoseExtractor
-from cvi.evidence.landmark_graph import LandmarkEvidencer
 from cvi.evidence.quality import overall_quality
 
 
@@ -48,13 +43,10 @@ class MultiEvidencePipeline:
             if isinstance(ev, Dinov2WithUncertainty):
                 emb, epi, ale = ev.extract_with_uncertainty(image)
                 embs[name] = emb
-                uncertainties[name] = epi
-            elif isinstance(ev, (MiewIDNoseExtractor, LandmarkEvidencer)):
-                embs[name] = ev.extract(image)
-                uncertainties[name] = 0.05
+                if epi is not None:
+                    uncertainties[name] = epi
             else:
                 embs[name] = ev.extract(image)
-                uncertainties[name] = 0.1
         return embs, uncertainties
 
     def estimate_quality(self, image: Image.Image) -> dict[str, float]:

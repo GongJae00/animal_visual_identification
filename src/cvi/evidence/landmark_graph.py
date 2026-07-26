@@ -113,16 +113,24 @@ class LandmarkEvidencer(AbstractEvidencer):
 
     def __init__(self, heatmap_model: nn.Module | None = None,
                  graph_model: nn.Module | None = None):
-        self._heatmap = heatmap_model or HRNetHeatmap()
-        self._graph = graph_model or LandmarkGraphEmbedder()
+        if heatmap_model is None or graph_model is None:
+            raise RuntimeError(
+                "Landmark evidence is disabled until checkpoint-backed heatmap "
+                "and graph models are supplied. Random placeholder models are "
+                "not valid inference evidence."
+            )
+        self._heatmap = heatmap_model
+        self._graph = graph_model
+        self._heatmap.eval()
+        self._graph.eval()
 
     def extract(self, image: Image.Image) -> np.ndarray:
         img = np.array(image.resize((224, 224)))
         tensor = torch.from_numpy(img).permute(2, 0, 1).float().unsqueeze(0) / 255.0
-        hm = self._heatmap(tensor)
-        pts = heatmap_to_points(hm)
-        pts_t = torch.from_numpy(pts).float()
         with torch.no_grad():
+            hm = self._heatmap(tensor)
+            pts = heatmap_to_points(hm)
+            pts_t = torch.from_numpy(pts).float()
             emb = self._graph(pts_t)
         return emb.squeeze(0).numpy()
 

@@ -260,18 +260,27 @@ class ArcFaceModel(nn.Module):
             config.arcface_margin,
         )
 
+    def encode(self, images: torch.Tensor) -> torch.Tensor:
+        """Return L2-normalized embeddings for inference and retrieval."""
+        return self._backbone(images)
+
+    def forward_train(
+        self, images: torch.Tensor, labels: torch.Tensor
+    ) -> torch.Tensor:
+        """Return metric-learning class logits regardless of module mode."""
+        return self._head(self.encode(images), labels)
+
     def forward(
         self, images: torch.Tensor, labels: torch.Tensor | None = None
     ) -> torch.Tensor:
-        emb = self._backbone(images)
         if labels is not None and self.training:
-            return self._head(emb, labels)
-        return emb
+            return self.forward_train(images, labels)
+        return self.encode(images)
 
     @torch.no_grad()
     def extract_embedding(self, images: torch.Tensor) -> np.ndarray:
         self.eval()
-        emb = self._backbone(images)
+        emb = self.encode(images)
         return emb.cpu().numpy()
 
     def export_to_onnx(self, output_path: Path) -> None:
@@ -469,7 +478,7 @@ def train_model(
             optimizer.zero_grad()
             if scaler is not None:
                 with torch.amp.autocast("cuda"):
-                    logits = model(images, labels)
+                    logits = model.forward_train(images, labels)
                     loss = F.cross_entropy(logits, labels)
                 scaler.scale(loss).backward()
                 scaler.unscale_(optimizer)
@@ -477,7 +486,7 @@ def train_model(
                 scaler.step(optimizer)
                 scaler.update()
             else:
-                logits = model(images, labels)
+                logits = model.forward_train(images, labels)
                 loss = F.cross_entropy(logits, labels)
                 loss.backward()
                 torch.nn.utils.clip_grad_norm_(model.parameters(), config.grad_clip_norm)
@@ -522,7 +531,7 @@ def train_model(
                                 [0.229, 0.224, 0.225], device=device
                             ).view(1, 3, 1, 1)
                         images = ImageCache.gpu_normalize(images, norm_mean, norm_std)
-                    logits = model(images, labels)
+                    logits = model.forward_train(images, labels)
                     loss = F.cross_entropy(logits, labels)
                     total_val_loss += loss.item()
                     val_steps += 1

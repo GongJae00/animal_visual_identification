@@ -225,6 +225,17 @@ class ArcFaceModelTests(unittest.TestCase):
         emb_np = model.extract_embedding(images)
         self.assertEqual(emb_np.shape, (2, 64))
 
+    def test_forward_train_returns_logits_in_eval_mode(self) -> None:
+        cfg = TrainConfig(embedding_dim=64, num_classes=5)
+        model = ArcFaceModel(cfg, backbone_factory=_DummyBackbone)
+        model.eval()
+        images = torch.randn(4, 3, 224, 224)
+        labels = torch.tensor([0, 1, 2, 3])
+        logits = model.forward_train(images, labels)
+        embeddings = model.encode(images)
+        self.assertEqual(logits.shape, (4, 5))
+        self.assertEqual(embeddings.shape, (4, 64))
+
     def test_export_to_onnx(self) -> None:
         import tempfile
         cfg = TrainConfig(embedding_dim=64, num_classes=5)
