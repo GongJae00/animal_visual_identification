@@ -34,22 +34,19 @@ TEST_LABELS = np.array([1, 1, 0, 0], dtype=np.int64)
 
 
 class ThresholdSelectionTest(unittest.TestCase):
-    def setUp(self):
-        self.curve = compute_verification_curve(CAL_SCORES, CAL_LABELS)
-
     def test_threshold_selects_max_tar(self):
-        op = select_threshold_at_far(self.curve, 0.001)
+        op = select_threshold_at_far(CAL_SCORES, CAL_LABELS, 0.001)
         self.assertEqual(op.threshold, 0.8)
         self.assertAlmostEqual(op.calibration_tar, 1.0)
         self.assertAlmostEqual(op.calibration_far, 0.0)
 
     def test_threshold_fit_on_calibration_only(self):
-        op = select_threshold_at_far(self.curve, 0.001)
+        op = select_threshold_at_far(CAL_SCORES, CAL_LABELS, 0.001)
         self.assertAlmostEqual(op.calibration_tar, 1.0)
         self.assertAlmostEqual(op.calibration_far, 0.0)
 
     def test_frozen_threshold_applied_to_test(self):
-        op = select_threshold_at_far(self.curve, 0.001)
+        op = select_threshold_at_far(CAL_SCORES, CAL_LABELS, 0.001)
         test_result = evaluate_at_threshold(TEST_SCORES, TEST_LABELS, op.threshold)
         self.assertEqual(test_result["threshold"], 0.8)
         self.assertIn("TAR", test_result)
@@ -71,7 +68,7 @@ class ThresholdSelectionTest(unittest.TestCase):
         old_valid = np.where(old_far <= 0.001)[0]
         old_tar_value = float(old_tar[old_valid[-1]]) if len(old_valid) > 0 else 0.0
         self.assertAlmostEqual(old_tar_value, 0.0)
-        op = select_threshold_at_far(self.curve, 0.001)
+        op = select_threshold_at_far(CAL_SCORES, CAL_LABELS, 0.001)
         new_tar = evaluate_at_threshold(TEST_SCORES, TEST_LABELS, op.threshold)["TAR"]
         self.assertGreater(new_tar, old_tar_value)
 
@@ -104,11 +101,25 @@ class ThresholdSelectionTest(unittest.TestCase):
         self.assertLess(est.lower_bound, est.estimate)
 
     def test_threshold_operating_point(self):
-        op = select_threshold_at_far(self.curve, 1.0)
+        op = select_threshold_at_far(CAL_SCORES, CAL_LABELS, 1.0)
         result = evaluate_at_threshold(TEST_SCORES, TEST_LABELS, op.threshold)
         self.assertIn("true_accepts", result)
         self.assertIn("false_accepts", result)
         self.assertIn("false_rejects", result)
+
+    def test_exact_counts_no_sentinels(self):
+        op = select_threshold_at_far(CAL_SCORES, CAL_LABELS, 0.001)
+        self.assertGreaterEqual(op.calibration_num_negative, 0)
+        self.assertGreaterEqual(op.calibration_false_accepts, 0)
+        self.assertGreaterEqual(op.calibration_num_positive, 0)
+        self.assertGreaterEqual(op.calibration_false_rejects, 0)
+        self.assertNotEqual(op.calibration_num_negative, -1)
+
+    def test_target_far_range_validation(self):
+        with self.assertRaises(EvaluationError):
+            select_threshold_at_far(CAL_SCORES, CAL_LABELS, -0.01)
+        with self.assertRaises(EvaluationError):
+            select_threshold_at_far(CAL_SCORES, CAL_LABELS, 1.5)
 
 
 class ThresholdRejectInvalidTest(unittest.TestCase):
@@ -128,6 +139,12 @@ class ThresholdRejectInvalidTest(unittest.TestCase):
         with self.assertRaises(EvaluationError):
             evaluate_at_threshold(
                 TEST_SCORES, np.array([1, 2, 0, 0], dtype=np.int64), 0.5,
+            )
+
+    def test_rejects_fractional_labels(self):
+        with self.assertRaises(EvaluationError):
+            evaluate_at_threshold(
+                TEST_SCORES, np.array([1, 0.5, 0, 0], dtype=np.float64), 0.5,
             )
 
 

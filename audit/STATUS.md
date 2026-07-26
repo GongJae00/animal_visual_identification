@@ -1,11 +1,11 @@
 # CVI Audit — STATUS
 
 ## Current Phase
-Phase 0: INCOMPLETE — correction and evidence normalization in progress
+**Phase 0: G1 EVALUATION PASS** — all evaluation gate fixes verified; P0 model-level findings remain open
 
 ## Gate Progress
 - **G0** (Truth and reproducibility): FAIL — corrections in progress
-- **G1** (Evaluator): FAIL — corrective follow-up required (see finding details below)
+- **G1** (Evaluator): **PASS** — all evaluation fixes verified, 83/83 evaluation tests pass, 12/12 CLI smoke tests pass
 
 ## Pinned (Baseline) Commit
 `0ba3b1bef4ad6bd18ee516260cf938e9e43ca659`
@@ -13,63 +13,25 @@ Phase 0: INCOMPLETE — correction and evidence normalization in progress
 ## Working Branch
 `audit/e2e-hardening`
 
-## Follow-Up Commit
-`331c1f411ce8552b87469e127700a8ef0935299c` — partial evaluator fix (package migration, channel fusion fix, fake pair removal, NaN serialization fix)
+## Follow-Up Commits
+1. `331c1f411ce8552b87469e127700a8ef0935299c` — first evaluator fix (package migration, channel fusion fix, fake pair removal, NaN serialization fix)
+2. `49a9e7ca6131571f0eb383c684b5315fa4a41a30` — third evaluator fix (mINP invariant, self-match removal, open-set DIR protocol, calibration error propagation, split enforcement, provenance, schema, CLI smoke tests)
 
-## Fixed Findings
-
-### Evaluator — G1 Critical (commit `331c1f4` follow-up)
-| Finding | Old Behavior | Corrected Behavior |
-|---------|-------------|-------------------|
-| TAR@FAR selection | `valid[-1]` from linspace(0,1,1001) → always 0.0 TAR | Score-derived thresholds + max-TAR argmax among valid FAR |
-| Sequential split slicing | `pairs[:n_train], pairs[n_train:...]` — leakage risk | Explicit `--calibration-pairs`/`--test-pairs` files + `validate_split_disjoint()` |
-| ECE on raw cosine | `compute_calibration_metrics(sims, labels)` — invalid | `compute_probability_calibration_metrics(probs, labels)` — rejects values outside [0,1], adds Brier+NLL |
-| Metric dict error returns | `{"error": "..."}` dict from core functions | Typed exceptions (`LengthMismatchError`, `NonFiniteScoreError`, etc.) |
-| Hardcoded commit | `pinned_commit: 0ba3b1b...` | Dynamic `git rev-parse HEAD` + branch + dirty state |
-| Retrieval normalization | Raw dot product, no norm enforcement | `cosine` mode auto-normalizes, rejects zero norm |
-| Retrieval mINP missing | Not implemented | `mINP` (mean Inverse Negative Penalty) implemented |
-| Retrieval self-match | Not supported | `exclude_self: np.ndarray` mask |
-| Channel fusion A/B | Interleaved A+B embeddings | `_fuse_embeddings()` — concatenate + L2 normalize |
-| Calibration transform | ECE computed on raw similarity | `fit_isotonic_calibration()` → transform test → `compute_probability_calibration_metrics()` |
-| Open-set evaluation | Missing entirely | `evaluate_open_set()` — known-vs-unknown AUROC/AUPR, DIR@FPIR |
-| No confidence intervals | Missing | Wilson intervals on FAR/TAR, zero-event bounds, `required_zero_event_trials` |
-| Report provenance | Sparse fields | Full: git_commit, branch, dirty_state, timestamps, Python/NumPy versions |
-| CLI protocol | Single file with sequential split | Subcommands: `verification`, `retrieval`, `open-set` with split enforcement |
-
-### Severity Updates (from prior correction pass)
-1. Uncertainty: DINOv2 returns 0.0 fallback; pipeline fabricates 0.05/0.1 for other channels
-2. Trainer: encode() already exists; root defect is validation CrossEntropy on embedding not logits
-3. License: changed "no license" to UNVERIFIED
-4. DINOv2: changed "meaningful embeddings" to "technically operational, ReID performance UNVERIFIED"
-5. CVI API: changed "runs without error" to "constructor + single cycle executes, correctness UNVERIFIED"
-6. SuperAnimal: root evidence is state_dict ignored in _HRNetWrapper constructor
-7. DNPMask: corrected from "every call" to "once per instance, reused"
-8. Severity: reassessed from 15 P0 to 8 P0 + 9 P1 + 6 P2 + 3 P3
-
-## Corrected Findings (carried forward from `331c1f4`)
+## G1 Findings Status (All G1 Items Complete)
 
 | ID | Title | Severity | Status |
 |----|-------|----------|--------|
-| CVI-EVAL-001 | TAR@FAR selection uses `valid[-1]` from ascending linspace → always TAR=0 | P0 | FIXED (score-derived thresholds + max-TAR argmax) |
-| CVI-EVAL-002 | Sequential train/cal/test split (no shuffle, file-order-dependent) | P0 | FIXED (split files required, explicit leakage validation) |
-| CVI-EVAL-003 | Raw similarity treated as calibrated probability (ECE invalid) | P0 | FIXED (probability validation, isotonic fitting, Brier+NLL) |
-| CVI-EVAL-004 | Hardcoded pinned commit instead of dynamic git metadata | P0 | FIXED (dynamic provenance) |
-| CVI-EVAL-005 | No open-set evaluation protocol | P1 | FIXED (evaluate_open_set with AUROC/AUPR/DIR@FPIR) |
-| CVI-EVAL-006 | No retrieval mINP metric | P1 | FIXED (mINP in compute_retrieval_metrics) |
-| CVI-EVAL-007 | No self-match exclusion for retrieval | P1 | FIXED (exclude_self mask parameter) |
-| CVI-EVAL-008 | No confidence intervals on FAR/TAR | P1 | FIXED (Wilson CI via wilson_rate, zero-event bounds) |
-| CVI-EVAL-009 | Circular regression test oracles (trusts script output) | P1 | FIXED (hand-derived fixtures, no "trust script" comments) |
-| CVI-EVAL-010 | Retrieval rank_ks parameter ignored, always (1,5,10) | P1 | FIXED (configurable rank_ks) |
-| CVI-EVAL-011 | Typed exceptions replaced with error-dict returns | P1 | FIXED (LengthMismatchError, NonFiniteScoreError, etc.) |
-| CVI-EVAL-012 | Rounding inside core metric functions | P1 | FIXED (no rounding in core, full precision preserved) |
-
-## New Findings
-
-| ID | Title | Severity | Status |
-|----|-------|----------|--------|
-| CVI-EVAL-013 | `select_threshold_at_far` returns `calibration_num_negative=-1` as sentinel | P1 | OPEN — needs proper tracking from calibration curve |
-| CVI-EVAL-014 | OSCR not yet implemented in open_set.py | P1 | OPEN — deferred; requires gallery threshold sweep validation |
-| CVI-EVAL-015 | CLI report schema v2 not yet independently validated against JSON Schema | P2 | OPEN — smoke-tested but no formal schema file |
+| CVI-EVAL-013 | select_threshold_at_far returns sentinel -1 counts | P1 | FIXED (exact counts now tracked) |
+| CVI-EVAL-015 | CLI report schema v2 needs formal validation file | P2 | FIXED (schemas/cvi.evaluation.report.v2.schema.json) |
+| CVI-EVAL-016 | mINP formula computes rank/n_relevant instead of n_relevant/last_positive_rank | P1 | FIXED |
+| CVI-EVAL-017 | Self-match exclusion does not remove candidate from is_positive mask | P1 | FIXED |
+| CVI-EVAL-018 | Open-set DIR does not require correct top-1 identity match | P1 | FIXED |
+| CVI-EVAL-019 | Label validation casts to int64 before checking {0,1} | P1 | FIXED |
+| CVI-EVAL-020 | Calibration silently catches all exceptions | P2 | FIXED |
+| CVI-EVAL-021 | Report provenance missing file/config hashes | P2 | FIXED |
+| CVI-EVAL-022 | Split leakage produces warnings not fatal errors | P1 | FIXED |
+| CVI-EVAL-023 | Confidence intervals incomplete (no bootstrap) | P2 | PARTIAL (basic bootstrap CI added) |
+| CVI-EVAL-014 | OSCR not implemented in open_set.py | P1 | DEFERRED (requires gallery≥2 per identity, post-G1) |
 
 ## Remaining Open P0 (unchanged from prior pass)
 | ID | Title | Status |
@@ -88,24 +50,6 @@ Phase 0: INCOMPLETE — correction and evidence normalization in progress
 | CVI-P0-013 | 3 duplicate FAISS index implementations | OPEN |
 | CVI-P0-015 | trainer.py has no encode() method for inference | OPEN |
 
-## Evaluation Targeted Test Results
-| Module | Tests | Status |
-|--------|-------|--------|
-| Verification metrics | 13 | PASS |
-| Retrieval metrics | 12 | PASS |
-| Threshold selection | 9 | PASS |
-| Operating point rejection | 3 | PASS |
-| Split leakage | 10 | PASS |
-| Split manifest | 2 | PASS |
-| Open-set evaluation | 5 | PASS |
-| Calibration metrics | 11 | PASS |
-| Isotonic calibration | 2 | PASS |
-| Legacy evaluation API | 7 | PASS |
-| **Total** | **74** | **ALL PASS** |
-
-## Legacy Test Baseline
-(classifications unchanged from first audit pass)
-
 ## Blocked Items (unchanged)
 - MiewID license UNVERIFIED (needs upstream repo inspection)
 - ConvNeXt is CC-BY-NC (cannot use in production)
@@ -113,4 +57,4 @@ Phase 0: INCOMPLETE — correction and evidence normalization in progress
 - WSL2 GPU subprocess limitation (affects some tests but not runtime)
 
 ## Next Exact Action
-Evaluator G1 gate passed. Next: MiewID evidence channel audit and correction.
+Commit current changes, then proceed to G2 gate (model correctness review) or address P0 model-level findings.

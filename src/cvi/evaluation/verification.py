@@ -36,6 +36,8 @@ class VerificationCurve:
     far: np.ndarray
     frr: np.ndarray
     tar: np.ndarray
+    n_pos: int
+    n_neg: int
 
 
 @dataclass(frozen=True)
@@ -54,7 +56,7 @@ def _validate_scores_labels(
     scores: np.ndarray,
     labels: np.ndarray,
     require_both_classes: bool = True,
-) -> tuple[np.ndarray, np.ndarray]:
+) -> tuple[int, int]:
     if len(scores) != len(labels):
         raise LengthMismatchError(
             f"scores length {len(scores)} != labels length {len(labels)}"
@@ -69,27 +71,27 @@ def _validate_scores_labels(
         )
     if len(scores) == 0:
         raise EmptyInputError("scores and labels are empty")
-    lb = labels.astype(np.int64)
-    if not np.all((lb == 0) | (lb == 1)):
+    if not np.all((labels == 0) | (labels == 1)):
         raise InvalidLabelError(
-            f"labels must be in {{0, 1}}, got values {np.unique(lb)}"
+            f"labels must be in {{0, 1}}, got values {np.unique(labels)}"
         )
     if not np.all(np.isfinite(scores)):
         raise NonFiniteScoreError("scores contain non-finite values")
-    n_pos = int(lb.sum())
-    n_neg = int((1 - lb).sum())
+    n_pos = int(labels.sum())
+    n_neg = int(len(labels) - n_pos)
     if require_both_classes and (n_pos == 0 or n_neg == 0):
         raise SingleClassError(
             f"both classes required: n_pos={n_pos}, n_neg={n_neg}"
         )
-    return lb, n_pos, n_neg
+    return n_pos, n_neg
 
 
 def compute_verification_curve(
     scores: np.ndarray,
     labels: np.ndarray,
 ) -> VerificationCurve:
-    lb, n_pos, n_neg = _validate_scores_labels(scores, labels)
+    n_pos, n_neg = _validate_scores_labels(scores, labels)
+    lb = labels.astype(np.int64)
     unique = np.sort(np.unique(scores))[::-1]
     thresholds = np.concatenate([
         [np.inf],
@@ -114,33 +116,42 @@ def compute_verification_curve(
         far=far_arr,
         frr=frr_arr,
         tar=tar_arr,
+        n_pos=n_pos,
+        n_neg=n_neg,
     )
 
 
 def select_threshold_at_far(
-    calibration_curve: VerificationCurve,
+    scores: np.ndarray,
+    labels: np.ndarray,
     target_far: float,
 ) -> OperatingThreshold:
-    valid = np.where(calibration_curve.far <= target_far)[0]
+    if not 0.0 <= target_far <= 1.0:
+        raise EvaluationError(f"target_far must be in [0, 1], got {target_far}")
+    n_pos, n_neg = _validate_scores_labels(scores, labels)
+    lb = labels.astype(np.int64)
+    curve = compute_verification_curve(scores, lb)
+    valid = np.where(curve.far <= target_far)[0]
     if len(valid) == 0:
-        valid = np.array([len(calibration_curve.thresholds) - 1])
-    max_tar_idx = valid[np.argmax(calibration_curve.tar[valid])]
-    t = float(calibration_curve.thresholds[max_tar_idx])
-    cal_far = float(calibration_curve.far[max_tar_idx])
-    cal_tar = float(calibration_curve.tar[max_tar_idx])
-    far_at_max = calibration_curve.far[max_tar_idx]
-    frr_at_max = calibration_curve.frr[max_tar_idx]
-    n_pos_approx = None
-    n_neg_approx = None
+        idx = len(curve.thresholds) - 1
+    else:
+        idx = valid[np.argmax(curve.tar[valid])]
+    t = float(curve.thresholds[idx])
+    pred = (scores >= t).astype(np.int64)
+    tp = int(((pred == 1) & (lb == 1)).sum())
+    fp = int(((pred == 1) & (lb == 0)).sum())
+    fn = n_pos - tp
+    cal_far = fp / max(n_neg, 1)
+    cal_tar = tp / max(n_pos, 1)
     return OperatingThreshold(
         threshold=t,
         target_far=target_far,
         calibration_far=cal_far,
         calibration_tar=cal_tar,
-        calibration_num_negative=-1,
-        calibration_false_accepts=-1,
-        calibration_num_positive=-1,
-        calibration_false_rejects=-1,
+        calibration_num_negative=n_neg,
+        calibration_false_accepts=fp,
+        calibration_num_positive=n_pos,
+        calibration_false_rejects=fn,
     )
 
 
@@ -149,15 +160,16 @@ def evaluate_at_threshold(
     test_labels: np.ndarray,
     threshold: float,
 ) -> dict:
-    lb, n_pos, n_neg = _validate_scores_labels(test_scores, test_labels)
+    n_pos, n_neg = _validate_scores_labels(test_scores, test_labels)
+    lb = test_labels.astype(np.int64)
     pred = (test_scores >= threshold).astype(np.int64)
     tp = int(((pred == 1) & (lb == 1)).sum())
     fp = int(((pred == 1) & (lb == 0)).sum())
-    fn = int(((pred == 0) & (lb == 1)).sum())
-    tn = int(((pred == 0) & (lb == 0)).sum())
-    tar = tp / max(tp + fn, 1)
-    far = fp / max(fp + tn, 1)
-    frr = fn / max(fn + tp, 1)
+    fn = n_pos - tp
+    tn = n_neg - fp
+    tar = tp / max(n_pos, 1)
+    far = fp / max(n_neg, 1)
+    frr = fn / max(n_pos, 1)
     return {
         "threshold": float(threshold),
         "true_accepts": tp,
@@ -176,7 +188,8 @@ def compute_verification_metrics(
     scores: np.ndarray,
     labels: np.ndarray,
 ) -> dict:
-    lb, n_pos, n_neg = _validate_scores_labels(scores, labels)
+    n_pos, n_neg = _validate_scores_labels(scores, labels)
+    lb = labels.astype(np.int64)
     pos_scores = scores[lb == 1]
     neg_scores = scores[lb == 0]
     auc = float(roc_auc_score(lb, scores))

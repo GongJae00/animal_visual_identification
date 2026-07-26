@@ -33,6 +33,8 @@ from cvi.evaluation.retrieval import (
     NonFiniteEmbeddingError,
     MissingGalleryIdentityError,
     ClosedSetViolation,
+    MetricInvariantError,
+    SampleIdValidationError,
     compute_retrieval_metrics,
 )
 from cvi.evaluation.calibration import (
