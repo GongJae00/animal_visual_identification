@@ -15,7 +15,7 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install uv
         uses: astral-sh/setup-uv@v7
@@ -25,6 +25,11 @@ jobs:
 
       - name: Install Python
         run: uv python install 3.12
+
+      - name: Install system runtime dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends ffmpeg
 
       - name: Sync CPU release environment
         run: >-
@@ -63,16 +68,22 @@ jobs:
           assert any(name.endswith(".dist-info/licenses/LICENSE") for name in names)
           assert "cvi/schemas/cvi.evaluation.report.v3.schema.json" in names
           PY
-          uv venv .wheel-venv --python 3.12
-          uv pip install --python .wheel-venv/bin/python "$wheel_path"
+          UV_PROJECT_ENVIRONMENT=.wheel-venv \
+            uv sync --locked --extra cpu --no-dev
+          uv pip uninstall \
+            --python .wheel-venv/bin/python canine-video-identity
+          uv pip install \
+            --python .wheel-venv/bin/python --no-deps "$wheel_path"
           .wheel-venv/bin/python - <<'PY'
           from importlib import resources
 
           import cvi
+          import torch
 
           schema = resources.files("cvi").joinpath(
               "schemas/cvi.evaluation.report.v3.schema.json"
           )
           assert schema.is_file()
           assert cvi.CVI.__module__ == "cvi.api"
+          assert torch.version.cuda is None
           PY
