@@ -453,7 +453,7 @@ def parse_executable_mappings(
         if len(fields) != 6:
             raise ValueError("anonymous executable mapping is forbidden")
         path_bytes = fields[5]
-        if path_bytes == b"[vdso]":
+        if path_bytes in {b"[vdso]", b"[vsyscall]"}:
             continue
         if path_bytes.startswith(b"[") or path_bytes.endswith(b" (deleted)"):
             raise ValueError("special or deleted executable mapping is forbidden")

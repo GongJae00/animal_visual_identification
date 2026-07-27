@@ -76,6 +76,8 @@ class RuntimeLibraryProvenanceTests(unittest.TestCase):
             path.write_bytes(b"runtime-binary")
             payload = maps_line(path) + maps_line(path) + (
                 b"00003000-00004000 r-xp 00000000 00:00 0 [vdso]\n"
+                b"ffffffffff600000-ffffffffff601000 --xp 00000000 "
+                b"00:00 0 [vsyscall]\n"
             )
             parsed = parse_executable_mappings(payload, maximum_lines=10)
             self.assertEqual(len(parsed), 1)
@@ -83,6 +85,11 @@ class RuntimeLibraryProvenanceTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "anonymous executable"):
                 parse_executable_mappings(
                     b"00001000-00002000 r-xp 00000000 00:00 0\n",
+                    maximum_lines=10,
+                )
+            with self.assertRaisesRegex(ValueError, "special"):
+                parse_executable_mappings(
+                    b"00003000-00004000 r-xp 00000000 00:00 0 [anonymous]\n",
                     maximum_lines=10,
                 )
             with self.assertRaisesRegex(ValueError, "deleted executable"):
