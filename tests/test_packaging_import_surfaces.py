@@ -22,6 +22,11 @@ forbidden = {
     'cvi.evidence.landmark_graph',
     'cvi.evidence.miewid',
     'cvi.evidence.nose_print',
+    'cvi.nose_id.dataset',
+    'cvi.nose_id.frequency',
+    'cvi.nose_id.losses',
+    'cvi.nose_id.model',
+    'cvi.nose_id.trainer',
     'torch',
     'transformers',
 }
