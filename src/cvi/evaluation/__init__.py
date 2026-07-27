@@ -1,4 +1,4 @@
-from cvi.evaluation._legacy import (
+from cvi.evaluation.protected_verification import (
     ClusterBootstrapConfig,
     ClusterUnit,
     FrozenVerificationThreshold,
@@ -35,7 +35,11 @@ from cvi.evaluation.retrieval import (
     ClosedSetViolation,
     MetricInvariantError,
     SampleIdValidationError,
+    SelfMatchPolicy,
+    compute_cosine_score_matrix,
     compute_retrieval_metrics,
+    evaluate_multi_template_closed_set,
+    identity_clustered_bootstrap_ci,
 )
 from cvi.evaluation.calibration import (
     CalibrationError,
@@ -80,7 +84,13 @@ __all__ = [
     "NonFiniteEmbeddingError",
     "MissingGalleryIdentityError",
     "ClosedSetViolation",
+    "MetricInvariantError",
+    "SampleIdValidationError",
+    "SelfMatchPolicy",
+    "compute_cosine_score_matrix",
     "compute_retrieval_metrics",
+    "evaluate_multi_template_closed_set",
+    "identity_clustered_bootstrap_ci",
     "CalibrationError",
     "InvalidProbabilityError",
     "fit_isotonic_calibration",

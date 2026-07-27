@@ -1,49 +1,11 @@
 from __future__ import annotations
 
-import json
-from pathlib import Path
-from typing import Any
-
 import numpy as np
 
+from cvi.fusion.calibrator import PerChannelCalibrator
 
-class ScoreCalibrator:
-    def __init__(self) -> None:
-        self._calibrators: dict[str, Any] = {}
 
-    def fit(self, scores: dict[str, np.ndarray],
-            labels: np.ndarray) -> None:
-        from sklearn.isotonic import IsotonicRegression
-        for name, vals in scores.items():
-            iso = IsotonicRegression(out_of_bounds="clip")
-            iso.fit(vals, labels.astype(np.float64))
-            self._calibrators[name] = iso
-
-    def transform(self, scores: dict[str, np.ndarray]
-                  ) -> dict[str, np.ndarray]:
-        return {
-            name: self._calibrators[name].transform(vals)
-            for name, vals in scores.items()
-        }
-
-    def calibrate(self, raw_score: float, channel: str = "all") -> float:
-        if channel not in self._calibrators:
-            return raw_score
-        result = self._calibrators[channel].predict([[raw_score]])[0]
-        return float(np.clip(result, 0.0, 1.0))
-
-    def save(self, path: Path) -> None:
-        import pickle
-        with open(path, "wb") as f:
-            pickle.dump(self._calibrators, f)
-
-    @classmethod
-    def load(cls, path: Path) -> ScoreCalibrator:
-        import pickle
-        obj = cls()
-        with open(path, "rb") as f:
-            obj._calibrators = pickle.load(f)
-        return obj
+ScoreCalibrator = PerChannelCalibrator
 
 
 class AdaptiveFusion:

@@ -1,6 +1,10 @@
 from __future__ import annotations
 
+import hashlib
 import itertools
+import os
+import stat
+import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -8,7 +12,19 @@ from typing import Any
 import numpy as np
 from PIL import Image
 
-from ultralytics import YOLO
+
+
+def YOLO(*args: Any, **kwargs: Any) -> Any:
+    """Load the separately licensed optional detector only when requested."""
+
+    try:
+        from ultralytics import YOLO as ultralytics_yolo
+    except ImportError as exc:
+        raise RuntimeError(
+            "dog detection requires a separately installed and licensed "
+            "Ultralytics package"
+        ) from exc
+    return ultralytics_yolo(*args, **kwargs)
 
 
 @dataclass(frozen=True, slots=True)
@@ -90,10 +106,11 @@ class QualityMetrics:
 @dataclass
 class DogDetectorConfig:
     model_path: str | None = None
+    model_sha256: str | None = None
     model_size: str = "n"
     conf_threshold: float = 0.25
     iou_threshold: float = 0.45
-    device: str = "cuda:0"
+    device: str = "cpu"
     max_detections: int = 5
     input_size: int = 640
     target_size: int = 224
@@ -108,12 +125,55 @@ class DogDetector:
     def __init__(self, config: DogDetectorConfig | None = None) -> None:
         self._cfg = config or DogDetectorConfig()
         device = self._cfg.device if self._cfg.device else "cpu"
-        if self._cfg.model_path:
-            self._model = YOLO(self._cfg.model_path)
-        else:
-            model_name = f"yolo11{self._cfg.model_size}.pt"
-            self._model = YOLO(model_name)
-        self._model.to(device)
+        if not self._cfg.model_path or not self._cfg.model_sha256:
+            raise RuntimeError(
+                "dog detection requires an explicit local model_path and SHA256"
+            )
+        model_path = Path(self._cfg.model_path)
+        self._model_staging = tempfile.TemporaryDirectory(
+            prefix="cvi-detector-model-"
+        )
+        staged_path = Path(self._model_staging.name) / "model.pt"
+        try:
+            descriptor = os.open(
+                model_path,
+                os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0),
+            )
+            with (
+                os.fdopen(descriptor, "rb") as source,
+                staged_path.open("xb") as target,
+            ):
+                before = os.fstat(source.fileno())
+                if not stat.S_ISREG(before.st_mode):
+                    raise ValueError("dog detector model must be a regular file")
+                if before.st_size <= 0 or before.st_size > 2_147_483_648:
+                    raise ValueError("dog detector model size is invalid")
+                digest = hashlib.sha256()
+                for chunk in iter(lambda: source.read(1024 * 1024), b""):
+                    digest.update(chunk)
+                    target.write(chunk)
+                target.flush()
+                os.fsync(target.fileno())
+                after = os.fstat(source.fileno())
+            if (
+                before.st_dev != after.st_dev
+                or before.st_ino != after.st_ino
+                or before.st_size != after.st_size
+                or before.st_mtime_ns != after.st_mtime_ns
+                or staged_path.stat().st_size != before.st_size
+            ):
+                raise RuntimeError("dog detector model changed while being verified")
+            if digest.hexdigest() != self._cfg.model_sha256:
+                raise RuntimeError("dog detector model SHA256 differs")
+            self._model = YOLO(str(staged_path))
+        except BaseException:
+            self._model_staging.cleanup()
+            raise
+        try:
+            self._model.to(device)
+        except BaseException:
+            self._model_staging.cleanup()
+            raise
 
     @property
     def config(self) -> DogDetectorConfig:
@@ -206,6 +266,7 @@ class DogDetector:
 
     def close(self) -> None:
         del self._model
+        self._model_staging.cleanup()
         import torch
         torch.cuda.empty_cache()
 

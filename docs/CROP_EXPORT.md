@@ -59,7 +59,7 @@ uv run python tools/export_oracle_crops.py \
   --ground-truth /protected/pairs/ground-truth.json \
   --pair-summary /protected/pairs/summary.json \
   --crop-sources /protected/crops/sources.json \
-  --export-policy configs/crop_export_policy.example.json \
+  --export-policy configs/data/crop_export_policy.example.json \
   --output-directory /protected/crops/token-images \
   --receipt-output /protected/crops/export-receipt.json
 ```

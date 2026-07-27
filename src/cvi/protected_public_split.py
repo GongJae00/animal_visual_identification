@@ -16,13 +16,22 @@ import hashlib
 import hmac
 import os
 import stat
-from collections import defaultdict
+from collections import Counter, defaultdict
 from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
 from typing import Any, Iterable
 
+from cvi.evaluation import required_zero_event_trials
 from cvi.provenance import content_sha256
+from cvi.split_role_exposure import (
+    ExposureStage,
+    RoleExposureLedger,
+    RoleExposureReceipt,
+    role_allows_historical_stage,
+    validate_split_candidate_assignment,
+    verify_split_role_exposure_inputs,
+)
 
 
 _HEX_SHA256_LENGTH = 64
@@ -294,6 +303,7 @@ class FrozenPublicSplitEvidenceGraph:
 
 @dataclass(frozen=True, slots=True)
 class ProtectedPublicSplitPolicy:
+    capacity_mode: str = "EVIDENCE_CONSTRAINED_MAXIMAL_COVERAGE"
     yt_official_train_identities: int = 2000
     yt_official_test_identities: int = 723
     yt_requested_fit_identities: int = 1200
@@ -306,11 +316,19 @@ class ProtectedPublicSplitPolicy:
     yt_minimum_eligible_train_identities: int = 1800
     yt_test_known_identities: int = 300
     yt_test_unknown_identities: int = 423
+    yt_test_unknown_target_fpir: float = 0.01
+    yt_test_unknown_reporting_fpir: float = 0.001
+    yt_test_unknown_confidence_level: float = 0.95
+    yt_test_unknown_minimum_identities: int = required_zero_event_trials(
+        0.01, confidence_level=0.95
+    )
     dogface_train_identities: int = 1254
     dogface_test_identities: int = 139
     dogface_fit_identities: int = 1004
+    dogface_minimum_fit_identities: int = 1000
     dogface_development_identities: int = 125
     dogface_calibration_identities: int = 125
+    dogface_minimum_test_identities: int = 125
     mpdd_train_identities: int = 95
     mpdd_test_identities: int = 96
     mpdd_open_known_identities: int = 64
@@ -331,10 +349,10 @@ class ProtectedPublicSplitPolicy:
     threshold_selection: str = "YT_CALIBRATION_ONLY_EXACT_ORDER_STATISTIC"
     development_reuse_policy: str = "PROHIBITED_AFTER_MARGIN_SELECTION"
     bootstrap_draws: int = 10_000
-    schema_version: str = "cvi.protected_public_split_policy.v2"
+    schema_version: str = "cvi.protected_public_split_policy.v3"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.protected_public_split_policy.v2":
+        if self.schema_version != "cvi.protected_public_split_policy.v3":
             raise ValueError("unsupported protected public split policy")
         expected = ProtectedPublicSplitPolicy.__dataclass_fields__
         for name in expected:
@@ -342,9 +360,13 @@ class ProtectedPublicSplitPolicy:
                 "shot_counts",
                 "diagnostic_shot_counts",
                 "yt_calibration_gallery_sizes",
+                "capacity_mode",
                 "external_result_boundary",
                 "threshold_selection",
                 "development_reuse_policy",
+                "yt_test_unknown_target_fpir",
+                "yt_test_unknown_reporting_fpir",
+                "yt_test_unknown_confidence_level",
                 "schema_version",
             }:
                 continue
@@ -359,6 +381,8 @@ class ProtectedPublicSplitPolicy:
             sorted((*self.shot_counts, *self.diagnostic_shot_counts))
         ) != (1, 3, 5):
             raise ValueError("primary and diagnostic shot partitions differ")
+        if self.capacity_mode != "EVIDENCE_CONSTRAINED_MAXIMAL_COVERAGE":
+            raise ValueError("protected split capacity mode differs")
         if self.yt_calibration_gallery_sizes != (39, 64, 100, 300):
             raise ValueError("YT calibration gallery sizes are fixed")
         if self.external_result_boundary != "STRICT_EXTERNAL_DOMAIN_ZERO_SHOT":
@@ -367,6 +391,17 @@ class ProtectedPublicSplitPolicy:
             raise ValueError("threshold selection boundary differs")
         if self.yt_test_known_identities + self.yt_test_unknown_identities != 723:
             raise ValueError("YT test role counts must preserve all 723 identities")
+        if self.yt_test_unknown_target_fpir != 0.01:
+            raise ValueError("YT test unknown target FPIR differs")
+        if self.yt_test_unknown_reporting_fpir != 0.001:
+            raise ValueError("YT test unknown reporting FPIR differs")
+        if self.yt_test_unknown_confidence_level != 0.95:
+            raise ValueError("YT test unknown confidence level differs")
+        if self.yt_test_unknown_minimum_identities != required_zero_event_trials(
+            self.yt_test_unknown_target_fpir,
+            confidence_level=self.yt_test_unknown_confidence_level,
+        ):
+            raise ValueError("YT test unknown statistical floor differs")
         if self.yt_primary_open_set_gallery_size != self.yt_test_known_identities:
             raise ValueError("YT primary open-set N differs from known identities")
         if self.yt_primary_open_set_shot != 3:
@@ -390,6 +425,10 @@ class ProtectedPublicSplitPolicy:
             raise ValueError("YT calibration maximum N differs from known bank")
         if self.dogface_fit_identities + self.dogface_development_identities + self.dogface_calibration_identities != self.dogface_train_identities:
             raise ValueError("DogFace role counts differ")
+        if self.dogface_minimum_fit_identities != 1000:
+            raise ValueError("DogFace fit statistical floor differs")
+        if self.dogface_minimum_test_identities != 125:
+            raise ValueError("DogFace test statistical floor differs")
         if self.mpdd_open_known_identities + self.mpdd_open_unknown_identities != self.mpdd_test_identities:
             raise ValueError("MPDD derivative counts differ")
         if self.sibetan_cross_sequence_identities + self.sibetan_unknown_identities != self.sibetan_identities:
@@ -433,6 +472,13 @@ class ProtectedPublicSplitPolicy:
 class _Component:
     token: str
     samples: tuple[PublicSplitSample, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class _AllocationBlock:
+    token: str
+    identity_tokens: tuple[str, ...]
+    component_tokens: tuple[str, ...]
 
 
 @dataclass(frozen=True, slots=True)
@@ -556,6 +602,8 @@ def build_protected_public_split(
     secret: bytes,
     input_file_sha256s: tuple[tuple[str, str], ...],
     tool_provenance: dict[str, Any],
+    role_exposure_ledger: RoleExposureLedger,
+    role_exposure_receipt: RoleExposureReceipt,
 ) -> PublicSplitBuildResult:
     """Build opaque roles from frozen evidence without any score input."""
 
@@ -567,6 +615,11 @@ def build_protected_public_split(
         raise ValueError("protected split policy is not the fixed protocol")
     if not isinstance(tool_provenance, dict) or not tool_provenance:
         raise ValueError("tool provenance must be a non-empty object")
+    historical_exposure = verify_split_role_exposure_inputs(
+        source.samples,
+        role_exposure_ledger,
+        role_exposure_receipt,
+    )
     samples_by_token = {sample.sample_token: sample for sample in source.samples}
     source_id_to_token = {
         sample.source_sample_id: sample.sample_token for sample in source.samples
@@ -583,11 +636,17 @@ def build_protected_public_split(
         for component in components
         for sample in component.samples
     }
+    allocation_blocks, block_by_identity = _build_allocation_blocks(components)
+    _quarantine_official_lane_conflicts(allocation_blocks, components, quarantine_reasons)
+    _propagate_component_quarantine(
+        allocation_blocks, quarantine_reasons
+    )
+    quarantined_components = set(quarantine_reasons)
     quarantined_identities = {
-        sample.identity_token
-        for component in components
-        if component.token in quarantined_components
-        for sample in component.samples
+        identity
+        for block in allocation_blocks
+        if set(block.component_tokens) & quarantined_components
+        for identity in block.identity_tokens
     }
     evidence_root = content_sha256({
         "source_bundle_sha256": source.bundle_sha256,
@@ -603,7 +662,19 @@ def build_protected_public_split(
         quarantined_identities,
         policy,
         keys["identity_roles"],
+        keys["frame_roles"],
+        historical_exposure,
+        block_by_identity,
+        quarantine_reasons,
     )
+    _propagate_component_quarantine(allocation_blocks, quarantine_reasons)
+    quarantined_components = set(quarantine_reasons)
+    quarantined_identities = {
+        identity
+        for block in allocation_blocks
+        if set(block.component_tokens) & quarantined_components
+        for identity in block.identity_tokens
+    }
     status = capacity["status"]
     if status == "PASS_PROTECTED_SPLIT_CONSTRUCTION":
         uses, evidence_capacity = _build_protocol_uses(
@@ -686,8 +757,14 @@ def build_protected_public_split(
     }
     assignment_sha = content_sha256(assignment)
     binding_sha = content_sha256(evaluator_binding)
+    if status == "PASS_PROTECTED_SPLIT_CONSTRUCTION":
+        validate_split_candidate_assignment(
+            source_samples=source.samples,
+            assignment=assignment,
+            ledger=role_exposure_ledger,
+        )
     receipt_payload = {
-        "schema_version": "cvi.protected_public_split_receipt.v1",
+        "schema_version": "cvi.protected_public_split_receipt.v3",
         "status": status,
         "seed_commitment": seed_commitment(secret),
         "evidence_root_sha256": evidence_root,
@@ -698,11 +775,41 @@ def build_protected_public_split(
         "input_file_sha256s": [list(item) for item in input_file_sha256s],
         "assignment_sha256": assignment_sha,
         "evaluator_binding_sha256": binding_sha,
+        "role_exposure_ledger_sha256": role_exposure_ledger.ledger_sha256,
+        "role_exposure_receipt_sha256": role_exposure_receipt.receipt_sha256,
+        "capacity_mode": policy.capacity_mode,
+        "requested_role_counts": capacity.get("requested_role_counts", {}),
+        "actual_role_counts": capacity.get("actual_role_counts", {}),
+        "quarantined_identity_counts_by_lane": capacity.get(
+            "quarantined_identity_counts_by_lane", {}
+        ),
+        "yt_test_unknown_fpir_power": capacity.get(
+            "yt_test_unknown_fpir_power", {}
+        ),
         "capacity": capacity,
         "protocol_cohorts": cohort_summary,
         "quarantine": {
             "component_count": len(quarantined_components),
             "identity_count": len(quarantined_identities),
+            "sample_count": sum(
+                len(component.samples)
+                for component in components
+                if component.token in quarantined_components
+            ),
+            "allocation_block_count": sum(
+                bool(set(block.component_tokens) & quarantined_components)
+                for block in allocation_blocks
+            ),
+            "total_component_count": len(components),
+            "total_allocation_block_count": len(allocation_blocks),
+            "largest_quarantined_block_identity_count": max(
+                (
+                    len(block.identity_tokens)
+                    for block in allocation_blocks
+                    if set(block.component_tokens) & quarantined_components
+                ),
+                default=0,
+            ),
             "reason_counts": sorted(
                 (reason, sum(reason in values for values in quarantine_reasons.values()))
                 for reason in {item for values in quarantine_reasons.values() for item in values}
@@ -757,8 +864,8 @@ def _validate_dependency_edges(
         for edge in edges
         if edge.relation is EvidenceRelation.DEPENDENCY
     }
-    if declared != observed:
-        raise ValueError("typed random-background dependency edge set differs")
+    if not declared.issubset(observed):
+        raise ValueError("typed random-background dependency edge is missing")
 
 
 def _close_components(
@@ -791,28 +898,80 @@ def _close_components(
         if edge.relation is EvidenceRelation.REVIEW_UNRESOLVED:
             reasons[by_sample[edge.left_sample_token]].add("UNRESOLVED_REVIEW")
             reasons[by_sample[edge.right_sample_token]].add("UNRESOLVED_REVIEW")
-    for component in components:
-        labels = {sample.dataset_identity_id for sample in component.samples}
-        if len(labels) != 1:
-            reasons[component.token].add("LABEL_CONFLICT")
-        stages = {
-            _official_stage(sample)
-            for sample in component.samples
-            if sample.source_variant == "original"
-        }
-        stages.discard(None)
-        if len(stages) > 1:
-            reasons[component.token].add("OFFICIAL_ROLE_CONFLICT")
-        mpdd_roles = {
-            sample.original_split
-            for sample in component.samples
-            if sample.dataset_name == "mpdd"
-            and sample.source_variant == "original"
-            and sample.original_split in {"query", "gallery"}
-        }
-        if len(mpdd_roles) > 1:
-            reasons[component.token].add("PUBLISHER_GALLERY_QUERY_CONFLICT")
     return tuple(components), set(reasons), reasons
+
+
+def _build_allocation_blocks(
+    components: tuple[_Component, ...],
+) -> tuple[tuple[_AllocationBlock, ...], dict[str, _AllocationBlock]]:
+    identities = {
+        sample.identity_token
+        for component in components
+        for sample in component.samples
+    }
+    dsu = _DisjointSet(identities)
+    component_identities: dict[str, tuple[str, ...]] = {}
+    for component in components:
+        members = tuple(sorted({sample.identity_token for sample in component.samples}))
+        component_identities[component.token] = members
+        for identity in members[1:]:
+            dsu.union(members[0], identity)
+    grouped_identities: dict[str, set[str]] = defaultdict(set)
+    for identity in identities:
+        grouped_identities[dsu.find(identity)].add(identity)
+    component_tokens_by_root: dict[str, set[str]] = defaultdict(set)
+    for component_token, members in component_identities.items():
+        component_tokens_by_root[dsu.find(members[0])].add(component_token)
+    blocks = tuple(
+        sorted(
+            (
+                _AllocationBlock(
+                    token=content_sha256({
+                        "domain": "CVI_PUBLIC_SPLIT_ALLOCATION_BLOCK_V1",
+                        "identities": sorted(grouped_identities[root]),
+                        "components": sorted(component_tokens_by_root[root]),
+                    }),
+                    identity_tokens=tuple(sorted(grouped_identities[root])),
+                    component_tokens=tuple(sorted(component_tokens_by_root[root])),
+                )
+                for root in grouped_identities
+            ),
+            key=lambda item: item.token,
+        )
+    )
+    by_identity = {
+        identity: block for block in blocks for identity in block.identity_tokens
+    }
+    return blocks, by_identity
+
+
+def _quarantine_official_lane_conflicts(
+    blocks: tuple[_AllocationBlock, ...],
+    components: tuple[_Component, ...],
+    reasons: dict[str, set[str]],
+) -> None:
+    lane_by_identity: dict[str, str] = {}
+    for component in components:
+        for sample in component.samples:
+            lane = _official_lane(sample)
+            prior = lane_by_identity.setdefault(sample.identity_token, lane)
+            if prior != lane:
+                raise ValueError("one identity crosses official dataset lanes")
+    for block in blocks:
+        lanes = {lane_by_identity[identity] for identity in block.identity_tokens}
+        if len(lanes) > 1:
+            for component_token in block.component_tokens:
+                reasons[component_token].add("OFFICIAL_LANE_CONFLICT")
+
+
+def _propagate_component_quarantine(
+    blocks: tuple[_AllocationBlock, ...],
+    reasons: dict[str, set[str]],
+) -> None:
+    for block in blocks:
+        if any(component in reasons for component in block.component_tokens):
+            for component in block.component_tokens:
+                reasons[component].add("ALLOCATION_BLOCK_QUARANTINE_CLOSURE")
 
 
 def _validate_official_identity_cardinalities(
@@ -856,12 +1015,88 @@ def _assign_identity_roles(
     quarantined: set[str],
     policy: ProtectedPublicSplitPolicy,
     key: bytes,
+    frame_key: bytes,
+    historical_exposure: dict[str, ExposureStage],
+    block_by_identity: dict[str, _AllocationBlock],
+    quarantine_reasons: dict[str, set[str]],
 ) -> tuple[dict[str, str], dict[str, Any]]:
     original_by_identity: dict[str, list[PublicSplitSample]] = defaultdict(list)
     for sample in samples:
         if sample.source_variant == "original":
             original_by_identity[sample.identity_token].append(sample)
     eligible = {identity for identity in original_by_identity if identity not in quarantined}
+    for split in ("train", "test"):
+        domain = {
+            identity
+            for identity in eligible
+            if _identity_matches(
+                original_by_identity[identity], "yt-bb-dog", {split}
+            )
+        }
+        individually_eligible = {
+            identity
+            for identity in domain
+            if _complete_yt_temporal_plan(
+                original_by_identity[identity],
+                component_by_sample,
+                policy,
+                key,
+            )
+            is not None
+        }
+        rejected = _quarantine_incomplete_protocol_blocks(
+            domain,
+            individually_eligible,
+            block_by_identity,
+            quarantine_reasons,
+        )
+        eligible.difference_update(rejected)
+    lane_by_identity = {
+        identity: _official_lane(identity_samples[0])
+        for identity, identity_samples in original_by_identity.items()
+    }
+    raw_lane_counts = Counter(lane_by_identity.values())
+    eligible_lane_counts = Counter(
+        lane_by_identity[identity] for identity in eligible
+    )
+    requested_role_counts = {
+        "YT_FIT": policy.yt_requested_fit_identities,
+        "YT_DEVELOPMENT": policy.yt_development_identities,
+        "YT_CALIBRATION_KNOWN": policy.yt_calibration_known_identities,
+        "YT_CALIBRATION_UNKNOWN": policy.yt_calibration_unknown_identities,
+        "YT_TEST_KNOWN": policy.yt_test_known_identities,
+        "YT_TEST_UNKNOWN": policy.yt_test_unknown_identities,
+        "DOGFACE_FIT": policy.dogface_fit_identities,
+        "DOGFACE_DEVELOPMENT": policy.dogface_development_identities,
+        "DOGFACE_CALIBRATION": policy.dogface_calibration_identities,
+        "DOGFACE_TEST": policy.dogface_test_identities,
+        "MPDD_EXTERNAL_KNOWN": policy.mpdd_open_known_identities,
+        "MPDD_EXTERNAL_UNKNOWN": policy.mpdd_open_unknown_identities,
+        "MPDD_EXTERNAL_UNUSED_TRAIN_DOMAIN": policy.mpdd_train_identities,
+        "SIBETAN_EXTERNAL_KNOWN": policy.sibetan_cross_sequence_identities,
+        "SIBETAN_EXTERNAL_UNKNOWN": policy.sibetan_unknown_identities,
+    }
+    minimum_role_counts = {
+        **requested_role_counts,
+        "YT_FIT": policy.yt_minimum_fit_identities,
+        "YT_TEST_UNKNOWN": policy.yt_test_unknown_minimum_identities,
+        "DOGFACE_FIT": policy.dogface_minimum_fit_identities,
+        "DOGFACE_TEST": policy.dogface_minimum_test_identities,
+    }
+    capacity_contract = {
+        "capacity_mode": policy.capacity_mode,
+        "raw_official_identity_counts_by_lane": dict(sorted(raw_lane_counts.items())),
+        "eligible_identity_counts_by_lane": dict(sorted(eligible_lane_counts.items())),
+        "quarantined_identity_counts_by_lane": {
+            lane: raw_lane_counts[lane] - eligible_lane_counts[lane]
+            for lane in sorted(raw_lane_counts)
+        },
+        "requested_role_counts": requested_role_counts,
+        "minimum_role_counts": minimum_role_counts,
+        "yt_test_unknown_fpir_power": _yt_test_unknown_fpir_power(
+            0, policy
+        ),
+    }
     yt_train = _rank_tokens(
         (
             identity
@@ -890,6 +1125,7 @@ def _assign_identity_roles(
     if actual_fit < policy.yt_minimum_fit_identities:
         capacity_status = "SPLIT_CAPACITY_FAILED"
     capacity = {
+        **capacity_contract,
         "status": capacity_status,
         "eligible_yt_train_identities": len(yt_train),
         "minimum_eligible_yt_train_identities": policy.yt_minimum_eligible_train_identities,
@@ -903,17 +1139,36 @@ def _assign_identity_roles(
         },
     }
     if capacity_status != "PASS_PROTECTED_SPLIT_CONSTRUCTION":
+        _mark_capacity_loss(
+            {
+                identity
+                for identity, identity_samples in original_by_identity.items()
+                if _identity_matches(identity_samples, "yt-bb-dog", {"train"})
+            },
+            block_by_identity,
+            quarantine_reasons,
+        )
         return {}, capacity
-    roles: dict[str, str] = {}
-    cursor = 0
-    for role, count in (
-        ("YT_FIT", actual_fit),
-        ("YT_DEVELOPMENT", policy.yt_development_identities),
-        ("YT_CALIBRATION_KNOWN", policy.yt_calibration_known_identities),
-        ("YT_CALIBRATION_UNKNOWN", policy.yt_calibration_unknown_identities),
-    ):
-        roles.update((identity, role) for identity in yt_train[cursor:cursor + count])
-        cursor += count
+    roles = _allocate_exposure_constrained_roles(
+        yt_train,
+        (
+            ("YT_FIT", actual_fit),
+            ("YT_DEVELOPMENT", policy.yt_development_identities),
+            ("YT_CALIBRATION_KNOWN", policy.yt_calibration_known_identities),
+            ("YT_CALIBRATION_UNKNOWN", policy.yt_calibration_unknown_identities),
+        ),
+        historical_exposure,
+        block_by_identity,
+    )
+    if roles is None:
+        _mark_allocation_failure(
+            yt_train, block_by_identity, quarantine_reasons
+        )
+        return {}, {
+            **capacity,
+            "status": "ROLE_EXPOSURE_CAPACITY_FAILED",
+            "exposure_constrained_domain": "YT_TRAIN",
+        }
     yt_test = _rank_tokens(
         (
             identity
@@ -932,26 +1187,74 @@ def _assign_identity_roles(
         key,
         b"YT_TEST",
     )
-    if len(yt_test) != policy.yt_official_test_identities:
+    actual_yt_test_unknown = len(yt_test) - policy.yt_test_known_identities
+    capacity["yt_test_unknown_fpir_power"] = _yt_test_unknown_fpir_power(
+        max(0, actual_yt_test_unknown), policy
+    )
+    if (
+        len(yt_test) < policy.yt_test_known_identities
+        or actual_yt_test_unknown < policy.yt_test_unknown_minimum_identities
+    ):
+        _mark_capacity_loss(
+            {
+                identity
+                for identity, identity_samples in original_by_identity.items()
+                if _identity_matches(identity_samples, "yt-bb-dog", {"test"})
+            },
+            block_by_identity,
+            quarantine_reasons,
+        )
         return {}, {
             **capacity,
             "status": "YT_TEST_PRIMARY_CAPACITY_FAILED",
             "eligible_yt_test_primary_identities": len(yt_test),
-            "required_yt_test_primary_identities": (
-                policy.yt_official_test_identities
+            "minimum_yt_test_primary_identities": (
+                policy.yt_test_known_identities
+                + policy.yt_test_unknown_minimum_identities
             ),
             "primary_shot_counts": list(policy.shot_counts),
             "interpolation_allowed": False,
             "post_score_backfill_allowed": False,
         }
     capacity["eligible_yt_test_primary_identities"] = len(yt_test)
-    roles.update((identity, "YT_TEST_KNOWN") for identity in yt_test[:policy.yt_test_known_identities])
-    roles.update((identity, "YT_TEST_UNKNOWN") for identity in yt_test[policy.yt_test_known_identities:])
+    yt_test_roles = _allocate_exposure_constrained_roles(
+        yt_test,
+        (
+            ("YT_TEST_KNOWN", policy.yt_test_known_identities),
+            ("YT_TEST_UNKNOWN", actual_yt_test_unknown),
+        ),
+        historical_exposure,
+        block_by_identity,
+    )
+    if yt_test_roles is None:
+        _mark_allocation_failure(
+            yt_test, block_by_identity, quarantine_reasons
+        )
+        return {}, {
+            **capacity,
+            "status": "ROLE_EXPOSURE_CAPACITY_FAILED",
+            "exposure_constrained_domain": "YT_TEST",
+        }
+    roles.update(yt_test_roles)
 
     dog_train = _rank_tokens(
         (identity for identity in eligible if _identity_matches(original_by_identity[identity], "dogfacenet224", {"train"})), key, b"DOGFACE_TRAIN"
     )
-    if len(dog_train) != policy.dogface_train_identities:
+    actual_dogface_fit = (
+        len(dog_train)
+        - policy.dogface_development_identities
+        - policy.dogface_calibration_identities
+    )
+    if actual_dogface_fit < policy.dogface_minimum_fit_identities:
+        _mark_capacity_loss(
+            {
+                identity
+                for identity, identity_samples in original_by_identity.items()
+                if _identity_matches(identity_samples, "dogfacenet224", {"train"})
+            },
+            block_by_identity,
+            quarantine_reasons,
+        )
         return {}, {**capacity, "status": "SPLIT_CAPACITY_FAILED", "eligible_dogface_train_identities": len(dog_train)}
     dog_test = _rank_tokens(
         (
@@ -964,17 +1267,48 @@ def _assign_identity_roles(
         key,
         b"DOGFACE_TEST",
     )
-    if len(dog_test) != policy.dogface_test_identities:
+    if len(dog_test) < policy.dogface_minimum_test_identities:
+        _mark_capacity_loss(
+            {
+                identity
+                for identity, identity_samples in original_by_identity.items()
+                if _identity_matches(identity_samples, "dogfacenet224", {"test"})
+            },
+            block_by_identity,
+            quarantine_reasons,
+        )
         return {}, {
             **capacity,
             "status": "SPLIT_CAPACITY_FAILED",
             "eligible_dogface_test_identities": len(dog_test),
         }
-    offset = 0
-    for role, count in (("DOGFACE_FIT", 1004), ("DOGFACE_DEVELOPMENT", 125), ("DOGFACE_CALIBRATION", 125)):
-        roles.update((identity, role) for identity in dog_train[offset:offset + count])
-        offset += count
-    roles.update((identity, "DOGFACE_TEST") for identity in dog_test)
+    dog_train_roles = _allocate_exposure_constrained_roles(
+        dog_train,
+        (
+            ("DOGFACE_FIT", actual_dogface_fit),
+            ("DOGFACE_DEVELOPMENT", policy.dogface_development_identities),
+            ("DOGFACE_CALIBRATION", policy.dogface_calibration_identities),
+        ),
+        historical_exposure,
+        block_by_identity,
+    )
+    dog_test_roles = _allocate_exposure_constrained_roles(
+        dog_test,
+        (("DOGFACE_TEST", len(dog_test)),),
+        historical_exposure,
+        block_by_identity,
+    )
+    if dog_train_roles is None or dog_test_roles is None:
+        _mark_allocation_failure(
+            (*dog_train, *dog_test), block_by_identity, quarantine_reasons
+        )
+        return {}, {
+            **capacity,
+            "status": "ROLE_EXPOSURE_CAPACITY_FAILED",
+            "exposure_constrained_domain": "DOGFACE",
+        }
+    roles.update(dog_train_roles)
+    roles.update(dog_test_roles)
     mpdd_train = _rank_tokens(
         (
             identity
@@ -993,24 +1327,101 @@ def _assign_identity_roles(
         len(mpdd_train) != policy.mpdd_train_identities
         or len(mpdd_test) != policy.mpdd_test_identities
     ):
+        _mark_capacity_loss(
+            {
+                identity
+                for identity, identity_samples in original_by_identity.items()
+                if _identity_matches(
+                    identity_samples,
+                    "mpdd",
+                    {"train", "val", "query", "gallery"},
+                )
+            },
+            block_by_identity,
+            quarantine_reasons,
+        )
         return {}, {
             **capacity,
             "status": "SPLIT_CAPACITY_FAILED",
             "eligible_mpdd_train_identities": len(mpdd_train),
             "eligible_mpdd_test_identities": len(mpdd_test),
         }
-    roles.update(
-        (identity, "MPDD_EXTERNAL_KNOWN")
-        for identity in mpdd_test[: policy.mpdd_open_known_identities]
+    mpdd_known_eligible = _rank_tokens(
+        (
+            identity
+            for identity in mpdd_test
+            if _mpdd_open_set_plan(
+                original_by_identity[identity],
+                component_by_sample,
+                frame_key,
+                policy,
+            )
+            is not None
+        ),
+        key,
+        b"MPDD_EXTERNAL_KNOWN",
     )
-    roles.update(
-        (identity, "MPDD_EXTERNAL_UNKNOWN")
-        for identity in mpdd_test[policy.mpdd_open_known_identities :]
+    mpdd_known_eligible_set = set(mpdd_known_eligible)
+    mpdd_test_set = set(mpdd_test)
+    eligible_known_blocks: list[_AllocationBlock] = []
+    seen_known_blocks: set[str] = set()
+    for identity in mpdd_known_eligible:
+        block = block_by_identity[identity]
+        if block.token in seen_known_blocks:
+            continue
+        seen_known_blocks.add(block.token)
+        members = set(block.identity_tokens)
+        if members.issubset(mpdd_known_eligible_set) and members.issubset(
+            mpdd_test_set
+        ):
+            eligible_known_blocks.append(block)
+    selected_known_blocks = _select_ranked_blocks(
+        eligible_known_blocks, policy.mpdd_open_known_identities
     )
-    roles.update(
-        (identity, "MPDD_EXTERNAL_UNUSED_TRAIN_DOMAIN")
-        for identity in mpdd_train
+    if selected_known_blocks is None:
+        return {}, {
+            **capacity,
+            "status": "EXTERNAL_OPEN_SET_CAPACITY_FAILED",
+            "eligible_mpdd_open_known_identities": len(mpdd_known_eligible),
+            "required_mpdd_open_known_identities": policy.mpdd_open_known_identities,
+        }
+    mpdd_known_set = {
+        identity
+        for block in selected_known_blocks
+        for identity in block.identity_tokens
+    }
+    mpdd_known = [
+        identity for identity in mpdd_known_eligible if identity in mpdd_known_set
+    ]
+    mpdd_unknown = _rank_tokens(
+        (identity for identity in mpdd_test if identity not in mpdd_known_set),
+        key,
+        b"MPDD_EXTERNAL_UNKNOWN",
     )
+    if len(mpdd_unknown) != policy.mpdd_open_unknown_identities:
+        raise RuntimeError("MPDD known/unknown role arithmetic differs")
+    mpdd_roles = _allocate_exposure_constrained_roles(
+        (*mpdd_known, *mpdd_unknown, *mpdd_train),
+        (
+            ("MPDD_EXTERNAL_KNOWN", len(mpdd_known)),
+            ("MPDD_EXTERNAL_UNKNOWN", len(mpdd_unknown)),
+            ("MPDD_EXTERNAL_UNUSED_TRAIN_DOMAIN", len(mpdd_train)),
+        ),
+        historical_exposure,
+        block_by_identity,
+    )
+    if mpdd_roles is None:
+        _mark_allocation_failure(
+            (*mpdd_known, *mpdd_unknown, *mpdd_train),
+            block_by_identity,
+            quarantine_reasons,
+        )
+        return {}, {
+            **capacity,
+            "status": "ROLE_EXPOSURE_CAPACITY_FAILED",
+            "exposure_constrained_domain": "MPDD",
+        }
+    roles.update(mpdd_roles)
     sibetan_known = [
         identity for identity in eligible
         if _identity_matches(original_by_identity[identity], "sibetan", {None})
@@ -1022,11 +1433,200 @@ def _assign_identity_roles(
         and all(sample.in_no_mono_subset is False for sample in original_by_identity[identity])
     ]
     if (len(sibetan_known), len(sibetan_unknown)) != (39, 20):
+        _mark_capacity_loss(
+            {
+                identity
+                for identity, identity_samples in original_by_identity.items()
+                if _identity_matches(identity_samples, "sibetan", {None})
+            },
+            block_by_identity,
+            quarantine_reasons,
+        )
         return {}, {**capacity, "status": "SPLIT_CAPACITY_FAILED", "eligible_sibetan_known_unknown": [len(sibetan_known), len(sibetan_unknown)]}
-    roles.update((identity, "SIBETAN_EXTERNAL_KNOWN") for identity in sibetan_known)
-    roles.update((identity, "SIBETAN_EXTERNAL_UNKNOWN") for identity in sibetan_unknown)
+    sibetan_roles = _allocate_exposure_constrained_roles(
+        (*sibetan_known, *sibetan_unknown),
+        (
+            ("SIBETAN_EXTERNAL_KNOWN", len(sibetan_known)),
+            ("SIBETAN_EXTERNAL_UNKNOWN", len(sibetan_unknown)),
+        ),
+        historical_exposure,
+        block_by_identity,
+    )
+    if sibetan_roles is None:
+        _mark_allocation_failure(
+            (*sibetan_known, *sibetan_unknown),
+            block_by_identity,
+            quarantine_reasons,
+        )
+        return {}, {
+            **capacity,
+            "status": "ROLE_EXPOSURE_CAPACITY_FAILED",
+            "exposure_constrained_domain": "SIBETAN",
+        }
+    roles.update(sibetan_roles)
     capacity["assigned_identity_count"] = len(roles)
+    actual_role_counts = Counter(roles.values())
+    capacity["actual_role_counts"] = {
+        role: actual_role_counts.get(role, 0)
+        for role in requested_role_counts
+    }
+    capacity["contracted_role_counts"] = {
+        role: requested - actual_role_counts.get(role, 0)
+        for role, requested in requested_role_counts.items()
+    }
     return roles, capacity
+
+
+def _yt_test_unknown_fpir_power(
+    actual_trials: int,
+    policy: ProtectedPublicSplitPolicy,
+) -> dict[str, Any]:
+    targets = (
+        ("PRIMARY", policy.yt_test_unknown_target_fpir),
+        ("REPORTING", policy.yt_test_unknown_reporting_fpir),
+    )
+    return {
+        "confidence_level": policy.yt_test_unknown_confidence_level,
+        "actual_unknown_identity_trials": actual_trials,
+        "targets": [
+            {
+                "purpose": purpose,
+                "target_fpir": target,
+                "required_zero_event_trials": required,
+                "status": "POWERED" if actual_trials >= required else "UNDERPOWERED",
+            }
+            for purpose, target in targets
+            for required in (
+                required_zero_event_trials(
+                    target,
+                    confidence_level=policy.yt_test_unknown_confidence_level,
+                ),
+            )
+        ],
+    }
+
+
+def _allocate_exposure_constrained_roles(
+    ranked_identities: Iterable[str],
+    role_counts: tuple[tuple[str, int], ...],
+    historical_exposure: dict[str, ExposureStage],
+    block_by_identity: dict[str, _AllocationBlock],
+) -> dict[str, str] | None:
+    """Fill exact role quotas with indivisible blocks in existing HMAC order."""
+
+    ranked = list(ranked_identities)
+    ranked_set = set(ranked)
+    ordered_blocks: list[_AllocationBlock] = []
+    seen_blocks: set[str] = set()
+    for identity in ranked:
+        block = block_by_identity[identity]
+        if block.token in seen_blocks:
+            continue
+        if not set(block.identity_tokens).issubset(ranked_set):
+            return None
+        seen_blocks.add(block.token)
+        ordered_blocks.append(block)
+    remaining = ordered_blocks
+    assigned: dict[str, str] = {}
+    for role, count in role_counts:
+        eligible = [
+            block
+            for block in remaining
+            if role_allows_historical_stage(
+                role,
+                _maximum_historical_stage(block, historical_exposure),
+            )
+        ]
+        selected = _select_ranked_blocks(eligible, count)
+        if selected is None:
+            return None
+        selected_tokens = {block.token for block in selected}
+        assigned.update(
+            (identity, role)
+            for block in selected
+            for identity in block.identity_tokens
+        )
+        remaining = [
+            block for block in remaining if block.token not in selected_tokens
+        ]
+    if remaining:
+        return None
+    return assigned
+
+
+def _select_ranked_blocks(
+    blocks: list[_AllocationBlock], target: int
+) -> list[_AllocationBlock] | None:
+    suffix = [0] * (len(blocks) + 1)
+    suffix[-1] = 1
+    mask = (1 << (target + 1)) - 1
+    for index in range(len(blocks) - 1, -1, -1):
+        size = len(blocks[index].identity_tokens)
+        suffix[index] = suffix[index + 1] | (
+            suffix[index + 1] << size
+        ) & mask
+    if not (suffix[0] >> target) & 1:
+        return None
+    selected: list[_AllocationBlock] = []
+    remaining = target
+    for index, block in enumerate(blocks):
+        size = len(block.identity_tokens)
+        if size <= remaining and (suffix[index + 1] >> (remaining - size)) & 1:
+            selected.append(block)
+            remaining -= size
+    if remaining != 0:
+        raise RuntimeError("component subset reconstruction differs")
+    return selected
+
+
+def _maximum_historical_stage(
+    block: _AllocationBlock,
+    historical_exposure: dict[str, ExposureStage],
+) -> ExposureStage | None:
+    stages = [
+        historical_exposure[identity]
+        for identity in block.identity_tokens
+        if identity in historical_exposure
+    ]
+    return max(stages, key=lambda stage: tuple(ExposureStage).index(stage)) if stages else None
+
+
+def _mark_capacity_loss(
+    domain_identities: set[str],
+    block_by_identity: dict[str, _AllocationBlock],
+    reasons: dict[str, set[str]],
+) -> None:
+    blocks = {block_by_identity[identity] for identity in domain_identities}
+    for block in blocks:
+        if any(component in reasons for component in block.component_tokens):
+            for component in block.component_tokens:
+                reasons[component].add("FIXED_QUOTA_CAPACITY_LOSS")
+
+
+def _quarantine_incomplete_protocol_blocks(
+    domain_identities: set[str],
+    individually_eligible: set[str],
+    block_by_identity: dict[str, _AllocationBlock],
+    reasons: dict[str, set[str]],
+) -> set[str]:
+    rejected: set[str] = set()
+    for block in {block_by_identity[identity] for identity in domain_identities}:
+        members = set(block.identity_tokens)
+        if not members.issubset(individually_eligible):
+            rejected.update(members)
+            for component in block.component_tokens:
+                reasons[component].add("PROTOCOL_EVIDENCE_CAPACITY_CONFLICT")
+    return rejected
+
+
+def _mark_allocation_failure(
+    identities: Iterable[str],
+    block_by_identity: dict[str, _AllocationBlock],
+    reasons: dict[str, set[str]],
+) -> None:
+    for block in {block_by_identity[identity] for identity in identities}:
+        for component in block.component_tokens:
+            reasons[component].add("INDIVISIBLE_COMPONENT_QUOTA_CONFLICT")
 
 
 def _build_protocol_uses(
@@ -1536,11 +2136,20 @@ def _ranked_image_uses(uses: defaultdict[str, list[dict[str, Any]]], samples: li
 def _mpdd_uses(uses: defaultdict[str, list[dict[str, Any]]], samples: list[PublicSplitSample], component_by_sample: dict[str, _Component], role: str, key: bytes, policy: ProtectedPublicSplitPolicy) -> None:
     gallery = [sample for sample in samples if sample.original_split == "gallery"]
     query = [sample for sample in samples if sample.original_split == "query"]
-    gallery_components = _unique_components(gallery, component_by_sample)
+    chosen_query = _rank_samples(query, key, b"MPDD_QUERY")[0] if query else None
+    query_component = (
+        component_by_sample[chosen_query.sample_token].token
+        if chosen_query is not None
+        else None
+    )
+    gallery_components = [
+        component
+        for component in _unique_components(gallery, component_by_sample)
+        if component.token != query_component
+    ]
     ranked = sorted(gallery_components, key=lambda item: (_hmac_digest(key, b"MPDD_GALLERY", item.token), item.token))
     reps = [_component_representative(item, key, b"MPDD_FRAME") for item in ranked]
-    if query:
-        chosen_query = _rank_samples(query, key, b"MPDD_QUERY")[0]
+    if chosen_query is not None:
         if role == "MPDD_EXTERNAL_UNKNOWN":
             for shot in policy.shot_counts:
                 _add_use(
@@ -1553,16 +2162,40 @@ def _mpdd_uses(uses: defaultdict[str, list[dict[str, Any]]], samples: list[Publi
                     chosen_query.identity_token,
                     gallery_size=policy.mpdd_external_gallery_size,
                 )
-        for shot in (1, 3, 5):
+        for shot in (*policy.shot_counts, *policy.diagnostic_shot_counts):
             if len(reps) < shot:
                 continue
             for rep in reps[:shot]:
                 _add_use(uses, rep.sample_token, "MPDD_CLOSED_SET", shot, "GALLERY", key, rep.identity_token)
-                if role == "MPDD_EXTERNAL_KNOWN":
+                if role == "MPDD_EXTERNAL_KNOWN" and shot in policy.shot_counts:
                     _add_use(uses, rep.sample_token, "MPDD_OPEN_SET", shot, "GALLERY", key, rep.identity_token, gallery_size=policy.mpdd_external_gallery_size)
             _add_use(uses, chosen_query.sample_token, "MPDD_CLOSED_SET", shot, "KNOWN_QUERY", key, chosen_query.identity_token)
-            if role == "MPDD_EXTERNAL_KNOWN":
+            if role == "MPDD_EXTERNAL_KNOWN" and shot in policy.shot_counts:
                 _add_use(uses, chosen_query.sample_token, "MPDD_OPEN_SET", shot, "KNOWN_QUERY", key, chosen_query.identity_token, gallery_size=policy.mpdd_external_gallery_size)
+
+
+def _mpdd_open_set_plan(
+    samples: list[PublicSplitSample],
+    component_by_sample: dict[str, _Component],
+    key: bytes,
+    policy: ProtectedPublicSplitPolicy,
+) -> tuple[tuple[_Component, ...], PublicSplitSample] | None:
+    query = [sample for sample in samples if sample.original_split == "query"]
+    if not query:
+        return None
+    chosen_query = _rank_samples(query, key, b"MPDD_QUERY")[0]
+    query_component = component_by_sample[chosen_query.sample_token].token
+    gallery_components = tuple(
+        component
+        for component in _unique_components(
+            [sample for sample in samples if sample.original_split == "gallery"],
+            component_by_sample,
+        )
+        if component.token != query_component
+    )
+    if len(gallery_components) < max(policy.shot_counts):
+        return None
+    return gallery_components, chosen_query
 
 
 def _sibetan_known_uses(uses: defaultdict[str, list[dict[str, Any]]], samples: list[PublicSplitSample], component_by_sample: dict[str, _Component], keys: dict[str, bytes], policy: ProtectedPublicSplitPolicy) -> None:
@@ -1589,16 +2222,38 @@ def _sibetan_known_uses(uses: defaultdict[str, list[dict[str, Any]]], samples: l
         ]
         for sequence, sequence_samples in by_sequence.items()
     }
-    if any(not sequence_samples for sequence_samples in by_sequence.values()):
+    by_sequence = {
+        sequence: sequence_samples
+        for sequence, sequence_samples in by_sequence.items()
+        if sequence_samples
+    }
+    if len(by_sequence) < 2:
         return
-    sequence_order = _rank_tokens(by_sequence, keys["sequence_roles"], b"SIBETAN_SEQUENCE")
-    gallery_sequence = sequence_order[0]
+    minimum_gallery_components = max(policy.shot_counts)
+    gallery_eligible_sequences = [
+        sequence
+        for sequence, sequence_samples in by_sequence.items()
+        if len(_unique_components(sequence_samples, component_by_sample))
+        >= minimum_gallery_components
+    ]
+    if not gallery_eligible_sequences:
+        return
+    gallery_sequence = _rank_tokens(
+        gallery_eligible_sequences,
+        keys["sequence_roles"],
+        b"SIBETAN_SEQUENCE",
+    )[0]
+    query_sequences = _rank_tokens(
+        (sequence for sequence in by_sequence if sequence != gallery_sequence),
+        keys["sequence_roles"],
+        b"SIBETAN_SEQUENCE",
+    )
     gallery_components = _unique_components(by_sequence[gallery_sequence], component_by_sample)
     gallery_components.sort(key=lambda item: (_hmac_digest(keys["frame_roles"], b"SIBETAN_GALLERY", item.token), item.token))
     reps = [_component_representative(item, keys["frame_roles"], b"SIBETAN_FRAME") for item in gallery_components]
     query_reps = [
         _rank_samples(by_sequence[sequence], keys["frame_roles"], b"SIBETAN_QUERY")[0]
-        for sequence in sequence_order[1:]
+        for sequence in query_sequences
     ]
     for shot in (1, 3, 5):
         if len(reps) < shot:
@@ -1758,8 +2413,13 @@ def _add_use(
 
 
 def _unique_components(samples: list[PublicSplitSample], component_by_sample: dict[str, _Component]) -> list[_Component]:
-    values = {component_by_sample[sample.sample_token].token: component_by_sample[sample.sample_token] for sample in samples}
-    return list(values.values())
+    grouped: dict[str, list[PublicSplitSample]] = defaultdict(list)
+    for sample in samples:
+        grouped[component_by_sample[sample.sample_token].token].append(sample)
+    return [
+        _Component(token, tuple(sorted(members, key=lambda item: item.sample_token)))
+        for token, members in grouped.items()
+    ]
 
 
 def _component_representative(component: _Component, key: bytes, domain: bytes) -> PublicSplitSample:
@@ -1800,15 +2460,29 @@ def _identity_matches(samples: list[PublicSplitSample], dataset: str, splits: se
     return bool(samples) and all(sample.dataset_name == dataset and sample.original_split in splits for sample in samples)
 
 
-def _official_stage(sample: PublicSplitSample) -> str | None:
-    if sample.dataset_name in {"yt-bb-dog", "dogfacenet224"}:
-        return sample.original_split
+def _official_lane(sample: PublicSplitSample) -> str:
+    if sample.dataset_name == "yt-bb-dog" and sample.original_split in {
+        "train",
+        "test",
+    }:
+        return f"YT_{sample.original_split.upper()}"
+    if sample.dataset_name == "dogfacenet224" and sample.original_split in {
+        "train",
+        "test",
+    }:
+        return f"DOGFACE_{sample.original_split.upper()}"
     if sample.dataset_name == "mpdd":
         if sample.original_split in {"train", "val"}:
-            return "train"
+            return "MPDD_TRAIN_DOMAIN"
         if sample.original_split in {"query", "gallery"}:
-            return "test"
-    return None
+            return "MPDD_EXTERNAL_TEST"
+    if sample.dataset_name == "sibetan" and sample.original_split is None:
+        return (
+            "SIBETAN_EXTERNAL_KNOWN"
+            if sample.in_no_mono_subset is True
+            else "SIBETAN_EXTERNAL_UNKNOWN"
+        )
+    raise ValueError("sample has no supported official dataset lane")
 
 
 def _model_access(dataset: str, role: str) -> str:

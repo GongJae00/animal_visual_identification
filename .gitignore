@@ -1,47 +1,68 @@
-# ── Python ──
+# Python
 __pycache__/
 *.py[cod]
 *.pyo
-*.egg-info/
 *.egg
-dist/
-build/
+*.egg-info/
 .eggs/
 *.so
 *.dylib
 
-# ── Virtual environment ──
+# Virtual environments
 .venv/
+.venv-*/
 venv/
 env/
 .virtualenvs/
 
-# ── Models & Weights (large binaries) ──
-models/
-models/backbones/*.pt
-models/backbones/*.pth
-models/backbones/*.bin
-models/backbones/*.safetensors
-models/onnx/*.onnx
-models/pretrained/*.pt
-models/pretrained/*.pth
-models/pretrained/*.onnx
-models/checkpoints/*.pt
-models/checkpoints/*.pth
-models/checkpoints/*.tar
-models/checkpoints/*.ckpt
+# Build, test, and coverage caches
+build/
+dist/
+site/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+.nox/
+.hypothesis/
+.cache/
+*.cache
+*.bak
 
-# ── Data ──
-data/
-datasets/
+# Model, checkpoint, and export artifacts
+*.pt
+*.pth
+*.ckpt
+*.bin
+*.safetensors
+*.onnx
+*.onnx.data
+*.tflite
+*.engine
+*.plan
+*.joblib
 checkpoints/
-data/raw/**
-data/processed/**
-data/registry/**
-!data/*/.gitkeep
-!data/**/.gitkeep
+exports/
+/models/*
 
-# ── Outputs & Logs ──
+# Data and indexes
+/data/*
+datasets/
+cvi_index/
+*.db
+*.db-*
+*.sqlite
+*.sqlite-*
+*.sqlite3
+*.sqlite3-*
+*.faiss
+*.index
+
+# Outputs and logs
 outputs/
 results/
 artifacts/
@@ -51,7 +72,14 @@ runs/
 wandb/
 mlruns/
 
-# ── IDE & Editor ──
+# Environment and secrets
+.env
+.env.*
+*.secret
+/.split-secret
+secrets/
+
+# Editors and operating systems
 .idea/
 .vscode/
 *.swp
@@ -60,32 +88,18 @@ mlruns/
 .DS_Store
 Thumbs.db
 
-# ── Environment & Secrets ──
-.env
-.env.*
-*.secret
-secrets/
-
-# ── Jupyter ──
+# Notebooks
 .ipynb_checkpoints/
 *.ipynb
 
-# ── Cache ──
-.cache/
-*.cache
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
-
-# ── Tool outputs ──
+# Tool and research workspaces
 /tmp/
 /node_modules/
+/audit/
+/workspace/
+/paper/
 
-# ── Research artifacts (not tracked in public repo) ──
-workspace/
-paper/
-
-# ── Docker ──
+# Docker
 docker-compose.override.yml
 
-# `uv.lock` is tracked to reproduce the validated dependency graph.
+# uv.lock is tracked to reproduce the validated dependency graph.

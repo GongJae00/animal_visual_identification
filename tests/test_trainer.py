@@ -1,12 +1,18 @@
 from __future__ import annotations
 
+import hashlib
 import tempfile
+import subprocess
+import sys
 import unittest
+from dataclasses import replace
 from pathlib import Path
+from unittest.mock import patch
 
 import torch
 
 from cvi.trainer import (
+    AdmittedCropDataset,
     ArcFaceHead,
     ArcFaceModel,
     ConvNeXtEmbedding,
@@ -14,14 +20,107 @@ from cvi.trainer import (
     IdentityBalancedSampler,
     TrainConfig,
     _build_label_index,
+    _checkpoint_payload,
+    compute_embeddings,
     _count_parameters,
+    _evaluate_development_retrieval,
+    evaluate_pretrained_development,
+    _prepare_training_images,
     _warmup_cosine_schedule,
+    train_model,
 )
+from cvi.train.augment import RandAugment
+from cvi.public_crop_manifest import (
+    PublicCropArtifact,
+    PublicCropManifest,
+    canonical_rgb_pixel_sha256,
+    verify_public_crop_manifest,
+)
+from cvi.training_admission import (
+    TrainingAdmissionManifest,
+    TrainingCropRow,
+    admit_training,
+)
+from cvi.role_exposure import (
+    ExposureDeclarationKind,
+    ExposureStage,
+    RoleExposureDeclaration,
+    RoleExposureDeclarationRecord,
+    create_role_exposure_receipt,
+    merge_role_exposure_declarations,
+)
+
+
+def _token(label: str) -> str:
+    return hashlib.sha256(label.encode("ascii")).hexdigest()
+
+
+def _crop_fixture(
+    root: Path,
+    *,
+    sample_label: str = "sample",
+    subject_label: str = "subject",
+) -> tuple[PublicCropManifest, tuple[TrainingCropRow, ...]]:
+    from PIL import Image
+
+    sample = _token(sample_label)
+    path = root / f"{sample}.png"
+    with Image.new("RGB", (8, 8), color=(100, 120, 140)) as image:
+        image.save(path, format="PNG")
+        pixel_sha256 = canonical_rgb_pixel_sha256(
+            8, 8, image.tobytes("raw", "RGB")
+        )
+    payload = path.read_bytes()
+    artifact = PublicCropArtifact(
+        sample_token=sample,
+        public_subject_token=_token(subject_label),
+        component_token=_token(f"{sample_label}-component"),
+        source_variant="original",
+        relative_path=path.name,
+        content_sha256=hashlib.sha256(payload).hexdigest(),
+        byte_size=len(payload),
+        pixel_sha256=pixel_sha256,
+        width=8,
+        height=8,
+        mode="RGB",
+        format="PNG",
+    )
+    row = TrainingCropRow(
+        sample_token=artifact.sample_token,
+        identity_token=_token(f"{subject_label}-identity"),
+        public_subject_token=artifact.public_subject_token,
+        component_token=artifact.component_token,
+        lane="MODEL_TRAINING",
+        role="YT_FIT",
+        crop_relative_path=artifact.relative_path,
+        crop_artifact_sha256=artifact.artifact_sha256,
+    )
+    return PublicCropManifest((artifact,)), (row,)
+
+
+def _exposure(rows: tuple[TrainingCropRow, ...]):
+    declaration = RoleExposureDeclaration(
+        source_artifact_sha256=_token("training-test-exposure"),
+        kind=ExposureDeclarationKind.PRIOR_ASSIGNMENT,
+        revoked=False,
+        records=tuple(
+            RoleExposureDeclarationRecord(
+                sample_token=row.sample_token,
+                identity_token=row.identity_token,
+                public_subject_token=row.public_subject_token,
+                stage=ExposureStage.BYTES_EXPORTED,
+            )
+            for row in rows
+        ),
+    )
+    ledger = merge_role_exposure_declarations((declaration,))
+    return ledger, create_role_exposure_receipt(ledger)
 
 
 class TrainConfigTests(unittest.TestCase):
     def test_defaults(self) -> None:
         c = TrainConfig()
+        self.assertEqual(c.model_name, "dinov2-small")
         self.assertEqual(c.embedding_dim, 384)
         self.assertEqual(c.arcface_margin, 0.50)
         self.assertIsInstance(c.to_dict(), dict)
@@ -37,24 +136,28 @@ class TrainConfigTests(unittest.TestCase):
 
 class LabelIndexTests(unittest.TestCase):
     def test_build_label_index(self) -> None:
-        bindings = [
-            {"registered_dog_id": "uuid-a", "identity_token": "a"},
-            {"registered_dog_id": "uuid-b", "identity_token": "b"},
-            {"registered_dog_id": "uuid-a", "identity_token": "c"},
-        ]
-        index = _build_label_index(bindings)
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            _, first = _crop_fixture(root, sample_label="a", subject_label="subject-a")
+            _, second = _crop_fixture(root, sample_label="b", subject_label="subject-b")
+            _, third = _crop_fixture(root, sample_label="c", subject_label="subject-a")
+        index = _build_label_index(first + second + third)
         self.assertEqual(len(index), 2)
-        self.assertEqual(index["uuid-a"], 0)
-        self.assertEqual(index["uuid-b"], 1)
+        self.assertEqual(set(index), {_token("subject-a"), _token("subject-b")})
 
     def test_sorted_order(self) -> None:
-        bindings = [
-            {"registered_dog_id": "z-id", "identity_token": "z"},
-            {"registered_dog_id": "a-id", "identity_token": "a"},
-        ]
-        index = _build_label_index(bindings)
-        self.assertEqual(index["a-id"], 0)
-        self.assertEqual(index["z-id"], 1)
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            _, first = _crop_fixture(
+                root, sample_label="z", subject_label="z-subject"
+            )
+            _, second = _crop_fixture(
+                root, sample_label="a", subject_label="a-subject"
+            )
+        index = _build_label_index(first + second)
+        labels = sorted((_token("z-subject"), _token("a-subject")))
+        self.assertEqual(index[labels[0]], 0)
+        self.assertEqual(index[labels[1]], 1)
 
 
 class WarmupCosineScheduleTests(unittest.TestCase):
@@ -86,9 +189,13 @@ class IdentityBalancedSamplerTests(unittest.TestCase):
         )
         batches = list(sampler)
         self.assertTrue(len(batches) > 0)
+        flattened = [index for batch in batches for index in batch]
+        self.assertEqual(sorted(flattened), list(range(len(labels))))
+        self.assertEqual(len(batches), len(sampler))
         for batch in batches:
             self.assertLessEqual(len(batch), 3)
             self.assertTrue(all(isinstance(i, int) for i in batch))
+            self.assertEqual(len({labels[i] for i in batch}), len(batch))
 
     def test_identity_coverage_on_small_data(self) -> None:
         labels = [0, 1]
@@ -98,6 +205,380 @@ class IdentityBalancedSamplerTests(unittest.TestCase):
         for batch in batches:
             all_indices.update(batch)
         self.assertEqual(all_indices, {0, 1})
+
+    def test_skewed_identity_batches_remain_unique(self) -> None:
+        labels = [0, 0, 0, 0, 0, 1, 2]
+        sampler = IdentityBalancedSampler(
+            labels,
+            batch_size=3,
+            generator=torch.Generator().manual_seed(7),
+        )
+        batches = list(sampler)
+        self.assertEqual(len(batches), len(sampler))
+        self.assertEqual(
+            sorted(index for batch in batches for index in batch),
+            list(range(len(labels))),
+        )
+        for batch in batches:
+            self.assertEqual(len({labels[i] for i in batch}), len(batch))
+
+    def test_seeded_sampler_is_reproducible(self) -> None:
+        labels = [0, 0, 1, 1, 2, 2]
+        first = list(IdentityBalancedSampler(
+            labels, 2, torch.Generator().manual_seed(42)
+        ))
+        second = list(IdentityBalancedSampler(
+            labels, 2, torch.Generator().manual_seed(42)
+        ))
+        self.assertEqual(first, second)
+
+    def test_adversarial_imbalance_length_is_exact(self) -> None:
+        labels = [0] * 7 + [1] * 2 + [2] * 2 + [3]
+        sampler = IdentityBalancedSampler(
+            labels, 3, torch.Generator().manual_seed(1)
+        )
+        batches = list(sampler)
+        self.assertEqual(len(batches), len(sampler))
+        self.assertEqual(len(batches), 7)
+        for batch in batches:
+            self.assertLessEqual(len(batch), 3)
+            self.assertEqual(len({labels[i] for i in batch}), len(batch))
+
+
+class AdmittedCropDatasetTests(unittest.TestCase):
+    def test_uncached_preprocessing_matches_cached_uint8_contract(self) -> None:
+        import numpy as np
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            manifest, rows = _crop_fixture(root)
+            dataset = AdmittedCropDataset(
+                root,
+                rows,
+                manifest,
+                {rows[0].public_subject_token: 0},
+                use_cache=False,
+            )
+            tensor, label = dataset[0]
+            self.assertEqual(tensor.dtype, torch.uint8)
+            self.assertEqual(label, 0)
+            self.assertTrue(np.isfinite(tensor.numpy()).all())
+
+    def test_nested_duplicate_is_not_discovered(self) -> None:
+        from PIL import Image
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            manifest, rows = _crop_fixture(root)
+            nested = root / "nested"
+            nested.mkdir()
+            Image.new("RGB", (8, 8), color=(1, 2, 3)).save(
+                nested / rows[0].crop_relative_path
+            )
+            dataset = AdmittedCropDataset(
+                root,
+                rows,
+                manifest,
+                {rows[0].public_subject_token: 0},
+                use_cache=False,
+            )
+            self.assertEqual(len(dataset), 1)
+
+    def test_uncached_reads_reverify_bytes_but_cache_retains_verified_bytes(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            manifest, rows = _crop_fixture(root)
+            labels = {rows[0].public_subject_token: 0}
+            uncached = AdmittedCropDataset(
+                root, rows, manifest, labels, use_cache=False
+            )
+            cached = AdmittedCropDataset(root, rows, manifest, labels, use_cache=True)
+            path = root / rows[0].crop_relative_path
+            path.write_bytes(path.read_bytes() + b"tampered")
+            with self.assertRaisesRegex(ValueError, "byte size mismatch"):
+                uncached[0]
+            tensor, label = cached[0]
+            self.assertEqual(tensor.dtype, torch.uint8)
+            self.assertEqual(label, 0)
+
+    def test_uncached_training_images_are_augmented(self) -> None:
+        calls = 0
+
+        def augment(image: torch.Tensor) -> torch.Tensor:
+            nonlocal calls
+            calls += 1
+            return image
+
+        images = torch.full((2, 3, 4, 4), 128, dtype=torch.uint8)
+        mean = torch.zeros((1, 3, 1, 1))
+        std = torch.ones((1, 3, 1, 1))
+        prepared = _prepare_training_images(images, augment, mean, std)  # type: ignore[arg-type]
+        self.assertEqual(calls, 2)
+        self.assertEqual(prepared.dtype, torch.float32)
+
+
+class AdmittedTrainingBoundaryTests(unittest.TestCase):
+    def test_crop_tampering_fails_before_model_artifact_or_backbone_access(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            train_manifest, train_rows = _crop_fixture(
+                root, sample_label="train", subject_label="train-subject"
+            )
+            development_manifest, development_rows = _crop_fixture(
+                root,
+                sample_label="development",
+                subject_label="development-subject",
+            )
+            development_row = replace(
+                development_rows[0],
+                lane="MODEL_SELECTION",
+                role="YT_DEVELOPMENT",
+            )
+            crop_manifest = PublicCropManifest(tuple(sorted(
+                train_manifest.artifacts + development_manifest.artifacts,
+                key=lambda artifact: artifact.sample_token,
+            )))
+            rows = tuple(sorted(
+                train_rows + (development_row,), key=lambda row: row.sample_token
+            ))
+            crop_receipt_sha256 = verify_public_crop_manifest(
+                root, crop_manifest
+            ).receipt_sha256
+            exposure_ledger, exposure_receipt = _exposure(rows)
+            admission = TrainingAdmissionManifest(
+                split_receipt_sha256=_token("split-receipt"),
+                crop_manifest_sha256=crop_manifest.manifest_sha256,
+                crop_receipt_sha256=crop_receipt_sha256,
+                exposure_receipt_sha256=exposure_receipt.receipt_sha256,
+                model_receipt_sha256=_token("model-receipt"),
+                rows=rows,
+            )
+            receipt = admit_training(
+                admission,
+                crop_manifest,
+                crop_root=root,
+                exposure_ledger=exposure_ledger,
+                exposure_receipt=exposure_receipt,
+                expected_sample_tokens=tuple(row.sample_token for row in rows),
+                expected_split_receipt_sha256=admission.split_receipt_sha256,
+                expected_crop_receipt_sha256=admission.crop_receipt_sha256,
+                expected_exposure_receipt_sha256=admission.exposure_receipt_sha256,
+                expected_model_receipt_sha256=admission.model_receipt_sha256,
+            )
+            crop_path = root / rows[0].crop_relative_path
+            crop_path.write_bytes(crop_path.read_bytes() + b"tampered")
+            model_accessed = False
+
+            def verify_model() -> None:
+                nonlocal model_accessed
+                model_accessed = True
+
+            output = root / "output"
+            config = TrainConfig(
+                checkpoint_dir=str(output / "checkpoints"), preload_images=False
+            )
+            with self.assertRaisesRegex(ValueError, "byte size mismatch"):
+                train_model(
+                    config,
+                    root,
+                    admission,
+                    crop_manifest,
+                    receipt,
+                    exposure_ledger=exposure_ledger,
+                    exposure_receipt=exposure_receipt,
+                    output_directory=output,
+                    expected_admission_manifest_sha256=admission.manifest_sha256,
+                    expected_admission_receipt_sha256=receipt.receipt_sha256,
+                    expected_split_receipt_sha256=admission.split_receipt_sha256,
+                    expected_crop_receipt_sha256=admission.crop_receipt_sha256,
+                    expected_exposure_receipt_sha256=(
+                        admission.exposure_receipt_sha256
+                    ),
+                    expected_model_receipt_sha256=admission.model_receipt_sha256,
+                    model_artifact_verifier=verify_model,
+                )
+            self.assertFalse(model_accessed)
+            self.assertFalse(output.exists())
+
+    def test_pretrained_evaluation_rejects_tampering_before_model_access(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            train_manifest, train_rows = _crop_fixture(
+                root, sample_label="train", subject_label="train-subject"
+            )
+            development_manifest, development_rows = _crop_fixture(
+                root,
+                sample_label="development",
+                subject_label="development-subject",
+            )
+            development_row = replace(
+                development_rows[0],
+                lane="MODEL_SELECTION",
+                role="YT_DEVELOPMENT",
+            )
+            crop_manifest = PublicCropManifest(tuple(sorted(
+                train_manifest.artifacts + development_manifest.artifacts,
+                key=lambda artifact: artifact.sample_token,
+            )))
+            rows = tuple(sorted(
+                train_rows + (development_row,), key=lambda row: row.sample_token
+            ))
+            crop_receipt_sha256 = verify_public_crop_manifest(
+                root, crop_manifest
+            ).receipt_sha256
+            exposure_ledger, exposure_receipt = _exposure(rows)
+            admission = TrainingAdmissionManifest(
+                split_receipt_sha256=_token("split-receipt"),
+                crop_manifest_sha256=crop_manifest.manifest_sha256,
+                crop_receipt_sha256=crop_receipt_sha256,
+                exposure_receipt_sha256=exposure_receipt.receipt_sha256,
+                model_receipt_sha256=_token("model-receipt"),
+                rows=rows,
+            )
+            receipt = admit_training(
+                admission,
+                crop_manifest,
+                crop_root=root,
+                exposure_ledger=exposure_ledger,
+                exposure_receipt=exposure_receipt,
+                expected_sample_tokens=tuple(row.sample_token for row in rows),
+                expected_split_receipt_sha256=admission.split_receipt_sha256,
+                expected_crop_receipt_sha256=admission.crop_receipt_sha256,
+                expected_exposure_receipt_sha256=admission.exposure_receipt_sha256,
+                expected_model_receipt_sha256=admission.model_receipt_sha256,
+            )
+            (root / rows[0].crop_relative_path).write_bytes(b"tampered")
+            model_accessed = False
+
+            def verify_model() -> None:
+                nonlocal model_accessed
+                model_accessed = True
+
+            with self.assertRaisesRegex(ValueError, "byte size mismatch"):
+                evaluate_pretrained_development(
+                    TrainConfig(preload_images=False),
+                    root,
+                    admission,
+                    crop_manifest,
+                    receipt,
+                    exposure_ledger=exposure_ledger,
+                    exposure_receipt=exposure_receipt,
+                    expected_admission_manifest_sha256=admission.manifest_sha256,
+                    expected_admission_receipt_sha256=receipt.receipt_sha256,
+                    expected_split_receipt_sha256=admission.split_receipt_sha256,
+                    expected_crop_receipt_sha256=admission.crop_receipt_sha256,
+                    expected_exposure_receipt_sha256=admission.exposure_receipt_sha256,
+                    expected_model_receipt_sha256=admission.model_receipt_sha256,
+                    model_artifact_verifier=verify_model,
+                )
+            self.assertFalse(model_accessed)
+
+
+class AugmentationContractTests(unittest.TestCase):
+    def test_each_randaugment_operation_is_clamped_to_image_range(self) -> None:
+        augment = RandAugment(n=2, m=9)
+        operations = [augment._adjust_brightness, augment._solarize]
+        with patch(
+            "cvi.train.augment.random.choice", side_effect=operations
+        ), patch("cvi.train.augment.random.uniform", return_value=0.5):
+            result = augment(torch.ones((3, 4, 4)))
+        self.assertGreaterEqual(float(result.min()), 0.0)
+        self.assertLessEqual(float(result.max()), 1.0)
+
+
+class MultiHeadTrainingContractTests(unittest.TestCase):
+    def test_unauthenticated_training_crop_extractor_is_fail_closed(self) -> None:
+        completed = subprocess.run(
+            [
+                sys.executable,
+                "tools/extract_training_oracle_crops.py",
+                "--secure-root", "secure",
+                "--output-dir", "output",
+            ],
+            cwd=Path(__file__).resolve().parents[1],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        self.assertNotEqual(completed.returncode, 0)
+        self.assertIn("Training crop extraction is disabled", completed.stderr)
+        self.assertNotIn("Traceback", completed.stderr)
+
+    def test_embedding_trainer_requires_immutable_admission_inputs(self) -> None:
+        completed = subprocess.run(
+            [
+                sys.executable,
+                "tools/train_embedding_model.py",
+                "--crop-root", "crops",
+                "--output-dir", "output",
+            ],
+            cwd=Path(__file__).resolve().parents[1],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        self.assertNotEqual(completed.returncode, 0)
+        self.assertIn("--admission-manifest", completed.stderr)
+        self.assertIn("--model-artifact", completed.stderr)
+        self.assertNotIn("Traceback", completed.stderr)
+
+    def test_embedding_trainer_refuses_existing_output_before_input_reads(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "existing"
+            output.mkdir()
+            command = [sys.executable, "tools/train_embedding_model.py"]
+            for argument in (
+                "admission-manifest",
+                "admission-receipt",
+                "crop-manifest",
+                "crop-root",
+                "exposure-ledger",
+                "exposure-receipt",
+                "model-artifact",
+                "model-receipt",
+            ):
+                command.extend((f"--{argument}", "missing"))
+            command.extend(("--output-dir", str(output)))
+            for argument in (
+                "admission-manifest",
+                "admission-receipt",
+                "crop-manifest",
+                "split-receipt",
+                "crop-receipt",
+                "exposure-receipt",
+                "model-receipt",
+            ):
+                command.extend((f"--expected-{argument}-sha256", "0" * 64))
+            completed = subprocess.run(
+                command,
+                cwd=Path(__file__).resolve().parents[1],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+        self.assertNotEqual(completed.returncode, 0)
+        self.assertIn("--output-dir must not exist", completed.stderr)
+        self.assertNotIn("Traceback", completed.stderr)
+
+    def test_unvalidated_multi_head_trainer_is_fail_closed(self) -> None:
+        completed = subprocess.run(
+            [
+                sys.executable,
+                "tools/train_multi_head_model.py",
+                "--assignment", "assignment.json",
+                "--split-receipt", "receipt.json",
+                "--registry-db", "registry.db",
+                "--crop-root", "crops",
+                "--output-dir", "output",
+            ],
+            cwd=Path(__file__).resolve().parents[1],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        self.assertNotEqual(completed.returncode, 0)
+        self.assertIn("Multi-head training is disabled", completed.stderr)
+        self.assertNotIn("Traceback", completed.stderr)
 
 
 class CountParametersTests(unittest.TestCase):
@@ -199,6 +680,142 @@ class _DummyBackbone(torch.nn.Module):
         return torch.nn.functional.normalize(self._linear(flat), p=2, dim=1)
 
 
+class _VectorBackbone(torch.nn.Module):
+    def __init__(self, embedding_dim: int = 2,
+                 use_gradient_checkpointing: bool = False) -> None:
+        super().__init__()
+        self._anchor = torch.nn.Parameter(torch.zeros(1))
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return torch.nn.functional.normalize(x[:, :2], p=2, dim=1)
+
+
+class _RecordingImageBackbone(torch.nn.Module):
+    last_input: torch.Tensor | None = None
+
+    def __init__(self, embedding_dim: int = 2,
+                 use_gradient_checkpointing: bool = False) -> None:
+        super().__init__()
+        self._anchor = torch.nn.Parameter(torch.zeros(1))
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        type(self).last_input = x.detach().cpu()
+        values = x.mean(dim=(2, 3))[:, :2]
+        return torch.nn.functional.normalize(values, p=2, dim=1)
+
+
+class TrainingArtifactTests(unittest.TestCase):
+    def test_compute_embeddings_normalizes_uint8_dataset_images(self) -> None:
+        from torch.utils.data import DataLoader, TensorDataset
+
+        model = ArcFaceModel(
+            TrainConfig(embedding_dim=2, num_classes=2),
+            backbone_factory=_RecordingImageBackbone,
+        )
+        images = torch.full((2, 3, 4, 4), 255, dtype=torch.uint8)
+        labels = torch.tensor([0, 1])
+        embeddings, observed_labels = compute_embeddings(
+            model,
+            DataLoader(TensorDataset(images, labels), batch_size=2),
+            torch.device("cpu"),
+        )
+        self.assertEqual(embeddings.shape, (2, 2))
+        self.assertEqual(observed_labels.tolist(), [0, 1])
+        self.assertEqual(_RecordingImageBackbone.last_input.dtype, torch.float32)
+        self.assertAlmostEqual(
+            float(_RecordingImageBackbone.last_input[0, 0, 0, 0]),
+            (1.0 - 0.485) / 0.229,
+            places=5,
+        )
+
+    def test_checkpoint_is_reconstructable_with_weights_only_load(self) -> None:
+        cfg = TrainConfig(
+            model_name="test-vector",
+            embedding_dim=2,
+            num_classes=2,
+            epochs=1,
+        )
+        model = ArcFaceModel(cfg, backbone_factory=_VectorBackbone)
+        optimizer = torch.optim.AdamW(model.parameters())
+        payload = _checkpoint_payload(
+            model=model,
+            optimizer=optimizer,
+            scaler=None,
+            config=cfg,
+            label_to_index={"dog-a": 0, "dog-b": 1},
+            epoch=1,
+            global_step=3,
+            selection_metric={"rank1": 1.0},
+        )
+        with tempfile.NamedTemporaryFile(suffix=".pt") as file:
+            torch.save(payload, file.name)
+            loaded = torch.load(file.name, weights_only=True)
+        self.assertEqual(loaded["schema_version"], "cvi.training_checkpoint.v1")
+        self.assertEqual(loaded["architecture"]["model_name"], "test-vector")
+        self.assertEqual(loaded["label_to_index"], {"dog-a": 0, "dog-b": 1})
+
+    def test_default_checkpoint_reconstructs_with_matching_backbone(self) -> None:
+        from tools import export_onnx
+
+        cfg = TrainConfig(num_classes=2)
+        model = ArcFaceModel(cfg, backbone_factory=_VectorBackbone)
+        optimizer = torch.optim.AdamW(model.parameters())
+        payload = _checkpoint_payload(
+            model=model,
+            optimizer=optimizer,
+            scaler=None,
+            config=cfg,
+            label_to_index={"dog-a": 0, "dog-b": 1},
+            epoch=1,
+            global_step=1,
+            selection_metric={"rank1": 1.0},
+        )
+        with patch.dict(
+            export_onnx._BACKBONES, {"dinov2-small": _VectorBackbone}
+        ):
+            reconstructed = export_onnx.reconstruct_model(payload)
+        self.assertEqual(
+            set(reconstructed.state_dict()), set(model.state_dict())
+        )
+
+    def test_development_retrieval_uses_unseen_identity_labels(self) -> None:
+        from torch.utils.data import DataLoader, TensorDataset
+
+        cfg = TrainConfig(embedding_dim=2, num_classes=2, epochs=1)
+        model = ArcFaceModel(cfg, backbone_factory=_VectorBackbone)
+        vectors = torch.tensor([
+            [1.0, 0.0],
+            [0.99, 0.01],
+            [0.0, 1.0],
+            [0.01, 0.99],
+        ])
+        labels = torch.tensor([10, 10, 11, 11])
+        metrics = _evaluate_development_retrieval(
+            model,
+            DataLoader(TensorDataset(vectors, labels), batch_size=2),
+            torch.device("cpu"),
+            None,
+            None,
+        )
+        self.assertEqual(metrics["rank1"], 1.0)
+        self.assertEqual(metrics["map"], 1.0)
+        self.assertEqual(metrics["identities"], 2.0)
+
+    def test_development_retrieval_rejects_singletons(self) -> None:
+        from torch.utils.data import DataLoader, TensorDataset
+
+        cfg = TrainConfig(embedding_dim=2, num_classes=2, epochs=1)
+        model = ArcFaceModel(cfg, backbone_factory=_VectorBackbone)
+        loader = DataLoader(TensorDataset(
+            torch.tensor([[1.0, 0.0], [0.0, 1.0]]),
+            torch.tensor([10, 11]),
+        ))
+        with self.assertRaisesRegex(RuntimeError, "two samples"):
+            _evaluate_development_retrieval(
+                model, loader, torch.device("cpu"), None, None
+            )
+
+
 class ArcFaceModelTests(unittest.TestCase):
     def test_forward_training(self) -> None:
         cfg = TrainConfig(embedding_dim=64, num_classes=5)
@@ -237,6 +854,10 @@ class ArcFaceModelTests(unittest.TestCase):
         self.assertEqual(embeddings.shape, (4, 64))
 
     def test_export_to_onnx(self) -> None:
+        import numpy as np
+        import onnx
+        import onnxruntime as ort
+
         import tempfile
         cfg = TrainConfig(embedding_dim=64, num_classes=5)
         model = ArcFaceModel(cfg, backbone_factory=_DummyBackbone)
@@ -244,6 +865,43 @@ class ArcFaceModelTests(unittest.TestCase):
             path = Path(f.name)
             model.export_to_onnx(path)
             self.assertTrue(path.exists())
+            exported = onnx.load(path, load_external_data=False)
+            self.assertEqual(exported.graph.input[0].name, "images")
+            self.assertEqual(exported.graph.output[0].name, "embedding")
+            self.assertEqual(
+                exported.graph.input[0].type.tensor_type.shape.dim[0].dim_param,
+                "batch",
+            )
+            self.assertEqual(
+                exported.graph.output[0].type.tensor_type.shape.dim[0].dim_param,
+                "batch",
+            )
+            self.assertEqual(
+                {opset.domain: opset.version for opset in exported.opset_import}[""],
+                18,
+            )
+            self.assertTrue(all(
+                initializer.data_location != onnx.TensorProto.EXTERNAL
+                and not initializer.external_data
+                for initializer in exported.graph.initializer
+            ))
+
+            session = ort.InferenceSession(
+                str(path), providers=["CPUExecutionProvider"]
+            )
+            self.assertEqual(session.get_inputs()[0].shape, ["batch", 3, 224, 224])
+            self.assertEqual(session.get_outputs()[0].shape, ["batch", 64])
+            for batch_size in (1, 3):
+                embedding = session.run(
+                    ["embedding"],
+                    {
+                        "images": np.random.default_rng(batch_size).standard_normal(
+                            (batch_size, 3, 224, 224), dtype=np.float32
+                        )
+                    },
+                )[0]
+                self.assertEqual(embedding.shape, (batch_size, 64))
+                self.assertTrue(np.isfinite(embedding).all())
 
     def test_dinov2_compat_subclass(self) -> None:
         from cvi.trainer import Dinov2ArcFaceModel
@@ -269,22 +927,78 @@ class ConvNeXtOnnxExportTests(unittest.TestCase):
     def test_export_and_reload(self) -> None:
         import tempfile
         import numpy as np
+        import onnx
+        import onnxruntime as ort
+
         model = ConvNeXtEmbedding(embedding_dim=768)
-        dummy = torch.randn(1, 3, 224, 224)
-        with torch.no_grad():
-            emb_before = model(dummy).numpy()
+        dummy = torch.randn(3, 3, 224, 224)
         with tempfile.NamedTemporaryFile(suffix=".onnx") as f:
             path = Path(f.name)
             model.eval()
+            batch = torch.export.Dim("batch")
             torch.onnx.export(
-                model, dummy, str(path),
+                model, (dummy,), str(path),
                 input_names=["images"], output_names=["embedding"],
-                dynamic_axes={"images": {0: "batch"}, "embedding": {0: "batch"}},
+                dynamo=True,
+                dynamic_shapes=({0: batch},),
                 opset_version=18,
+                external_data=False,
             )
+            exported = onnx.load(path, load_external_data=False)
+            self.assertEqual(exported.graph.input[0].name, "images")
+            self.assertEqual(exported.graph.output[0].name, "embedding")
+            self.assertEqual(
+                exported.graph.input[0].type.tensor_type.shape.dim[0].dim_param,
+                "batch",
+            )
+            self.assertEqual(
+                exported.graph.output[0].type.tensor_type.shape.dim[0].dim_param,
+                "batch",
+            )
+            self.assertEqual(
+                {opset.domain: opset.version for opset in exported.opset_import}[""],
+                18,
+            )
+            self.assertTrue(all(
+                initializer.data_location != onnx.TensorProto.EXTERNAL
+                and not initializer.external_data
+                for initializer in exported.graph.initializer
+            ))
+
+            session = ort.InferenceSession(
+                str(path), providers=["CPUExecutionProvider"]
+            )
+            self.assertEqual(session.get_inputs()[0].shape, ["batch", 3, 224, 224])
+            self.assertEqual(session.get_outputs()[0].shape, ["batch", 768])
+            for batch_size in (1, 3):
+                images = torch.randn(batch_size, 3, 224, 224).numpy()
+                embedding = session.run(["embedding"], {"images": images})[0]
+                self.assertEqual(embedding.shape, (batch_size, 768))
+                self.assertTrue(np.isfinite(embedding).all())
+
             from cvi.evidence_extractor import OnnxExtractor
-            ext = OnnxExtractor(path, input_size=224, output_dim=768,
-                                provider="CPUExecutionProvider")
+            from cvi.evidence.model_contract import (
+                OnnxEvidenceModelManifest,
+                OnnxPreprocessingContract,
+            )
+            manifest = OnnxEvidenceModelManifest(
+                model_id="convnext-export-test",
+                model_sha256=hashlib.sha256(path.read_bytes()).hexdigest(),
+                input_name="images",
+                input_shape=("batch", 3, 224, 224),
+                output_name="embedding",
+                output_dim=768,
+                preprocessing=OnnxPreprocessingContract(
+                    color_mode="RGB",
+                    layout="NCHW",
+                    dtype="float32",
+                    resize="bilinear",
+                    scale=1.0 / 255.0,
+                    mean=(0.485, 0.456, 0.406),
+                    std=(0.229, 0.224, 0.225),
+                ),
+            )
+            ext = OnnxExtractor(path, manifest)
             from PIL import Image
             img = Image.fromarray(
                 (dummy[0].permute(1, 2, 0).numpy() * 255).astype(np.uint8)

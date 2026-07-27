@@ -82,6 +82,7 @@ class EvaluateMultichannelCliTest(unittest.TestCase):
             "--queries", str(qry),
             "--output", str(out),
             "--open-set",
+            "--self-match-policy", "include",
         )
         self.assertEqual(result.returncode, 0)
         report = json.loads(out.read_text())
@@ -140,10 +141,64 @@ class EvaluateMultichannelCliTest(unittest.TestCase):
         combined = result.stdout + result.stderr
         self.assertIn("sample_ids", combined)
 
+    def test_retrieval_requires_explicit_self_match_policy(self):
+        out = self._path("report.json")
+        gal = self._path("gal.json")
+        qry = self._path("qry.json")
+        _write_json(gal, {"embeddings": [[1, 0]], "identities": [0]})
+        _write_json(qry, {"embeddings": [[1, 0]], "identities": [0]})
+        result = _run(
+            "retrieval",
+            "--gallery", str(gal),
+            "--queries", str(qry),
+            "--output", str(out),
+            check=False,
+        )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("self-match-policy", result.stderr)
+
+    def test_closed_set_retrieval_aggregates_templates_by_identity(self):
+        out = self._path("report.json")
+        gal = self._path("gal.json")
+        qry = self._path("qry.json")
+        _write_json(
+            gal,
+            {
+                "embeddings": [[1, 0], [0.8, 0.2], [0, 1], [0.2, 0.8]],
+                "identities": ["a", "a", "b", "b"],
+                "template_ids": ["a1", "a2", "b1", "b2"],
+            },
+        )
+        _write_json(
+            qry,
+            {
+                "embeddings": [[1, 0], [0, 1]],
+                "identities": ["a", "b"],
+                "template_ids": ["qa", "qb"],
+            },
+        )
+        _run(
+            "retrieval",
+            "--gallery", str(gal),
+            "--queries", str(qry),
+            "--output", str(out),
+            "--self-match-policy", "include",
+        )
+        report = json.loads(out.read_text())
+        self.assertEqual(report["evaluation_variant"], "multi_template_closed_set")
+        self.assertEqual(report["ranking_unit"], "gallery_identity")
+        self.assertEqual(report["aggregation"], "max")
+        self.assertEqual(report["num_gallery_templates"], 4)
+        self.assertEqual(report["num_gallery_identities"], 2)
+        self.assertEqual(report["identity_clustered_bootstrap"]["state"], "AVAILABLE")
+        self.assertFalse(report["valid_for_model_selection"])
+        self.assertFalse(report["valid_for_final_reporting"])
+
     # ---- Positive open-set ----
     def test_open_set_happy_path(self):
         out = self._path("report.json")
         gal = self._path("gal.json")
+        cal_g = self._path("cal_g.json")
         cal_q = self._path("cal_q.json")
         test_q = self._path("test_q.json")
         np.random.seed(42)
@@ -155,10 +210,17 @@ class EvaluateMultichannelCliTest(unittest.TestCase):
             },
         )
         _write_json(
+            cal_g,
+            {
+                "embeddings": np.random.randn(4, 8).tolist(),
+                "identities": [10, 11, 12, 13],
+            },
+        )
+        _write_json(
             cal_q,
             {
                 "embeddings": np.random.randn(4, 8).tolist(),
-                "identities": [0, 1, 2, 99],
+                "identities": [10, 11, 12, 199],
             },
         )
         _write_json(
@@ -171,6 +233,7 @@ class EvaluateMultichannelCliTest(unittest.TestCase):
         result = _run(
             "open-set",
             "--gallery", str(gal),
+            "--calibration-gallery", str(cal_g),
             "--calibration-queries", str(cal_q),
             "--test-queries", str(test_q),
             "--output", str(out),
@@ -184,6 +247,7 @@ class EvaluateMultichannelCliTest(unittest.TestCase):
     def test_open_set_no_unknowns_raises(self):
         out = self._path("report.json")
         gal = self._path("gal.json")
+        cal_g = self._path("cal_g.json")
         cal_q = self._path("cal_q.json")
         test_q = self._path("test_q.json")
         np.random.seed(7)
@@ -195,10 +259,17 @@ class EvaluateMultichannelCliTest(unittest.TestCase):
             },
         )
         _write_json(
+            cal_g,
+            {
+                "embeddings": np.random.randn(2, 8).tolist(),
+                "identities": [10, 11],
+            },
+        )
+        _write_json(
             cal_q,
             {
                 "embeddings": np.random.randn(2, 8).tolist(),
-                "identities": [0, 1],
+                "identities": [10, 11],
             },
         )
         _write_json(
@@ -212,13 +283,14 @@ class EvaluateMultichannelCliTest(unittest.TestCase):
         result = _run(
             "open-set",
             "--gallery", str(gal),
+            "--calibration-gallery", str(cal_g),
             "--calibration-queries", str(cal_q),
             "--test-queries", str(test_q),
-            "--fpir-targets", str(self._path("fpt.json")),
             "--output", str(out),
             check=False,
         )
         self.assertNotEqual(result.returncode, 0)
+        self.assertIn("unknown", result.stdout + result.stderr)
 
     # ---- Provenance checks via retrieval ----
     def test_provenance_has_git_info(self):
@@ -232,6 +304,7 @@ class EvaluateMultichannelCliTest(unittest.TestCase):
             "--gallery", str(gal),
             "--queries", str(qry),
             "--output", str(out),
+            "--self-match-policy", "include",
         )
         report = json.loads(out.read_text())
         prov = report["provenance"]
@@ -252,6 +325,7 @@ class EvaluateMultichannelCliTest(unittest.TestCase):
             "--gallery", str(gal),
             "--queries", str(qry),
             "--output", str(out),
+            "--self-match-policy", "include",
         )
         report = json.loads(out.read_text())
         self.assertIn("schema_version", report["provenance"])
@@ -274,7 +348,7 @@ class EvaluateMultichannelCliTest(unittest.TestCase):
             qry,
             {
                 "embeddings": np.random.randn(5, 4).tolist(),
-                "identities": [0, 1, 2, 3, 5],
+                "identities": [0, 1, 2, 3, 4],
             },
         )
         _run(
@@ -282,8 +356,10 @@ class EvaluateMultichannelCliTest(unittest.TestCase):
             "--gallery", str(gal),
             "--queries", str(qry),
             "--output", str(out),
-            "--open-set",
+            "--self-match-policy", "include",
         )
         report = json.loads(out.read_text())
-        self.assertIn("rank_bootstrap_ci", report)
-        self.assertIn("mAP_bootstrap_ci", report)
+        bootstrap = report["identity_clustered_bootstrap"]
+        self.assertEqual(bootstrap["state"], "AVAILABLE")
+        self.assertIn("Rank-1", bootstrap["metrics"])
+        self.assertIn("AP", bootstrap["metrics"])

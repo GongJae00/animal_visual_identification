@@ -1,138 +1,282 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
+from pathlib import Path
+
 import numpy as np
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
 from PIL import Image
 
-from cvi.evidence.base import AbstractEvidencer
+from cvi.evidence.artifact_manifest import (
+    ArtifactContractError,
+    ExactOnnxRuntime,
+    LandmarkGraphManifest,
+    LandmarkKeypointManifest,
+    preprocess_image,
+)
+from cvi.evidence.base import (
+    AbstractEvidencer,
+    EvidenceInsufficiency,
+    EvidenceObservation,
+    EvidenceUnavailableReason,
+)
+from cvi.provenance import content_sha256
 
 
-DOGFLW_LANDMARKS: list[str] = [
-    "left_eye", "right_eye", "nose_tip", "left_ear_base", "right_ear_base",
-    "left_ear_tip", "right_ear_tip", "muzzle_left", "muzzle_right",
-    "mouth_center", "chin", "left_cheek", "right_cheek",
-    "forehead_center", "crown", "left_eye_corner", "right_eye_corner",
-]
+DOGFLW_LANDMARKS: tuple[str, ...] = (
+    "left_eye",
+    "right_eye",
+    "nose_tip",
+    "left_ear_base",
+    "right_ear_base",
+    "left_ear_tip",
+    "right_ear_tip",
+    "muzzle_left",
+    "muzzle_right",
+    "mouth_center",
+    "chin",
+    "left_cheek",
+    "right_cheek",
+    "forehead_center",
+    "crown",
+    "left_eye_corner",
+    "right_eye_corner",
+)
 
 
-class HRNetHeatmap(nn.Module):
-    def __init__(self, num_keypoints: int = 17):
-        super().__init__()
-        self._conv1 = nn.Conv2d(3, 64, 3, padding=1)
-        self._bn1 = nn.BatchNorm2d(64)
-        self._conv2 = nn.Conv2d(64, 128, 3, stride=2, padding=1)
-        self._bn2 = nn.BatchNorm2d(128)
-        self._conv3 = nn.Conv2d(128, 256, 3, stride=2, padding=1)
-        self._bn3 = nn.BatchNorm2d(256)
-        self._conv4 = nn.Conv2d(256, 512, 3, stride=2, padding=1)
-        self._bn4 = nn.BatchNorm2d(512)
-        self._heatmap = nn.Conv2d(512, num_keypoints, 1)
+@dataclass(frozen=True, slots=True)
+class LandmarkDecodeResult:
+    pixel_points: np.ndarray
+    normalized_points: np.ndarray
+    confidence: np.ndarray
+    visible: np.ndarray
+    crop_size: tuple[int, int]
+    keypoint_order: tuple[str, ...]
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        x = F.relu(self._bn1(self._conv1(x)))
-        x = F.relu(self._bn2(self._conv2(x)))
-        x = F.relu(self._bn3(self._conv3(x)))
-        x = F.relu(self._bn4(self._conv4(x)))
-        heatmaps = self._heatmap(x)
-        return heatmaps
-
-
-def heatmap_to_points(heatmaps: torch.Tensor) -> np.ndarray:
-    b, k, h, w = heatmaps.shape
-    flat = heatmaps.view(b, k, -1)
-    max_idx = flat.argmax(dim=2)
-    ys = (max_idx // w).float().cpu().numpy()
-    xs = (max_idx % w).float().cpu().numpy()
-    return np.stack([xs, ys], axis=-1)
-
-
-def compute_pairwise_distances(points: np.ndarray) -> np.ndarray:
-    diff = points[:, None] - points[None, :]
-    dists = np.sqrt(np.sum(diff ** 2, axis=-1))
-    return dists
+    def __post_init__(self) -> None:
+        if not isinstance(self.pixel_points, np.ndarray):
+            raise ArtifactContractError("pixel_points must be an ndarray")
+        count = self.pixel_points.shape[0]
+        if self.pixel_points.dtype != np.float32 or self.pixel_points.shape != (count, 2):
+            raise ArtifactContractError("pixel_points must be float32 [K,2]")
+        if (
+            self.normalized_points.dtype != np.float32
+            or self.normalized_points.shape != (count, 2)
+            or np.any(self.normalized_points < 0.0)
+            or np.any(self.normalized_points > 1.0)
+        ):
+            raise ArtifactContractError("normalized_points must be float32 [K,2] in [0,1]")
+        if (
+            self.confidence.dtype != np.float32
+            or self.confidence.shape != (count,)
+            or np.any(self.confidence < 0.0)
+            or np.any(self.confidence > 1.0)
+        ):
+            raise ArtifactContractError("confidence must be float32 [K] in [0,1]")
+        if self.visible.dtype != np.bool_ or self.visible.shape != (count,):
+            raise ArtifactContractError("visible must be bool [K]")
+        if len(self.keypoint_order) != count:
+            raise ArtifactContractError("keypoint_order must match the decoded point count")
 
 
-class EdgeConv(nn.Module):
-    def __init__(self, in_features: int, out_features: int, k: int = 8):
-        super().__init__()
-        self._k = k
-        self._mlp = nn.Sequential(
-            nn.Linear(in_features * 2, out_features),
-            nn.BatchNorm1d(out_features),
-            nn.ReLU(),
+def decode_landmark_heatmaps(
+    heatmaps: np.ndarray,
+    manifest: LandmarkKeypointManifest,
+    crop_size: tuple[int, int],
+) -> LandmarkDecodeResult:
+    """Decode exact [1,K,H,W] probability maps in the source crop geometry."""
+
+    if not isinstance(manifest, LandmarkKeypointManifest):
+        raise ArtifactContractError("decoder requires a LandmarkKeypointManifest")
+    if (
+        not isinstance(heatmaps, np.ndarray)
+        or heatmaps.dtype != np.float32
+        or heatmaps.shape != manifest.output_shape
+    ):
+        dtype = getattr(heatmaps, "dtype", None)
+        shape = getattr(heatmaps, "shape", None)
+        raise ArtifactContractError(
+            f"landmark heatmaps must be float32 {manifest.output_shape}, got "
+            f"{dtype} {shape}"
+        )
+    if not np.isfinite(heatmaps).all():
+        raise ArtifactContractError("landmark heatmaps contain non-finite values")
+    if np.any((heatmaps < 0.0) | (heatmaps > 1.0)):
+        raise ArtifactContractError("landmark heatmaps must contain probabilities in [0,1]")
+    if (
+        not isinstance(crop_size, tuple)
+        or len(crop_size) != 2
+        or not all(
+            isinstance(value, int) and not isinstance(value, bool) and value >= 2
+            for value in crop_size
+        )
+    ):
+        raise ArtifactContractError("crop_size must contain width and height of at least 2")
+
+    _, keypoints, heatmap_height, heatmap_width = heatmaps.shape
+    flattened = heatmaps[0].reshape(keypoints, -1)
+    maximum_indices = flattened.argmax(axis=1)
+    confidence = flattened[np.arange(keypoints), maximum_indices].astype(
+        np.float32, copy=False
+    )
+    visible = np.asarray(
+        confidence >= manifest.visibility_threshold, dtype=np.bool_
+    )
+    if int(visible.sum()) < manifest.min_visible_keypoints:
+        raise EvidenceInsufficiency(
+            EvidenceUnavailableReason.INSUFFICIENT_LANDMARKS,
+            {
+                "visible_keypoints": int(visible.sum()),
+                "required_keypoints": manifest.min_visible_keypoints,
+            },
         )
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        b, n, d = x.shape
-        k = min(self._k, n - 1)
-        idx = self._knn(x, k)
-        idx_offset = idx + torch.arange(b, device=x.device).view(b, 1, 1) * n
-        idx_flat = idx_offset.contiguous().view(b * n * k)
-        x_flat = x.view(b * n, d)
-        neighbors = x_flat[idx_flat].view(b, n, k, d)
-        center = x.unsqueeze(2).expand(-1, -1, k, -1)
-        edge_features = torch.cat([center, neighbors - center], dim=-1)
-        out = self._mlp(edge_features.view(b * n * k, -1))
-        out = out.view(b, n, k, -1).max(dim=2).values
-        return out
-
-    def _knn(self, x: torch.Tensor, k: int) -> torch.Tensor:
-        inner = -2 * torch.matmul(x, x.transpose(2, 1))
-        sq = (x ** 2).sum(dim=2, keepdim=True)
-        pairwise = sq + inner + sq.transpose(1, 2)
-        _, idx = pairwise.topk(k=k + 1, dim=-1, largest=False)
-        return idx[:, :, 1:]
+    heatmap_x = (maximum_indices % heatmap_width).astype(np.float32)
+    heatmap_y = (maximum_indices // heatmap_width).astype(np.float32)
+    crop_width, crop_height = crop_size
+    pixel_x = heatmap_x * np.float32((crop_width - 1) / (heatmap_width - 1))
+    pixel_y = heatmap_y * np.float32((crop_height - 1) / (heatmap_height - 1))
+    pixel_points = np.stack([pixel_x, pixel_y], axis=1).astype(np.float32)
+    normalized_points = np.stack(
+        [pixel_x / (crop_width - 1), pixel_y / (crop_height - 1)], axis=1
+    ).astype(np.float32)
+    return LandmarkDecodeResult(
+        pixel_points=pixel_points,
+        normalized_points=normalized_points,
+        confidence=confidence,
+        visible=visible,
+        crop_size=crop_size,
+        keypoint_order=manifest.keypoint_order,
+    )
 
 
-class LandmarkGraphEmbedder(nn.Module):
-    def __init__(self, num_keypoints: int = 17, embedding_dim: int = 256):
-        super().__init__()
-        self._pos_enc = nn.Linear(2, 64)
-        self._dist_enc = nn.Linear(num_keypoints * num_keypoints, 128)
-        self._ec1 = EdgeConv(64, 128, k=6)
-        self._ec2 = EdgeConv(128, 256, k=6)
-        self._pool = nn.AdaptiveAvgPool1d(1)
-        self._out = nn.Linear(256, embedding_dim)
+class HRNetHeatmap:
+    """Exact keypoint artifact adapter; no random HRNet-like model is built."""
 
-    def forward(self, points: torch.Tensor) -> torch.Tensor:
-        b, n, _ = points.shape
-        pos_feat = F.relu(self._pos_enc(points))
-        x = self._ec1(pos_feat)
-        x = self._ec2(x)
-        x = x.permute(0, 2, 1)
-        x = self._pool(x).squeeze(-1)
-        x = self._out(x)
-        return F.normalize(x, p=2, dim=1)
+    def __init__(
+        self,
+        artifact_path: Path,
+        manifest: LandmarkKeypointManifest,
+        *,
+        use_cuda: bool = False,
+    ) -> None:
+        if not isinstance(manifest, LandmarkKeypointManifest):
+            raise ArtifactContractError("HRNetHeatmap requires a LandmarkKeypointManifest")
+        self.manifest = manifest
+        self._runtime = ExactOnnxRuntime(artifact_path, manifest, use_cuda=use_cuda)
+
+    def infer(self, image: Image.Image) -> np.ndarray:
+        return self._runtime.run(preprocess_image(image, self.manifest))
+
+
+class LandmarkGraphEmbedder:
+    """Checkpoint-backed graph adapter consuming normalized landmark records."""
+
+    def __init__(
+        self,
+        artifact_path: Path,
+        manifest: LandmarkGraphManifest,
+        *,
+        use_cuda: bool = False,
+    ) -> None:
+        if not isinstance(manifest, LandmarkGraphManifest):
+            raise ArtifactContractError(
+                "LandmarkGraphEmbedder requires a LandmarkGraphManifest"
+            )
+        self.manifest = manifest
+        self._runtime = ExactOnnxRuntime(artifact_path, manifest, use_cuda=use_cuda)
+
+    def embed(self, decoded: LandmarkDecodeResult) -> np.ndarray:
+        if not isinstance(decoded, LandmarkDecodeResult):
+            raise ArtifactContractError("graph input must be a LandmarkDecodeResult")
+        point_count = len(self.manifest.keypoint_order)
+        if decoded.keypoint_order != self.manifest.keypoint_order:
+            raise ArtifactContractError(
+                "decoded landmarks and graph manifest use different schema order"
+            )
+        if decoded.normalized_points.shape != (point_count, 2):
+            raise ArtifactContractError("decoded landmark count differs from graph schema")
+        records = np.concatenate(
+            [
+                decoded.normalized_points,
+                decoded.confidence[:, None],
+                decoded.visible.astype(np.float32)[:, None],
+            ],
+            axis=1,
+        )[None].astype(np.float32)
+        output = self._runtime.run(records)[0]
+        norm = float(np.linalg.norm(output))
+        if not np.isfinite(norm) or norm <= 0:
+            raise ArtifactContractError(
+                "landmark graph artifact produced a non-finite or zero-norm embedding"
+            )
+        return np.asarray(output / norm, dtype=np.float32)
 
 
 class LandmarkEvidencer(AbstractEvidencer):
     name = "landmark"
-    output_dim = 256
 
-    def __init__(self, heatmap_model: nn.Module | None = None,
-                 graph_model: nn.Module | None = None):
-        if heatmap_model is None or graph_model is None:
-            raise RuntimeError(
-                "Landmark evidence is disabled until checkpoint-backed heatmap "
-                "and graph models are supplied. Random placeholder models are "
-                "not valid inference evidence."
+    def __init__(
+        self,
+        keypoint_path: Path,
+        keypoint_manifest: LandmarkKeypointManifest,
+        graph_path: Path,
+        graph_manifest: LandmarkGraphManifest,
+        *,
+        use_cuda: bool = False,
+    ) -> None:
+        if not isinstance(keypoint_manifest, LandmarkKeypointManifest):
+            raise ArtifactContractError(
+                "LandmarkEvidencer requires a LandmarkKeypointManifest"
             )
-        self._heatmap = heatmap_model
-        self._graph = graph_model
-        self._heatmap.eval()
-        self._graph.eval()
+        if not isinstance(graph_manifest, LandmarkGraphManifest):
+            raise ArtifactContractError(
+                "LandmarkEvidencer requires a LandmarkGraphManifest"
+            )
+        if keypoint_manifest.keypoint_order != graph_manifest.keypoint_order:
+            raise ArtifactContractError(
+                "keypoint and graph manifests must bind the same schema and order"
+            )
+        self._heatmap = HRNetHeatmap(
+            keypoint_path, keypoint_manifest, use_cuda=use_cuda
+        )
+        self._graph = LandmarkGraphEmbedder(
+            graph_path, graph_manifest, use_cuda=use_cuda
+        )
+        self.output_dim = graph_manifest.output_shape[1]
+        self.gallery_contract_fields = {
+            "model_sha256": content_sha256({
+                "keypoint_artifact_sha256": keypoint_manifest.artifact_sha256,
+                "graph_artifact_sha256": graph_manifest.artifact_sha256,
+            }),
+            "keypoint_artifact_sha256": keypoint_manifest.artifact_sha256,
+            "graph_artifact_sha256": graph_manifest.artifact_sha256,
+            "manifest_contract_sha256": content_sha256({
+                "keypoint": keypoint_manifest.to_dict(),
+                "graph": graph_manifest.to_dict(),
+            }),
+        }
 
-    def extract(self, image: Image.Image) -> np.ndarray:
-        img = np.array(image.resize((224, 224)))
-        tensor = torch.from_numpy(img).permute(2, 0, 1).float().unsqueeze(0) / 255.0
-        with torch.no_grad():
-            hm = self._heatmap(tensor)
-            pts = heatmap_to_points(hm)
-            pts_t = torch.from_numpy(pts).float()
-            emb = self._graph(pts_t)
-        return emb.squeeze(0).numpy()
+    def extract(self, image: Image.Image) -> EvidenceObservation:
+        heatmaps = self._heatmap.infer(image)
+        try:
+            decoded = decode_landmark_heatmaps(
+                heatmaps, self._heatmap.manifest, image.size
+            )
+        except EvidenceInsufficiency as exc:
+            return EvidenceObservation.unavailable(
+                self.name, exc.reason, details=exc.details
+            )
+        return EvidenceObservation.available(self.name, self._graph.embed(decoded))
 
-    def extract_batch(self, images: list[Image.Image]) -> np.ndarray:
-        return np.stack([self.extract(img) for img in images])
+    def extract_batch(self, images: list[Image.Image]) -> list[EvidenceObservation]:
+        return [self.extract(image) for image in images]
+
+
+__all__ = [
+    "DOGFLW_LANDMARKS",
+    "HRNetHeatmap",
+    "LandmarkDecodeResult",
+    "LandmarkEvidencer",
+    "LandmarkGraphEmbedder",
+    "decode_landmark_heatmaps",
+]

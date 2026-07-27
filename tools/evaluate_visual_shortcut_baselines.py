@@ -17,6 +17,11 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 
+from cvi.evaluation.verification import (
+    compute_verification_metrics,
+    select_threshold_at_far,
+)
+
 
 # ---------------------------------------------------------------------------
 # Image loading
@@ -68,43 +73,25 @@ def cosine_sim(a: np.ndarray, b: np.ndarray) -> float:
 def _roc_auc(pos: list[float], neg: list[float]) -> float:
     if not pos or not neg:
         return 0.5
-    concat = np.array(pos + neg)
-    labels = np.array([1] * len(pos) + [0] * len(neg))
-    order = np.argsort(concat)
-    ls = labels[order]
-    rs = float(np.sum(np.where(ls == 1)[0] + 1))
-    return (rs - len(pos) * (len(pos) + 1) / 2) / (len(pos) * len(neg))
+    scores = np.asarray(pos + neg, dtype=np.float64)
+    labels = np.asarray([1] * len(pos) + [0] * len(neg), dtype=np.int64)
+    return compute_verification_metrics(scores, labels)["ROC_AUC"]
 
 
 def _tar_at_far(pos, neg, target: float) -> float:
     if not pos or not neg:
         return 0.0
-    pos_a = np.array(pos)
-    neg_a = np.array(neg)
-    u = np.sort(np.unique(np.concatenate([pos_a, neg_a])))[::-1]
-    n_neg = len(neg)
-    n_pos = len(pos)
-    neg_sort = np.sort(neg_a)
-    pos_sort = np.sort(pos_a)
-    for t in u:
-        far = (n_neg - int(np.searchsorted(neg_sort, t, side="left"))) / n_neg
-        if far <= target:
-            return (n_pos - int(np.searchsorted(pos_sort, t, side="left"))) / n_pos
-    return 0.0
+    scores = np.asarray(pos + neg, dtype=np.float64)
+    labels = np.asarray([1] * len(pos) + [0] * len(neg), dtype=np.int64)
+    return select_threshold_at_far(scores, labels, target).calibration_tar
 
 
 def _eer(pos, neg) -> float:
     if not pos or not neg:
         return 0.5
-    pos_a = np.sort(np.array(pos))
-    neg_a = np.sort(np.array(neg))
-    scores = np.unique(np.concatenate([pos_a, neg_a]))
-    n_pos, n_neg = len(pos), len(neg)
-    neg_left = n_neg - np.searchsorted(neg_a, scores, side="left")
-    far = neg_left / n_neg
-    pos_left = np.searchsorted(pos_a, scores, side="left")
-    fnr = pos_left / n_pos
-    return float(np.min((far + fnr) / 2))
+    scores = np.asarray(pos + neg, dtype=np.float64)
+    labels = np.asarray([1] * len(pos) + [0] * len(neg), dtype=np.int64)
+    return compute_verification_metrics(scores, labels)["EER"]
 
 
 # ---------------------------------------------------------------------------
@@ -410,6 +397,12 @@ def main() -> None:
         help="Replace dataset_identity_id with deterministic registered_dog_id (UUIDv5)",
     )
     args = parser.parse_args()
+
+    raise RuntimeError(
+        "visual shortcut baseline publication is disabled until records are "
+        "isolated by protocol, episode, gallery_size, shot, modality, and role, "
+        "and every use is bound to its exact crop artifact"
+    )
 
     t0 = time.time()
     assignment = json.loads(args.assignment.read_text())

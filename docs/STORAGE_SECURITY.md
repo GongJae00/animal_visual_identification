@@ -1,12 +1,18 @@
-# WSL and 4TB SSD Storage Boundary
+# Storage Security Boundary
 
 ## Active roots
 
-Source code and private research ledgers remain on the WSL Linux filesystem.
-Large CVI data belongs on the Samsung 990 PRO 4TB tier under:
+Keep source code separate from private datasets, embeddings, checkpoints, and
+experiment outputs. Configure the data root explicitly for each machine:
+
+```bash
+export CVI_DATA_DIR=/path/to/cvi-data
+```
+
+The configured root may use this layout:
 
 ```text
-/mnt/r/research-data/canine_video_identity_secure/
+$CVI_DATA_DIR/
   raw/
   downloads/
   datasets/{research-only,deployment-eligible}/
@@ -17,20 +23,18 @@ Large CVI data belongs on the Samsung 990 PRO 4TB tier under:
   cache/
 ```
 
-The secure root has Windows inheritance disabled. Its allowed principals are
-the current workstation user, `SYSTEM`, and `BUILTIN\Administrators`, each with
-full inheritable access. New sensitive CVI material must not be written to the
-older, broadly inherited `/mnt/r/research-data/*/canine_video_identity` roots.
-Those paths contain only historical infrastructure smokes at present.
+Before use, verify that the root has restrictive ownership and access controls.
+Do not place sensitive CVI material in a directory with broad inherited access.
 
 ## DrvFS semantics
 
-`/mnt/r` is WSL 9P/DrvFS, not a native Linux filesystem. Linux mode bits are
-not the confidentiality authority: a file written as mode 0600 is currently
-reported as mode 0777. Windows ACLs must therefore be audited with `icacls.exe`
-before admitting private camera data, biometric embeddings, protected
-manifests, or checkpoints. Code must not interpret the DrvFS mode display as a
-private-file guarantee.
+A Windows drive mounted in WSL under `/mnt/<drive-letter>` uses DrvFS rather
+than a native Linux filesystem. Depending on mount configuration, Linux mode
+bits may not be the confidentiality authority and a file written as mode 0600
+may be displayed with broader permissions. Audit the backing Windows ACLs, for
+example with `icacls.exe`, before admitting private camera data, biometric
+embeddings, protected manifests, or checkpoints. Code must not interpret the
+DrvFS mode display alone as a private-file guarantee.
 
 Protected, independently archived precommitment/final hashes should remain in
 the private WSL research-state layer or another independently controlled
@@ -59,14 +63,7 @@ This protects against ordinary concurrent CVI jobs and worktree/data-pipeline
 changes. It is not an isolation boundary against a hostile process running as
 the same OS user.
 
-The recorded DrvFS infrastructure smoke is:
-
-```text
-/mnt/r/research-data/canine_video_identity_secure/experiments/smoke/
-  publication-jncG0rHk/receipt.json
-```
-
-It proves only that directory fsync, the reserved-directory rename fallback,
-existing-target preservation, and inherited Windows ACLs worked on this
-workstation. It is not camera, recognition, performance, or optimization
+Validate directory fsync, the reserved-directory rename fallback,
+existing-target preservation, and effective ACLs on every target filesystem.
+Such a storage smoke is not camera, recognition, performance, or optimization
 evidence.

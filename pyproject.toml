@@ -1,9 +1,19 @@
 [project]
 name = "canine-video-identity"
-version = "0.2.0"
-description = "Multi-evidence canine identity search — FAISS GPU, ONNX, ArcFace/MagFace"
+version = "0.3.0"
+description = "Research infrastructure for contract-bound canine visual identity retrieval"
 readme = "README.md"
-requires-python = ">=3.12"
+authors = [
+    { name = "GongJae", email = "gongjae00@gmail.com" },
+]
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+requires-python = ">=3.12,<3.13"
+classifiers = [
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
 dependencies = [
     "numpy>=2.5,<3",
     "pillow>=12.3,<13",
@@ -16,40 +26,49 @@ dependencies = [
 [project.optional-dependencies]
 cpu = [
     "faiss-cpu>=1.9.0",
+    "onnx>=1.19",
     "onnxruntime>=1.27,<1.28",
     "torch>=2.7,<3",
     "torchvision>=0.22,<1",
+    "transformers>=4.55",
 ]
 cuda = [
     "faiss-gpu>=1.7.4",
+    "onnx>=1.19",
     "onnxruntime-gpu>=1.27,<1.28",
     "torch>=2.7,<3",
     "torchvision>=0.22,<1",
     "transformers>=4.55",
 ]
 training = [
-    "ultralytics>=8.3",
     "scipy>=1.15",
     "tensorboard>=2.19",
     "transformers>=4.55",
     "onnx>=1.19",
     "onnxscript>=0.5",
 ]
-all = [
-    "canine-video-identity[cpu,cuda,training]",
+models = [
+    "safetensors>=0.6,<1",
+    "timm>=1.0,<2",
 ]
+data = [
+    "pyarrow>=21,<22",
+]
+
+[project.urls]
+Homepage = "https://github.com/GongJae00/canine_video_identity"
+Repository = "https://github.com/GongJae00/canine_video_identity.git"
+Issues = "https://github.com/GongJae00/canine_video_identity/issues"
 
 [dependency-groups]
 dev = [
     "pytest>=9.0,<10",
 ]
 
-[project.scripts]
-cvi-setup-cuda = "scripts.setup_cuda:main"
-cvi-train = "tools.train_embedding_model:main"
-cvi-evaluate = "tools.evaluate_multichannel:main"
-cvi-search = "tools.search_identity:main"
-cvi-download-models = "tools.download_models:main"
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
 
 [[tool.uv.index]]
 name = "pytorch-cu128"
@@ -58,9 +77,11 @@ explicit = true
 
 [tool.uv.sources]
 torch = [
+    { index = "pytorch-cpu", extra = "cpu" },
     { index = "pytorch-cu128", extra = "cuda" },
 ]
 torchvision = [
+    { index = "pytorch-cpu", extra = "cpu" },
     { index = "pytorch-cu128", extra = "cuda" },
 ]
 
@@ -70,6 +91,12 @@ build-backend = "uv_build"
 
 [tool.uv]
 package = true
+conflicts = [
+    [
+        { extra = "cpu" },
+        { extra = "cuda" },
+    ],
+]
 
 [tool.uv.build-backend]
 module-name = "cvi"

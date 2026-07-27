@@ -1,0 +1,44 @@
+{
+  "bootstrap_resamples": 10000,
+  "bootstrap_seed": 7,
+  "maximum_embedding_dimension": 4096,
+  "maximum_json_array_length": 1000000,
+  "maximum_json_bytes": 268435456,
+  "maximum_json_depth": 32,
+  "maximum_json_keys": 1000000,
+  "maximum_json_nodes": 2000000,
+  "maximum_json_number_characters": 128,
+  "maximum_json_string_characters": 4194304,
+  "maximum_samples_per_input": 10000,
+  "maximum_score_matrix_elements": 20000000,
+  "maximum_total_embedding_values": 20000000,
+  "metric": "cosine",
+  "rank_ks": [
+    1,
+    5,
+    10
+  ],
+  "role_bindings": [
+    {
+      "episode": "PRIMARY",
+      "gallery_size": 723,
+      "name": "gallery",
+      "protocol": "YT_CLOSED_SET",
+      "role": "GALLERY",
+      "schema_version": "cvi.protected_evaluation_role_binding.v1",
+      "shot": 3
+    },
+    {
+      "episode": "PRIMARY",
+      "gallery_size": 723,
+      "name": "queries",
+      "protocol": "YT_CLOSED_SET",
+      "role": "KNOWN_QUERY",
+      "schema_version": "cvi.protected_evaluation_role_binding.v1",
+      "shot": 3
+    }
+  ],
+  "schema_version": "cvi.protected_evaluation_policy.v1",
+  "score_dtype": "float64",
+  "self_match_policy": "exclude"
+}

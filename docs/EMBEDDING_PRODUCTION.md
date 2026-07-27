@@ -7,6 +7,9 @@ artifacts and the float32 embedding cache used by the reference scorer. It does
 not choose a model, train a model, calibrate a biometric threshold, or prove
 that an optimized backend is safe.
 
+This research production path is not connected to the public `cvi.CVI` runtime
+and is not a supported CPU or CUDA deployment facade.
+
 The backend receives only an ordered tuple of opaque artifact paths. The
 producer binds and verifies:
 
@@ -101,10 +104,11 @@ custom-op libraries, model-embedded ORT configuration, undeclared I/O metadata,
 and provider fallback. It passes the in-memory bytes whose digest it reports
 directly to ONNX Runtime.
 
-The guarded CUDA reference uses the mutually exclusive `onnx-cuda` dependency
-group. It locks cuDNN 9 beside the CUDA 13 ORT wheel, preloads the declared
-runtime libraries, sets `enable_fallback=0`, calls `disable_fallback()`, and
-also sets `session.disable_cpu_ep_fallback=1`. These controls are distinct:
+The guarded CUDA reference uses the `cuda` extra, which must not be installed
+with the mutually exclusive `cpu` extra. The dependency lock and runtime
+manifest bind the exact runtime libraries. The adapter preloads those declared
+libraries, sets `enable_fallback=0`, calls `disable_fallback()`, and also sets
+`session.disable_cpu_ep_fallback=1`. These controls are distinct:
 the first pair prevents Python session recreation after provider failure, while
 the session entry rejects graph nodes that CUDA EP cannot execute. Session
 creation must still report the expected CUDA-plus-registered-CPU provider list

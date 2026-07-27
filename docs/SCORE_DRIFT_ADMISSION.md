@@ -137,7 +137,7 @@ uv run python tools/create_score_drift_precommitment.py \
   --candidate-producer-config CANDIDATE_CONFIG.json \
   --numerical-policy NUMERICAL_POLICY.json \
   --frozen-boundary FROZEN_BOUNDARY.json \
-  --score-drift-policy configs/score_drift_policy.example.json \
+  --score-drift-policy configs/research/contracts/score_drift_policy.example.json \
   --cache-policy CACHE_POLICY.json \
   --prior-attempt-ledger-sha256 PRIOR_LEDGER_HEAD \
   --candidate-attempt-token UNIQUE_ATTEMPT_TOKEN \
@@ -163,7 +163,7 @@ uv run python tools/create_score_drift_plan.py \
   --numerical-admission NUMERICAL_BUNDLE.json \
   --numerical-policy NUMERICAL_POLICY.json \
   --frozen-boundary FROZEN_BOUNDARY.json \
-  --score-drift-policy configs/score_drift_policy.example.json \
+  --score-drift-policy configs/research/contracts/score_drift_policy.example.json \
   --cache-policy CACHE_POLICY.json \
   --precommitment SCORE_DRIFT_PRECOMMITMENT.json \
   --plan SCORE_DRIFT_PLAN.json
@@ -198,7 +198,7 @@ uv run python tools/compare_score_drift.py \
   --numerical-admission NUMERICAL_BUNDLE.json \
   --numerical-policy NUMERICAL_POLICY.json \
   --frozen-boundary FROZEN_BOUNDARY.json \
-  --score-drift-policy configs/score_drift_policy.example.json \
+  --score-drift-policy configs/research/contracts/score_drift_policy.example.json \
   --cache-policy CACHE_POLICY.json \
   --admission-plan SCORE_DRIFT_PLAN.json \
   --expected-precommitment-sha256 ARCHIVED_PRECOMMITMENT_HASH \

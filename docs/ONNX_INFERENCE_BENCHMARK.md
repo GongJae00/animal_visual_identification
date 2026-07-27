@@ -22,9 +22,9 @@ never their values. A non-empty parent `LD_PRELOAD` fails before launch.
 
 CPU and CUDA are separate dependency lanes. A CPU worker requires exactly the
 `onnxruntime` distribution and a CUDA worker requires exactly
-`onnxruntime-gpu`. Local stable lanes are `.venv-cpu` and `.venv-cuda`; both are
-ignored by Git. Measurements from temporary isolated environments are useful
-for tests but cannot support a reusable absolute-path runtime policy.
+`onnxruntime-gpu`. Configure each environment explicitly. Measurements from
+temporary isolated environments are useful for tests but cannot support a
+reusable absolute-path runtime policy.
 
 The phases are deliberately separate:
 
@@ -51,36 +51,47 @@ true before `docs/PAIRED_INFERENCE_COMPARISON.md` accepts a pair.
 CPU example:
 
 ```bash
-.venv-cpu/bin/python tools/benchmark_onnx_inference.py \
+export CVI_CPU_PYTHON=/path/to/cpu-environment/bin/python
+export CVI_MODEL=/path/to/model.onnx
+export CVI_ARTIFACT_A=/path/to/crop-a.png
+export CVI_ARTIFACT_B=/path/to/crop-b.png
+export CVI_CPU_RUNTIME_POLICY=/path/to/cpu-runtime-policy.json
+export CVI_BENCHMARK_RECEIPTS=/path/to/benchmark-receipts
+
+"$CVI_CPU_PYTHON" tools/benchmark_onnx_inference.py \
   --backend CPU \
-  --model MODEL.onnx \
-  --backend-config configs/onnx_cpu_backend.example.json \
-  --preprocessing configs/image_preprocessing.example.json \
-  --artifact CROP_A.png --artifact CROP_B.png \
+  --model "$CVI_MODEL" \
+  --backend-config configs/deployment/onnx_cpu_backend.example.json \
+  --preprocessing configs/pipeline/evidence/image_preprocessing.example.json \
+  --artifact "$CVI_ARTIFACT_A" --artifact "$CVI_ARTIFACT_B" \
   --dependency-lock uv.lock \
-  --runtime-library-policy CPU_RUNTIME_POLICY.json \
+  --runtime-library-policy "$CVI_CPU_RUNTIME_POLICY" \
   --code-revision REVISION \
-  --policy configs/onnx_inference_benchmark_cpu.example.json \
-  --receipt /mnt/r/research-data/experiments/canine_video_identity/RUN/cpu.json
+  --policy configs/deployment/onnx_inference_benchmark_cpu.example.json \
+  --receipt "$CVI_BENCHMARK_RECEIPTS/cpu.json"
 ```
 
-CUDA runs must additionally use the workstation's bounded GPU-job wrapper:
+CUDA example:
 
 ```bash
-research-gpu-bounded-job --timeout-seconds 900 \
-  --receipt /mnt/r/research-data/experiments/canine_video_identity/RUN/job.json \
-  -- .venv-cuda/bin/python tools/benchmark_onnx_inference.py \
+export CVI_CUDA_PYTHON=/path/to/cuda-environment/bin/python
+export CVI_CUDA_RUNTIME_POLICY=/path/to/cuda-runtime-policy.json
+
+"$CVI_CUDA_PYTHON" tools/benchmark_onnx_inference.py \
   --backend CUDA \
-  --model MODEL.onnx \
-  --backend-config configs/onnx_cuda_backend.example.json \
-  --preprocessing configs/image_preprocessing.example.json \
-  --artifact CROP_A.png --artifact CROP_B.png \
+  --model "$CVI_MODEL" \
+  --backend-config configs/deployment/onnx_cuda_backend.example.json \
+  --preprocessing configs/pipeline/evidence/image_preprocessing.example.json \
+  --artifact "$CVI_ARTIFACT_A" --artifact "$CVI_ARTIFACT_B" \
   --dependency-lock uv.lock \
-  --runtime-library-policy CUDA_RUNTIME_POLICY.json \
+  --runtime-library-policy "$CVI_CUDA_RUNTIME_POLICY" \
   --code-revision REVISION \
-  --policy configs/onnx_inference_benchmark_cuda.example.json \
-  --receipt /mnt/r/research-data/experiments/canine_video_identity/RUN/cuda.json
+  --policy configs/deployment/onnx_inference_benchmark_cuda.example.json \
+  --receipt "$CVI_BENCHMARK_RECEIPTS/cuda.json"
 ```
+
+Use a scheduler or bounded-job wrapper when required by local policy, but keep
+that machine-specific control outside the portable command example.
 
 The two backend configuration examples must be regenerated for the same real
 model shape and preprocessing before use. Example values are not performance

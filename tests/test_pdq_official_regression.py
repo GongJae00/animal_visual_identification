@@ -3,6 +3,7 @@ from __future__ import annotations
 import copy
 import hashlib
 import json
+import os
 import unittest
 from dataclasses import replace
 from pathlib import Path
@@ -19,10 +20,7 @@ from cvi.source_provenance import build_offline_tool_provenance
 
 
 ROOT = Path(__file__).parents[1]
-SOURCE_ROOT = Path(
-    "/home/gongjae/research/sources/ThreatExchange/"
-    "baefb4ed67b6cdc1d4c82dbaef858d50866ac424"
-)
+SOURCE_ROOT = Path(os.environ.get("CVI_PDQ_OFFICIAL_SOURCE_ROOT") or os.devnull)
 REGRESSION_BUNDLE = SOURCE_ROOT / "pdq-regression-intake-v1"
 NATIVE_WORKER = SOURCE_ROOT / "pdq-native-worker-v4"
 AVAILABLE = REGRESSION_BUNDLE.is_dir() and NATIVE_WORKER.is_dir()

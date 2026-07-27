@@ -851,7 +851,7 @@ class OnnxInferenceBenchmarkIntegrationTests(unittest.TestCase):
 
     @unittest.skipUnless(
         OPTIONAL_CPU_ONNX_AVAILABLE,
-        "requires the onnx-cpu optional dependency group",
+        "requires the cpu optional dependency group",
     )
     def test_cpu_fresh_workers_bind_tensor_output_timing_and_rss(self) -> None:
         with TemporaryDirectory() as temporary:
@@ -920,7 +920,7 @@ class OnnxInferenceBenchmarkIntegrationTests(unittest.TestCase):
 
     @unittest.skipUnless(
         OPTIONAL_CPU_ONNX_AVAILABLE,
-        "requires the onnx-cpu optional dependency group",
+        "requires the cpu optional dependency group",
     )
     def test_cpu_discovery_policy_strict_rerun_passes(self) -> None:
         with TemporaryDirectory() as temporary:
@@ -956,7 +956,7 @@ class OnnxInferenceBenchmarkIntegrationTests(unittest.TestCase):
 
     @unittest.skipUnless(
         OPTIONAL_CPU_ONNX_AVAILABLE,
-        "requires the onnx-cpu optional dependency group",
+        "requires the cpu optional dependency group",
     )
     def test_cpu_cli_writes_private_nonpromotion_receipt(self) -> None:
         with TemporaryDirectory() as temporary:

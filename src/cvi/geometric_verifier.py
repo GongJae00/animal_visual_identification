@@ -532,6 +532,26 @@ class GeometricPairResult:
             "evidence_token": self.evidence_token,
         }
 
+    @classmethod
+    def from_dict(cls, payload: Mapping[str, Any]) -> "GeometricPairResult":
+        _exact(payload, set(cls.__dataclass_fields__), "geometric pair result")
+        metrics = payload["metrics"]
+        tokens = payload["candidate_evidence_tokens"]
+        if not isinstance(metrics, Mapping) or not isinstance(tokens, list):
+            raise TypeError("geometric result metrics/tokens fields differ")
+        return cls(
+            left_opaque_sample_id=payload["left_opaque_sample_id"],
+            right_opaque_sample_id=payload["right_opaque_sample_id"],
+            decision=GeometricDecision(payload["decision"]),
+            reason=GeometricReason(payload["reason"]),
+            selected_right_d4=payload["selected_right_d4"],
+            selected_model=payload["selected_model"],
+            metrics=tuple(sorted(metrics.items())),
+            candidate_evidence_tokens=tuple(tokens),
+            evidence_token=payload["evidence_token"],
+            schema_version=payload["schema_version"],
+        )
+
 
 @dataclass(frozen=True, slots=True)
 class GeometricVerifierEvidence:
@@ -588,6 +608,38 @@ class GeometricVerifierEvidence:
             "evidence_bindings": [list(item) for item in self.evidence_bindings],
             "interpretation": self.interpretation,
         }
+
+    @classmethod
+    def from_dict(cls, payload: Mapping[str, Any]) -> "GeometricVerifierEvidence":
+        expected = set(cls.__dataclass_fields__) | {"policy_sha256", "threshold_status"}
+        _exact(payload, expected, "geometric verifier evidence")
+        policy_raw = payload["policy"]
+        backend = payload["backend"]
+        results = payload["results"]
+        counts = payload["counts"]
+        if (
+            not isinstance(policy_raw, Mapping)
+            or not isinstance(backend, Mapping)
+            or not isinstance(results, list)
+            or not isinstance(counts, Mapping)
+        ):
+            raise TypeError("geometric evidence collection fields differ")
+        policy = GeometricVerifierPolicy.from_dict(policy_raw)
+        if (
+            payload["policy_sha256"] != policy.policy_sha256
+            or payload["threshold_status"] != policy.threshold_status
+        ):
+            raise ValueError("geometric evidence policy binding differs")
+        return cls(
+            request_sha256=payload["request_sha256"],
+            policy=policy,
+            backend=tuple(sorted(backend.items())),
+            results=tuple(GeometricPairResult.from_dict(item) for item in results),
+            counts=tuple(sorted(counts.items())),
+            evidence_bindings=_binding_tuple(payload["evidence_bindings"]),
+            interpretation=payload["interpretation"],
+            schema_version=payload["schema_version"],
+        )
 
 
 def canonical_rgb_sha256(rgb: Any) -> str:
@@ -735,6 +787,38 @@ def publish_geometric_evidence(
     bundle["bundle_sha256"] = content_sha256(bundle)
     write_private_json_bundle(((path, bundle),))
     return bundle["bundle_sha256"]
+
+
+def read_geometric_evidence_bundle(path: Path) -> GeometricVerifierEvidence:
+    """Read and authenticate one no-overwrite geometric result chunk."""
+
+    from cvi.protected_io import read_strict_json_object
+
+    bundle = read_strict_json_object(path)
+    expected = {
+        "schema_version",
+        "evidence",
+        "evidence_sha256",
+        "tool_provenance",
+        "tool_provenance_sha256",
+        "bundle_sha256",
+    }
+    if set(bundle) != expected or bundle["schema_version"] != (
+        "cvi.geometric_verifier_bundle.v1"
+    ):
+        raise ValueError("geometric verifier bundle fields differ")
+    unsigned = dict(bundle)
+    observed_bundle_sha256 = unsigned.pop("bundle_sha256")
+    if content_sha256(unsigned) != observed_bundle_sha256:
+        raise ValueError("geometric verifier bundle digest differs")
+    if content_sha256(bundle["tool_provenance"]) != bundle[
+        "tool_provenance_sha256"
+    ]:
+        raise ValueError("geometric verifier provenance digest differs")
+    evidence = GeometricVerifierEvidence.from_dict(bundle["evidence"])
+    if evidence.evidence_sha256 != bundle["evidence_sha256"]:
+        raise ValueError("geometric verifier evidence digest differs")
+    return evidence
 
 
 def _load_backend() -> tuple[Any, Any] | None:

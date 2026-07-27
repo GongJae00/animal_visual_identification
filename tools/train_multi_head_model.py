@@ -278,7 +278,10 @@ def _select_records(binding: dict, access: str) -> list[dict]:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--assignment", required=True, type=Path)
+    parser.add_argument("--split-receipt", required=True, type=Path)
     parser.add_argument("--registry-db", required=True, type=Path)
+    parser.add_argument("--registry-manifest", type=Path)
+    parser.add_argument("--expected-split-receipt-sha256")
     parser.add_argument("--crop-root", required=True, type=Path)
     parser.add_argument("--output-dir", required=True, type=Path)
     parser.add_argument("--epochs", type=int, default=50)
@@ -292,6 +295,15 @@ def main() -> None:
     parser.add_argument("--no-preload", action="store_true")
     args = parser.parse_args()
 
+    parser.exit(
+        status=2,
+        message=(
+            "Multi-head training is disabled: its sampler, development "
+            "selection, checkpoint, and authenticated crop-manifest contracts "
+            "are not validated.\n"
+        ),
+    )
+
     if args.device == "auto":
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     else:
@@ -299,7 +311,15 @@ def main() -> None:
 
     from cvi.split_registry_binding import build_binding
     assignment = read_strict_json_object(args.assignment)
-    binding = build_binding(assignment, args.registry_db)
+    split_receipt = read_strict_json_object(args.split_receipt)
+    registry_manifest = read_strict_json_object(args.registry_manifest)
+    binding = build_binding(
+        assignment,
+        args.registry_db,
+        split_receipt,
+        registry_manifest,
+        args.expected_split_receipt_sha256,
+    )
     if not binding.is_valid:
         print(json.dumps({"event": "binding_invalid",
                            "unregistered": len(binding.unregistered_tokens)}))

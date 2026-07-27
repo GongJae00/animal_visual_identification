@@ -1,8 +1,11 @@
 {
   "bootstrap_draws": 10000,
+  "capacity_mode": "EVIDENCE_CONSTRAINED_MAXIMAL_COVERAGE",
   "dogface_calibration_identities": 125,
   "dogface_development_identities": 125,
   "dogface_fit_identities": 1004,
+  "dogface_minimum_fit_identities": 1000,
+  "dogface_minimum_test_identities": 125,
   "dogface_test_identities": 139,
   "dogface_train_identities": 1254,
   "external_result_boundary": "STRICT_EXTERNAL_DOMAIN_ZERO_SHOT",
@@ -15,7 +18,7 @@
   "diagnostic_shot_counts": [
     5
   ],
-  "schema_version": "cvi.protected_public_split_policy.v2",
+  "schema_version": "cvi.protected_public_split_policy.v3",
   "shot_counts": [
     1,
     3
@@ -46,5 +49,9 @@
   "yt_primary_open_set_shot": 3,
   "yt_requested_fit_identities": 1200,
   "yt_test_known_identities": 300,
-  "yt_test_unknown_identities": 423
+  "yt_test_unknown_identities": 423,
+  "yt_test_unknown_target_fpir": 0.01,
+  "yt_test_unknown_reporting_fpir": 0.001,
+  "yt_test_unknown_confidence_level": 0.95,
+  "yt_test_unknown_minimum_identities": 299
 }

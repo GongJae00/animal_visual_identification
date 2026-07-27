@@ -130,6 +130,8 @@ class PublicCaninePHashConfigTests(unittest.TestCase):
         policy = read_public_canine_phash_policy(
             Path(__file__).parents[1]
             / "configs"
+            / "research"
+            / "contracts"
             / "public_canine_phash_policy.example.json"
         )
         self.assertEqual(policy.radius, 10)

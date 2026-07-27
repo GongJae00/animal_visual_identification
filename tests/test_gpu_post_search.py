@@ -6,74 +6,6 @@ from pathlib import Path
 
 import numpy as np
 
-from cvi.gpu_index import GpuIdentityIndex
-
-
-class GpuIdentityIndexTests(unittest.TestCase):
-    def setUp(self) -> None:
-        self.tmpdir = Path(tempfile.mkdtemp())
-        self.index = GpuIdentityIndex(
-            dim=384,
-            index_path=self.tmpdir / "index.pt",
-            metadata_path=self.tmpdir / "meta.json",
-        )
-
-    def tearDown(self) -> None:
-        self.index.close()
-
-    def test_empty(self) -> None:
-        results = self.index.search(np.random.randn(384).astype(np.float32), top_k=5)
-        self.assertEqual(results, [])
-
-    def test_enroll_and_search(self) -> None:
-        idx = self.index.enroll(np.random.randn(384).astype(np.float32), "dog_001")
-        self.assertEqual(idx, 0)
-        self.assertEqual(self.index.size, 1)
-        q = self.index._index.reconstruct(0)
-        results = self.index.search(q, top_k=1)
-        self.assertEqual(len(results), 1)
-        self.assertAlmostEqual(results[0][1], 1.0, places=5)
-
-    def test_enroll_batch(self) -> None:
-        embs = np.random.randn(3, 384).astype(np.float32)
-        ids = ["dog_001", "dog_002", "dog_003"]
-        indices = self.index.enroll_batch(embs, ids)
-        self.assertEqual(indices, [0, 1, 2])
-        self.assertEqual(self.index.size, 3)
-
-    def test_search_with_evidence(self) -> None:
-        emb = np.random.randn(384).astype(np.float32)
-        self.index.enroll(emb, "dog_001")
-        results = self.index.search_with_evidence(emb, top_k=1)
-        self.assertEqual(len(results), 1)
-        self.assertIn("evidence", results[0])
-        self.assertIn("visual", results[0]["evidence"])
-
-    def test_remove(self) -> None:
-        emb = np.random.randn(384).astype(np.float32)
-        self.index.enroll(emb, "dog_001")
-        self.index.enroll(emb + 0.1, "dog_002")
-        self.index.remove(0)
-        self.assertEqual(self.index.size, 1)
-        meta = self.index._metadata[0]
-        self.assertEqual(meta["registered_dog_id"], "dog_002")
-
-    def test_persistence(self) -> None:
-        emb = np.random.randn(384).astype(np.float32)
-        self.index.enroll(emb, "dog_001")
-        self.index.close()
-        loaded = GpuIdentityIndex(
-            dim=384,
-            index_path=self.tmpdir / "index.pt",
-            metadata_path=self.tmpdir / "meta.json",
-        )
-        self.assertEqual(loaded.size, 1)
-        loaded.close()
-
-    def test_invalid_dim(self) -> None:
-        with self.assertRaises(ValueError):
-            self.index.enroll(np.random.randn(128).astype(np.float32), "dog")
-
 
 class PostSearchTests(unittest.TestCase):
     def setUp(self) -> None:
@@ -145,14 +77,50 @@ class PostSearchTests(unittest.TestCase):
         from cvi.post_search import ScoreCalibrator
         cal = ScoreCalibrator()
         cal.fit({"vis": np.array([0.1, 0.5, 0.9])}, np.array([0, 1, 1]))
-        with tempfile.NamedTemporaryFile(suffix=".pkl") as f:
-            path = Path(f.name)
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "calibrator.json"
             cal.save(path)
             loaded = ScoreCalibrator.load(path)
         val = loaded.calibrate(0.9, "vis")
         self.assertAlmostEqual(val, 1.0, places=1)
         val2 = loaded.calibrate(0.1, "vis")
         self.assertAlmostEqual(val2, 0.0, places=1)
+
+    def test_calibrator_uses_strict_json_not_pickle(self) -> None:
+        from cvi.post_search import ScoreCalibrator
+
+        cal = ScoreCalibrator()
+        cal.fit({"vis": np.array([0.1, 0.5, 0.9])}, np.array([0, 1, 1]))
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "calibrator.json"
+            cal.save(path)
+            self.assertTrue(path.read_text(encoding="utf-8").startswith("{"))
+            payload = __import__("json").loads(path.read_text(encoding="utf-8"))
+            payload["schema_version"] = "tampered"
+            path.chmod(0o600)
+            path.write_text(__import__("json").dumps(payload), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "schema"):
+                ScoreCalibrator.load(path)
+
+    def test_constant_score_calibrator_round_trip(self) -> None:
+        from cvi.post_search import ScoreCalibrator
+
+        cal = ScoreCalibrator()
+        cal.fit({"vis": np.array([0.5, 0.5])}, np.array([0, 1]))
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "calibrator.json"
+            cal.save(path)
+            loaded = ScoreCalibrator.load(path)
+        self.assertAlmostEqual(loaded.calibrate(0.5, "vis"), 0.5)
+
+    def test_private_json_publication_rejects_nonfinite_values(self) -> None:
+        from cvi.protected_io import write_private_json_bundle
+
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "report.json"
+            with self.assertRaisesRegex(ValueError, "JSON compliant"):
+                write_private_json_bundle(((path, {"threshold": float("inf")}),))
+            self.assertFalse(path.exists())
 
     def test_empty_scores_fusion(self) -> None:
         fuser = self.Fusion()

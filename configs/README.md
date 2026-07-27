@@ -1,46 +1,30 @@
-# 설정 파일 가이드
+# Configuration Files
 
-기능별로 그룹화된 설정 파일입니다. 각 하위 디렉토리는 다음을 담당합니다:
+The files under `configs/` are versioned examples for several independent
+schemas. They are not a single application configuration set, and none is a
+ready-made production deployment.
 
-```
-configs/
-├── models/             # 모델 학습/추론 설정
-│   ├── backbones/      #   백본 아키텍처 설정
-│   └── heads/          #   손실함수 파라미터
-│
-├── pipeline/           # 파이프라인 설정
-│   ├── evidence/       #   증거 채널 구성 + 화질 임계값
-│   ├── fusion/         #   융합 가중치 + Open-Set 문턱값
-│   └── detection/      #   YOLO 검출 파라미터
-│
-├── deployment/         # 배포 환경별 설정
-│   ├── onnx_cpu_backend.example.json
-│   ├── onnx_cuda_backend.example.json
-│   ├── embedding_production_policy.example.json
-│   └── ...
-│
-├── research/           # 연구 인프라 설정
-│   ├── contracts/      #   계약/정책 (pairing, split, scoring)
-│   ├── benchmarks/     #   벤치마크 (batch invariance, embedding cache)
-│   └── processing/     #   처리 (control transform, capacity)
-│
-├── data/               # 데이터 처리 설정
-│   └── crop_export_policy.example.json
-│
-├── pdq/                # PDQ 해시 설정
-└── pretrained-weights/ # 사전학습 가중치 intake 설정
-```
+| Path | Contents |
+|---|---|
+| `configs/pipeline/evidence/` | Image preprocessing and evidence-coverage examples |
+| `configs/deployment/` | ONNX measurement, runtime discovery, worker, and production-policy examples |
+| `configs/research/contracts/` | Dataset, split, duplicate, scoring, and artifact contract examples |
+| `configs/research/benchmarks/` | Capacity, cache, and batch-invariance examples |
+| `configs/research/processing/` | Control-transform and scoring examples |
+| `configs/data/` | Crop-export policy example |
+| `configs/pdq/` | Pinned PDQ implementation metadata |
+| `configs/pretrained-weights/` | Pretrained weight and preprocessor intake contracts |
 
-## 사용법
+Each consumer validates its own exact schema. A filename ending in
+`.example.json` is documentation input, not evidence that local data, models,
+or runtime support exist. Do not rename an example to `production.json` and
+assume it becomes deployable.
 
-```bash
-# 증거 채널 설정 예시
-cp configs/pipeline/evidence/evidence_coverage.example.json configs/pipeline/evidence/mine.json
-# → "channels" 항목에 원하는 증거 채널 추가
+The public `CVI` API requires `cvi.retrieval_config.v2`. No retrieval JSON is
+shipped because artifact-backed channels need user-specific verified paths.
+Use the audited in-memory example in the [README](../README.md) and the field
+reference in [Configuration](../docs/CONFIGURATION.md).
 
-# 학습 설정 예시
-# → configs/models/backbones/ 에 백본별 JSON 추가
-
-# 배포 설정
-cp configs/deployment/onnx_cuda_backend.example.json configs/deployment/production.json
-```
+Before using any other example, identify the tool or module that consumes it,
+read that consumer's validation code, and keep secrets and machine-specific
+paths outside tracked files.

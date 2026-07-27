@@ -1,123 +1,113 @@
-# CVI Architecture — Target and Current Runtime
+# Architecture
 
-> Status: this document contains a target architecture, not measured system
-> capability. The canonical runtime is currently image-crop appearance
-> enrollment/search. MiewID-msv3 is a 440×440 general wildlife ReID benchmark
-> candidate, not a nose-print model. Random TinyViT, DNP mask, landmark graph,
-> and fabricated uncertainty paths are disabled. No nose, landmark, fusion,
-> open-set, video, edge, or service performance claim is supported yet.
+## Current Implementation
 
-## Design Principles
+The canonical runtime is `cvi.CVI`, defined in `src/cvi/api.py`. It accepts a
+user-provided `PIL.Image` crop and performs local, crop-level closed-set
+retrieval. It does not invoke video decoding, detection, tracking, or temporal
+aggregation.
 
-1. **Evidence earns inclusion**: appearance is the baseline; every added
-   channel requires calibrated ablation evidence and compute justification
-2. **Search-space reduction**: species → breed → color → individual
-3. **Invariance-first**: each layer uses biologically invariant features
-4. **Uncertainty-gated fusion**: low-confidence channels are suppressed, not averaged
-5. **Signal maximization**: every preprocessing step maximizes SNR (super-resolution, denoising, segmentation)
-6. **Continuous improvement**: every module is independently benchmarkable and tunable
-
-```
-Input Frame
-  │
-  ├─[1] Hierarchical Classifier──────── species / breed / color filter
-  │
-  ├─[2] Nose Print Pipeline──────────── 1st biometric (99.8% Rank-1)
-  │     YOLO-Nose → SuperRes → UNet Mask → TinyViT+MagFace → 512-d
-  │
-  ├─[3] Skeletal Landmark Graph──────── 2nd biometric (pose-invariant)
-  │     HRNet 17-pt → DGCNN → 256-d
-  │
-  ├─[4] Appearance (Uncertainty)──────── 3rd biometric (conditioned)
-  │     DINOV2/ConvNeXt ArcFace → 384-d → evidential head → uncertainty
-  │
-  └─[5] Learned Fusion ──────────────── uncertainty-gated weighted sum
-        → FAISS GPU Index → evidence breakdown
-        → Open-Set (evidential threshold) → Temporal Aggregation
+```text
+strict config v2
+       |
+       v
+configured evidence extractors
+       |
+       v
+EvidenceObservation per channel
+       |
+       +--> required channel unavailable: fail closed
+       +--> optional channel unavailable: record absence
+       |
+       v
+versioned gallery
+  required vectors: dense FAISS IndexFlatIP storage
+  optional vectors: sparse sidecar storage
+       |
+       v
+exact available-intersection weighted cosine scoring
+       |
+       v
+maximum template score per registered UUIDv5 identity
+       |
+       v
+ordered Match candidates
 ```
 
-## Directory Layout
+### Configuration And Construction
 
-```
-src/cvi/
-├── evidence/                  # NEW: per-modality subpackage
-│   ├── __init__.py
-│   ├── base.py                # AbstractEvidencer
-│   ├── nose_print.py          # YOLO-Nose + TinyViT + MagFace
-│   ├── landmark_graph.py      # HRNet + DGCNN
-│   ├── appearance.py          # DINOV2/ConvNeXt + uncertainty
-│   └── quality.py             # Blur/lighting/occlusion estimator
-├── classifier/                # NEW: hierarchical classification
-│   ├── __init__.py
-│   ├── species.py             # Canidae-level
-│   ├── breed.py               # Breed-level
-│   └── color.py               # Coat color/pattern
-├── fusion/                    # NEW: evidence fusion
-│   ├── __init__.py
-│   ├── calibrator.py          # Per-channel ScoreCalibrator
-│   ├── fuser.py               # LearnedWeightFuser + UncertaintyFuser
-│   ├── open_set.py            # EvidentialOpenSet
-│   └── temporal.py            # TemporalAggregator (improved)
-├── index/                     # NEW: search index
-│   ├── __init__.py
-│   ├── base.py                # AbstractIdentityIndex
-│   ├── faiss_gpu.py           # GpuIdentityIndex (existing)
-│   └── hierarchical.py        # Species-filtered index shards
-├── train/                     # NEW: training
-│   ├── __init__.py
-│   ├── config.py              # TrainConfig (extended)
-│   ├── model.py               # ArcFaceModel + MagFaceModel
-│   ├── dataset.py             # PetFaceDataset + OracleCropDataset
-│   ├── augment.py             # Environmental augmentation
-│   └── callbacks.py           # FAR/FRR/CMC eval during training
-├── pipeline/                  # NEW: orchestration
-│   ├── __init__.py
-│   ├── enroll.py              # Multi-evidence enrollment
-│   ├── search.py              # Multi-evidence search
-│   └── explain.py             # Evidence explanation
-└── post_search.py             # KEPT: legacy wrappers call new modules
-```
+`CVI` accepts a Python dictionary, strict JSON text, or a JSON file path. It
+rejects unknown keys, duplicate JSON keys, non-finite values, unsupported modes,
+implicit optional evidence, and enabled open-set behavior. Config v2 requires
+`optional_channels`, and at least one configured channel must remain required.
 
-## Phase Implementation Plan
+Each channel is constructed from its exact channel schema. `CVI` rejects the
+legacy `dinov2` and `appearance` types and has no public branch that executes an
+unpinned Torch Hub loader. The retained `dinov2_local` channel validates
+receipt-bound local model and preprocessing artifacts, loads local files only,
+and disables remote-code trust. Other ONNX, landmark, nose, and MiewID paths
+likewise require their corresponding local files and manifests. The repository
+does not bundle those artifacts.
 
-### Phase 1 — Hierarchical Classifier
-Goal: species → breed → color → filter search space 10x–100x
-- PetFace (257K individuals, 13 families, 319 breeds) fine-tune ConvNeXt ArcFace
-- Hierarchical softmax: family → genus → species → breed → color
-- Inference: top-3 breed filter → downstream only searches within those breeds
+### Enrollment
 
-### Phase 2 — Nose Print Candidate
-Goal: determine whether a licensed, trained nose-specific channel improves the
-frozen appearance baseline under the same leakage-controlled protocol
-- YOLOv8-nose detector (from Nose-to-ID, 2025)
-- Super-resolution enhancer for low-res crops
-- UNet DNPMask segmentation (noise reduction)
-- TinyViT backbone + MagFace loss + ArcFace head
-- Multi-resolution ensemble (3 scales)
-- Data: MiewID dataset + DNND (196K samples) + self-collected
+`CVI.enroll` requires a canonical UUIDv5 registered identity. The helper
+`compute_registered_dog_id` deterministically derives it from a stable source
+identity using the CVI namespace. The pipeline hashes image mode, dimensions,
+and pixels, extracts each configured channel, validates finite non-zero vectors,
+and rejects conflicting template content or idempotency keys.
 
-### Phase 3 — Skeletal Landmark Graph
-Goal: pose-invariant 2nd biometric
-- DogFLW 17-point → HRNet-W32 heatmap
-- Pose normalization → distance matrix → DGCNN (EdgeConv) → 256-d
-- Synthetic pose augmentation (rotation, perspective, partial occlusion)
+Multiple templates may be enrolled for one identity. A single image payload
+cannot be bound to different identities in one gallery.
 
-### Phase 4 — Appearance with Uncertainty
-Goal: 3rd biometric, conditionally used when nose/landmark fail
-- DINOv2/ConvNeXt fine-tune ArcFace (existing trainer.py)
-- Evidential head: output evidence → Dirichlet → aleatoric + epistemic uncertainty
-- Quality gate: blur/lighting/occlusion pre-filter (from quality.py)
+### Search And Scoring
 
-### Phase 5 — Learned Fusion + Open-Set
-Goal: uncertainty-gated, threshold-calibrated, temporally stable
-- LearnedWeightFuser: softmax(confidence × attention)
-- EvidentialOpenSet: reject if epistemic uncertainty > threshold
-- TemporalAggregator: learned weighted median
+Search extracts the same evidence contract used to create the gallery. Required
+channels must be available for every query and template. Optional channels are
+scored only when present on both sides. Configured weights are renormalized over
+that intersection, and each channel contributes cosine similarity.
 
-### Phase 6 — E2E Evaluation
-Goal: FAR/FRR/CMC + longitudinal invariance + domain shift
-- Holdout: known-ID dataset with time-separated pairs
-- Metrics: Rank-1, Rank-5, mAP, AUC, EER, TPR@FPR=1e-3
-- Ablation: remove each evidence layer → measure impact
-- Per-breed breakdown
-- Domain shift: indoor/outdoor, day/night, summer/winter
+The current gallery implementation evaluates stored templates exactly and then
+keeps the maximum-scoring template for each identity. `Match` exposes the
+candidate identity, similarity, channel evidence, availability, scorer hash,
+and exactness marker. No acceptance threshold is applied by `CVI`.
+
+### Persistence And Concurrency
+
+`src/cvi/index/hierarchical.py` persists gallery manifest v4 plus
+content-addressed index and sidecar files. Loading validates the embedding
+contract, dimensions, scorer, cardinalities, hashes, normalized vectors, and
+template metadata. Publishing uses temporary files followed by `os.replace`.
+
+The writable gallery uses a non-blocking `fcntl` lock and permits one writer.
+This makes Linux/POSIX filesystem semantics part of the current support
+boundary. The public API does not expose a read-only multi-process service
+contract.
+
+### Implemented But Non-Canonical Components
+
+The repository also contains detection, evaluation, training, temporal,
+open-set, ONNX measurement, and protected-evaluation components. Their presence
+does not mean they are connected to `CVI` or admitted for production use.
+Notably, `CVIDeploymentCPU` and `CVIDeploymentCUDA` intentionally fail closed,
+and `CVI` rejects enabled open-set configuration.
+
+## Module Map
+
+| Module | Current role |
+|---|---|
+| `src/cvi/api.py` | Public configuration, enrollment, search, explanation, and persistence |
+| `src/cvi/pipeline/` | Evidence orchestration for crop enrollment and search |
+| `src/cvi/evidence/` | Extractors, availability, model manifests, and parity contracts |
+| `src/cvi/fusion/` | Weight representation and research calibration/aggregation utilities |
+| `src/cvi/index/` | Versioned gallery storage and exact candidate scoring |
+| `src/cvi/identity_registry.py` | Deterministic UUIDv5 identity registry |
+| `src/cvi/evaluation/` | Metric implementations outside the canonical decision path |
+| `src/cvi/deployment/` | Disabled deployment facades reserved for future integration |
+
+## Roadmap
+
+Future integration is gate-driven rather than a statement of current
+capability. See [Roadmap](ROADMAP.md) for the required evidence, calibration,
+video, and deployment gates, and [Known Limitations](KNOWN_LIMITATIONS.md) for
+the present boundary.

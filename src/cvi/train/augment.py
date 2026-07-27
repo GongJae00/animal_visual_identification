@@ -28,7 +28,7 @@ class RandAugment:
                 self._shear_x,
                 self._shear_y,
             ])
-            img = op(img)
+            img = op(img).clamp_(0.0, 1.0)
         return img
 
     def _scale(self) -> float:
@@ -36,7 +36,7 @@ class RandAugment:
 
     def _adjust_brightness(self, img: torch.Tensor) -> torch.Tensor:
         factor = 1.0 + self._scale() * random.uniform(-0.5, 0.5)
-        return img.clamp(min=0) * factor
+        return (img * factor).clamp(0, 1)
 
     def _adjust_contrast(self, img: torch.Tensor) -> torch.Tensor:
         factor = 1.0 + self._scale() * random.uniform(-0.5, 0.5)

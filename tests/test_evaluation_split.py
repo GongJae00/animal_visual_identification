@@ -19,7 +19,13 @@ class SplitLeakageTest(unittest.TestCase):
         cal = [{"image_a": "shared.jpg", "image_b": "other.jpg", "label": 1}]
         test = [{"image_a": "shared.jpg", "image_b": "diff.jpg", "label": 0}]
         warnings = validate_split_disjoint(cal, test)
-        self.assertTrue(any("image_a" in w for w in warnings))
+        self.assertTrue(any("pair sides" in w for w in warnings))
+
+    def test_cross_side_image_leakage_detected(self):
+        cal = [{"image_a": "shared.jpg", "image_b": "other.jpg"}]
+        test = [{"image_a": "new.jpg", "image_b": "shared.jpg"}]
+        warnings = validate_split_disjoint(cal, test)
+        self.assertTrue(any("pair sides" in w for w in warnings))
 
     def test_identity_cross_split_detected(self):
         cal = [{"image_a": "a.jpg", "image_b": "b.jpg", "label": 1, "identity": "dog_1"}]
@@ -31,7 +37,14 @@ class SplitLeakageTest(unittest.TestCase):
         cal = [{"image_a": "a.jpg", "image_b": "b.jpg", "label": 1, "video_id": "vid_1"}]
         test = [{"image_a": "c.jpg", "image_b": "d.jpg", "label": 0, "video_id": "vid_1"}]
         warnings = validate_split_disjoint(cal, test)
-        self.assertTrue(any("video_id" in w for w in warnings))
+        self.assertTrue(any("video namespace" in w for w in warnings))
+
+    def test_cross_alias_identity_and_session_leakage_detected(self):
+        cal = [{"identity_a": "dog_1", "session_id_a": "session_1"}]
+        test = [{"identity_b": "dog_1", "session_id_b": "session_1"}]
+        warnings = validate_split_disjoint(cal, test)
+        self.assertTrue(any("identity leakage" in w for w in warnings))
+        self.assertTrue(any("session namespace" in w for w in warnings))
 
     def test_no_leakage_clean(self):
         cal = [{"image_a": "a.jpg", "image_b": "b.jpg", "label": 1, "identity": "dog_1"}]

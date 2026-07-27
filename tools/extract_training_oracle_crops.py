@@ -172,6 +172,15 @@ def main() -> None:
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
 
+    parser.exit(
+        status=2,
+        message=(
+            "Training crop extraction is disabled until the source bundle, "
+            "split receipt, assignment, and crop-content manifest are "
+            "authenticated.\n"
+        ),
+    )
+
     if not args.source_bundle and not args.assignment:
         parser.error("--source-bundle or --assignment required")
 

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
+import math
 from pathlib import Path
 import warnings
 
@@ -7,18 +9,25 @@ import cv2
 import numpy as np
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 from PIL import Image
 
-from cvi.evidence.base import AbstractEvidencer
-from cvi.evidence.miewid import MiewIDReIDExtractor
+from cvi.evidence.artifact_manifest import (
+    ArtifactContractError,
+    ExactOnnxRuntime,
+    NoseDetectorManifest,
+    NoseEmbeddingManifest,
+    NoseMaskManifest,
+    preprocess_image,
+)
+from cvi.evidence.base import EvidenceObservation, EvidenceUnavailableReason
+from cvi.provenance import content_sha256
 
 
 class TinyViTBackbone(nn.Module):
     def __init__(self, embedding_dim: int = 512):
         raise RuntimeError(
-            "TinyViTBackbone is disabled: the implementation was an untrained "
-            "three-layer CNN, not TinyViT. Select a checkpoint-backed backbone."
+            "TinyViTBackbone is disabled: the former implementation was an "
+            "untrained CNN, not TinyViT. Supply an exact nose embedding artifact."
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -26,153 +35,287 @@ class TinyViTBackbone(nn.Module):
 
 
 class MagFaceNoseHead(nn.Module):
-    def __init__(self, embedding_dim: int, num_classes: int,
-                 scale: float = 64.0, margin: float = 0.45):
-        super().__init__()
-        self.W = nn.Parameter(torch.randn(embedding_dim, num_classes) * 0.01)
-        self._scale = scale
-        self._margin = margin
+    """Disabled random training head retained only for an explicit failure."""
 
-    def forward(self, embeddings: torch.Tensor, labels: torch.Tensor
-                ) -> tuple[torch.Tensor, torch.Tensor]:
-        w = F.normalize(self.W, p=2, dim=0)
-        x = F.normalize(embeddings, p=2, dim=1)
-        cos_theta = torch.mm(x, w).clamp(-1.0 + 1e-7, 1.0 - 1e-7)
-        theta = torch.acos(cos_theta)
-        one_hot = F.one_hot(labels, num_classes=self.W.shape[1]).to(embeddings.dtype)
-        target_logits = torch.cos(theta + self._margin)
-        other_logits = cos_theta
-        output = one_hot * target_logits + (1.0 - one_hot) * other_logits
-        output *= self._scale
-        norm_batch = torch.norm(embeddings, dim=1)
-        mag_loss = torch.mean(torch.exp(-norm_batch))
-        return output, mag_loss
+    def __init__(self, *args: object, **kwargs: object):
+        raise RuntimeError(
+            "MagFaceNoseHead is disabled until a trained, exact checkpoint contract exists"
+        )
+
+    def forward(self, *args: object, **kwargs: object) -> torch.Tensor:
+        raise RuntimeError("MagFaceNoseHead is disabled")
 
 
 class NoseEnhancer:
-    def __init__(self, target_size: tuple[int, int] = (224, 224)):
-        self._target_size = target_size
+    """Disabled ambiguous alias; CLAHE is an optional preprocessing transform."""
 
-    def enhance(self, nose_crop: np.ndarray) -> np.ndarray:
-        lab = cv2.cvtColor(nose_crop, cv2.COLOR_RGB2LAB)
-        l, a, b = cv2.split(lab)
-        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
-        l_eq = clahe.apply(l)
-        enhanced = cv2.merge([l_eq, a, b])
-        enhanced_rgb = cv2.cvtColor(enhanced, cv2.COLOR_LAB2RGB)
-        resized = cv2.resize(enhanced_rgb, self._target_size, interpolation=cv2.INTER_CUBIC)
-        return resized
+    def __init__(self, *args: object, **kwargs: object):
+        raise RuntimeError(
+            "NoseEnhancer is disabled; declare optional ClaheTransform in the artifact manifest"
+        )
 
 
-class MiewIDNoseExtractor(MiewIDReIDExtractor):
-    """Deprecated compatibility alias for the former incorrect channel name."""
+class MiewIDNoseExtractor:
+    """Disabled former alias: MiewID is not a nose-print embedding model."""
 
     def __init__(self, onnx_path: Path, input_size: int = 440):
-        if input_size != 440:
-            raise ValueError("MiewID-msv3 only supports its official 440x440 input")
         warnings.warn(
-            "MiewIDNoseExtractor is deprecated; use MiewIDReIDExtractor. "
-            "MiewID is a whole-crop wildlife ReID model, not a nose biometric.",
+            "MiewIDNoseExtractor is deprecated and disabled because MiewID is "
+            "a whole-crop wildlife ReID model, not a nose biometric.",
             DeprecationWarning,
             stacklevel=2,
         )
-        super().__init__(onnx_path)
+        raise RuntimeError(
+            "MiewIDNoseExtractor is deprecated and disabled; use an exact "
+            "detector and nose-embedding artifact bundle"
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class NoseDetection:
+    box: tuple[int, int, int, int]
+    confidence: float
 
 
 class YoloNoseDetector:
-    def __init__(self, model_path: Path | None = None, conf_threshold: float = 0.5):
-        self._conf = conf_threshold
-        self._model = None
-        if model_path and model_path.exists():
-            self._model = cv2.dnn.readNetFromONNX(str(model_path))
+    """Exact normalized-xyxy detector adapter; no model is created implicitly."""
 
-    def detect(self, image: Image.Image) -> tuple[int, int, int, int] | None:
-        if self._model is None:
+    def __init__(
+        self,
+        model_path: Path,
+        manifest: NoseDetectorManifest,
+        *,
+        use_cuda: bool = False,
+    ) -> None:
+        if not isinstance(manifest, NoseDetectorManifest):
+            raise ArtifactContractError(
+                "YoloNoseDetector requires a NoseDetectorManifest"
+            )
+        self._manifest = manifest
+        self._runtime = ExactOnnxRuntime(model_path, manifest, use_cuda=use_cuda)
+
+    def detect(self, image: Image.Image) -> NoseDetection | None:
+        detections = self._runtime.run(preprocess_image(image, self._manifest))[0]
+        confidence = detections[:, 4]
+        if np.any((confidence < 0.0) | (confidence > 1.0)):
+            raise ArtifactContractError("detector confidence must be between 0 and 1")
+        eligible = np.flatnonzero(confidence >= self._manifest.confidence_threshold)
+        if eligible.size == 0:
             return None
-        img_np = np.array(image)
-        blob = cv2.dnn.blobFromImage(img_np, 1/255, (416, 416), swapRB=True)
-        self._model.setInput(blob)
-        outputs = self._model.forward()
-        boxes = []
-        for out in outputs:
-            for det in out:
-                scores = det[5:]
-                cls_id = int(scores.argmax())
-                if scores[cls_id] < self._conf:
-                    continue
-                cx, cy, w, h = det[:4]
-                x0 = int((cx - w/2) * image.width)
-                y0 = int((cy - h/2) * image.height)
-                x1 = int((cx + w/2) * image.width)
-                y1 = int((cy + h/2) * image.height)
-                boxes.append((x0, y0, x1, y1, float(scores[cls_id])))
-        if not boxes:
-            return None
-        best = max(boxes, key=lambda b: b[4])
-        return (best[0], best[1], best[2], best[3])
+        best_index = int(eligible[np.argmax(confidence[eligible])])
+        x0, y0, x1, y1 = np.clip(detections[best_index, :4], 0.0, 1.0)
+        width, height = image.size
+        clipped = (
+            int(math.floor(float(x0) * width)),
+            int(math.floor(float(y0) * height)),
+            int(math.ceil(float(x1) * width)),
+            int(math.ceil(float(y1) * height)),
+        )
+        return NoseDetection(clipped, float(confidence[best_index]))
 
 
 class DNPMask:
-    def __init__(self, model: nn.Module | None = None):
-        self._model = model
+    """Optional exact mask adapter; the former random U-Net is not available."""
 
-    def _build_unet(self) -> nn.Module:
-        class UNet(nn.Module):
-            def __init__(self):
-                super().__init__()
-                self._enc1 = nn.Sequential(
-                    nn.Conv2d(3, 64, 3, padding=1), nn.ReLU(),
-                    nn.Conv2d(64, 64, 3, padding=1), nn.ReLU(),
-                    nn.MaxPool2d(2))
-                self._enc2 = nn.Sequential(
-                    nn.Conv2d(64, 128, 3, padding=1), nn.ReLU(),
-                    nn.Conv2d(128, 128, 3, padding=1), nn.ReLU(),
-                    nn.MaxPool2d(2))
-                self._enc3 = nn.Sequential(
-                    nn.Conv2d(128, 256, 3, padding=1), nn.ReLU(),
-                    nn.Conv2d(256, 256, 3, padding=1), nn.ReLU(),
-                    nn.MaxPool2d(2))
-                self._bridge = nn.Sequential(
-                    nn.Conv2d(256, 512, 3, padding=1), nn.ReLU(),
-                    nn.Conv2d(512, 512, 3, padding=1), nn.ReLU())
-                self._up1 = nn.ConvTranspose2d(512, 256, 2, stride=2)
-                self._dec1 = nn.Sequential(
-                    nn.Conv2d(512, 256, 3, padding=1), nn.ReLU(),
-                    nn.Conv2d(256, 256, 3, padding=1), nn.ReLU())
-                self._up2 = nn.ConvTranspose2d(256, 128, 2, stride=2)
-                self._dec2 = nn.Sequential(
-                    nn.Conv2d(256, 128, 3, padding=1), nn.ReLU(),
-                    nn.Conv2d(128, 128, 3, padding=1), nn.ReLU())
-                self._up3 = nn.ConvTranspose2d(128, 64, 2, stride=2)
-                self._dec3 = nn.Sequential(
-                    nn.Conv2d(128, 64, 3, padding=1), nn.ReLU(),
-                    nn.Conv2d(64, 64, 3, padding=1), nn.ReLU())
-                self._out = nn.Conv2d(64, 1, 1)
-
-            def forward(self, x):
-                e1 = self._enc1(x)
-                e2 = self._enc2(e1)
-                e3 = self._enc3(e2)
-                b = self._bridge(e3)
-                u1 = F.interpolate(self._up1(b), size=e3.shape[2:], mode="bilinear", align_corners=False)
-                d1 = self._dec1(torch.cat([u1, e3], dim=1))
-                u2 = F.interpolate(self._up2(d1), size=e2.shape[2:], mode="bilinear", align_corners=False)
-                d2 = self._dec2(torch.cat([u2, e2], dim=1))
-                u3 = F.interpolate(self._up3(d2), size=e1.shape[2:], mode="bilinear", align_corners=False)
-                d3 = self._dec3(torch.cat([u3, e1], dim=1))
-                return torch.sigmoid(self._out(d3))
-        return UNet()
+    def __init__(
+        self,
+        model_path: Path,
+        manifest: NoseMaskManifest,
+        *,
+        use_cuda: bool = False,
+    ) -> None:
+        if not isinstance(manifest, NoseMaskManifest):
+            raise ArtifactContractError("DNPMask requires a NoseMaskManifest")
+        self._manifest = manifest
+        self._runtime = ExactOnnxRuntime(model_path, manifest, use_cuda=use_cuda)
 
     def apply(self, nose_crop: np.ndarray) -> np.ndarray:
-        import cv2
-        if self._model is None:
-            return nose_crop.astype(np.uint8, copy=True)
-        h, w = nose_crop.shape[:2]
-        if h < 16 or w < 16:
-            return nose_crop.astype(np.uint8)
-        tensor = torch.from_numpy(nose_crop).permute(2, 0, 1).float().unsqueeze(0) / 255.0
-        with torch.no_grad():
-            mask = self._model(tensor).squeeze(0, 1).numpy()
-        mask_resized = cv2.resize(mask, (w, h), interpolation=cv2.INTER_LINEAR)
-        mask_bin = (mask_resized > 0.5).astype(np.uint8)
-        return nose_crop * mask_bin[:, :, None] + 128 * (1 - mask_bin[:, :, None]).astype(np.uint8)
+        if (
+            not isinstance(nose_crop, np.ndarray)
+            or nose_crop.dtype != np.uint8
+            or nose_crop.ndim != 3
+            or nose_crop.shape[2] != 3
+            or nose_crop.shape[0] == 0
+            or nose_crop.shape[1] == 0
+        ):
+            raise ArtifactContractError("nose crop must be a non-empty uint8 RGB array")
+        image = Image.fromarray(nose_crop, mode="RGB")
+        probabilities = self._runtime.run(
+            preprocess_image(image, self._manifest)
+        )[0, 0]
+        if np.any((probabilities < 0.0) | (probabilities > 1.0)):
+            raise ArtifactContractError("mask probabilities must be between 0 and 1")
+        height, width = nose_crop.shape[:2]
+        mask = cv2.resize(probabilities, (width, height), interpolation=cv2.INTER_LINEAR)
+        foreground = mask >= self._manifest.threshold
+        return np.where(foreground[:, :, None], nose_crop, 128).astype(np.uint8)
+
+
+@dataclass(frozen=True, slots=True)
+class NoseRoiPolicy:
+    min_box_width: int
+    min_box_height: int
+    min_resolution_width: int
+    min_resolution_height: int
+
+    def __post_init__(self) -> None:
+        values = (
+            self.min_box_width,
+            self.min_box_height,
+            self.min_resolution_width,
+            self.min_resolution_height,
+        )
+        if not all(
+            isinstance(value, int) and not isinstance(value, bool) and value > 0
+            for value in values
+        ):
+            raise ArtifactContractError("nose ROI policy values must be positive integers")
+        if (
+            self.min_resolution_width < self.min_box_width
+            or self.min_resolution_height < self.min_box_height
+        ):
+            raise ArtifactContractError(
+                "minimum ROI resolution must not be smaller than minimum box size"
+            )
+
+
+NoseAbstainReason = EvidenceUnavailableReason
+NoseEvidenceResult = EvidenceObservation
+
+
+class NosePrintExtractor:
+    """Composed detector-to-ROI-to-embedding channel with typed abstention."""
+
+    name = "nose_print"
+
+    def __init__(
+        self,
+        detector_path: Path,
+        detector_manifest: NoseDetectorManifest,
+        embedding_path: Path,
+        embedding_manifest: NoseEmbeddingManifest,
+        roi_policy: NoseRoiPolicy,
+        *,
+        mask_path: Path | None = None,
+        mask_manifest: NoseMaskManifest | None = None,
+        use_cuda: bool = False,
+    ) -> None:
+        if not isinstance(detector_manifest, NoseDetectorManifest):
+            raise ArtifactContractError(
+                "NosePrintExtractor requires a NoseDetectorManifest"
+            )
+        if not isinstance(embedding_manifest, NoseEmbeddingManifest):
+            raise ArtifactContractError(
+                "NosePrintExtractor requires a NoseEmbeddingManifest"
+            )
+        if not isinstance(roi_policy, NoseRoiPolicy):
+            raise ArtifactContractError("roi_policy must be a NoseRoiPolicy")
+        if (mask_path is None) != (mask_manifest is None):
+            raise ArtifactContractError(
+                "mask_path and mask_manifest must be supplied together"
+            )
+        self._detector = YoloNoseDetector(
+            detector_path, detector_manifest, use_cuda=use_cuda
+        )
+        self._embedding_manifest = embedding_manifest
+        self._embedding_runtime = ExactOnnxRuntime(
+            embedding_path, embedding_manifest, use_cuda=use_cuda
+        )
+        self._mask = (
+            DNPMask(mask_path, mask_manifest, use_cuda=use_cuda)
+            if mask_path is not None and mask_manifest is not None
+            else None
+        )
+        self._roi_policy = roi_policy
+        contract = {
+            "detector": detector_manifest.to_dict(),
+            "embedding": embedding_manifest.to_dict(),
+            "mask": None if mask_manifest is None else mask_manifest.to_dict(),
+            "roi_policy": {
+                "min_box_width": roi_policy.min_box_width,
+                "min_box_height": roi_policy.min_box_height,
+                "min_resolution_width": roi_policy.min_resolution_width,
+                "min_resolution_height": roi_policy.min_resolution_height,
+            },
+        }
+        self.gallery_contract_fields = {
+            "model_sha256": content_sha256(contract),
+            "detector_artifact_sha256": detector_manifest.artifact_sha256,
+            "embedding_artifact_sha256": embedding_manifest.artifact_sha256,
+            "mask_artifact_sha256": (
+                None if mask_manifest is None else mask_manifest.artifact_sha256
+            ),
+            "manifest_contract_sha256": content_sha256(contract),
+        }
+
+    @property
+    def output_dim(self) -> int:
+        return self._embedding_manifest.output_shape[1]
+
+    def extract(self, image: Image.Image) -> NoseEvidenceResult:
+        detection = self._detector.detect(image)
+        if detection is None:
+            return EvidenceObservation.unavailable(
+                self.name, EvidenceUnavailableReason.NO_ROI
+            )
+        x0, y0, x1, y1 = detection.box
+        width, height = x1 - x0, y1 - y0
+        if width < self._roi_policy.min_box_width or height < self._roi_policy.min_box_height:
+            return EvidenceObservation.unavailable(
+                self.name,
+                EvidenceUnavailableReason.ROI_TOO_SMALL,
+                details={
+                    "roi_box": list(detection.box),
+                    "detection_confidence": detection.confidence,
+                },
+            )
+        if (
+            width < self._roi_policy.min_resolution_width
+            or height < self._roi_policy.min_resolution_height
+        ):
+            return EvidenceObservation.unavailable(
+                self.name,
+                EvidenceUnavailableReason.ROI_LOW_RESOLUTION,
+                details={
+                    "roi_box": list(detection.box),
+                    "detection_confidence": detection.confidence,
+                },
+            )
+        crop = np.asarray(image.convert("RGB").crop(detection.box), dtype=np.uint8)
+        if self._mask is not None:
+            crop = self._mask.apply(crop)
+        output = self._embedding_runtime.run(
+            preprocess_image(Image.fromarray(crop, mode="RGB"), self._embedding_manifest)
+        )[0]
+        norm = float(np.linalg.norm(output))
+        if not math.isfinite(norm) or norm <= 0:
+            raise ArtifactContractError(
+                "nose embedding artifact produced a non-finite or zero-norm vector"
+            )
+        embedding = np.asarray(output / norm, dtype=np.float32)
+        return EvidenceObservation.available(
+            self.name,
+            embedding,
+            details={
+                "roi_box": list(detection.box),
+                "detection_confidence": detection.confidence,
+            },
+        )
+
+    def extract_batch(self, images: list[Image.Image]) -> list[NoseEvidenceResult]:
+        return [self.extract(image) for image in images]
+
+
+__all__ = [
+    "DNPMask",
+    "MiewIDNoseExtractor",
+    "MagFaceNoseHead",
+    "NoseAbstainReason",
+    "NoseDetection",
+    "NoseEnhancer",
+    "NoseEvidenceResult",
+    "NosePrintExtractor",
+    "NoseRoiPolicy",
+    "TinyViTBackbone",
+    "YoloNoseDetector",
+]

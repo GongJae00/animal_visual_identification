@@ -142,6 +142,8 @@ class PDQContractTests(unittest.TestCase):
         path = (
             Path(__file__).parents[1]
             / "configs"
+            / "research"
+            / "contracts"
             / "public_canine_pdq_policy.example.json"
         )
         payload = json.loads(path.read_text(encoding="utf-8"))

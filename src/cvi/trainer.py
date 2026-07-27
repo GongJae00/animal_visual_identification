@@ -1,8 +1,12 @@
 from __future__ import annotations
 
+import io
 import json
 import math
+import os
+import random
 import time
+from collections.abc import Callable
 from collections import Counter, OrderedDict
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -16,8 +20,20 @@ from torch.utils.data import DataLoader, Dataset, Sampler
 from torch.utils.data.distributed import DistributedSampler
 
 
-from cvi.train.config import TrainConfig  # noqa: F401 — canonical, backward compat
+from cvi.public_crop_manifest import (
+    PublicCropArtifact,
+    PublicCropManifest,
+    read_verified_crop_artifact,
+)
+from cvi.training_admission import (
+    TrainingAdmissionManifest,
+    TrainingAdmissionReceipt,
+    TrainingCropRow,
+    verify_training_admission_receipt,
+)
+from cvi.role_exposure import RoleExposureLedger, RoleExposureReceipt
 from cvi.train.augment import RandAugment
+from cvi.train.config import TrainConfig  # noqa: F401 — canonical, backward compat
 
 
 # ---------------------------------------------------------------------------
@@ -26,7 +42,7 @@ from cvi.train.augment import RandAugment
 
 
 class ImageCache:
-    """Preload all oracle crop images into a contiguous CHW uint8 array.
+    """Preload admitted crop images into a contiguous CHW uint8 array.
 
     Eliminates 9P filesystem bottleneck during training by decoding and
     resizing all crops once at init.  Normalization is deferred to GPU
@@ -36,16 +52,22 @@ class ImageCache:
     _NORM_MEAN: np.ndarray = np.array([0.485, 0.456, 0.406], dtype=np.float32)
     _NORM_STD: np.ndarray = np.array([0.229, 0.224, 0.225], dtype=np.float32)
 
-    def __init__(self, samples: list[tuple[Path, int]],
-                 size: tuple[int, int] = (224, 224)) -> None:
+    def __init__(
+        self,
+        crop_root: Path,
+        samples: list[tuple[PublicCropArtifact, int]],
+        size: tuple[int, int] = (224, 224),
+    ) -> None:
         from PIL import Image
         n = len(samples)
         self._data = np.zeros((n, 3, size[0], size[1]), dtype=np.uint8)
         self._labels = np.array([label for _, label in samples], dtype=np.int64)
-        for i, (path, _) in enumerate(samples):
-            img = Image.open(path).convert("RGB")
-            img = img.resize(size, Image.BILINEAR)
-            arr = np.array(img, dtype=np.uint8)
+        for i, (artifact, _) in enumerate(samples):
+            payload = read_verified_crop_artifact(crop_root, artifact)
+            with Image.open(io.BytesIO(payload)) as image:
+                with image.convert("RGB") as rgb:
+                    resized = rgb.resize(size, Image.BILINEAR)
+                    arr = np.array(resized, dtype=np.uint8)
             self._data[i] = np.ascontiguousarray(np.transpose(arr, (2, 0, 1)))
 
     @property
@@ -71,8 +93,8 @@ class ImageCache:
 # ---------------------------------------------------------------------------
 
 
-class OracleCropDataset(Dataset):
-    """Read oracle crop images from the exported crop directory.
+class AdmittedCropDataset(Dataset):
+    """Read exactly the immutable crop artifacts named by admitted rows.
 
     Each sample is a (224x224 RGB tensor, label_index) pair.
     When *use_cache* is True (default), all images are preloaded into a
@@ -83,26 +105,34 @@ class OracleCropDataset(Dataset):
     def __init__(
         self,
         crop_root: Path,
-        binding_records: list[dict],
+        rows: tuple[TrainingCropRow, ...],
+        crop_manifest: PublicCropManifest,
         label_to_index: dict[str, int],
         *,
         use_cache: bool = True,
     ) -> None:
-        self._samples: list[tuple[Path, int]] = []
-        for rec in binding_records:
-            label = rec["registered_dog_id"]
-            if label not in label_to_index:
-                continue
-            label_idx = label_to_index[label]
-            sample_tokens = rec.get("sample_tokens", [rec.get("identity_token", "")])
-            for sample_token in sample_tokens:
-                paths = sorted(crop_root.rglob(f"**/{sample_token}.jpg"))
-                for p in paths:
-                    self._samples.append((p, label_idx))
+        artifacts_by_sample = {
+            artifact.sample_token: artifact for artifact in crop_manifest.artifacts
+        }
+        self._crop_root = crop_root
+        self._samples: list[tuple[PublicCropArtifact, int]] = []
+        for row in rows:
+            try:
+                artifact = artifacts_by_sample[row.sample_token]
+                label_idx = label_to_index[row.public_subject_token]
+            except KeyError as error:
+                raise ValueError("admitted dataset row is not exactly bound") from error
+            if (
+                artifact.public_subject_token != row.public_subject_token
+                or artifact.relative_path != row.crop_relative_path
+                or artifact.artifact_sha256 != row.crop_artifact_sha256
+            ):
+                raise ValueError("admitted dataset row crop binding differs")
+            self._samples.append((artifact, label_idx))
 
         self._cache: ImageCache | None = None
         if use_cache and self._samples:
-            self._cache = ImageCache(self._samples)
+            self._cache = ImageCache(crop_root, self._samples)
 
     def __len__(self) -> int:
         return len(self._samples)
@@ -110,12 +140,13 @@ class OracleCropDataset(Dataset):
     def __getitem__(self, index: int) -> tuple[torch.Tensor, int]:
         if self._cache is not None:
             return self._cache[index]
-        path, label = self._samples[index]
+        artifact, label = self._samples[index]
         from PIL import Image
-        img = Image.open(path).convert("RGB")
-        img = img.resize((224, 224), Image.BILINEAR)
-        arr = np.array(img, dtype=np.float32) / 255.0
-        arr = (arr - np.array([0.485, 0.456, 0.406])) / np.array([0.229, 0.224, 0.225])
+        payload = read_verified_crop_artifact(self._crop_root, artifact)
+        with Image.open(io.BytesIO(payload)) as image:
+            with image.convert("RGB") as rgb:
+                resized = rgb.resize((224, 224), Image.BILINEAR)
+                arr = np.array(resized, dtype=np.uint8)
         tensor = torch.from_numpy(np.transpose(arr, (2, 0, 1)))
         return tensor, label
 
@@ -137,6 +168,10 @@ class IdentityBalancedSampler(Sampler):
         batch_size: int,
         generator: torch.Generator | None = None,
     ) -> None:
+        if isinstance(batch_size, bool) or batch_size <= 0:
+            raise ValueError("batch_size must be positive")
+        if not labels:
+            raise ValueError("sampler requires at least one sample")
         self._batch_size = batch_size
         self._generator = generator
         label_to_indices: dict[int, list[int]] = {}
@@ -148,21 +183,40 @@ class IdentityBalancedSampler(Sampler):
 
     def __iter__(self):
         g = self._generator if self._generator is not None else torch.default_generator
-        order = torch.randperm(self._num_identities, generator=g).tolist()
-        indices: list[int] = []
-        g2 = torch.Generator()
-        for identity_id in order:
-            candidates = self._label_to_indices[self._identity_ids[identity_id]]
-            g2.manual_seed(int(g.seed()) + identity_id)
-            perm = torch.randperm(len(candidates), generator=g2).tolist()
-            pick = [candidates[i] for i in perm]
-            indices.extend(pick)
-            if len(indices) >= self._batch_size:
-                yield indices[: self._batch_size]
-                indices = indices[self._batch_size:]
+        identity_ties = torch.randperm(self._num_identities, generator=g).tolist()
+        tie_rank = {self._identity_ids[pos]: rank for rank, pos in enumerate(identity_ties)}
+        identities = sorted(
+            self._identity_ids,
+            key=lambda identity: (
+                -len(self._label_to_indices[identity]),
+                tie_rank[identity],
+            ),
+        )
+        batches: list[list[int]] = [[] for _ in range(len(self))]
+        batch_ties = torch.randperm(len(batches), generator=g).tolist()
+        batch_rank = {batch: rank for rank, batch in enumerate(batch_ties)}
+        for identity in identities:
+            candidates = self._label_to_indices[identity]
+            permutation = torch.randperm(len(candidates), generator=g).tolist()
+            available = sorted(
+                range(len(batches)),
+                key=lambda batch: (len(batches[batch]), batch_rank[batch]),
+            )
+            selected = available[:len(candidates)]
+            if any(len(batches[batch]) >= self._batch_size for batch in selected):
+                raise RuntimeError("identity-balanced batch schedule is infeasible")
+            for sample_position, batch in zip(permutation, selected):
+                batches[batch].append(candidates[sample_position])
+        order = torch.randperm(len(batches), generator=g).tolist()
+        for batch in order:
+            if not batches[batch]:
+                raise RuntimeError("identity-balanced sampler created an empty batch")
+            yield batches[batch]
 
     def __len__(self) -> int:
-        return math.ceil(len(self._label_to_indices) / self._batch_size)
+        total = sum(len(indices) for indices in self._label_to_indices.values())
+        largest_identity = max(len(indices) for indices in self._label_to_indices.values())
+        return max(largest_identity, math.ceil(total / self._batch_size))
 
 
 # ---------------------------------------------------------------------------
@@ -177,11 +231,19 @@ class Dinov2Embedding(nn.Module):
     """
 
     def __init__(self, embedding_dim: int = 384,
-                 use_gradient_checkpointing: bool = False) -> None:
+                 use_gradient_checkpointing: bool = False,
+                 model_directory: Path | None = None) -> None:
         super().__init__()
         from transformers import AutoModel
+        source = (
+            str(model_directory)
+            if model_directory is not None
+            else "facebook/dinov2-small"
+        )
         self._backbone = AutoModel.from_pretrained(
-            "facebook/dinov2-small", attn_implementation="sdpa"
+            source,
+            attn_implementation="sdpa",
+            local_files_only=model_directory is not None,
         )
         self._embedding_dim = embedding_dim
         if use_gradient_checkpointing:
@@ -195,10 +257,18 @@ class Dinov2Embedding(nn.Module):
 
 class ConvNeXtEmbedding(nn.Module):
     def __init__(self, embedding_dim: int = 768,
-                 use_gradient_checkpointing: bool = False) -> None:
+                 use_gradient_checkpointing: bool = False,
+                 model_directory: Path | None = None) -> None:
         super().__init__()
         from transformers import AutoModel
-        self._backbone = AutoModel.from_pretrained("facebook/convnext-base-224")
+        source = (
+            str(model_directory)
+            if model_directory is not None
+            else "facebook/convnext-base-224"
+        )
+        self._backbone = AutoModel.from_pretrained(
+            source, local_files_only=model_directory is not None
+        )
         hidden = self._backbone.config.hidden_sizes[-1]
         if embedding_dim != hidden:
             self._project = nn.Linear(hidden, embedding_dim)
@@ -244,11 +314,20 @@ class ArcFaceModel(nn.Module):
     """Generic backbone + ArcFace head.  Backbone is a callable factory."""
 
     def __init__(self, config: TrainConfig,
-                 backbone_factory: type[nn.Module] | None = None) -> None:
+                  backbone_factory: Callable[..., nn.Module] | None = None) -> None:
         super().__init__()
         self._config = config
         if backbone_factory is None:
-            backbone_factory = Dinov2Embedding
+            factories = {
+                "dinov2-small": Dinov2Embedding,
+                "convnext-base": ConvNeXtEmbedding,
+            }
+            try:
+                backbone_factory = factories[config.model_name]
+            except KeyError as exc:
+                raise ValueError(
+                    f"unsupported training backbone {config.model_name!r}"
+                ) from exc
         self._backbone = backbone_factory(
             config.embedding_dim,
             use_gradient_checkpointing=config.gradient_checkpointing,
@@ -285,15 +364,19 @@ class ArcFaceModel(nn.Module):
 
     def export_to_onnx(self, output_path: Path) -> None:
         self.eval()
-        dummy = torch.randn(1, 3, 224, 224)
+        device = next(self._backbone.parameters()).device
+        dummy = torch.randn(3, 3, 224, 224, device=device)
+        batch = torch.export.Dim("batch")
         torch.onnx.export(
             self._backbone,
-            dummy,
+            (dummy,),
             str(output_path),
             input_names=["images"],
             output_names=["embedding"],
-            dynamic_axes={"images": {0: "batch"}, "embedding": {0: "batch"}},
+            dynamo=True,
+            dynamic_shapes=({0: batch},),
             opset_version=18,
+            external_data=False,
         )
 
 
@@ -344,9 +427,131 @@ def _count_parameters(model: nn.Module) -> dict[str, int]:
     return {"total": total, "trainable": trainable}
 
 
-def _build_label_index(binding_records: list[dict]) -> dict[str, int]:
-    unique_labels = sorted(set(rec["registered_dog_id"] for rec in binding_records))
+def _build_label_index(rows: tuple[TrainingCropRow, ...]) -> dict[str, int]:
+    unique_labels = sorted({row.public_subject_token for row in rows})
     return {label: idx for idx, label in enumerate(unique_labels)}
+
+
+def _unwrap_model(model: nn.Module) -> ArcFaceModel:
+    candidate = getattr(model, "_orig_mod", model)
+    if not isinstance(candidate, ArcFaceModel):
+        raise TypeError("training model is not an ArcFaceModel")
+    return candidate
+
+
+def _checkpoint_payload(
+    *,
+    model: nn.Module,
+    optimizer: torch.optim.Optimizer,
+    scaler: torch.amp.GradScaler | None,
+    config: TrainConfig,
+    label_to_index: dict[str, int],
+    epoch: int,
+    global_step: int,
+    selection_metric: dict[str, float] | None,
+    admission_receipt: TrainingAdmissionReceipt | None = None,
+) -> dict[str, Any]:
+    return {
+        "schema_version": "cvi.training_checkpoint.v1",
+        "architecture": {
+            "model_name": config.model_name,
+            "embedding_dim": config.embedding_dim,
+            "num_classes": config.num_classes,
+            "loss_type": config.loss_type,
+        },
+        "config": config.to_dict(),
+        "label_to_index": dict(sorted(label_to_index.items())),
+        "epoch": epoch,
+        "global_step": global_step,
+        "selection_metric": selection_metric,
+        "training_admission": (
+            None
+            if admission_receipt is None
+            else {
+                "receipt_sha256": admission_receipt.receipt_sha256,
+                "receipt": admission_receipt.to_dict(),
+            }
+        ),
+        "model_state_dict": _unwrap_model(model).state_dict(),
+        "optimizer_state_dict": optimizer.state_dict(),
+        "scaler_state_dict": scaler.state_dict() if scaler is not None else None,
+        "rng_state": {
+            "python": random.getstate(),
+            "numpy": {
+                "bit_generator": np.random.get_state()[0],
+                "keys": [int(value) for value in np.random.get_state()[1]],
+                "position": int(np.random.get_state()[2]),
+                "has_gauss": int(np.random.get_state()[3]),
+                "cached_gaussian": float(np.random.get_state()[4]),
+            },
+            "torch_cpu": torch.get_rng_state(),
+            "torch_cuda": torch.cuda.get_rng_state_all() if torch.cuda.is_available() else [],
+        },
+        "preprocessing": {
+            "input_shape": ["batch", 3, 224, 224],
+            "color_mode": "RGB",
+            "resize": "bilinear_stretch_224x224",
+            "scale": 1.0 / 255.0,
+            "mean": ImageCache._NORM_MEAN.tolist(),
+            "std": ImageCache._NORM_STD.tolist(),
+            "dtype": "float32",
+        },
+    }
+
+
+@torch.no_grad()
+def _evaluate_development_retrieval(
+    model: nn.Module,
+    loader: DataLoader,
+    device: torch.device,
+    norm_mean: torch.Tensor | None,
+    norm_std: torch.Tensor | None,
+) -> dict[str, float]:
+    model.eval()
+    all_embeddings: list[torch.Tensor] = []
+    all_labels: list[torch.Tensor] = []
+    for images, labels in loader:
+        images = images.to(device, non_blocking=True)
+        if images.dtype == torch.uint8:
+            images = ImageCache.gpu_normalize(images, norm_mean, norm_std)
+        else:
+            images = images.to(dtype=torch.float32)
+        embeddings = _unwrap_model(model).encode(images)
+        if embeddings.ndim != 2 or not torch.isfinite(embeddings).all():
+            raise RuntimeError("development embeddings are invalid")
+        all_embeddings.append(embeddings.detach().cpu())
+        all_labels.append(labels.detach().cpu())
+    if not all_embeddings:
+        raise RuntimeError("development retrieval loader is empty")
+    embeddings = F.normalize(torch.cat(all_embeddings, dim=0), p=2, dim=1)
+    labels = torch.cat(all_labels, dim=0)
+    unique, counts = torch.unique(labels, return_counts=True)
+    if unique.numel() < 2 or torch.any(counts < 2):
+        raise RuntimeError(
+            "development retrieval requires at least two identities and two "
+            "samples per identity"
+        )
+    rank1_hits = 0
+    average_precisions: list[float] = []
+    for query_idx in range(embeddings.shape[0]):
+        scores = embeddings @ embeddings[query_idx]
+        candidate_mask = torch.arange(embeddings.shape[0]) != query_idx
+        order = torch.argsort(
+            scores[candidate_mask], descending=True, stable=True
+        )
+        candidate_labels = labels[candidate_mask]
+        relevant = candidate_labels[order] == labels[query_idx]
+        rank1_hits += int(relevant[0].item())
+        ranks = torch.nonzero(relevant, as_tuple=False).flatten() + 1
+        precision = torch.arange(1, ranks.numel() + 1, dtype=torch.float64) / ranks
+        average_precisions.append(float(precision.mean().item()))
+    count = embeddings.shape[0]
+    return {
+        "rank1": rank1_hits / count,
+        "map": float(np.mean(average_precisions)),
+        "queries": float(count),
+        "identities": float(unique.numel()),
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -385,31 +590,192 @@ def _build_dataloader(
     )
 
 
+def _prepare_training_images(
+    images: torch.Tensor,
+    augment: RandAugment,
+    norm_mean: torch.Tensor,
+    norm_std: torch.Tensor,
+) -> torch.Tensor:
+    if images.dtype != torch.uint8:
+        raise TypeError("training dataset images must use uint8 CHW tensors")
+    images = images.float().div_(255.0)
+    for index in range(images.shape[0]):
+        images[index] = augment(images[index])
+    return images.sub_(norm_mean).div_(norm_std)
+
+
+def evaluate_pretrained_development(
+    config: TrainConfig,
+    crop_root: Path,
+    admission_manifest: TrainingAdmissionManifest,
+    crop_manifest: PublicCropManifest,
+    admission_receipt: TrainingAdmissionReceipt,
+    *,
+    exposure_ledger: RoleExposureLedger,
+    exposure_receipt: RoleExposureReceipt,
+    expected_admission_manifest_sha256: str,
+    expected_admission_receipt_sha256: str,
+    expected_split_receipt_sha256: str,
+    expected_crop_receipt_sha256: str,
+    expected_exposure_receipt_sha256: str,
+    expected_model_receipt_sha256: str,
+    model_artifact_verifier: Callable[[], None],
+    device: torch.device = torch.device("cpu"),
+    backbone_factory: Callable[..., nn.Module] | None = None,
+) -> dict[str, Any]:
+    """Evaluate the frozen pretrained backbone on the admitted development set."""
+    verify_training_admission_receipt(
+        admission_manifest,
+        crop_manifest,
+        admission_receipt,
+        crop_root=crop_root,
+        exposure_ledger=exposure_ledger,
+        exposure_receipt=exposure_receipt,
+        expected_admission_manifest_sha256=expected_admission_manifest_sha256,
+        expected_admission_receipt_sha256=expected_admission_receipt_sha256,
+        expected_split_receipt_sha256=expected_split_receipt_sha256,
+        expected_crop_receipt_sha256=expected_crop_receipt_sha256,
+        expected_exposure_receipt_sha256=expected_exposure_receipt_sha256,
+        expected_model_receipt_sha256=expected_model_receipt_sha256,
+    )
+    if not callable(model_artifact_verifier):
+        raise TypeError("model_artifact_verifier must be callable")
+
+    train_rows = tuple(
+        row for row in admission_manifest.rows if row.lane == "MODEL_TRAINING"
+    )
+    development_rows = tuple(
+        row for row in admission_manifest.rows if row.lane == "MODEL_SELECTION"
+    )
+    if not train_rows or not development_rows:
+        raise ValueError("exact train and development rows are required")
+    train_labels = _build_label_index(train_rows)
+    development_labels = _build_label_index(development_rows)
+    if set(train_labels) & set(development_labels):
+        raise ValueError("training and development public subjects must be disjoint")
+    development_counts = Counter(
+        row.public_subject_token for row in development_rows
+    )
+    if len(development_counts) < 2 or min(development_counts.values()) < 2:
+        raise ValueError(
+            "development rows require at least two public subjects and two "
+            "samples per subject"
+        )
+
+    model_artifact_verifier()
+    config = TrainConfig(**{**config.to_dict(), "num_classes": len(train_labels)})
+    dataset = AdmittedCropDataset(
+        crop_root,
+        development_rows,
+        crop_manifest,
+        development_labels,
+        use_cache=config.preload_images,
+    )
+    loader = _build_dataloader(dataset, None, config, device, shuffle=False)
+    model = ArcFaceModel(config, backbone_factory=backbone_factory).to(device)
+    norm_mean = torch.tensor(
+        [0.485, 0.456, 0.406], device=device
+    ).view(1, 3, 1, 1)
+    norm_std = torch.tensor(
+        [0.229, 0.224, 0.225], device=device
+    ).view(1, 3, 1, 1)
+    metrics = _evaluate_development_retrieval(
+        model, loader, device, norm_mean, norm_std
+    )
+    return {
+        "config": config.to_dict(),
+        "development_metrics": metrics,
+        "parameters": _count_parameters(model),
+        "training_admission": {
+            "manifest_sha256": admission_manifest.manifest_sha256,
+            "receipt_sha256": admission_receipt.receipt_sha256,
+        },
+        "interpretation": "FROZEN_PRETRAINED_DEVELOPMENT_BASELINE_ONLY",
+    }
+
+
 def train_model(
     config: TrainConfig,
     crop_root: Path,
-    train_binding: list[dict],
-    val_binding: list[dict] | None = None,
+    admission_manifest: TrainingAdmissionManifest,
+    crop_manifest: PublicCropManifest,
+    admission_receipt: TrainingAdmissionReceipt,
+    *,
+    exposure_ledger: RoleExposureLedger,
+    exposure_receipt: RoleExposureReceipt,
+    output_directory: Path,
+    expected_admission_manifest_sha256: str,
+    expected_admission_receipt_sha256: str,
+    expected_split_receipt_sha256: str,
+    expected_crop_receipt_sha256: str,
+    expected_exposure_receipt_sha256: str,
+    expected_model_receipt_sha256: str,
+    model_artifact_verifier: Callable[[], None],
     device: torch.device = torch.device("cpu"),
-    backbone_factory: type[nn.Module] | None = None,
+    backbone_factory: Callable[..., nn.Module] | None = None,
 ) -> dict[str, Any]:
-    """Run supervised ArcFace training on oracle crops.
+    """Run receipt-bound ArcFace training on immutable public crops.
 
     *backbone_factory* is a callable(embedding_dim, use_gradient_checkpointing) → nn.Module.
     Defaults to Dinov2Embedding.
     """
+    if output_directory.is_symlink() or os.path.lexists(output_directory):
+        raise FileExistsError("training output directory must not exist")
+    checkpoint_dir = output_directory / "checkpoints"
+    if Path(config.checkpoint_dir) != checkpoint_dir:
+        raise ValueError("checkpoint_dir must be the output directory checkpoints path")
+    verified_admission = verify_training_admission_receipt(
+        admission_manifest,
+        crop_manifest,
+        admission_receipt,
+        crop_root=crop_root,
+        exposure_ledger=exposure_ledger,
+        exposure_receipt=exposure_receipt,
+        expected_admission_manifest_sha256=expected_admission_manifest_sha256,
+        expected_admission_receipt_sha256=expected_admission_receipt_sha256,
+        expected_split_receipt_sha256=expected_split_receipt_sha256,
+        expected_crop_receipt_sha256=expected_crop_receipt_sha256,
+        expected_exposure_receipt_sha256=expected_exposure_receipt_sha256,
+        expected_model_receipt_sha256=expected_model_receipt_sha256,
+    )
+    if not callable(model_artifact_verifier):
+        raise TypeError("model_artifact_verifier must be callable")
+
+    train_rows = tuple(
+        row for row in admission_manifest.rows if row.lane == "MODEL_TRAINING"
+    )
+    development_rows = tuple(
+        row for row in admission_manifest.rows if row.lane == "MODEL_SELECTION"
+    )
+    if not train_rows or not development_rows:
+        raise ValueError("exact train and development rows are required")
+    random.seed(config.seed)
     torch.manual_seed(config.seed)
     np.random.seed(config.seed)
 
-    label_to_index = _build_label_index(train_binding)
+    label_to_index = _build_label_index(train_rows)
+    development_label_to_index = _build_label_index(development_rows)
+    overlap = set(label_to_index) & set(development_label_to_index)
+    if overlap:
+        raise ValueError("training and development public subjects must be disjoint")
+    development_counts = Counter(
+        row.public_subject_token for row in development_rows
+    )
+    if len(development_counts) < 2 or min(development_counts.values()) < 2:
+        raise ValueError(
+            "development rows require at least two public subjects and two "
+            "samples per subject"
+        )
     config = TrainConfig(
         **{**config.to_dict(), "num_classes": len(label_to_index)}
     )
 
-    train_dataset = OracleCropDataset(
-        crop_root, train_binding, label_to_index,
+    train_dataset = AdmittedCropDataset(
+        crop_root, train_rows, crop_manifest, label_to_index,
         use_cache=config.preload_images,
     )
+    if len(train_dataset) == 0:
+        raise ValueError("training crop dataset is empty")
     train_labels = [lab for _, lab in train_dataset]
     sampler = IdentityBalancedSampler(
         train_labels, config.batch_size,
@@ -417,14 +783,19 @@ def train_model(
     )
     train_loader = _build_dataloader(train_dataset, sampler, config, device)
 
-    val_loader: DataLoader | None = None
-    if val_binding:
-        val_dataset = OracleCropDataset(
-            crop_root, val_binding, label_to_index,
-            use_cache=config.preload_images,
-        )
-        val_loader = _build_dataloader(val_dataset, None, config, device, shuffle=False)
+    val_dataset = AdmittedCropDataset(
+        crop_root, development_rows, crop_manifest, development_label_to_index,
+        use_cache=config.preload_images,
+    )
+    if len(val_dataset) == 0:
+        raise ValueError("development crop dataset is empty")
+    val_loader = _build_dataloader(
+        val_dataset, None, config, device, shuffle=False
+    )
 
+    model_artifact_verifier()
+    output_directory.mkdir(parents=True, exist_ok=False)
+    checkpoint_dir.mkdir()
     model = ArcFaceModel(config, backbone_factory=backbone_factory).to(device)
 
     augment = RandAugment(n=2, m=9)
@@ -436,17 +807,19 @@ def train_model(
         model.parameters(), lr=config.lr, weight_decay=config.weight_decay
     )
 
-    checkpoint_dir = Path(config.checkpoint_dir)
-    checkpoint_dir.mkdir(parents=True, exist_ok=True)
-
     scaler = torch.amp.GradScaler("cuda") if device.type == "cuda" and config.mixed_precision else None
-    best_val_loss = float("inf")
+    best_val_rank1 = float("-inf")
     best_checkpoint: str | None = None
     history: list[dict[str, Any]] = []
     global_step = 0
+    processed_samples = 0
     t0 = time.time()
-    norm_mean: torch.Tensor | None = None
-    norm_std: torch.Tensor | None = None
+    norm_mean = torch.tensor(
+        [0.485, 0.456, 0.406], device=device
+    ).view(1, 3, 1, 1)
+    norm_std = torch.tensor(
+        [0.229, 0.224, 0.225], device=device
+    ).view(1, 3, 1, 1)
 
     for epoch in range(config.epochs):
         lr = _warmup_cosine_schedule(
@@ -461,19 +834,9 @@ def train_model(
         for batch_idx, (images, labels) in enumerate(train_loader):
             images = images.to(device, non_blocking=True)
             labels = labels.to(device, non_blocking=True)
-            if images.dtype == torch.uint8:
-                if norm_mean is None:
-                    norm_mean = torch.tensor(
-                        [0.485, 0.456, 0.406], device=device
-                    ).view(1, 3, 1, 1)
-                    norm_std = torch.tensor(
-                        [0.229, 0.224, 0.225], device=device
-                    ).view(1, 3, 1, 1)
-                images = images.float().div_(255.0)
-                if augment is not None:
-                    for i in range(images.shape[0]):
-                        images[i] = augment(images[i])
-                images = images.sub_(norm_mean).div_(norm_std)
+            images = _prepare_training_images(
+                images, augment, norm_mean, norm_std
+            )
 
             optimizer.zero_grad()
             if scaler is not None:
@@ -495,6 +858,7 @@ def train_model(
             epoch_loss += loss.item()
             epoch_steps += 1
             global_step += 1
+            processed_samples += int(labels.shape[0])
 
             if global_step % config.log_interval == 0:
                 used = torch.cuda.max_memory_allocated(device) // 2**20 if device.type == "cuda" else 0
@@ -513,39 +877,32 @@ def train_model(
 
         avg_train_loss = epoch_loss / max(epoch_steps, 1)
 
-        val_loss: float | None = None
-        if val_loader is not None:
-            model.eval()
-            total_val_loss = 0.0
-            val_steps = 0
-            with torch.no_grad():
-                for images, labels in val_loader:
-                    images = images.to(device, non_blocking=True)
-                    labels = labels.to(device, non_blocking=True)
-                    if images.dtype == torch.uint8:
-                        if norm_mean is None:
-                            norm_mean = torch.tensor(
-                                [0.485, 0.456, 0.406], device=device
-                            ).view(1, 3, 1, 1)
-                            norm_std = torch.tensor(
-                                [0.229, 0.224, 0.225], device=device
-                            ).view(1, 3, 1, 1)
-                        images = ImageCache.gpu_normalize(images, norm_mean, norm_std)
-                    logits = model.forward_train(images, labels)
-                    loss = F.cross_entropy(logits, labels)
-                    total_val_loss += loss.item()
-                    val_steps += 1
-            val_loss = total_val_loss / max(val_steps, 1)
-
-            if val_loss < best_val_loss:
-                best_val_loss = val_loss
-                best_checkpoint = str(checkpoint_dir / "best_model.pt")
-                torch.save(model.state_dict(), best_checkpoint)
+        val_metrics = _evaluate_development_retrieval(
+            model, val_loader, device, norm_mean, norm_std
+        )
+        if val_metrics["rank1"] > best_val_rank1:
+            best_val_rank1 = val_metrics["rank1"]
+            best_checkpoint = str(checkpoint_dir / "best_model.pt")
+            torch.save(
+                _checkpoint_payload(
+                    model=model,
+                    optimizer=optimizer,
+                    scaler=scaler,
+                    config=config,
+                    label_to_index=label_to_index,
+                    epoch=epoch + 1,
+                    global_step=global_step,
+                    selection_metric=val_metrics,
+                    admission_receipt=verified_admission,
+                ),
+                best_checkpoint,
+            )
 
         epoch_record = {
             "epoch": epoch + 1,
             "train_loss": round(avg_train_loss, 4),
-            "val_loss": round(val_loss, 4) if val_loss is not None else None,
+            "development_rank1": round(val_metrics["rank1"], 6),
+            "development_map": round(val_metrics["map"], 6),
             "lr": round(lr, 8),
         }
         history.append(epoch_record)
@@ -553,15 +910,41 @@ def train_model(
 
         if (epoch + 1) % config.save_every_n_epochs == 0:
             ckpt = checkpoint_dir / f"epoch_{epoch + 1:03d}.pt"
-            torch.save(model.state_dict(), ckpt)
+            torch.save(
+                _checkpoint_payload(
+                    model=model,
+                    optimizer=optimizer,
+                    scaler=scaler,
+                    config=config,
+                    label_to_index=label_to_index,
+                    epoch=epoch + 1,
+                    global_step=global_step,
+                    selection_metric=val_metrics,
+                    admission_receipt=verified_admission,
+                ),
+                ckpt,
+            )
 
     last_checkpoint = str(checkpoint_dir / "last_model.pt")
-    torch.save(model.state_dict(), last_checkpoint)
+    torch.save(
+        _checkpoint_payload(
+            model=model,
+            optimizer=optimizer,
+            scaler=scaler,
+            config=config,
+            label_to_index=label_to_index,
+            epoch=config.epochs,
+            global_step=global_step,
+            selection_metric=val_metrics,
+            admission_receipt=verified_admission,
+        ),
+        last_checkpoint,
+    )
 
     elapsed = time.time() - t0
     steps_per_sec = global_step / elapsed if elapsed > 0 else 0.0
     total_samples = len(train_dataset)
-    samples_per_sec = total_samples * config.epochs / elapsed if elapsed > 0 else 0.0
+    samples_per_sec = processed_samples / elapsed if elapsed > 0 else 0.0
 
     summary = {
         "config": config.to_dict(),
@@ -576,7 +959,12 @@ def train_model(
         "best_checkpoint": best_checkpoint,
         "last_checkpoint": last_checkpoint,
         "total_steps": global_step,
+        "processed_samples": processed_samples,
         "elapsed_seconds": round(elapsed, 1),
+        "training_admission": {
+            "manifest_sha256": admission_manifest.manifest_sha256,
+            "receipt_sha256": verified_admission.receipt_sha256,
+        },
     }
 
     summary_path = checkpoint_dir / "train_summary.json"
@@ -602,6 +990,12 @@ def compute_embeddings(
     all_labels: list[np.ndarray] = []
     for images, labels in loader:
         images = images.to(device)
+        if images.dtype == torch.uint8:
+            images = ImageCache.gpu_normalize(images)
+        else:
+            images = images.to(dtype=torch.float32)
+        if not torch.isfinite(images).all():
+            raise RuntimeError("embedding input contains non-finite values")
         emb = model.extract_embedding(images)
         all_embs.append(emb)
         all_labels.append(labels.numpy())

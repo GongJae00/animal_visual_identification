@@ -18,6 +18,7 @@ from cvi.protected_public_split import (
 )
 from cvi.source_provenance import build_offline_tool_provenance
 from cvi.provenance import content_sha256
+from cvi.split_role_exposure import RoleExposureLedger, RoleExposureReceipt
 
 
 def main() -> None:
@@ -30,6 +31,8 @@ def main() -> None:
     parser.add_argument("--source-bundle", required=True, type=Path)
     parser.add_argument("--evidence-graph", required=True, type=Path)
     parser.add_argument("--policy", required=True, type=Path)
+    parser.add_argument("--role-exposure-ledger", required=True, type=Path)
+    parser.add_argument("--role-exposure-receipt", required=True, type=Path)
     parser.add_argument("--secret", required=True, type=Path)
     parser.add_argument(
         "--create-secret",
@@ -52,9 +55,13 @@ def main() -> None:
     source_payload = read_strict_json_object(args.source_bundle)
     graph_payload = read_strict_json_object(args.evidence_graph)
     policy_payload = read_strict_json_object(args.policy)
+    exposure_ledger_payload = read_strict_json_object(args.role_exposure_ledger)
+    exposure_receipt_payload = read_strict_json_object(args.role_exposure_receipt)
     source = PublicSplitSourceBundle.from_dict(source_payload)
     graph = FrozenPublicSplitEvidenceGraph.from_dict(graph_payload)
     policy = ProtectedPublicSplitPolicy.from_dict(policy_payload)
+    exposure_ledger = RoleExposureLedger.from_dict(exposure_ledger_payload)
+    exposure_receipt = RoleExposureReceipt.from_dict(exposure_receipt_payload)
     secret = (
         create_split_secret(args.secret)
         if args.create_secret
@@ -72,6 +79,8 @@ def main() -> None:
         secret=secret,
         input_file_sha256s=input_hashes,
         tool_provenance=build_offline_tool_provenance(Path(__file__)),
+        role_exposure_ledger=exposure_ledger,
+        role_exposure_receipt=exposure_receipt,
     )
     write_private_json_bundle((
         (args.assignment_output, result.assignment),

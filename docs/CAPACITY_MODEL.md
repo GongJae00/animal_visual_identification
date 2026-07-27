@@ -92,6 +92,6 @@ The checked-in example contains placeholders, not measurements:
 
 ```bash
 uv run python tools/evaluate_capacity.py \
-  configs/capacity.example.json \
+  configs/research/benchmarks/capacity.example.json \
   --duration-seconds 86400
 ```

@@ -14,6 +14,7 @@ from cvi.embedding_producer import (
     EmbeddingBackendIdentity,
     EmbeddingRuntimeResources,
 )
+from cvi.model_contracts import reject_unverified_superanimal_onnx
 from cvi.provenance import content_sha256
 
 
@@ -25,6 +26,7 @@ class ImageTensorLayout(StrEnum):
 class ImageResizePolicy(StrEnum):
     EXACT = "EXACT"
     STRETCH = "STRETCH"
+    SHORTEST_EDGE_CENTER_CROP = "SHORTEST_EDGE_CENTER_CROP"
 
 
 class ImageInterpolation(StrEnum):
@@ -104,9 +106,13 @@ class ImagePreprocessingConfig:
     gamma_policy: str = "IGNORE_METADATA"
     operation_order: str = "CONVERT_THEN_RESIZE"
     schema_version: str = "cvi.image_preprocessing.v1"
+    resize_shortest_edge: int | None = None
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.image_preprocessing.v1":
+        if self.schema_version not in {
+            "cvi.image_preprocessing.v1",
+            "cvi.image_preprocessing.v2",
+        }:
             raise ValueError("unsupported image preprocessing schema")
         _require_positive_int(self.width, "width")
         _require_positive_int(self.height, "height")
@@ -171,10 +177,25 @@ class ImagePreprocessingConfig:
             raise ValueError(
                 "initial gamma policy is fixed to IGNORE_METADATA"
             )
-        if self.operation_order != "CONVERT_THEN_RESIZE":
-            raise ValueError(
-                "initial operation order is CONVERT_THEN_RESIZE"
+        if self.resize_policy is ImageResizePolicy.SHORTEST_EDGE_CENTER_CROP:
+            if self.schema_version != "cvi.image_preprocessing.v2":
+                raise ValueError("shortest-edge preprocessing requires schema v2")
+            _require_positive_int(
+                self.resize_shortest_edge,
+                "resize_shortest_edge",
             )
+            if self.resize_shortest_edge < max(self.width, self.height):
+                raise ValueError("resize_shortest_edge must cover the center crop")
+            if self.operation_order != "CONVERT_THEN_RESIZE_THEN_CENTER_CROP":
+                raise ValueError(
+                    "shortest-edge preprocessing operation order differs"
+                )
+        elif self.resize_shortest_edge is not None:
+            raise ValueError(
+                "resize_shortest_edge is only valid for shortest-edge preprocessing"
+            )
+        elif self.operation_order != "CONVERT_THEN_RESIZE":
+            raise ValueError("initial operation order is CONVERT_THEN_RESIZE")
 
     @property
     def channels(self) -> int:
@@ -185,7 +206,7 @@ class ImagePreprocessingConfig:
         return content_sha256(self.to_dict())
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        payload = {
             "schema_version": self.schema_version,
             "width": self.width,
             "height": self.height,
@@ -211,40 +232,47 @@ class ImagePreprocessingConfig:
             "gamma_policy": self.gamma_policy,
             "operation_order": self.operation_order,
         }
+        if self.schema_version == "cvi.image_preprocessing.v2":
+            payload["resize_shortest_edge"] = self.resize_shortest_edge
+        return payload
 
     @classmethod
     def from_dict(
         cls,
         payload: dict[str, Any],
     ) -> ImagePreprocessingConfig:
+        schema_version = payload.get("schema_version")
+        expected_keys = {
+            "schema_version",
+            "width",
+            "height",
+            "color_mode",
+            "channel_order",
+            "layout",
+            "resize_policy",
+            "interpolation",
+            "value_scale",
+            "mean",
+            "std",
+            "maximum_source_width",
+            "maximum_source_height",
+            "maximum_source_pixels",
+            "allowed_source_modes",
+            "decoder_version",
+            "allowed_formats",
+            "tensor_dtype",
+            "decoder",
+            "exif_orientation",
+            "alpha_policy",
+            "icc_profile_policy",
+            "gamma_policy",
+            "operation_order",
+        }
+        if schema_version == "cvi.image_preprocessing.v2":
+            expected_keys.add("resize_shortest_edge")
         _require_exact_keys(
             payload,
-            {
-                "schema_version",
-                "width",
-                "height",
-                "color_mode",
-                "channel_order",
-                "layout",
-                "resize_policy",
-                "interpolation",
-                "value_scale",
-                "mean",
-                "std",
-                "maximum_source_width",
-                "maximum_source_height",
-                "maximum_source_pixels",
-                "allowed_source_modes",
-                "decoder_version",
-                "allowed_formats",
-                "tensor_dtype",
-                "decoder",
-                "exif_orientation",
-                "alpha_policy",
-                "icc_profile_policy",
-                "gamma_policy",
-                "operation_order",
-            },
+            expected_keys,
             "image preprocessing config",
         )
         mean = payload["mean"]
@@ -285,6 +313,7 @@ class ImagePreprocessingConfig:
             icc_profile_policy=payload["icc_profile_policy"],
             gamma_policy=payload["gamma_policy"],
             operation_order=payload["operation_order"],
+            resize_shortest_edge=payload.get("resize_shortest_edge"),
         )
 
 
@@ -582,6 +611,7 @@ class OnnxRuntimeCpuBackend:
                 "CPU reference requires CPUExecutionProvider only"
             )
         resolved_model = _regular_file(model_path, "ONNX model")
+        reject_unverified_superanimal_onnx(resolved_model)
         if os.environ.get("ORT_LOAD_CONFIG_FROM_MODEL") not in {None, "0"}:
             raise RuntimeError(
                 "ORT_LOAD_CONFIG_FROM_MODEL must be unset or 0"
@@ -595,7 +625,16 @@ class OnnxRuntimeCpuBackend:
             resolved_model,
             maximum_bytes=config.maximum_model_bytes,
         )
+        reject_unverified_superanimal_onnx(
+            resolved_model,
+            model_sha256=model_sha256,
+        )
         parsed_model = onnx.load_model_from_string(model_bytes)
+        _reject_superanimal_graph_contract(
+            resolved_model,
+            parsed_model.graph,
+            model_sha256,
+        )
         _reject_external_data(parsed_model.graph, onnx)
         onnx.checker.check_model(parsed_model)
         available = tuple(ort.get_available_providers())
@@ -789,6 +828,7 @@ class OnnxRuntimeCudaBackend:
             onnxruntime_distribution_identity(require_gpu=True)
         )
         resolved_model = _regular_file(model_path, "ONNX model")
+        reject_unverified_superanimal_onnx(resolved_model)
         np, _, ort, onnx, pillow_version = _optional_dependencies()
         if pillow_version != preprocessing.decoder_version:
             raise RuntimeError(
@@ -803,7 +843,16 @@ class OnnxRuntimeCudaBackend:
             resolved_model,
             maximum_bytes=config.maximum_model_bytes,
         )
+        reject_unverified_superanimal_onnx(
+            resolved_model,
+            model_sha256=model_sha256,
+        )
         parsed_model = onnx.load_model_from_string(model_bytes)
+        _reject_superanimal_graph_contract(
+            resolved_model,
+            parsed_model.graph,
+            model_sha256,
+        )
         _reject_external_data(parsed_model.graph, onnx)
         onnx.checker.check_model(parsed_model)
         available = tuple(ort.get_available_providers())
@@ -1007,10 +1056,31 @@ def preprocess_image_batch(
             if config.resize_policy is ImageResizePolicy.EXACT:
                 if image.size != expected_size:
                     raise ValueError("embedding image size differs from EXACT")
-            elif image.size != expected_size:
+            elif config.resize_policy is ImageResizePolicy.STRETCH and (
+                image.size != expected_size
+            ):
                 image = image.resize(
                     expected_size,
                     resample=interpolation,
+                )
+            elif config.resize_policy is ImageResizePolicy.SHORTEST_EDGE_CENTER_CROP:
+                shortest_edge = config.resize_shortest_edge
+                if shortest_edge is None:  # pragma: no cover - config validation
+                    raise RuntimeError("shortest-edge preprocessing is incomplete")
+                if source_width <= source_height:
+                    resized_width = shortest_edge
+                    resized_height = int(shortest_edge * source_height / source_width)
+                else:
+                    resized_height = shortest_edge
+                    resized_width = int(shortest_edge * source_width / source_height)
+                image = image.resize(
+                    (resized_width, resized_height),
+                    resample=interpolation,
+                )
+                left = (resized_width - config.width) // 2
+                top = (resized_height - config.height) // 2
+                image = image.crop(
+                    (left, top, left + config.width, top + config.height)
                 )
             array = np.asarray(image, dtype=np.float32)
         if config.color_mode == "L":
@@ -1251,6 +1321,33 @@ def _read_model_bytes(
     return payload, sha256(payload).hexdigest()
 
 
+def _reject_superanimal_graph_contract(
+    model_path: Path,
+    graph: Any,
+    model_sha256: str,
+) -> None:
+    if len(graph.input) != 1 or len(graph.output) != 1:
+        return
+
+    def shape(value_info: Any) -> tuple[object, ...]:
+        dimensions: list[object] = []
+        for dimension in value_info.type.tensor_type.shape.dim:
+            if dimension.dim_value > 0:
+                dimensions.append(int(dimension.dim_value))
+            elif dimension.dim_param:
+                dimensions.append(dimension.dim_param)
+            else:
+                dimensions.append(None)
+        return tuple(dimensions)
+
+    reject_unverified_superanimal_onnx(
+        model_path,
+        model_sha256=model_sha256,
+        input_shape=shape(graph.input[0]),
+        output_shape=shape(graph.output[0]),
+    )
+
+
 def _reject_external_data(graph: Any, onnx: Any) -> None:
     def reject_tensor(tensor: Any) -> None:
         if (
@@ -1294,7 +1391,7 @@ def _optional_dependencies() -> tuple[Any, Any, Any, Any, str]:
         from PIL import Image
     except ModuleNotFoundError as error:
         raise RuntimeError(
-            "ONNX CPU backend requires `uv sync --extra onnx-cpu`"
+            "ONNX CPU backend requires `uv sync --extra cpu`"
         ) from error
     return np, Image, ort, onnx, PIL.__version__
 

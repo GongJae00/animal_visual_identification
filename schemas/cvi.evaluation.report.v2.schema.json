@@ -41,14 +41,37 @@
     "test_pair_count": {"type": "integer"},
     "channels": {"type": "array"},
     "thresholds": {"type": "object"},
+    "evaluation_variant": {
+      "type": "string",
+      "enum": ["multi_template_closed_set", "legacy_open_set_retrieval_diagnostic"]
+    },
+    "self_match_policy": {"type": "string", "enum": ["include", "exclude"]},
+    "self_match_excluded": {"type": "boolean"},
+    "template_id_fields": {
+      "type": "object",
+      "required": ["gallery", "queries"],
+      "properties": {
+        "gallery": {"type": ["string", "null"]},
+        "queries": {"type": ["string", "null"]}
+      }
+    },
     "num_queries": {"type": "integer"},
     "num_gallery": {"type": "integer"},
+    "num_gallery_templates": {"type": "integer"},
     "num_valid_queries": {"type": "integer"},
+    "closed_set": {"type": "boolean"},
+    "ranking_unit": {"const": "gallery_identity"},
+    "aggregation": {"const": "max"},
+    "tie_policy": {"const": "stable_first_gallery_identity_occurrence"},
+    "gallery_identity_order": {"type": "array"},
+    "query_rows": {"type": "array", "minItems": 1},
     "mAP": {"type": "number"},
     "mINP": {"type": "number"},
+    "MRR": {"type": "number"},
     "Rank-1": {"type": "number"},
     "Rank-5": {"type": "number"},
     "Rank-10": {"type": "number"},
+    "identity_clustered_bootstrap": {"type": "object"},
     "known_detection_AUROC": {"type": "number"},
     "known_detection_AUPR": {"type": "number"},
     "DIR_at_FPIR": {"type": "object"},
@@ -62,5 +85,41 @@
     "num_enrolled_queries": {"type": "integer"},
     "num_unknown_queries": {"type": "integer"},
     "num_gallery_identities": {"type": "integer"}
-  }
+  },
+  "allOf": [
+    {
+      "if": {
+        "required": ["protocol", "evaluation_variant"],
+        "properties": {
+          "protocol": {"const": "retrieval"},
+          "evaluation_variant": {"const": "multi_template_closed_set"}
+        }
+      },
+      "then": {
+        "required": [
+          "self_match_policy",
+          "self_match_excluded",
+          "template_id_fields",
+          "valid_for_model_selection",
+          "valid_for_final_reporting",
+          "num_queries",
+          "num_gallery_templates",
+          "num_gallery_identities",
+          "closed_set",
+          "ranking_unit",
+          "aggregation",
+          "tie_policy",
+          "gallery_identity_order",
+          "query_rows",
+          "mAP",
+          "mINP",
+          "MRR",
+          "Rank-1",
+          "Rank-5",
+          "Rank-10",
+          "identity_clustered_bootstrap"
+        ]
+      }
+    }
+  ]
 }

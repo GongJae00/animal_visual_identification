@@ -206,19 +206,59 @@ class BuilderRuntimeProvenance:
     platform_system: str
     platform_release: str
     os_name: str
+    numpy_version: str | None = None
+    jsonschema_version: str | None = None
+    scikit_learn_version: str | None = None
 
     def __post_init__(self) -> None:
-        for name in self.__dataclass_fields__:
+        required = (
+            "python_implementation", "python_version", "python_cache_tag",
+            "platform_system", "platform_release", "os_name",
+        )
+        for name in required:
             value = getattr(self, name)
             if not isinstance(value, str) or not value.strip() or len(value) > 512:
                 raise ValueError(f"builder runtime {name} differs")
+        optional = (
+            self.numpy_version,
+            self.jsonschema_version,
+            self.scikit_learn_version,
+        )
+        if any(value is None for value in optional):
+            if any(value is not None for value in optional):
+                raise ValueError("builder runtime dependency versions are incomplete")
+        elif any(
+            not isinstance(value, str) or not value.strip() or len(value) > 512
+            for value in optional
+        ):
+            raise ValueError("builder runtime dependency version differs")
 
     def to_dict(self) -> dict[str, str]:
-        return {name: getattr(self, name) for name in self.__dataclass_fields__}
+        payload = {
+            name: getattr(self, name)
+            for name in (
+                "python_implementation", "python_version", "python_cache_tag",
+                "platform_system", "platform_release", "os_name",
+            )
+        }
+        if self.numpy_version is not None:
+            payload.update({
+                "numpy_version": self.numpy_version,
+                "jsonschema_version": self.jsonschema_version,
+                "scikit_learn_version": self.scikit_learn_version,
+            })
+        return payload
 
     @classmethod
     def from_dict(cls, payload: dict[str, Any]) -> "BuilderRuntimeProvenance":
-        if set(payload) != set(cls.__dataclass_fields__):
+        legacy = {
+            "python_implementation", "python_version", "python_cache_tag",
+            "platform_system", "platform_release", "os_name",
+        }
+        current = legacy | {
+            "numpy_version", "jsonschema_version", "scikit_learn_version",
+        }
+        if frozenset(payload) not in {frozenset(legacy), frozenset(current)}:
             raise ValueError("builder runtime fields differ")
         return cls(**payload)
 

@@ -47,6 +47,33 @@ def _classify_queries(
     return np.array([qid in enrolled for qid in query_ids], dtype=bool)
 
 
+def _validate_embedding_set(
+    embeddings: np.ndarray,
+    identities: np.ndarray,
+    name: str,
+) -> None:
+    if embeddings.ndim != 2 or embeddings.shape[0] == 0:
+        raise OpenSetError(f"{name} embeddings must be a non-empty matrix")
+    if identities.ndim != 1 or len(identities) != len(embeddings):
+        raise OpenSetError(f"{name} identities do not match embeddings")
+    if not np.all(np.isfinite(embeddings)):
+        raise OpenSetError(f"{name} embeddings contain non-finite values")
+
+
+def _distinct_identity_scores(
+    query_embeddings: np.ndarray,
+    gallery_embeddings: np.ndarray,
+    gallery_ids: np.ndarray,
+) -> tuple[np.ndarray, np.ndarray]:
+    similarities = query_embeddings @ gallery_embeddings.T
+    identity_values = sorted(set(gallery_ids.tolist()), key=lambda value: str(value))
+    unique_ids = np.asarray(identity_values, dtype=gallery_ids.dtype)
+    scores = np.empty((len(query_embeddings), len(unique_ids)), dtype=np.float64)
+    for column, identity in enumerate(unique_ids):
+        scores[:, column] = np.max(similarities[:, gallery_ids == identity], axis=1)
+    return np.clip(scores, -1.0, 1.0), unique_ids
+
+
 def _compute_detection_metrics(
     max_scores: np.ndarray,
     is_known: np.ndarray,
@@ -77,9 +104,13 @@ def _select_thresholds_from_calibration(
 ) -> dict[str, dict]:
     cal_q = _normalize_rows(cal_query_embs)
     cal_g = _normalize_rows(cal_gallery_embs)
-    cal_sims = cal_q @ cal_g.T
-    cal_max = np.max(cal_sims, axis=1)
-    cal_is_known = _classify_queries(cal_query_ids, cal_gallery_ids)
+    cal_scores, unique_gallery_ids = _distinct_identity_scores(
+        cal_q, cal_g, cal_gallery_ids
+    )
+    top_indices = np.argmax(cal_scores, axis=1)
+    top_ids = unique_gallery_ids[top_indices]
+    cal_max = cal_scores[np.arange(len(cal_scores)), top_indices]
+    cal_is_known = _classify_queries(cal_query_ids, unique_gallery_ids)
     n_known = int(cal_is_known.sum())
     n_unknown = int((~cal_is_known).sum())
     if n_known == 0 or n_unknown == 0:
@@ -87,46 +118,45 @@ def _select_thresholds_from_calibration(
             f"calibration needs both known ({n_known}) and unknown "
             f"({n_unknown}) queries"
         )
-    known_correct_scores = []
-    for i in np.where(cal_is_known)[0]:
-        same_id = cal_gallery_ids == cal_query_ids[i]
-        if same_id.any():
-            known_correct_scores.append(float(np.max(cal_sims[i][same_id])))
-        else:
-            known_correct_scores.append(-1.0)
-    known_correct_arr = np.array(known_correct_scores, dtype=np.float64)
+    known_indices = np.where(cal_is_known)[0]
+    known_correct_arr = np.where(
+        top_ids[known_indices] == cal_query_ids[known_indices],
+        cal_max[known_indices],
+        -np.inf,
+    )
     unknown_scores = cal_max[~cal_is_known]
-    all_scores = np.concatenate([known_correct_arr, unknown_scores])
-    all_labels = np.concatenate([
-        np.ones(n_known, dtype=np.int64),
-        np.zeros(n_unknown, dtype=np.int64),
+    finite_scores = np.concatenate([
+        known_correct_arr[np.isfinite(known_correct_arr)], unknown_scores
     ])
-    sorted_idx = np.argsort(-all_scores)
-    sorted_labels = all_labels[sorted_idx]
-    fp = np.cumsum(sorted_labels == 0)
-    tp = np.cumsum(sorted_labels == 1)
-    far = fp / max(n_unknown, 1)
-    dir_rate = tp / max(n_known, 1)
+    zero_accept_threshold = np.nextafter(float(np.max(unknown_scores)), np.inf)
+    thresholds = np.concatenate((
+        np.array([np.nextafter(1.0, np.inf), zero_accept_threshold]),
+        np.sort(np.unique(finite_scores))[::-1],
+    ))
+    thresholds = np.unique(thresholds)[::-1]
     per_target: dict[str, dict] = {}
     for target in fpir_targets:
-        valid = np.where(far <= target)[0]
-        if len(valid) > 0:
-            threshold = float(all_scores[sorted_idx[valid[-1]]])
-            cal_dir = float(dir_rate[valid[-1]])
-            cal_fpir = float(far[valid[-1]])
-        else:
-            threshold = float(all_scores[sorted_idx[-1]] + 1.0)
-            cal_dir = 0.0
-            cal_fpir = 0.0
+        candidates: list[tuple[int, float, float, int]] = []
+        for position, threshold in enumerate(thresholds):
+            unknown_accepts = int(np.sum(unknown_scores >= threshold))
+            correct_accepts = int(np.sum(known_correct_arr >= threshold))
+            fpir = unknown_accepts / n_unknown
+            if fpir <= target:
+                candidates.append((correct_accepts, float(threshold), fpir, position))
+        if not candidates:
+            raise OpenSetError("no admissible calibration threshold exists")
+        correct_accepts, threshold, cal_fpir, _ = max(
+            candidates,
+            key=lambda item: (item[0], item[1]),
+        )
+        cal_dir = correct_accepts / n_known
         per_target[str(target)] = {
             "target_fpir": target,
             "selected_threshold": threshold,
             "calibration": {
                 "known_queries": n_known,
                 "unknown_queries": n_unknown,
-                "correct_known_accepts": int(np.sum(
-                    (known_correct_arr >= threshold)
-                )),
+                "correct_known_accepts": correct_accepts,
                 "unknown_accepts": int(np.sum(unknown_scores >= threshold)),
                 "DIR": cal_dir,
                 "FPIR": cal_fpir,
@@ -150,11 +180,11 @@ def _evaluate_on_test(
 ]:
     q = _normalize_rows(test_query_embs)
     g = _normalize_rows(test_gallery_embs)
-    sims = q @ g.T
-    max_scores = np.max(sims, axis=1)
-    top1_indices = np.argmax(sims, axis=1)
-    top1_gallery_ids = test_gallery_ids[top1_indices]
-    is_known = _classify_queries(test_query_ids, test_gallery_ids)
+    scores, unique_gallery_ids = _distinct_identity_scores(q, g, test_gallery_ids)
+    top1_indices = np.argmax(scores, axis=1)
+    max_scores = scores[np.arange(len(scores)), top1_indices]
+    top1_gallery_ids = unique_gallery_ids[top1_indices]
+    is_known = _classify_queries(test_query_ids, unique_gallery_ids)
     n_known = int(is_known.sum())
     n_unknown = int((~is_known).sum())
     top1_is_correct = np.array([
@@ -172,7 +202,7 @@ def _evaluate_on_test(
             if is_known[i]:
                 if top1_is_correct[i] and max_scores[i] >= t:
                     correct_accept += 1
-                elif not top1_is_correct[i]:
+                elif max_scores[i] >= t:
                     misid += 1
                 else:
                     rejection += 1
@@ -214,23 +244,42 @@ def evaluate_open_set(
         raise OpenSetError("empty query set")
     if n_gallery == 0:
         raise OpenSetError("empty gallery set")
-    has_calibration = all(x is not None for x in [
+    calibration_values = [
         calibration_query_embs, calibration_gallery_embs,
         calibration_query_ids, calibration_gallery_ids,
-    ])
-    if has_calibration:
-        per_target = _select_thresholds_from_calibration(
-            calibration_query_embs,
-            calibration_gallery_embs,
-            calibration_query_ids,
-            calibration_gallery_ids,
-            fpir_targets,
-        )
-    else:
-        per_target = _select_thresholds_from_calibration(
-            query_embs, gallery_embs, query_ids, gallery_ids,
-            fpir_targets,
-        )
+    ]
+    if not all(value is not None for value in calibration_values):
+        raise OpenSetError("separate calibration queries and gallery are required")
+    _validate_embedding_set(query_embs, query_ids, "test query")
+    _validate_embedding_set(gallery_embs, gallery_ids, "test gallery")
+    _validate_embedding_set(
+        calibration_query_embs, calibration_query_ids, "calibration query"
+    )
+    _validate_embedding_set(
+        calibration_gallery_embs, calibration_gallery_ids, "calibration gallery"
+    )
+    if query_embs.shape[1] != gallery_embs.shape[1] or (
+        calibration_query_embs.shape[1] != calibration_gallery_embs.shape[1]
+    ) or query_embs.shape[1] != calibration_query_embs.shape[1]:
+        raise OpenSetError("calibration and test embedding dimensions differ")
+    calibration_identities = set(calibration_query_ids.tolist()) | set(
+        calibration_gallery_ids.tolist()
+    )
+    test_identities = set(query_ids.tolist()) | set(gallery_ids.tolist())
+    if calibration_identities & test_identities:
+        raise OpenSetError("calibration and test identities must be disjoint")
+    if not fpir_targets or any(
+        not np.isfinite(target) or not 0.0 <= target <= 1.0
+        for target in fpir_targets
+    ):
+        raise OpenSetError("FPIR targets must be finite values in [0, 1]")
+    per_target = _select_thresholds_from_calibration(
+        calibration_query_embs,
+        calibration_gallery_embs,
+        calibration_query_ids,
+        calibration_gallery_ids,
+        fpir_targets,
+    )
     per_target, max_scores, is_known, top1_is_correct, top1_gallery_ids = _evaluate_on_test(
         query_embs, gallery_embs, query_ids, gallery_ids,
         per_target,

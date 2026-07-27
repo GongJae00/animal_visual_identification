@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from typing import Literal
+from collections.abc import Hashable, Mapping, Sequence
+from math import ceil
+from typing import Any, Literal
 
 import numpy as np
 
@@ -31,6 +33,48 @@ class MetricInvariantError(RetrievalError):
 
 class SampleIdValidationError(RetrievalError):
     pass
+
+
+SelfMatchPolicy = Literal["include", "exclude"]
+
+
+def _as_hashable_ids(
+    values: np.ndarray,
+    *,
+    expected_length: int,
+    name: str,
+) -> tuple[Hashable, ...]:
+    if values.ndim != 1:
+        raise RetrievalError(f"{name} must be 1-d, got shape {values.shape}")
+    if len(values) != expected_length:
+        raise RetrievalError(
+            f"{name} length {len(values)} != expected length {expected_length}"
+        )
+    result: list[Hashable] = []
+    for index, value in enumerate(values.tolist()):
+        if value is None or not isinstance(value, Hashable):
+            raise RetrievalError(f"{name}[{index}] must be a non-null hashable ID")
+        if isinstance(value, float) and not np.isfinite(value):
+            raise RetrievalError(f"{name}[{index}] must be a finite ID")
+        result.append(value)
+    return tuple(result)
+
+
+def _validate_unique_ids(values: tuple[Hashable, ...], name: str) -> None:
+    seen: set[Hashable] = set()
+    for value in values:
+        if value in seen:
+            raise SampleIdValidationError(f"duplicate template ID in {name}: {value!r}")
+        seen.add(value)
+
+
+def _validate_rank_ks(rank_ks: tuple[int, ...]) -> None:
+    if not rank_ks:
+        raise RetrievalError("rank_ks must not be empty")
+    if len(set(rank_ks)) != len(rank_ks):
+        raise RetrievalError("rank_ks must contain distinct values")
+    if any(isinstance(k, bool) or not isinstance(k, int) or k <= 0 for k in rank_ks):
+        raise RetrievalError("rank_ks must contain positive integers")
 
 
 def _validate_embeddings(
@@ -109,6 +153,31 @@ def _normalize_rows(embs: np.ndarray) -> np.ndarray:
     return embs / norms
 
 
+def compute_cosine_score_matrix(
+    query_embeddings: np.ndarray,
+    gallery_embeddings: np.ndarray,
+) -> np.ndarray:
+    """Return pairwise cosine scores after strict matrix validation."""
+
+    query = np.asarray(query_embeddings)
+    gallery = np.asarray(gallery_embeddings)
+    if query.ndim != 2 or gallery.ndim != 2:
+        raise RetrievalError("query and gallery embeddings must be 2-d")
+    if query.shape[0] == 0 or gallery.shape[0] == 0:
+        raise RetrievalError("query and gallery embeddings must not be empty")
+    if query.shape[1] != gallery.shape[1]:
+        raise RetrievalError("query and gallery embedding dimensions must match")
+    if not np.issubdtype(query.dtype, np.number) or not np.issubdtype(
+        gallery.dtype, np.number
+    ):
+        raise RetrievalError("query and gallery embeddings must be numeric")
+    query = query.astype(np.float64, copy=False)
+    gallery = gallery.astype(np.float64, copy=False)
+    if not np.isfinite(query).all() or not np.isfinite(gallery).all():
+        raise NonFiniteEmbeddingError("embeddings contain non-finite values")
+    return _normalize_rows(query) @ _normalize_rows(gallery).T
+
+
 def _compute_ap_inp(
     ranked_pos: np.ndarray,
     n_relevant: int,
@@ -126,6 +195,257 @@ def _compute_ap_inp(
             f"n_relevant={n_relevant}, last_positive_rank={last_positive_rank}"
         )
     return ap, inp
+
+
+def evaluate_multi_template_closed_set(
+    query_template_scores: np.ndarray,
+    query_identity_ids: np.ndarray,
+    gallery_template_identity_ids: np.ndarray,
+    *,
+    self_match_policy: SelfMatchPolicy,
+    query_template_ids: np.ndarray | None = None,
+    gallery_template_ids: np.ndarray | None = None,
+    rank_ks: tuple[int, ...] = (1, 5, 10),
+) -> dict[str, Any]:
+    """Evaluate closed-set retrieval after frozen max template aggregation.
+
+    Gallery identities are frozen in first-template occurrence order. Scores
+    tied after max aggregation retain that order. With ``exclude``, exact
+    query/gallery template matches are removed before identity aggregation.
+    """
+
+    scores = np.asarray(query_template_scores)
+    query_ids_array = np.asarray(query_identity_ids)
+    gallery_ids_array = np.asarray(gallery_template_identity_ids)
+    if scores.ndim != 2:
+        raise RetrievalError(
+            f"query_template_scores must be 2-d, got shape {scores.shape}"
+        )
+    n_query, n_gallery_templates = scores.shape
+    if n_query == 0:
+        raise RetrievalError("empty query set")
+    if n_gallery_templates == 0:
+        raise RetrievalError("empty gallery set")
+    if not (
+        np.issubdtype(scores.dtype, np.integer)
+        or np.issubdtype(scores.dtype, np.floating)
+    ):
+        raise RetrievalError("query_template_scores must contain real numbers")
+    scores = scores.astype(np.float64, copy=True)
+    if not np.all(np.isfinite(scores)):
+        raise RetrievalError("query_template_scores contain non-finite values")
+    _validate_rank_ks(rank_ks)
+
+    query_ids = _as_hashable_ids(
+        query_ids_array,
+        expected_length=n_query,
+        name="query_identity_ids",
+    )
+    gallery_ids = _as_hashable_ids(
+        gallery_ids_array,
+        expected_length=n_gallery_templates,
+        name="gallery_template_identity_ids",
+    )
+    gallery_groups: dict[Hashable, list[int]] = {}
+    for template_index, identity_id in enumerate(gallery_ids):
+        gallery_groups.setdefault(identity_id, []).append(template_index)
+    identity_order = tuple(gallery_groups)
+    identity_indices = {
+        identity_id: index for index, identity_id in enumerate(identity_order)
+    }
+
+    if self_match_policy not in ("include", "exclude"):
+        raise RetrievalError(
+            "self_match_policy must be explicitly set to 'include' or 'exclude'"
+        )
+    if (query_template_ids is None) != (gallery_template_ids is None):
+        raise SampleIdValidationError(
+            "query_template_ids and gallery_template_ids must be provided together"
+        )
+    query_templates: tuple[Hashable, ...] | None = None
+    gallery_templates: tuple[Hashable, ...] | None = None
+    if query_template_ids is not None and gallery_template_ids is not None:
+        query_templates = _as_hashable_ids(
+            np.asarray(query_template_ids),
+            expected_length=n_query,
+            name="query_template_ids",
+        )
+        gallery_templates = _as_hashable_ids(
+            np.asarray(gallery_template_ids),
+            expected_length=n_gallery_templates,
+            name="gallery_template_ids",
+        )
+        _validate_unique_ids(query_templates, "query_template_ids")
+        _validate_unique_ids(gallery_templates, "gallery_template_ids")
+        gallery_template_index = {
+            template_id: index
+            for index, template_id in enumerate(gallery_templates)
+        }
+        for query_index, template_id in enumerate(query_templates):
+            gallery_index = gallery_template_index.get(template_id)
+            if gallery_index is not None and (
+                query_ids[query_index] != gallery_ids[gallery_index]
+            ):
+                raise SampleIdValidationError(
+                    f"template ID {template_id!r} has inconsistent query/gallery identity"
+                )
+    if self_match_policy == "exclude" and query_templates is None:
+        raise SampleIdValidationError(
+            "self_match_policy='exclude' requires query_template_ids and "
+            "gallery_template_ids"
+        )
+
+    if self_match_policy == "exclude":
+        assert query_templates is not None and gallery_templates is not None
+        gallery_template_index = {
+            template_id: index
+            for index, template_id in enumerate(gallery_templates)
+        }
+        for query_index, template_id in enumerate(query_templates):
+            gallery_index = gallery_template_index.get(template_id)
+            if gallery_index is None:
+                continue
+            scores[query_index, gallery_index] = -np.inf
+
+    identity_scores = np.empty((n_query, len(identity_order)), dtype=np.float64)
+    for identity_index, identity_id in enumerate(identity_order):
+        identity_scores[:, identity_index] = np.max(
+            scores[:, gallery_groups[identity_id]], axis=1
+        )
+
+    query_rows: list[dict[str, Any]] = []
+    rank_totals = {k: 0 for k in rank_ks}
+    for query_index, query_identity_id in enumerate(query_ids):
+        frozen_identity_index = identity_indices.get(query_identity_id)
+        if frozen_identity_index is None:
+            raise ClosedSetViolation(
+                f"query {query_index} (id={query_identity_id!r}) has no gallery identity"
+            )
+        if not np.isfinite(identity_scores[query_index, frozen_identity_index]):
+            raise ClosedSetViolation(
+                f"query {query_index} (id={query_identity_id!r}) has no eligible "
+                "gallery template after self-match policy"
+            )
+        order = np.argsort(-identity_scores[query_index], kind="stable")
+        relevant_rank = int(np.flatnonzero(order == frozen_identity_index)[0]) + 1
+        reciprocal_rank = 1.0 / relevant_rank
+        rank_hits = {k: int(relevant_rank <= k) for k in rank_ks}
+        for k, hit in rank_hits.items():
+            rank_totals[k] += hit
+        row: dict[str, Any] = {
+            "query_index": query_index,
+            "query_identity_id": query_identity_id,
+            "bootstrap_cluster_id": query_identity_id,
+            "relevant_rank": relevant_rank,
+            "AP": reciprocal_rank,
+            "INP": reciprocal_rank,
+            "reciprocal_rank": reciprocal_rank,
+        }
+        row.update({f"Rank-{k}": float(hit) for k, hit in rank_hits.items()})
+        query_rows.append(row)
+
+    result: dict[str, Any] = {
+        "num_queries": n_query,
+        "num_gallery_templates": n_gallery_templates,
+        "num_gallery_identities": len(identity_order),
+        "closed_set": True,
+        "ranking_unit": "gallery_identity",
+        "aggregation": "max",
+        "tie_policy": "stable_first_gallery_identity_occurrence",
+        "self_match_policy": self_match_policy,
+        "gallery_identity_order": list(identity_order),
+        "query_rows": query_rows,
+        "mAP": float(np.mean([row["AP"] for row in query_rows])),
+        "mINP": float(np.mean([row["INP"] for row in query_rows])),
+        "MRR": float(np.mean([row["reciprocal_rank"] for row in query_rows])),
+    }
+    for k in rank_ks:
+        result[f"Rank-{k}"] = rank_totals[k] / n_query
+    return result
+
+
+def identity_clustered_bootstrap_ci(
+    query_rows: Sequence[Mapping[str, Any]],
+    *,
+    metric: str,
+    confidence_level: float = 0.95,
+    resamples: int = 10_000,
+    seed: int = 0,
+) -> dict[str, Any]:
+    """Return a deterministic percentile CI by resampling whole identities."""
+
+    if not query_rows:
+        raise RetrievalError("identity bootstrap requires query rows")
+    if not isinstance(metric, str) or not metric:
+        raise RetrievalError("metric must be a non-empty row field name")
+    if not 0.0 < confidence_level < 1.0:
+        raise RetrievalError("confidence_level must be in (0, 1)")
+    if isinstance(resamples, bool) or not isinstance(resamples, int) or resamples <= 0:
+        raise RetrievalError("resamples must be a positive integer")
+    if isinstance(seed, bool) or not isinstance(seed, int) or seed < 0:
+        raise RetrievalError("seed must be a non-negative integer")
+
+    groups: dict[Hashable, list[float]] = {}
+    all_values: list[float] = []
+    for row_index, row in enumerate(query_rows):
+        if "bootstrap_cluster_id" not in row:
+            raise RetrievalError(
+                f"query row {row_index} is missing bootstrap_cluster_id"
+            )
+        cluster_id = row["bootstrap_cluster_id"]
+        if cluster_id is None or not isinstance(cluster_id, Hashable):
+            raise RetrievalError(
+                f"query row {row_index} has an invalid bootstrap_cluster_id"
+            )
+        if metric not in row:
+            raise RetrievalError(f"query row {row_index} is missing metric {metric!r}")
+        value = row[metric]
+        if isinstance(value, bool) or not isinstance(value, (int, float, np.number)):
+            raise RetrievalError(
+                f"query row {row_index} metric {metric!r} must be numeric"
+            )
+        numeric_value = float(value)
+        if not np.isfinite(numeric_value):
+            raise RetrievalError(
+                f"query row {row_index} metric {metric!r} must be finite"
+            )
+        groups.setdefault(cluster_id, []).append(numeric_value)
+        all_values.append(numeric_value)
+    if len(groups) < 2:
+        raise RetrievalError("identity bootstrap requires at least two identities")
+
+    cluster_sums = np.asarray(
+        [sum(values) for values in groups.values()], dtype=np.float64
+    )
+    cluster_counts = np.asarray(
+        [len(values) for values in groups.values()], dtype=np.int64
+    )
+    rng = np.random.default_rng(seed)
+    cluster_count = len(groups)
+    sampled_estimates = np.empty(resamples, dtype=np.float64)
+    for sample_index in range(resamples):
+        sampled_clusters = rng.integers(0, cluster_count, size=cluster_count)
+        sampled_estimates[sample_index] = float(
+            cluster_sums[sampled_clusters].sum()
+            / cluster_counts[sampled_clusters].sum()
+        )
+    sampled_estimates.sort()
+    alpha = (1.0 - confidence_level) / 2.0
+    lower_index = max(0, ceil(alpha * resamples) - 1)
+    upper_index = min(resamples - 1, ceil((1.0 - alpha) * resamples) - 1)
+    return {
+        "metric": metric,
+        "estimate": float(np.mean(all_values)),
+        "lower_bound": float(sampled_estimates[lower_index]),
+        "upper_bound": float(sampled_estimates[upper_index]),
+        "confidence_level": confidence_level,
+        "cluster_unit": "query_identity",
+        "cluster_count": cluster_count,
+        "query_row_count": len(query_rows),
+        "resamples": resamples,
+        "seed": seed,
+        "interval_method": "whole_identity_percentile_bootstrap",
+    }
 
 
 def compute_retrieval_metrics(

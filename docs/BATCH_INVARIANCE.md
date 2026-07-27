@@ -72,9 +72,9 @@ uv run python tools/create_batch_invariance_precommitment.py \
   --model-lineage MODEL_LINEAGE.json \
   --preprocessing-config PREPROCESSING.json \
   --dependency-lock uv.lock \
-  --policy configs/batch_invariance_policy.example.json \
+  --policy configs/research/benchmarks/batch_invariance_policy.example.json \
   --runtime-library-policy STRICT_RUNTIME_LIBRARY_POLICY.json \
-  --worker-execution-policy configs/batch_worker_execution_policy.example.json \
+  --worker-execution-policy configs/deployment/batch_worker_execution_policy.example.json \
   --python-executable .venv-cpu/bin/python \
   --prior-attempt-ledger-sha256 PRIOR_LEDGER_SHA256 \
   --candidate-attempt-token CANDIDATE_ATTEMPT_SHA256 \
@@ -93,11 +93,11 @@ uv run python tools/evaluate_batch_invariance.py \
   --model MODEL.onnx \
   --model-lineage MODEL_LINEAGE.json \
   --dependency-lock uv.lock \
-  --policy configs/batch_invariance_policy.example.json \
+  --policy configs/research/benchmarks/batch_invariance_policy.example.json \
   --precommitment BATCH_PRECOMMITMENT.json \
   --expected-precommitment-sha256 ARCHIVED_PRECOMMITMENT_SHA256 \
   --runtime-library-policy STRICT_RUNTIME_LIBRARY_POLICY.json \
-  --worker-execution-policy configs/batch_worker_execution_policy.example.json \
+  --worker-execution-policy configs/deployment/batch_worker_execution_policy.example.json \
   --python-executable .venv-cpu/bin/python \
   --receipt BATCH_INVARIANCE_RECEIPT.json
 ```

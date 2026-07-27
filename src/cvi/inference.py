@@ -21,6 +21,11 @@ from typing import Any
 import numpy as np
 from PIL import Image
 
+from cvi.model_contracts import (
+    reject_unverified_superanimal_onnx,
+    validated_onnx_bytes,
+)
+
 
 _IMAGENET_MEAN = np.array([0.485, 0.456, 0.406], dtype=np.float32)
 _IMAGENET_STD = np.array([0.229, 0.224, 0.225], dtype=np.float32)
@@ -80,13 +85,19 @@ class OnnxEmbeddingModel:
     """ONNX Runtime wrapper for embedding extraction."""
 
     def __init__(self, model_path: Path) -> None:
+        model_bytes = validated_onnx_bytes(model_path)
         import onnxruntime as ort
 
         self._sess = ort.InferenceSession(
-            str(model_path), providers=["CPUExecutionProvider"]
+            model_bytes, providers=["CPUExecutionProvider"]
         )
         self._inp = self._sess.get_inputs()[0]
         self._out = self._sess.get_outputs()[0]
+        reject_unverified_superanimal_onnx(
+            model_path,
+            input_shape=self._inp.shape,
+            output_shape=self._out.shape,
+        )
         self._input_shape = self._inp.shape
         self._output_dim = self._out.shape[1]
 

@@ -67,6 +67,31 @@ def _write_json(path: Path, payload: dict[str, object]) -> None:
 
 
 class CropExportToolTests(unittest.TestCase):
+    def test_legacy_public_crop_export_is_fail_closed(self) -> None:
+        completed = subprocess.run(
+            [
+                "uv",
+                "run",
+                "python",
+                "tools/export_public_protected_crops.py",
+                "--assignment",
+                "missing-assignment.json",
+                "--labels",
+                "missing-labels.json",
+                "--dataset-archives",
+                "missing-archives.json",
+                "--output-directory",
+                "missing-output",
+                "--manifest-output",
+                "missing-manifest.json",
+            ],
+            capture_output=True,
+            text=True,
+        )
+        self.assertNotEqual(completed.returncode, 0)
+        self.assertIn("Protected public crop export is disabled", completed.stderr)
+        self.assertNotIn("Traceback", completed.stderr)
+
     def test_private_receipt_refuses_overwrite(self) -> None:
         with TemporaryDirectory() as temporary:
             root = Path(temporary)

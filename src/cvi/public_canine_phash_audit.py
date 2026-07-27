@@ -584,6 +584,56 @@ def _fingerprint_member(
     UnidentifiedImageError: type[Exception],
     exact_pixel_fingerprint_cache: dict[str, tuple[int, int]] | None = None,
 ) -> tuple[PHashFingerprint, int]:
+    opaque_id = opaque_sample_id(record.source_sample_id)
+    rgb_payload, width, height, pixel_sha256 = _canonical_rgb_member(
+        bundle,
+        info,
+        protected,
+        policy,
+        Image,
+        ImageOps,
+        UnidentifiedImageError,
+    )
+    with Image.frombytes("RGB", (width, height), rgb_payload) as rgb:
+        with rgb.convert("L") as luma:
+            with luma.resize(
+                (32, 32), resample=Image.Resampling.LANCZOS
+            ) as resized:
+                luma_pixels = resized.tobytes("raw", "L")
+    cached = (
+        None
+        if exact_pixel_fingerprint_cache is None
+        else exact_pixel_fingerprint_cache.get(pixel_sha256)
+    )
+    if cached is None:
+        fingerprint = fingerprint_luma32(
+            opaque_id=opaque_id, luma_pixels=luma_pixels
+        )
+        if exact_pixel_fingerprint_cache is not None:
+            exact_pixel_fingerprint_cache[pixel_sha256] = (
+                fingerprint.original_hash,
+                fingerprint.horizontal_flip_hash,
+            )
+    else:
+        fingerprint = PHashFingerprint(
+            opaque_sample_id=opaque_id,
+            original_hash=cached[0],
+            horizontal_flip_hash=cached[1],
+        )
+    return fingerprint, width * height
+
+
+def _canonical_rgb_member(
+    bundle: zipfile.ZipFile,
+    info: zipfile.ZipInfo,
+    protected: dict[str, Any],
+    policy: PublicCaninePHashPolicy,
+    Image: Any,
+    ImageOps: Any,
+    UnidentifiedImageError: type[Exception],
+) -> tuple[bytes, int, int, str]:
+    """Return the receipt-authenticated canonical RGB raster for one member."""
+
     encoded, encoded_sha256 = _read_member(bundle, info, policy)
     if encoded_sha256 != protected["encoded_sha256"] or len(
         encoded.getbuffer()
@@ -640,38 +690,12 @@ def _fingerprint_member(
                         != protected["exif_orientation_applied"]
                     ):
                         raise ValueError("canonical pixels differ from protected receipt")
-                    with rgb.convert("L") as luma:
-                        with luma.resize(
-                            (32, 32), resample=Image.Resampling.LANCZOS
-                        ) as resized:
-                            luma_pixels = resized.tobytes("raw", "L")
+                    rgb_payload = rgb.tobytes("raw", "RGB")
+                    if len(rgb_payload) != width * height * 3:
+                        raise ValueError("canonical RGB byte count differs")
     finally:
         encoded.close()
-    opaque_id = opaque_sample_id(record.source_sample_id)
-    cached = (
-        None
-        if exact_pixel_fingerprint_cache is None
-        else exact_pixel_fingerprint_cache.get(protected["pixel_sha256"])
-    )
-    if cached is None:
-        fingerprint = fingerprint_luma32(
-            opaque_id=opaque_id, luma_pixels=luma_pixels
-        )
-        if exact_pixel_fingerprint_cache is not None:
-            exact_pixel_fingerprint_cache[protected["pixel_sha256"]] = (
-                fingerprint.original_hash,
-                fingerprint.horizontal_flip_hash,
-            )
-    else:
-        fingerprint = PHashFingerprint(
-            opaque_sample_id=opaque_id,
-            original_hash=cached[0],
-            horizontal_flip_hash=cached[1],
-        )
-    return (
-        fingerprint,
-        width * height,
-    )
+    return rgb_payload, width, height, pixel_sha256
 
 
 def _verify_image_receipt(

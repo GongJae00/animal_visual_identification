@@ -107,6 +107,16 @@ class CalibrationMetricsTest(unittest.TestCase):
         self.assertEqual(len(result["bin_confidences"]), 5)
         self.assertEqual(len(result["bin_positive_rates"]), 5)
 
+    def test_fractional_labels_are_rejected_before_cast(self):
+        with self.assertRaises(CalibrationError):
+            compute_probability_calibration_metrics(
+                np.array([0.2, 0.8]), np.array([0.5, 1.0])
+            )
+
+    def test_invalid_bin_count_rejected(self):
+        with self.assertRaises(CalibrationError):
+            compute_probability_calibration_metrics(PROB_A, LABEL_A, n_bins=0)
+
     def test_deterministic(self):
         r1 = compute_probability_calibration_metrics(PROB_A, LABEL_A)
         r2 = compute_probability_calibration_metrics(PROB_A, LABEL_A)
@@ -129,6 +139,16 @@ class IsotonicCalibrationTest(unittest.TestCase):
             fit_isotonic_calibration(
                 np.array([0.5], dtype=np.float64),
                 np.array([1], dtype=np.int64),
+            )
+
+    def test_single_class_and_nonfinite_fit_are_rejected(self):
+        with self.assertRaises(CalibrationError):
+            fit_isotonic_calibration(
+                np.array([0.1, 0.2]), np.array([0, 0])
+            )
+        with self.assertRaises(CalibrationError):
+            fit_isotonic_calibration(
+                np.array([0.1, np.nan]), np.array([0, 1])
             )
 
 

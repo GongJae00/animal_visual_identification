@@ -183,6 +183,15 @@ def main() -> None:
     parser.add_argument("--manifest-output", required=True, type=Path)
     args = parser.parse_args()
 
+    parser.exit(
+        status=2,
+        message=(
+            "Protected public crop export is disabled until the split receipt, "
+            "evaluator-binding digest, and every exported crop content hash are "
+            "verified and atomically published.\n"
+        ),
+    )
+
     assignment = json.loads(args.assignment.read_text())
     labels = json.loads(args.labels.read_text())
     archive_config = json.loads(args.dataset_archives.read_text())

@@ -10,7 +10,7 @@ from cvi.evaluation.verification import (
     evaluate_at_threshold,
     EvaluationError,
 )
-from cvi.evaluation._legacy import (
+from cvi.evaluation.protected_verification import (
     wilson_rate,
     zero_event_exact_upper_bound,
     required_zero_event_trials,

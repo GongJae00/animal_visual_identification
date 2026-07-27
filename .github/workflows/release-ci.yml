@@ -1,0 +1,78 @@
+name: Release CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  linux-cpu:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.11.25"
+          enable-cache: true
+
+      - name: Install Python
+        run: uv python install 3.12
+
+      - name: Sync CPU release environment
+        run: >-
+          uv sync --locked
+          --extra cpu
+          --extra data
+          --extra models
+          --extra training
+          --group dev
+
+      - name: Check lockfile
+        run: uv lock --check
+
+      - name: Run supported test suite
+        run: uv run --no-sync pytest
+
+      - name: Check source diff and compile Python
+        run: |
+          git diff --check
+          uv run --no-sync python -m compileall -q src tools
+
+      - name: Build distributions
+        run: uv build --out-dir dist
+
+      - name: Inspect and import built wheel
+        shell: bash
+        run: |
+          wheel_path=$(printf '%s\n' dist/*.whl)
+          WHEEL_PATH="$wheel_path" uv run --no-sync python - <<'PY'
+          import os
+          import zipfile
+
+          wheel_path = os.environ["WHEEL_PATH"]
+          with zipfile.ZipFile(wheel_path) as wheel:
+              names = set(wheel.namelist())
+          assert any(name.endswith(".dist-info/licenses/LICENSE") for name in names)
+          assert "cvi/schemas/cvi.evaluation.report.v3.schema.json" in names
+          PY
+          uv venv .wheel-venv --python 3.12
+          uv pip install --python .wheel-venv/bin/python "$wheel_path"
+          .wheel-venv/bin/python - <<'PY'
+          from importlib import resources
+
+          import cvi
+
+          schema = resources.files("cvi").joinpath(
+              "schemas/cvi.evaluation.report.v3.schema.json"
+          )
+          assert schema.is_file()
+          assert cvi.CVI.__module__ == "cvi.api"
+          PY

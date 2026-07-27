@@ -408,6 +408,64 @@ class PDQSearchResult:
             return PDQ_ELIGIBLE_SEARCHED
         return PDQ_NOT_IN_AUDIT
 
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "schema_version": self.schema_version,
+            "candidates": [item.to_dict() for item in self.candidates],
+            "eligible_sample_ids": list(self.eligible_sample_ids),
+            "ineligible_low_quality_sample_ids": list(
+                self.ineligible_low_quality_sample_ids
+            ),
+            "preflight_raw_posting_visits": self.preflight_raw_posting_visits,
+            "unique_orientation_inspections": self.unique_orientation_inspections,
+            "indexed_orientation_count": self.indexed_orientation_count,
+            "distance_threshold": self.distance_threshold,
+            "quality_threshold": self.quality_threshold,
+            "quality_threshold_status": self.quality_threshold_status,
+        }
+
+    @classmethod
+    def from_dict(cls, payload: Mapping[str, Any]) -> "PDQSearchResult":
+        expected = {
+            "schema_version",
+            "candidates",
+            "eligible_sample_ids",
+            "ineligible_low_quality_sample_ids",
+            "preflight_raw_posting_visits",
+            "unique_orientation_inspections",
+            "indexed_orientation_count",
+            "distance_threshold",
+            "quality_threshold",
+            "quality_threshold_status",
+        }
+        _require_exact_fields(payload, expected, "PDQ search result")
+        for name in (
+            "candidates",
+            "eligible_sample_ids",
+            "ineligible_low_quality_sample_ids",
+        ):
+            if not isinstance(payload[name], list):
+                raise TypeError(f"PDQ search result {name} must be a JSON array")
+        return cls(
+            candidates=tuple(
+                PDQNearDuplicateCandidate.from_dict(item)
+                for item in payload["candidates"]
+            ),
+            eligible_sample_ids=tuple(payload["eligible_sample_ids"]),
+            ineligible_low_quality_sample_ids=tuple(
+                payload["ineligible_low_quality_sample_ids"]
+            ),
+            preflight_raw_posting_visits=payload["preflight_raw_posting_visits"],
+            unique_orientation_inspections=payload[
+                "unique_orientation_inspections"
+            ],
+            indexed_orientation_count=payload["indexed_orientation_count"],
+            distance_threshold=payload["distance_threshold"],
+            quality_threshold=payload["quality_threshold"],
+            quality_threshold_status=payload["quality_threshold_status"],
+            schema_version=payload["schema_version"],
+        )
+
 
 def _require_distance_threshold(value: int) -> None:
     if (

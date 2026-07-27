@@ -76,7 +76,10 @@ def _request(images: list[object], *, d4: tuple[str, ...] = ("ORIGINAL",)) -> Ge
 
 class GeometricVerifierContractTests(unittest.TestCase):
     def test_policy_config_round_trip_and_initialization_warning(self) -> None:
-        path = Path("configs/public_canine_geometric_verifier_policy.example.json")
+        path = Path(
+            "configs/research/contracts/"
+            "public_canine_geometric_verifier_policy.example.json"
+        )
         policy = GeometricVerifierPolicy.from_dict(json.loads(path.read_text()))
         self.assertEqual(policy, GeometricVerifierPolicy())
         self.assertEqual(policy.threshold_status, "INITIALIZATION_ONLY_NOT_CALIBRATED")

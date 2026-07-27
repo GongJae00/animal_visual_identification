@@ -92,25 +92,40 @@ def compute_verification_curve(
 ) -> VerificationCurve:
     n_pos, n_neg = _validate_scores_labels(scores, labels)
     lb = labels.astype(np.int64)
-    unique = np.sort(np.unique(scores))[::-1]
+    order = np.argsort(-scores, kind="stable")
+    sorted_scores = scores[order]
+    sorted_labels = lb[order]
+    unique, first_indices, counts = np.unique(
+        sorted_scores, return_index=True, return_counts=True
+    )
+    group_order = np.argsort(first_indices)
+    unique = unique[group_order]
+    counts = counts[group_order]
     thresholds = np.concatenate([
         [np.inf],
         unique,
         [-np.inf],
     ])
-    n = len(thresholds)
-    far_arr = np.zeros(n, dtype=np.float64)
-    frr_arr = np.zeros(n, dtype=np.float64)
-    tar_arr = np.zeros(n, dtype=np.float64)
-    for i, t in enumerate(thresholds):
-        pred = (scores >= t).astype(np.int64)
-        tp = ((pred == 1) & (lb == 1)).sum()
-        fp = ((pred == 1) & (lb == 0)).sum()
-        fn = ((pred == 0) & (lb == 1)).sum()
-        tn = ((pred == 0) & (lb == 0)).sum()
-        far_arr[i] = fp / max(fp + tn, 1)
-        frr_arr[i] = fn / max(fn + tp, 1)
-        tar_arr[i] = tp / max(tp + fn, 1)
+    far_arr = np.empty(len(thresholds), dtype=np.float64)
+    frr_arr = np.empty(len(thresholds), dtype=np.float64)
+    tar_arr = np.empty(len(thresholds), dtype=np.float64)
+    tp = 0
+    fp = 0
+    far_arr[0] = 0.0
+    frr_arr[0] = 1.0
+    tar_arr[0] = 0.0
+    offset = 0
+    for position, count in enumerate(counts, start=1):
+        group_labels = sorted_labels[offset:offset + count]
+        tp += int(np.sum(group_labels == 1))
+        fp += int(np.sum(group_labels == 0))
+        far_arr[position] = fp / n_neg
+        tar_arr[position] = tp / n_pos
+        frr_arr[position] = 1.0 - tar_arr[position]
+        offset += int(count)
+    far_arr[-1] = 1.0
+    frr_arr[-1] = 0.0
+    tar_arr[-1] = 1.0
     return VerificationCurve(
         thresholds=thresholds,
         far=far_arr,
@@ -137,6 +152,10 @@ def select_threshold_at_far(
     else:
         idx = valid[np.argmax(curve.tar[valid])]
     t = float(curve.thresholds[idx])
+    if not np.isfinite(t):
+        raise EvaluationError(
+            "no finite verification threshold satisfies the requested FAR"
+        )
     pred = (scores >= t).astype(np.int64)
     tp = int(((pred == 1) & (lb == 1)).sum())
     fp = int(((pred == 1) & (lb == 0)).sum())
@@ -195,7 +214,10 @@ def compute_verification_metrics(
     auc = float(roc_auc_score(lb, scores))
     ap = float(average_precision_score(lb, scores))
     curve = compute_verification_curve(scores, lb)
-    eer_idx = int(np.argmin(np.abs(curve.far - curve.frr)))
+    finite_indices = np.flatnonzero(np.isfinite(curve.thresholds))
+    eer_idx = int(finite_indices[
+        np.argmin(np.abs(curve.far[finite_indices] - curve.frr[finite_indices]))
+    ])
     eer = float((curve.far[eer_idx] + curve.frr[eer_idx]) / 2)
     eer_threshold = float(curve.thresholds[eer_idx])
     d_prime_numer = pos_scores.mean() - neg_scores.mean()

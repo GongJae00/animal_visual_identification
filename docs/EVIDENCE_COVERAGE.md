@@ -49,7 +49,7 @@ fields are counted and treated as not usable, never silently imputed.
 
 ```bash
 uv run python tools/summarize_evidence_coverage.py \
-  --policy configs/evidence_coverage.example.json \
+  --policy configs/pipeline/evidence/evidence_coverage.example.json \
   --observations /protected/audits/camera-01.jsonl \
   --timeline-start-ns 1784516400000000000 \
   --timeline-end-ns 1784602800000000000

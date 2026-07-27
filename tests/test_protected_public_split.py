@@ -29,6 +29,16 @@ from cvi.protected_public_split import (
     seed_commitment,
     validate_protected_split_output_paths,
 )
+from cvi.identity_registry import compute_public_subject_token
+from cvi.evaluation import required_zero_event_trials
+from cvi.split_role_exposure import (
+    ExposureDeclarationKind,
+    ExposureStage,
+    RoleExposureDeclaration,
+    RoleExposureDeclarationRecord,
+    create_role_exposure_receipt,
+    merge_role_exposure_declarations,
+)
 from cvi.open_set_calibration import (
     OpenSetCalibrationPolicy,
     authenticate_open_set_calibration_panel,
@@ -144,7 +154,33 @@ def _build(
     graph: FrozenPublicSplitEvidenceGraph,
     *,
     secret: bytes = b"S" * 32,
+    historical_stage: ExposureStage = ExposureStage.BYTES_EXPORTED,
+    historical_sample: PublicSplitSample | None = None,
 ):
+    sample = historical_sample or source.samples[0]
+    declaration = RoleExposureDeclaration(
+        source_artifact_sha256=_token(
+            "historical-artifact", sample.sample_token, historical_stage.value
+        ),
+        kind=(
+            ExposureDeclarationKind.PRIOR_ASSIGNMENT
+            if historical_stage
+            in {ExposureStage.BYTES_EXPORTED, ExposureStage.MODEL_TRAINING_USED}
+            else ExposureDeclarationKind.PRIOR_EVALUATION
+        ),
+        revoked=False,
+        records=(
+            RoleExposureDeclarationRecord(
+                sample_token=sample.sample_token,
+                identity_token=sample.identity_token,
+                public_subject_token=compute_public_subject_token(
+                    sample.dataset_identity_id
+                ),
+                stage=historical_stage,
+            ),
+        ),
+    )
+    ledger = merge_role_exposure_declarations((declaration,))
     return build_protected_public_split(
         source=source,
         graph=graph,
@@ -152,6 +188,8 @@ def _build(
         secret=secret,
         input_file_sha256s=(("evidence_graph_payload_sha256", "1" * 64), ("policy_payload_sha256", "2" * 64), ("source_bundle_payload_sha256", "3" * 64)),
         tool_provenance={"schema_version": "fixture", "code": "unit-test"},
+        role_exposure_ledger=ledger,
+        role_exposure_receipt=create_role_exposure_receipt(ledger),
     )
 
 
@@ -168,7 +206,10 @@ class ProtectedPublicSplitTests(unittest.TestCase):
             text=True,
         )
         self.assertIn("--create-secret", completed.stdout)
-        path = Path("configs/public_canine_protected_split_policy.example.json")
+        path = Path(
+            "configs/research/contracts/"
+            "public_canine_protected_split_policy.example.json"
+        )
         policy = ProtectedPublicSplitPolicy.from_dict(json.loads(path.read_text()))
         self.assertEqual(policy, ProtectedPublicSplitPolicy())
 
@@ -206,6 +247,80 @@ class ProtectedPublicSplitTests(unittest.TestCase):
             self.assertNotIn(forbidden, serialized)
         self.assertIn('"dataset_identity_id"', json.dumps(result.evaluator_binding))
         self.assertGreater(role_counts["YT_TEST_KNOWN"], 300)
+        self.assertEqual(
+            result.receipt["schema_version"],
+            "cvi.protected_public_split_receipt.v3",
+        )
+        self.assertEqual(
+            result.receipt["capacity_mode"],
+            "EVIDENCE_CONSTRAINED_MAXIMAL_COVERAGE",
+        )
+        power = result.receipt["yt_test_unknown_fpir_power"]
+        self.assertEqual(power["confidence_level"], 0.95)
+        self.assertEqual(power["actual_unknown_identity_trials"], 423)
+        self.assertEqual(
+            power["targets"],
+            [
+                {
+                    "purpose": "PRIMARY",
+                    "target_fpir": 0.01,
+                    "required_zero_event_trials": 299,
+                    "status": "POWERED",
+                },
+                {
+                    "purpose": "REPORTING",
+                    "target_fpir": 0.001,
+                    "required_zero_event_trials": 2995,
+                    "status": "UNDERPOWERED",
+                },
+            ],
+        )
+        self.assertIn("role_exposure_ledger_sha256", result.receipt)
+        self.assertIn("role_exposure_receipt_sha256", result.receipt)
+
+    def test_historical_calibration_identity_is_not_regressed_by_role_allocation(self) -> None:
+        baseline = _build(self.source, self.graph)
+        fit_identity = next(
+            record["identity_token"]
+            for record in baseline.assignment["records"]
+            if record["identity_role"] == "YT_FIT"
+        )
+        sample = next(
+            value
+            for value in self.source.samples
+            if value.identity_token == fit_identity
+        )
+        constrained = _build(
+            self.source,
+            self.graph,
+            historical_stage=ExposureStage.CALIBRATION_SCORED,
+            historical_sample=sample,
+        )
+        self.assertEqual(constrained.status, "PASS_PROTECTED_SPLIT_CONSTRUCTION")
+        self.assertEqual(
+            {
+                record["identity_role"]
+                for record in constrained.assignment["records"]
+                if record["identity_token"] == fit_identity
+            },
+            {"YT_CALIBRATION_KNOWN"},
+        )
+
+    def test_historical_final_test_identity_cannot_return_to_yt_train_lanes(self) -> None:
+        sample = next(
+            value
+            for value in self.source.samples
+            if value.dataset_name == "yt-bb-dog"
+            and value.original_split == "train"
+        )
+        result = _build(
+            self.source,
+            self.graph,
+            historical_stage=ExposureStage.FINAL_TEST_SCORED,
+            historical_sample=sample,
+        )
+        self.assertEqual(result.status, "ROLE_EXPOSURE_CAPACITY_FAILED")
+        self.assertEqual(result.assignment["records"], [])
 
     def test_deterministic_order_independent_and_secret_changes_assignment(self) -> None:
         first = _build(self.source, self.graph)
@@ -336,7 +451,7 @@ class ProtectedPublicSplitTests(unittest.TestCase):
             for use in record["uses"]
         ))
 
-    def test_test_primary_k3_shortfall_fails_without_backfill(self) -> None:
+    def test_test_primary_k3_shortfall_contracts_unknown_without_backfill(self) -> None:
         target = _token("identity", "yt-bb-dog", 2001)
         samples = tuple(
             sample
@@ -352,14 +467,25 @@ class ProtectedPublicSplitTests(unittest.TestCase):
             PublicSplitSourceBundle(self.source.evidence_bindings, samples),
             self.graph,
         )
-        self.assertEqual(result.status, "YT_TEST_PRIMARY_CAPACITY_FAILED")
-        self.assertEqual(result.assignment["records"], [])
-        self.assertEqual(result.evaluator_binding["records"], [])
+        self.assertEqual(result.status, "PASS_PROTECTED_SPLIT_CONSTRUCTION")
+        self.assertFalse(any(
+            record["identity_token"] == target
+            for record in result.assignment["records"]
+        ))
         self.assertEqual(
             result.assignment["capacity"]["eligible_yt_test_primary_identities"],
             722,
         )
-        self.assertFalse(result.assignment["capacity"]["post_score_backfill_allowed"])
+        self.assertEqual(
+            result.assignment["capacity"]["actual_role_counts"]["YT_TEST_KNOWN"],
+            300,
+        )
+        self.assertEqual(
+            result.assignment["capacity"]["actual_role_counts"]["YT_TEST_UNKNOWN"],
+            422,
+        )
+        reasons = dict(result.receipt["quarantine"]["reason_counts"])
+        self.assertGreater(reasons["PROTOCOL_EVIDENCE_CAPACITY_CONFLICT"], 0)
 
     def test_development_ab_episodes_are_symmetric_disjoint_and_temporal(self) -> None:
         result = _build(self.source, self.graph)
@@ -515,6 +641,18 @@ class ProtectedPublicSplitTests(unittest.TestCase):
     def test_external_open_set_uses_have_exact_nonzero_n_and_k(self) -> None:
         result = _build(self.source, self.graph)
         self.assertEqual(result.status, "PASS_PROTECTED_SPLIT_CONSTRUCTION")
+        mpdd_open_shots = {
+            use["shot"]
+            for record in result.assignment["records"]
+            for use in record["uses"]
+            if use["protocol"] == "MPDD_OPEN_SET"
+        }
+        self.assertEqual(mpdd_open_shots, set(ProtectedPublicSplitPolicy().shot_counts))
+        self.assertTrue(any(
+            use["protocol"] == "MPDD_CLOSED_SET" and use["shot"] == 5
+            for record in result.assignment["records"]
+            for use in record["uses"]
+        ))
         specifications = (
             ("MPDD_OPEN_SET", "MPDD_EXTERNAL_KNOWN", "MPDD_EXTERNAL_UNKNOWN", 64, 32),
             ("SIBETAN_OPEN_SET", "SIBETAN_EXTERNAL_KNOWN", "SIBETAN_EXTERNAL_UNKNOWN", 39, 20),
@@ -543,6 +681,32 @@ class ProtectedPublicSplitTests(unittest.TestCase):
                 self.assertEqual(set(galleries), known_queries)
                 self.assertEqual(len(unknown_queries), unknown_count)
                 self.assertFalse(set(galleries) & unknown_queries)
+        capacity = result.assignment["capacity"]["protocol_evidence_capacity"]
+        self.assertEqual(
+            capacity["external_open_set"]["status"],
+            "PASS_EXTERNAL_OPEN_SET_CAPACITY",
+        )
+
+    def test_mpdd_known_roles_are_selected_from_k3_eligible_identities(self) -> None:
+        samples = tuple(
+            sample
+            for sample in self.source.samples
+            if not (
+                sample.dataset_name == "mpdd"
+                and sample.dataset_identity_id.endswith((":95", ":96"))
+                and sample.original_split == "gallery"
+                and sample.raw_frame_index >= 2
+            )
+        )
+        source = PublicSplitSourceBundle(self.source.evidence_bindings, samples)
+        result = _build(source, self.graph, secret=b"\0" * 32)
+        self.assertEqual(result.status, "PASS_PROTECTED_SPLIT_CONSTRUCTION")
+        known = {
+            record["identity_token"]
+            for record in result.assignment["records"]
+            if record["identity_role"] == "MPDD_EXTERNAL_KNOWN"
+        }
+        self.assertEqual(len(known), 64)
         capacity = result.assignment["capacity"]["protocol_evidence_capacity"]
         self.assertEqual(
             capacity["external_open_set"]["status"],
@@ -695,9 +859,9 @@ class ProtectedPublicSplitTests(unittest.TestCase):
         self.assertEqual(result.evaluator_binding["records"], [])
         self.assertEqual(result.assignment["capacity"]["eligible_yt_train_identities"], 1598)
 
-    def test_missing_dependency_and_graph_binding_mismatch_fail_closed(self) -> None:
+    def test_missing_required_dependency_and_graph_binding_mismatch_fail_closed(self) -> None:
         graph_without_dependency = FrozenPublicSplitEvidenceGraph(self.graph.evidence_bindings, ())
-        with self.assertRaisesRegex(ValueError, "dependency edge set differs"):
+        with self.assertRaisesRegex(ValueError, "dependency edge is missing"):
             _build(self.source, graph_without_dependency)
         changed = list(self.graph.evidence_bindings)
         changed[0] = (changed[0][0], "f" * 64)
@@ -705,7 +869,7 @@ class ProtectedPublicSplitTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "bindings differ"):
             _build(self.source, mismatched)
 
-    def test_external_quarantine_cannot_silently_shrink_fixed_evaluation(self) -> None:
+    def test_mpdd_query_gallery_dependency_stays_in_one_role_without_leakage(self) -> None:
         mpdd = [
             sample
             for sample in self.source.samples
@@ -731,14 +895,23 @@ class ProtectedPublicSplitTests(unittest.TestCase):
             ))),
         )
         result = _build(self.source, graph)
-        self.assertEqual(result.status, "SPLIT_CAPACITY_FAILED")
-        self.assertEqual(result.assignment["records"], [])
+        self.assertEqual(result.status, "PASS_PROTECTED_SPLIT_CONSTRUCTION")
+        records = {
+            record["sample_token"]: record
+            for record in result.assignment["records"]
+        }
         self.assertEqual(
-            result.assignment["capacity"]["eligible_mpdd_test_identities"],
-            95,
+            records[gallery.sample_token]["identity_role"],
+            records[query.sample_token]["identity_role"],
         )
-        reasons = dict(result.receipt["quarantine"]["reason_counts"])
-        self.assertEqual(reasons["PUBLISHER_GALLERY_QUERY_CONFLICT"], 1)
+        query_component = records[query.sample_token]["component_token"]
+        query_uses = [
+            use
+            for record in result.assignment["records"]
+            if record["component_token"] == query_component
+            for use in record["uses"]
+        ]
+        self.assertFalse(any(use["role"] == "GALLERY" for use in query_uses))
 
     def test_source_variant_whitelist_is_closed(self) -> None:
         samples = list(self.source.samples)
@@ -789,7 +962,7 @@ class ProtectedPublicSplitTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "contradictory"):
             FrozenPublicSplitEvidenceGraph(self.graph.evidence_bindings, edges)
 
-    def test_geometric_confirmed_is_a_distinct_union_edge(self) -> None:
+    def test_cross_identity_component_is_indivisible_within_official_lane(self) -> None:
         with self.assertRaises(ValueError):
             EvidenceRelation("GEOMETRIC_REJECTED")
         left_sample = self.source.samples[0]
@@ -800,7 +973,7 @@ class ProtectedPublicSplitTests(unittest.TestCase):
         edge = PublicSplitEvidenceEdge(
             left,
             right,
-            EvidenceRelation.GEOMETRIC_CONFIRMED,
+            EvidenceRelation.DEPENDENCY,
             _token("geometric", left, right),
         )
         graph = FrozenPublicSplitEvidenceGraph(
@@ -817,15 +990,116 @@ class ProtectedPublicSplitTests(unittest.TestCase):
                 )
             ),
         )
+        result = _build(
+            self.source,
+            graph,
+            historical_stage=ExposureStage.CALIBRATION_SCORED,
+            historical_sample=left_sample,
+        )
+        self.assertEqual(result.status, "PASS_PROTECTED_SPLIT_CONSTRUCTION")
+        roles = {
+            record["identity_token"]: record["identity_role"]
+            for record in result.assignment["records"]
+            if record["identity_token"]
+            in {left_sample.identity_token, right_sample.identity_token}
+        }
+        self.assertEqual(len(roles), 2)
+        self.assertEqual(set(roles.values()), {"YT_CALIBRATION_KNOWN"})
+        components = {
+            record["component_token"]
+            for record in result.assignment["records"]
+            if record["sample_token"] in {left_sample.sample_token, right_sample.sample_token}
+        }
+        self.assertEqual(len(components), 1)
+
+    def test_cross_official_lane_block_is_closed_and_quarantined(self) -> None:
+        left_sample = next(
+            sample
+            for sample in self.source.samples
+            if sample.dataset_name == "yt-bb-dog"
+            and sample.original_split == "train"
+            and sample.source_variant == "original"
+        )
+        right_sample = next(
+            sample
+            for sample in self.source.samples
+            if sample.dataset_name == "yt-bb-dog"
+            and sample.original_split == "test"
+            and sample.source_variant == "original"
+        )
+        left, right = sorted((left_sample.sample_token, right_sample.sample_token))
+        edge = PublicSplitEvidenceEdge(
+            left,
+            right,
+            EvidenceRelation.DEPENDENCY,
+            _token("conservative-dependency", left, right),
+        )
+        graph = FrozenPublicSplitEvidenceGraph(
+            self.graph.evidence_bindings,
+            tuple(sorted((*self.graph.edges, edge), key=lambda item: (
+                item.left_sample_token,
+                item.right_sample_token,
+                item.relation.value,
+                item.evidence_token,
+            ))),
+        )
         result = _build(self.source, graph)
         self.assertEqual(result.status, "PASS_PROTECTED_SPLIT_CONSTRUCTION")
-        reasons = dict(result.receipt["quarantine"]["reason_counts"])
-        self.assertEqual(reasons["LABEL_CONFLICT"], 1)
-        assigned = {
-            record["identity_token"] for record in result.assignment["records"]
-        }
-        self.assertNotIn(left_sample.identity_token, assigned)
-        self.assertNotIn(right_sample.identity_token, assigned)
+        quarantine = result.receipt["quarantine"]
+        self.assertEqual(quarantine["identity_count"], 2)
+        self.assertEqual(
+            quarantine["sample_count"],
+            sum(
+                sample.identity_token
+                in {left_sample.identity_token, right_sample.identity_token}
+                for sample in self.source.samples
+            ),
+        )
+        self.assertEqual(quarantine["allocation_block_count"], 1)
+        reasons = dict(quarantine["reason_counts"])
+        self.assertGreater(reasons["OFFICIAL_LANE_CONFLICT"], 0)
+        capacity = result.assignment["capacity"]
+        self.assertEqual(capacity["actual_role_counts"]["YT_FIT"], 1199)
+        self.assertEqual(capacity["actual_role_counts"]["YT_TEST_KNOWN"], 300)
+        self.assertEqual(capacity["actual_role_counts"]["YT_TEST_UNKNOWN"], 422)
+        self.assertEqual(capacity["contracted_role_counts"]["YT_TEST_UNKNOWN"], 1)
+
+    def test_dogface_maximal_coverage_contracts_only_fit_and_test(self) -> None:
+        train_sample = next(
+            sample
+            for sample in self.source.samples
+            if sample.dataset_name == "dogfacenet224"
+            and sample.original_split == "train"
+        )
+        test_sample = next(
+            sample
+            for sample in self.source.samples
+            if sample.dataset_name == "dogfacenet224"
+            and sample.original_split == "test"
+        )
+        left, right = sorted((train_sample.sample_token, test_sample.sample_token))
+        edge = PublicSplitEvidenceEdge(
+            left,
+            right,
+            EvidenceRelation.DEPENDENCY,
+            _token("dogface-lane-dependency", left, right),
+        )
+        graph = FrozenPublicSplitEvidenceGraph(
+            self.graph.evidence_bindings,
+            tuple(sorted((*self.graph.edges, edge), key=lambda item: (
+                item.left_sample_token,
+                item.right_sample_token,
+                item.relation.value,
+                item.evidence_token,
+            ))),
+        )
+        result = _build(self.source, graph)
+        self.assertEqual(result.status, "PASS_PROTECTED_SPLIT_CONSTRUCTION")
+        actual = result.assignment["capacity"]["actual_role_counts"]
+        self.assertEqual(actual["DOGFACE_FIT"], 1003)
+        self.assertEqual(actual["DOGFACE_DEVELOPMENT"], 125)
+        self.assertEqual(actual["DOGFACE_CALIBRATION"], 125)
+        self.assertEqual(actual["DOGFACE_TEST"], 138)
 
     def test_hmac_implementation_has_no_prng_or_python_hash_dependency(self) -> None:
         source = Path("src/cvi/protected_public_split.py").read_text()
@@ -893,6 +1167,17 @@ class ProtectedPublicSplitTests(unittest.TestCase):
         policy["yt_primary_open_set_gallery_size"] = 301
         with self.assertRaisesRegex(ValueError, "constants differ"):
             ProtectedPublicSplitPolicy.from_dict(policy)
+
+    def test_yt_unknown_floor_is_derived_from_zero_event_target(self) -> None:
+        policy = ProtectedPublicSplitPolicy()
+        self.assertEqual(policy.yt_test_unknown_minimum_identities, 299)
+        self.assertEqual(
+            policy.yt_test_unknown_minimum_identities,
+            required_zero_event_trials(
+                policy.yt_test_unknown_target_fpir,
+                confidence_level=policy.yt_test_unknown_confidence_level,
+            ),
+        )
 
 
 if __name__ == "__main__":

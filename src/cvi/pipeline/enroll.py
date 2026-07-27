@@ -4,51 +4,139 @@ import numpy as np
 from PIL import Image
 
 from cvi.evidence.base import AbstractEvidencer
+from cvi.evidence.base import (
+    EvidenceObservation,
+    RequiredEvidenceUnavailableError,
+)
 from cvi.evidence.appearance import Dinov2WithUncertainty
-from cvi.evidence.quality import overall_quality
+from cvi.evidence.quality import QualityObservation
 
 
 class MultiEvidencePipeline:
-    def __init__(self, evidencer_map: dict[str, AbstractEvidencer | None]):
+    def __init__(
+        self,
+        evidencer_map: dict[str, AbstractEvidencer | None],
+        optional_channels: set[str] | frozenset[str] | None = None,
+    ):
         self._evidencer_map = {
             k: v for k, v in evidencer_map.items() if v is not None
         }
+        self._optional_channels = frozenset(optional_channels or ())
+        if not self._optional_channels <= set(self._evidencer_map):
+            raise ValueError("optional channels must be active evidence channels")
+        if not set(self._evidencer_map) - self._optional_channels:
+            raise ValueError("at least one evidence channel must be required")
 
     @property
     def active_channels(self) -> list[str]:
         return list(self._evidencer_map.keys())
 
+    @property
+    def optional_channels(self) -> frozenset[str]:
+        return self._optional_channels
+
+    @property
+    def required_channels(self) -> frozenset[str]:
+        return frozenset(self._evidencer_map) - self._optional_channels
+
+    def extract_observations(
+        self, image: Image.Image
+    ) -> dict[str, EvidenceObservation]:
+        observations: dict[str, EvidenceObservation] = {}
+        for name, evidencer in self._evidencer_map.items():
+            value = evidencer.extract(image)
+            observation = _as_observation(name, value)
+            if not observation.is_available and name not in self._optional_channels:
+                raise RequiredEvidenceUnavailableError(
+                    f"required evidence channel {name!r} is unavailable: "
+                    f"{observation.reason.value}"
+                )
+            observations[name] = observation
+        return observations
+
     def extract_all(self, image: Image.Image
                     ) -> dict[str, np.ndarray]:
         return {
-            name: ev.extract(image)
-            for name, ev in self._evidencer_map.items()
+            name: observation.embedding
+            for name, observation in self.extract_observations(image).items()
+            if observation.is_available and observation.embedding is not None
         }
 
     def extract_with_quality(self, image: Image.Image
-                             ) -> tuple[dict[str, np.ndarray], dict[str, float]]:
+                             ) -> tuple[
+                                 dict[str, np.ndarray],
+                                 dict[str, QualityObservation],
+                             ]:
         embs: dict[str, np.ndarray] = {}
-        quals: dict[str, float] = {}
+        quals: dict[str, QualityObservation] = {}
         for name, ev in self._evidencer_map.items():
-            embs[name] = ev.extract(image)
-            quals[name] = ev.estimate_quality(image)
+            observation = _as_observation(name, ev.extract(image))
+            if not observation.is_available:
+                if name not in self._optional_channels:
+                    raise RequiredEvidenceUnavailableError(
+                        f"required evidence channel {name!r} is unavailable: "
+                        f"{observation.reason.value}"
+                    )
+                continue
+            assert observation.embedding is not None
+            embs[name] = observation.embedding
+            quals[name] = ev.estimate_quality(image, channel=name)
         return embs, quals
 
     def extract_with_uncertainty(
         self, image: Image.Image
     ) -> tuple[dict[str, np.ndarray], dict[str, float]]:
-        embs: dict[str, np.ndarray] = {}
+        observations, uncertainties = self.extract_observations_with_uncertainty(image)
+        return {
+            name: observation.embedding
+            for name, observation in observations.items()
+            if observation.is_available and observation.embedding is not None
+        }, uncertainties
+
+    def extract_observations_with_uncertainty(
+        self, image: Image.Image
+    ) -> tuple[dict[str, EvidenceObservation], dict[str, float]]:
+        observations: dict[str, EvidenceObservation] = {}
         uncertainties: dict[str, float] = {}
         for name, ev in self._evidencer_map.items():
             if isinstance(ev, Dinov2WithUncertainty):
                 emb, epi, ale = ev.extract_with_uncertainty(image)
-                embs[name] = emb
+                observations[name] = EvidenceObservation.available(name, emb)
                 if epi is not None:
                     uncertainties[name] = epi
             else:
-                embs[name] = ev.extract(image)
-        return embs, uncertainties
+                observations[name] = _as_observation(name, ev.extract(image))
+            if (
+                not observations[name].is_available
+                and name not in self._optional_channels
+            ):
+                raise RequiredEvidenceUnavailableError(
+                    f"required evidence channel {name!r} is unavailable: "
+                    f"{observations[name].reason.value}"
+                )
+        return observations, uncertainties
 
-    def estimate_quality(self, image: Image.Image) -> dict[str, float]:
-        q = overall_quality(image)
-        return {name: q for name in self._evidencer_map}
+    def estimate_quality(
+        self,
+        image: Image.Image,
+    ) -> dict[str, QualityObservation]:
+        return {
+            name: ev.estimate_quality(image, channel=name)
+            for name, ev in self._evidencer_map.items()
+        }
+
+
+def _as_observation(
+    channel: str, value: np.ndarray | EvidenceObservation
+) -> EvidenceObservation:
+    if isinstance(value, EvidenceObservation):
+        if value.channel == channel:
+            return value
+        return EvidenceObservation(
+            channel=channel,
+            availability=value.availability,
+            embedding=value.embedding,
+            reason=value.reason,
+            details=value.details,
+        )
+    return EvidenceObservation.available(channel, value)

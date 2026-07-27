@@ -5,6 +5,9 @@ candidate for descriptive systems comparison. It is intentionally downstream
 of both fresh-worker measurement and label-blind canonical-cache numerical
 admission.
 
+This research tool is not connected to the public `cvi.CVI` runtime and does
+not establish a supported CUDA deployment path or canine identity performance.
+
 The comparison requires exact agreement on:
 
 - host identity and Linux boot identifier;
@@ -50,7 +53,7 @@ defined in `docs/OPTIMIZATION_CONTRACT.md`.
 The protected join CLI is:
 
 ```bash
-uv run --extra onnx-cuda python tools/compare_onnx_measurements.py \
+uv run --extra cuda python tools/compare_onnx_measurements.py \
   --reference-benchmark CPU_BENCHMARK.json \
   --candidate-benchmark CUDA_BENCHMARK.json \
   --reference-producer-config CPU_PRODUCER.json \

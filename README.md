@@ -1,129 +1,158 @@
 # Canine Video Identity (CVI)
 
-영상 기반 개체 식별 시스템을 목표로 하는 초기 연구·구현 저장소입니다.
-현재 검증 가능한 recognizer 경로는 단일 appearance baseline 준비 단계이며,
-비문·랜드마크·불확실성 채널은 학습 artifact와 성능 증거가 없어 기본 비활성화됩니다.
+CVI is a research-oriented Python package for canine identity retrieval. The
+current executable recognizer accepts user-supplied dog image crops, enrolls
+them in a local gallery, and returns closed-set candidates for another crop.
 
-## 개요
+## Current Scope
 
-```
-현재: 이미지 crop → appearance embedding → exact cosine gallery search
+Implemented in the public `CVI` API:
 
-목표: 영상 decode → 검출 → tracking → quality frame selection
-      → 검증된 evidence → track aggregation → calibration/open-set → identity event
-```
+- Explicit `PIL.Image` crop enrollment and search.
+- Canonical UUIDv5 registered identities.
+- Strict retrieval configuration and artifact contracts.
+- Required and optional evidence-channel handling.
+- Exact weighted cosine scoring with identity-level template aggregation.
+- Versioned, integrity-checked local gallery persistence.
 
-## 설치
+Not implemented as an end-to-end product:
 
-### CUDA 환경 (개발/학습 서버)
+- Video decoding, dog detection, tracking, or crop selection in the `CVI` flow.
+- Calibrated unknown-dog rejection or an operational open-set decision.
+- A bundled, canine-trained identity model or validated biometric performance.
+- A production service, access control, encryption, or supported CPU/CUDA
+  deployment facade.
+
+Search results are candidates from an enrolled closed set. They are not a
+claim that the top candidate is the same dog. Passing tests demonstrates
+software behavior, not identification accuracy. See
+[Known Limitations](docs/KNOWN_LIMITATIONS.md).
+
+## Platform And Installation
+
+The supported development environment is Linux with POSIX filesystem
+semantics, Python 3.12, and
+[`uv`](https://docs.astral.sh/uv/). Gallery writer locking uses `fcntl`, so
+native Windows is not supported. Other POSIX operating systems are unvalidated.
+
+From a source checkout, choose one runtime lane:
 
 ```bash
-git clone <repo-url>
-cd canine_video_identity
-uv sync --extra cuda --extra training
+# CPU runtime and development tests
+uv sync --extra cpu --group dev
+
+# CUDA runtime and development tests
+uv sync --extra cuda --group dev
 ```
 
-### CPU 환경 (Raspberry Pi / 엣지 디바이스)
+Do not install the `cpu` and `cuda` extras together: they select different
+ONNX Runtime and PyTorch distributions. Additional opt-in dependencies are
+available through the `data`, `models`, and `training` extras.
 
 ```bash
-git clone <repo-url>
-cd canine_video_identity
-uv sync --extra cpu
+uv run python -c "import cvi; print(cvi.__all__)"
+uv run pytest
 ```
 
-> `uv`가 설치되어 있지 않다면: `curl -LsSf https://astral.sh/uv/install.sh | sh`
+## Crop-Level Example
 
-### 모델 & 데이터 준비
-
-```bash
-uv run python tools/download_datasets.py    # 공개 데이터셋 다운로드
-uv run python tools/download_models.py      # 추론 모델 다운로드
-uv run bash scripts/check_env.sh            # 환경 전수 점검
-```
-
-## 빠른 시작
-
-### 1. 개 검출
+This is a receipt-bound `dinov2_local` config-v2 template, not a runnable
+out-of-the-box example. It requires an admitted local DINOv2-small model and
+matching weight and preprocessor intake bundles. Replace every `/path/to`
+placeholder with those supplied local artifacts before constructing `CVI`.
+The runtime does not fetch them. `optional_channels` is empty, so the appearance
+channel is required. The image filenames are also placeholders for user-supplied
+dog crops.
 
 ```python
-from cvi.detection import DogDetector, DogDetectorConfig
+from PIL import Image
 
-detector = DogDetector(DogDetectorConfig(device="cuda:0"))
-detections = detector.detect("dog_video.mp4")
-```
+from cvi import CVI
+from cvi.identity_registry import compute_registered_dog_id
 
-### 2. 특징 추출
-
-```python
-from cvi.evidence import Dinov2WithUncertainty
-
-appearance = Dinov2WithUncertainty()
-embedding = appearance.extract(crop_image)  # 384-d L2 정규화 벡터
-```
-
-### 3. 개체 등록
-
-```python
-from cvi.deployment import CVIDeploymentCUDA
-
-deploy = CVIDeploymentCUDA({
+config = {
+    "schema_version": "cvi.retrieval_config.v2",
+    "mode": "closed_set_retrieval",
+    "index_dir": "/path/to/cvi-gallery",
     "channels": {
-        "appearance": {"type": "dinov2"},
+        "appearance": {
+            "type": "dinov2_local",
+            "model_dir": "/path/to/dinov2-small",
+            "weight_intake_bundle": "/path/to/weight-intake.json",
+            "preprocessor_intake_bundle": "/path/to/preprocessor-intake.json",
+            "device": "cpu",
+        }
     },
-    "index_dir": "./cvi_index",
-})
-deploy.enroll(image, dog_id="뽀삐", breed="비글")
+    "optional_channels": [],
+    "open_set": {"enabled": False},
+}
+
+runtime = CVI(config)
+registered_dog_id = compute_registered_dog_id("local:v1:dog:001")
+runtime.enroll(
+    Image.open("dog_001_crop.jpg").convert("RGB"),
+    registered_dog_id,
+)
+matches = runtime.search(
+    Image.open("query_crop.jpg").convert("RGB"),
+    top_k=5,
+)
+runtime.close()
 ```
 
-### 4. 개체 검색
+Use a stable, namespace-qualified source identity with
+`compute_registered_dog_id`. `CVI.enroll` rejects display names, arbitrary
+strings, non-v5 UUIDs, and non-canonical UUID text. Configuration details and
+artifact-backed channel requirements are documented in
+[Configuration](docs/CONFIGURATION.md).
 
-```python
-results = deploy.search(query_image, top_k=5)
-for r in results:
-    print(f"{r.registered_dog_id}: {r.similarity:.3f}")
-    print(f"  증거: {r.evidence}")
-```
+## Data And Models
 
-## 디렉토리
-
-| 디렉토리 | 설명 |
-|----------|------|
-| `src/cvi/` | 핵심 패키지 |
-| `src/cvi/backbones/` | 백본 후보 (DINOv2, ConvNeXt; 가짜 TinyViT 비활성화) |
-| `src/cvi/heads/` | 학습 헤드 (ArcFace, MagFace, Evidential) |
-| `src/cvi/evidence/` | evidence 추출기와 fail-closed 모델 계약 |
-| `src/cvi/fusion/` | 점수 융합 + 보정 + Open-Set 판정 |
-| `src/cvi/index/` | FAISS 검색 인덱스 |
-| `src/cvi/pipeline/` | 등록/검색 파이프라인 |
-| `src/cvi/deployment/` | 배포 (CUDA/CPU 분기) |
-| `tools/` | 학습/평가/다운로드 CLI 도구 |
-| `tests/` | 단위·계약·CLI 회귀 테스트 |
-| `models/` | 모델 가중치 (Git 미포함) |
-| `data/` | 데이터셋 (Git 미포함) |
-| `configs/` | 설정 파일 |
-| `docs/` | 기술 문서 |
-
-## 성능 지표
-
-평가 프레임워크를 통한 채널별 독립 성능 분석:
+Datasets, pretrained weights, generated ONNX files, galleries, and experiment
+outputs are not bundled. The Apache-2.0 repository license does not grant
+rights to third-party data or weights.
 
 ```bash
-uv run python tools/evaluate_multichannel.py \
-    --evidence-config configs/evidence/multi.json \
-    --query-pairs data/registry/val_pairs.json \
-    --output report.json
+export CVI_DATA_DIR=/path/to/cvi-data
+export CVI_MODELS_DIR=/path/to/cvi-model-cache
+
+uv sync --extra cpu --extra data --extra models --extra training
+uv run python tools/download_datasets.py --list
+uv run python tools/download_models.py --list
 ```
 
-산출 지표에는 verification, retrieval, calibration, open-set 지표가 포함됩니다.
-OSCR은 아직 DEFERRED이며, 실제 negative trial 수가 지지하지 않는 FAR는
-성능 주장에 사용하지 않습니다.
+`/path/to/...` values are user-selected external directories. Some dataset
+handlers only print manual acquisition instructions, and some model candidates
+are disabled or have unresolved license status. Read
+[Data and Models](docs/DATA_AND_MODELS.md) before downloading or using any
+artifact.
 
-## 학술 인용
+## Repository Layout
 
-준비 중.
+| Path | Purpose |
+|---|---|
+| `src/cvi/` | Public API, runtime components, research contracts, and evaluation code |
+| `src/cvi/evidence/` | Evidence extractors and artifact validation |
+| `src/cvi/index/` | Versioned local gallery and exact scoring |
+| `src/cvi/pipeline/` | Crop-level enrollment and search orchestration |
+| `tools/` | Source-checkout data, model, training, and evaluation commands |
+| `configs/` | Versioned protocol and backend examples, not a production config |
+| `tests/` | Unit, contract, synthetic, and CLI regression tests |
+| `docs/` | Architecture, configuration, limitations, and research protocols |
 
-## 라이선스
+## Project Documents
 
-저장소 코드 라이선스: UNVERIFIED (루트 LICENSE 미확정)
-사전학습 모델은 code/weight/dataset 라이선스를 별도로 검증해야 합니다.
-MiewID-msv3 code와 weight의 상업 이용·재배포 상태는 현재 UNVERIFIED입니다.
+- [Architecture](docs/ARCHITECTURE.md)
+- [Configuration](docs/CONFIGURATION.md)
+- [Data and Models](docs/DATA_AND_MODELS.md)
+- [Known Limitations](docs/KNOWN_LIMITATIONS.md)
+- [Roadmap](docs/ROADMAP.md)
+- [Contributing](CONTRIBUTING.md)
+- [Security Policy](SECURITY.md)
+
+## License
+
+Repository code and documentation are licensed under the
+[Apache License 2.0](LICENSE). Third-party datasets, model weights, source code,
+and generated artifacts retain their own terms. You are responsible for
+license, privacy, and deployment review for every external artifact.

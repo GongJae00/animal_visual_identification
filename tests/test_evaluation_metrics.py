@@ -9,7 +9,10 @@ from cvi.evaluation.retrieval import (
     EmbeddingNormError,
     MetricInvariantError,
     RetrievalError,
+    SampleIdValidationError,
     compute_retrieval_metrics,
+    evaluate_multi_template_closed_set,
+    identity_clustered_bootstrap_ci,
 )
 from cvi.evaluation.verification import (
     EmptyInputError,
@@ -17,8 +20,10 @@ from cvi.evaluation.verification import (
     LengthMismatchError,
     NonFiniteScoreError,
     SingleClassError,
+    EvaluationError,
     compute_verification_curve,
     compute_verification_metrics,
+    select_threshold_at_far,
 )
 
 PERFECT_SCORES = np.array([0.9, 0.7, 0.4, 0.2], dtype=np.float64)
@@ -69,6 +74,14 @@ class VerificationMetricsTest(unittest.TestCase):
         self.assertAlmostEqual(curve.far[eer_idx], 0.5)
         self.assertAlmostEqual(curve.frr[eer_idx], 0.5)
 
+    def test_all_tied_scores_have_a_finite_eer_threshold(self):
+        result = compute_verification_metrics(
+            np.array([0.5, 0.5], dtype=np.float64),
+            np.array([0, 1], dtype=np.int64),
+        )
+        self.assertEqual(result["EER"], 0.5)
+        self.assertEqual(result["EER_threshold"], 0.5)
+
     def test_rejects_nonfinite(self):
         with self.assertRaises(NonFiniteScoreError):
             compute_verification_metrics(
@@ -116,6 +129,20 @@ class VerificationMetricsTest(unittest.TestCase):
         self.assertIn(-np.inf, curve.thresholds)
         self.assertEqual(curve.n_pos, 2)
         self.assertEqual(curve.n_neg, 2)
+
+    def test_verification_curve_groups_ties_under_greater_equal_rule(self):
+        scores = np.array([0.8, 0.8, 0.2, 0.2], dtype=np.float64)
+        labels = np.array([1, 0, 1, 0], dtype=np.int64)
+        curve = compute_verification_curve(scores, labels)
+        tied = int(np.where(curve.thresholds == 0.8)[0][0])
+        self.assertEqual(curve.far[tied], 0.5)
+        self.assertEqual(curve.tar[tied], 0.5)
+
+    def test_rejects_nonfinite_reject_all_operating_threshold(self):
+        scores = np.array([0.9, 0.8, 0.7, 0.6], dtype=np.float64)
+        labels = np.array([0, 1, 1, 0], dtype=np.int64)
+        with self.assertRaisesRegex(EvaluationError, "no finite"):
+            select_threshold_at_far(scores, labels, target_far=0.0)
 
     def test_no_rounding_in_core(self):
         result = compute_verification_metrics(OVERLAP_SCORES, OVERLAP_LABELS)
@@ -304,6 +331,159 @@ class RetrievalMetricsTest(unittest.TestCase):
         from cvi.evaluation.retrieval import _compute_ap_inp
         with self.assertRaises(MetricInvariantError):
             _compute_ap_inp(ranked_pos, n_relevant=5)
+
+
+class MultiTemplateClosedSetTest(unittest.TestCase):
+    def test_frozen_max_aggregation_precedes_distinct_identity_ranking(self):
+        result = evaluate_multi_template_closed_set(
+            np.array([[0.9, 0.8, 0.7, 0.6]], dtype=np.float64),
+            np.array(["C"]),
+            np.array(["A", "A", "C", "B"]),
+            self_match_policy="include",
+            rank_ks=(1, 2),
+        )
+
+        self.assertEqual(result["gallery_identity_order"], ["A", "C", "B"])
+        self.assertEqual(result["query_rows"][0]["relevant_rank"], 2)
+        self.assertEqual(result["Rank-1"], 0.0)
+        self.assertEqual(result["Rank-2"], 1.0)
+
+    def test_max_not_mean_is_the_frozen_identity_aggregation(self):
+        result = evaluate_multi_template_closed_set(
+            np.array([[0.9, 0.1, 0.8]], dtype=np.float64),
+            np.array(["A"]),
+            np.array(["A", "A", "B"]),
+            self_match_policy="include",
+            rank_ks=(1,),
+        )
+
+        self.assertEqual(result["aggregation"], "max")
+        self.assertEqual(result["Rank-1"], 1.0)
+
+    def test_identity_score_ties_keep_first_gallery_occurrence(self):
+        result = evaluate_multi_template_closed_set(
+            np.array([[0.8, 0.8, 0.7, 0.1]], dtype=np.float64),
+            np.array(["A"]),
+            np.array(["B", "A", "B", "C"]),
+            self_match_policy="include",
+            rank_ks=(1, 2),
+        )
+
+        self.assertEqual(result["gallery_identity_order"], ["B", "A", "C"])
+        self.assertEqual(result["query_rows"][0]["relevant_rank"], 2)
+        self.assertEqual(result["Rank-1"], 0.0)
+        self.assertEqual(result["Rank-2"], 1.0)
+
+    def test_per_query_rows_have_exact_identity_level_metrics(self):
+        result = evaluate_multi_template_closed_set(
+            np.array(
+                [
+                    [0.9, 0.8, 0.7],
+                    [0.6, 0.9, 0.8],
+                    [0.9, 0.8, 0.7],
+                ],
+                dtype=np.float64,
+            ),
+            np.array(["A", "B", "C"]),
+            np.array(["A", "B", "C"]),
+            self_match_policy="include",
+            rank_ks=(1, 2, 3),
+        )
+
+        rows = result["query_rows"]
+        self.assertEqual([row["relevant_rank"] for row in rows], [1, 1, 3])
+        self.assertEqual(
+            [row["bootstrap_cluster_id"] for row in rows], ["A", "B", "C"]
+        )
+        for row, expected in zip(rows, (1.0, 1.0, 1.0 / 3.0), strict=True):
+            self.assertAlmostEqual(row["AP"], expected)
+            self.assertAlmostEqual(row["INP"], expected)
+            self.assertAlmostEqual(row["reciprocal_rank"], expected)
+        self.assertAlmostEqual(result["mAP"], 7.0 / 9.0)
+        self.assertAlmostEqual(result["mINP"], 7.0 / 9.0)
+        self.assertAlmostEqual(result["MRR"], 7.0 / 9.0)
+
+    def test_explicit_self_match_exclusion_happens_before_max(self):
+        kwargs = {
+            "query_template_scores": np.array([[0.99, 0.6, 0.8]]),
+            "query_identity_ids": np.array(["A"]),
+            "gallery_template_identity_ids": np.array(["A", "A", "B"]),
+            "query_template_ids": np.array(["same"]),
+            "gallery_template_ids": np.array(["same", "other-a", "other-b"]),
+            "rank_ks": (1, 2),
+        }
+        included = evaluate_multi_template_closed_set(
+            **kwargs, self_match_policy="include"
+        )
+        excluded = evaluate_multi_template_closed_set(
+            **kwargs, self_match_policy="exclude"
+        )
+
+        self.assertEqual(included["query_rows"][0]["relevant_rank"], 1)
+        self.assertEqual(excluded["query_rows"][0]["relevant_rank"], 2)
+
+    def test_self_match_exclusion_requires_template_ids(self):
+        with self.assertRaises(SampleIdValidationError):
+            evaluate_multi_template_closed_set(
+                np.array([[1.0]]),
+                np.array(["A"]),
+                np.array(["A"]),
+                self_match_policy="exclude",
+            )
+
+    def test_shared_template_id_requires_consistent_identity_even_when_included(self):
+        with self.assertRaises(SampleIdValidationError):
+            evaluate_multi_template_closed_set(
+                np.array([[1.0, 0.5]]),
+                np.array(["A"]),
+                np.array(["B", "A"]),
+                self_match_policy="include",
+                query_template_ids=np.array(["same"]),
+                gallery_template_ids=np.array(["same", "other"]),
+            )
+
+    def test_excluding_only_relevant_template_violates_closed_set(self):
+        with self.assertRaises(ClosedSetViolation):
+            evaluate_multi_template_closed_set(
+                np.array([[1.0, 0.5]]),
+                np.array(["A"]),
+                np.array(["A", "B"]),
+                self_match_policy="exclude",
+                query_template_ids=np.array(["same"]),
+                gallery_template_ids=np.array(["same", "other"]),
+            )
+
+    def test_identity_clustered_bootstrap_is_deterministic(self):
+        rows = (
+            {"bootstrap_cluster_id": "A", "AP": 0.0},
+            {"bootstrap_cluster_id": "A", "AP": 0.0},
+            {"bootstrap_cluster_id": "B", "AP": 1.0},
+        )
+        first = identity_clustered_bootstrap_ci(
+            rows, metric="AP", confidence_level=0.8, resamples=200, seed=17
+        )
+        second = identity_clustered_bootstrap_ci(
+            rows, metric="AP", confidence_level=0.8, resamples=200, seed=17
+        )
+
+        self.assertEqual(first, second)
+        self.assertAlmostEqual(first["estimate"], 1.0 / 3.0)
+        self.assertEqual(first["cluster_unit"], "query_identity")
+        self.assertEqual(first["cluster_count"], 2)
+        self.assertEqual(first["query_row_count"], 3)
+        self.assertEqual(first["lower_bound"], 0.0)
+        self.assertEqual(first["upper_bound"], 1.0)
+
+    def test_identity_clustered_bootstrap_rejects_missing_metric(self):
+        with self.assertRaisesRegex(RetrievalError, "missing metric"):
+            identity_clustered_bootstrap_ci(
+                (
+                    {"bootstrap_cluster_id": "A", "AP": 1.0},
+                    {"bootstrap_cluster_id": "B", "INP": 1.0},
+                ),
+                metric="AP",
+                resamples=10,
+            )
 
 
 if __name__ == "__main__":

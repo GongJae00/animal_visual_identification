@@ -28,10 +28,7 @@ from cvi.public_canine_manifest import (
 )
 
 
-_DEFAULT_SECURE_ROOT = Path(
-    "/mnt/r/research-data/canine_video_identity_secure/downloads"
-)
-_SECURE_ROOT = Path(os.environ.get("CVI_PUBLIC_CANINE_SECURE_ROOT", _DEFAULT_SECURE_ROOT))
+_SECURE_ROOT = Path(os.environ.get("CVI_PUBLIC_CANINE_SECURE_ROOT") or os.devnull)
 _RECEIPT_DIGEST = hashlib.sha256(b"focused semantic parser test receipt").hexdigest()
 
 

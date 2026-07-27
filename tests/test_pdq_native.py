@@ -34,10 +34,7 @@ from cvi.pdq_native import (
 from cvi.source_provenance import build_offline_tool_provenance
 
 
-SOURCE_BUNDLE = Path(
-    "/home/gongjae/research/sources/ThreatExchange/"
-    "baefb4ed67b6cdc1d4c82dbaef858d50866ac424/pdq-source-intake-v3"
-)
+SOURCE_BUNDLE = Path(os.environ.get("CVI_PDQ_SOURCE_BUNDLE") or os.devnull)
 WORKER_SOURCE = Path(__file__).parents[1] / "native/pdq_worker/main.cpp"
 COMPILER = Path("/usr/bin/c++")
 NATIVE_AVAILABLE = SOURCE_BUNDLE.is_dir() and COMPILER.exists()

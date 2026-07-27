@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import hashlib
+import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 import numpy as np
 from PIL import Image
@@ -137,14 +140,32 @@ class DogDetectorYOLOTests(unittest.TestCase):
     def test_config_defaults(self) -> None:
         cfg = DogDetectorConfig()
         self.assertEqual(cfg.model_size, "n")
+        self.assertEqual(cfg.device, "cpu")
         self.assertAlmostEqual(cfg.conf_threshold, 0.25)
         self.assertEqual(cfg.target_size, 224)
 
-    def test_detector_creation(self) -> None:
-        import torch
-        if not torch.cuda.is_available():
-            self.skipTest("CUDA not available")
-        cfg = DogDetectorConfig(device="cuda:0")
-        det = DogDetector(cfg)
-        self.assertIsNotNone(det)
-        det.close()
+    @mock.patch("cvi.detection.YOLO")
+    def test_detector_creation(self, yolo: mock.Mock) -> None:
+        with tempfile.NamedTemporaryFile(suffix=".pt") as model:
+            model.write(b"pinned detector fixture")
+            model.flush()
+            digest = hashlib.sha256(b"pinned detector fixture").hexdigest()
+            cfg = DogDetectorConfig(
+                model_path=model.name,
+                model_sha256=digest,
+                device="cuda:0",
+            )
+            det = DogDetector(cfg)
+            self.assertIsNotNone(det)
+            staged_path = Path(yolo.call_args.args[0])
+            self.assertNotEqual(staged_path, Path(model.name))
+            self.assertEqual(staged_path.read_bytes(), b"pinned detector fixture")
+            yolo.return_value.to.assert_called_once_with("cuda:0")
+            det.close()
+            self.assertFalse(staged_path.exists())
+
+    @mock.patch("cvi.detection.YOLO")
+    def test_detector_rejects_implicit_download(self, yolo: mock.Mock) -> None:
+        with self.assertRaisesRegex(RuntimeError, "explicit local"):
+            DogDetector(DogDetectorConfig(device="cpu"))
+        yolo.assert_not_called()

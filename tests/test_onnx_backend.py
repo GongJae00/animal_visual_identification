@@ -298,6 +298,53 @@ def _write_conv_model(path: Path) -> None:
     onnx.save_model(model, path)
 
 
+def _write_rejected_superanimal_contract(path: Path) -> None:
+    weights = np.ones((3, 39), dtype=np.float32)
+    graph = helper.make_graph(
+        [
+            helper.make_node(
+                "GlobalAveragePool",
+                ["images"],
+                ["pooled"],
+            ),
+            helper.make_node(
+                "Flatten",
+                ["pooled"],
+                ["flat"],
+                axis=1,
+            ),
+            helper.make_node(
+                "MatMul",
+                ["flat", "weights"],
+                ["embedding"],
+            ),
+        ],
+        "renamed-superanimal-replacement",
+        [
+            helper.make_tensor_value_info(
+                "images",
+                TensorProto.FLOAT,
+                ["batch", 3, 384, 384],
+            )
+        ],
+        [
+            helper.make_tensor_value_info(
+                "embedding",
+                TensorProto.FLOAT,
+                ["batch", 39],
+            )
+        ],
+        [numpy_helper.from_array(weights, name="weights")],
+    )
+    model = helper.make_model(
+        graph,
+        opset_imports=[helper.make_opsetid("", 13)],
+    )
+    model.ir_version = 10
+    onnx.checker.check_model(model)
+    onnx.save_model(model, path)
+
+
 def _write_rgb(path: Path, *, delta: int = 0) -> None:
     pixels = np.array(
         [
@@ -311,9 +358,31 @@ def _write_rgb(path: Path, *, delta: int = 0) -> None:
 
 @unittest.skipUnless(
     OPTIONAL_ONNX_AVAILABLE,
-    "requires the onnx-cpu optional dependency group",
+    "requires the cpu optional dependency group",
 )
 class OnnxBackendTests(unittest.TestCase):
+    def test_superanimal_replacement_contract_is_rejected(self) -> None:
+        with TemporaryDirectory() as tmpdir:
+            model = Path(tmpdir) / "renamed-model.onnx"
+            _write_rejected_superanimal_contract(model)
+            preprocessing = _preprocessing(
+                width=384,
+                height=384,
+                maximum_source_width=384,
+                maximum_source_height=384,
+                maximum_source_pixels=384 * 384,
+            )
+            config = _backend_config(
+                preprocessing,
+                vector_dimension=39,
+            )
+            with self.assertRaisesRegex(RuntimeError, "replacement ONNX contract"):
+                OnnxRuntimeCpuBackend(
+                    model_path=model,
+                    config=config,
+                    preprocessing=preprocessing,
+                )
+
     def _run_batch_invariance_smoke(
         self,
         root: Path,
@@ -509,6 +578,33 @@ class OnnxBackendTests(unittest.TestCase):
             np.testing.assert_array_equal(
                 gray_tensor[0, 1],
                 gray_tensor[0, 2],
+            )
+
+    def test_shortest_edge_center_crop_preprocessing_is_exact(self) -> None:
+        with TemporaryDirectory() as temporary:
+            path = Path(temporary) / "landscape.png"
+            pixels = np.arange(2 * 4 * 3, dtype=np.uint8).reshape(2, 4, 3)
+            Image.fromarray(pixels, mode="RGB").save(path, format="PNG")
+            config = _preprocessing(
+                schema_version="cvi.image_preprocessing.v2",
+                width=2,
+                height=2,
+                resize_policy=ImageResizePolicy.SHORTEST_EDGE_CENTER_CROP,
+                interpolation=ImageInterpolation.BICUBIC,
+                operation_order="CONVERT_THEN_RESIZE_THEN_CENTER_CROP",
+                resize_shortest_edge=4,
+            )
+            self.assertEqual(ImagePreprocessingConfig.from_dict(config.to_dict()), config)
+            tensor = preprocess_image_batch((path,), config)
+            expected = np.asarray(
+                Image.fromarray(pixels, mode="RGB")
+                .resize((8, 4), Image.Resampling.BICUBIC)
+                .crop((3, 1, 5, 3)),
+                dtype=np.float32,
+            ) * np.float32(1.0 / 255.0)
+            np.testing.assert_array_equal(
+                tensor,
+                np.transpose(expected, (2, 0, 1))[None],
             )
 
     def test_preprocessing_rejects_undeclared_image_semantics(self) -> None:
@@ -886,7 +982,7 @@ class OnnxBackendTests(unittest.TestCase):
 
     @unittest.skipUnless(
         OPTIONAL_CUDA_ONNX_AVAILABLE,
-        "requires the onnx-cuda optional dependency group",
+        "requires the cuda optional dependency group",
     )
     def test_cuda_backend_rejects_silent_provider_fallback(self) -> None:
         class SilentCpuSession:
@@ -934,7 +1030,7 @@ class OnnxBackendTests(unittest.TestCase):
 
     @unittest.skipUnless(
         OPTIONAL_CUDA_ONNX_AVAILABLE,
-        "requires the onnx-cuda optional dependency group",
+        "requires the cuda optional dependency group",
     )
     def test_cuda_full_graph_repeatability_and_cpu_drift_smoke(self) -> None:
         with TemporaryDirectory() as temporary:
@@ -991,7 +1087,7 @@ class OnnxBackendTests(unittest.TestCase):
 
     @unittest.skipUnless(
         OPTIONAL_CUDA_ONNX_AVAILABLE,
-        "requires the onnx-cuda optional dependency group",
+        "requires the cuda optional dependency group",
     )
     def test_cuda_convolution_path_is_dynamic_batch_and_cpu_close(self) -> None:
         with TemporaryDirectory() as temporary:
@@ -1053,7 +1149,7 @@ class OnnxBackendTests(unittest.TestCase):
 
     @unittest.skipUnless(
         OPTIONAL_CUDA_ONNX_AVAILABLE,
-        "requires the onnx-cuda optional dependency group",
+        "requires the cuda optional dependency group",
     )
     def test_cpu_cuda_canonical_cache_numerical_admission_smoke(self) -> None:
         with TemporaryDirectory() as temporary:

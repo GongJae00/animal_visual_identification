@@ -4,6 +4,7 @@ Protocols:
   evaluate verification   --calibration-pairs CAL  --test-pairs TEST  ...
   evaluate retrieval      --gallery FILE  --queries FILE  ...
   evaluate open-set       --gallery FILE  --calibration-queries CAL  --test-queries TEST  ...
+  evaluate protected      --preparation-directory DIR --gallery FILE --queries FILE ...
 """
 
 from __future__ import annotations
@@ -23,14 +24,20 @@ import numpy as np
 from jsonschema import Draft202012Validator
 from PIL import Image
 
-from cvi.evaluation._legacy import (
+from cvi.evaluation.protected_verification import (
     required_zero_event_trials,
     wilson_rate,
     zero_event_exact_upper_bound,
 )
 from cvi.evaluation.calibration import CalibrationError, compute_probability_calibration_metrics, fit_isotonic_calibration
 from cvi.evaluation.open_set import OpenSetError, OpenSetResult, evaluate_open_set
-from cvi.evaluation.retrieval import RetrievalError, compute_retrieval_metrics
+from cvi.evaluation.retrieval import (
+    RetrievalError,
+    compute_cosine_score_matrix,
+    compute_retrieval_metrics,
+    evaluate_multi_template_closed_set,
+    identity_clustered_bootstrap_ci,
+)
 from cvi.evaluation.verification import (
     EvaluationError,
     compute_verification_curve,
@@ -38,9 +45,19 @@ from cvi.evaluation.verification import (
     evaluate_at_threshold,
     select_threshold_at_far,
 )
-from cvi.evidence.appearance import Dinov2WithUncertainty
+from cvi.evidence.appearance import ReceiptBoundDinov2Small
 from cvi.evidence.base import AbstractEvidencer
 from cvi.evidence.landmark_graph import LandmarkEvidencer
+from cvi.protected_io import write_private_json_bundle
+from cvi.protected_evaluation import (
+    REPORT_INTERPRETATION,
+    REPORT_PROTOCOL_STATUS,
+    REPORT_SCHEMA_VERSION,
+    load_protected_evaluation,
+    publish_protected_evaluation_output,
+)
+from cvi.provenance import content_sha256
+from cvi.source_provenance import build_offline_tool_provenance
 
 SCHEMA_VERSION = "cvi.evaluation.report.v2"
 SCHEMA_PATH = Path(__file__).resolve().parent.parent / "schemas" / "cvi.evaluation.report.v2.schema.json"
@@ -119,7 +136,7 @@ def _provenance(start: str | None = None) -> dict:
         p["cwd"] = str(Path.cwd())
     except Exception:
         p["cwd"] = "N/A"
-    p["baseline_commit"] = "0ba3b1bef4ad6bd18ee516260cf938e9e43ca659"
+    p["baseline_commit"] = "96c25780509404b507feed7e9483ef3c27291b42"
     return p
 
 
@@ -135,45 +152,17 @@ def _validate_report(report: dict) -> None:
     if not SCHEMA_PATH.exists():
         raise FileNotFoundError(f"schema not found: {SCHEMA_PATH}")
     schema = json.loads(SCHEMA_PATH.read_text())
+    report["schema_sha256"] = hashlib.sha256(SCHEMA_PATH.read_bytes()).hexdigest()
     validator = Draft202012Validator(schema)
     errors = sorted(validator.iter_errors(report), key=lambda e: list(e.path))
     if errors:
         lines = ["; ".join(e.message for e in errors)]
         raise ReportSchemaValidationError("schema validation failed: " + "; ".join(lines))
-    report["schema_sha256"] = hashlib.sha256(SCHEMA_PATH.read_bytes()).hexdigest()
 
 
-# ---------------------------------------------------------------------------
-# CIs
-# ---------------------------------------------------------------------------
-
-def _bootstrap_ci(
-    values_per_query: np.ndarray,
-    n_resamples: int = 1000,
-    confidence_level: float = 0.95,
-    seed: int = 7,
-    unit: str = "query",
-) -> dict:
-    if len(values_per_query) == 0:
-        return {"estimate": 0.0, "ci_method": "none", "bootstrap_unit": unit}
-    rng = np.random.default_rng(seed)
-    means = np.array([
-        rng.choice(values_per_query, size=len(values_per_query), replace=True).mean()
-        for _ in range(n_resamples)
-    ], dtype=np.float64)
-    alpha = 1 - confidence_level
-    low = float(np.percentile(means, 100 * alpha / 2))
-    high = float(np.percentile(means, 100 * (1 - alpha / 2)))
-    return {
-        "estimate": float(np.mean(values_per_query)),
-        "lower_bound": low,
-        "upper_bound": high,
-        "n_resamples": n_resamples,
-        "ci_method": "bootstrap_percentile",
-        "confidence_level": confidence_level,
-        "bootstrap_unit": unit,
-        "bootstrap_seed": seed,
-    }
+def _write_report(path: Path, report: dict[str, Any]) -> None:
+    _validate_report(report)
+    write_private_json_bundle(((path, report),))
 
 
 def _wilson_ci(events: int, trials: int, level: float = 0.95) -> dict:
@@ -212,6 +201,22 @@ def load_embedding_manifest(path: Path) -> dict:
     return data
 
 
+def _template_ids(manifest: dict, name: str) -> tuple[np.ndarray | None, str | None]:
+    template_ids = manifest.get("template_ids")
+    sample_ids = manifest.get("sample_ids")
+    if template_ids is not None and sample_ids is not None:
+        if template_ids != sample_ids:
+            raise ValueError(
+                f"{name} template_ids and deprecated sample_ids differ"
+            )
+        return np.asarray(template_ids), "template_ids+sample_ids"
+    if template_ids is not None:
+        return np.asarray(template_ids), "template_ids"
+    if sample_ids is not None:
+        return np.asarray(sample_ids), "sample_ids"
+    return None, None
+
+
 # ---------------------------------------------------------------------------
 # Split validation
 # ---------------------------------------------------------------------------
@@ -221,30 +226,50 @@ def validate_split_disjoint(
     test: list[dict],
 ) -> list[str]:
     warnings: list[str] = []
-    for field_key in ("image_a", "image_b"):
-        cal_set = {p.get(field_key, "") for p in cal if p.get(field_key)}
-        test_set = {p.get(field_key, "") for p in test if p.get(field_key)}
-        overlap = cal_set & test_set
+    def values(records: list[dict], keys: tuple[str, ...]) -> set[str]:
+        return {
+            str(record[key])
+            for record in records
+            for key in keys
+            if key in record and record[key] not in (None, "")
+        }
+
+    image_keys = ("image_a", "image_b", "sample_id_a", "sample_id_b")
+    image_overlap = values(cal, image_keys) & values(test, image_keys)
+    if image_overlap:
+        warnings.append(
+            f"image path leakage across pair sides: {len(image_overlap)} item(s)"
+        )
+    identity_keys = (
+        "registered_dog_id", "identity_a", "identity_b", "identity"
+    )
+    identity_overlap = values(cal, identity_keys) & values(test, identity_keys)
+    if identity_overlap:
+        warnings.append(
+            f"identity leakage across aliases: {len(identity_overlap)} identity(s)"
+        )
+    group_namespaces = {
+        "video": ("video_id", "video_id_a", "video_id_b"),
+        "session": (
+            "session_id", "session_id_a", "session_id_b", "capture_session_id"
+        ),
+        "camera": ("camera_id", "camera_id_a", "camera_id_b"),
+        "source": ("source_dataset", "source_dataset_a", "source_dataset_b"),
+    }
+    for namespace, keys in group_namespaces.items():
+        overlap = values(cal, keys) & values(test, keys)
         if overlap:
-            warnings.append(f"image path leakage in {field_key}: {len(overlap)} path(s) in both splits")
-    for id_key in ("registered_dog_id", "identity_a", "identity_b", "identity"):
-        cal_ids = {str(p[id_key]) for p in cal if id_key in p}
-        test_ids = {str(p[id_key]) for p in test if id_key in p}
-        if cal_ids and test_ids and (cal_ids & test_ids):
-            warnings.append(f"identity leakage in {id_key}: identities in both splits")
-    for gk in ("video_id", "video_id_a", "video_id_b", "session_id", "capture_session_id", "camera_id", "source_dataset"):
-        cal_vals = {p.get(gk) for p in cal if p.get(gk) is not None}
-        test_vals = {p.get(gk) for p in test if p.get(gk) is not None}
-        if cal_vals and test_vals and (cal_vals & test_vals):
-            warnings.append(f"group leakage in {gk}: values in both splits")
-    pair_set = set()
+            warnings.append(
+                f"group leakage in {namespace} namespace: {len(overlap)} value(s)"
+            )
+    pair_set: set[tuple[str, str]] = set()
     for p in cal:
         a, b = p.get("image_a", ""), p.get("image_b", "")
-        pair_set.add((a, b))
-        pair_set.add((b, a))
+        if a and b:
+            pair_set.add(tuple(sorted((str(a), str(b)))))
     for p in test:
         a, b = p.get("image_a", ""), p.get("image_b", "")
-        if (a, b) in pair_set:
+        if a and b and tuple(sorted((str(a), str(b)))) in pair_set:
             warnings.append(f"reversed pair leakage: ({a}, {b}) across splits")
     return warnings
 
@@ -300,8 +325,30 @@ def cmd_verification(args: argparse.Namespace) -> None:
     ev_map: dict[str, AbstractEvidencer] = {}
     for name, spec in config.get("channels", {}).items():
         kind = spec.get("type", "")
-        if kind == "dinov2":
-            ev_map[name] = Dinov2WithUncertainty()
+        if kind == "dinov2_local":
+            required = {
+                "type",
+                "model_dir",
+                "weight_intake_bundle",
+                "preprocessor_intake_bundle",
+                "device",
+            }
+            if set(spec) != required:
+                raise ValueError(
+                    "dinov2_local verification requires exact receipt-bound fields"
+                )
+            ev_map[name] = ReceiptBoundDinov2Small(
+                model_directory=Path(spec["model_dir"]),
+                weight_intake_bundle=Path(spec["weight_intake_bundle"]),
+                preprocessor_intake_bundle=Path(
+                    spec["preprocessor_intake_bundle"]
+                ),
+                device=spec["device"],
+            )
+        elif kind in {"dinov2", "appearance"}:
+            raise ValueError(
+                "unpinned DINOv2 verification is disabled; use dinov2_local"
+            )
         elif kind == "landmark":
             raise ValueError(
                 "landmark evaluation is disabled until trained heatmap and "
@@ -329,7 +376,7 @@ def cmd_verification(args: argparse.Namespace) -> None:
     schema_hash = _file_sha256(SCHEMA_PATH) if SCHEMA_PATH.exists() else {"status": "NOT_FOUND"}
     report: dict[str, Any] = {
         "protocol": "verification",
-        "protocol_status": split_status,
+        "protocol_status": "UNVERIFIED" if split_status == "VERIFIED" else split_status,
         "provenance": prov,
         "evidence_config": _file_sha256(args.evidence_config),
         "calibration_pairs": _file_sha256(args.calibration_pairs),
@@ -399,8 +446,7 @@ def cmd_verification(args: argparse.Namespace) -> None:
 
     prov["end_timestamp"] = datetime.now(timezone.utc).isoformat()
     report["provenance"] = prov
-    _validate_report(report)
-    args.output.write_text(json.dumps(report, ensure_ascii=False, indent=2, allow_nan=False) + "\n")
+    _write_report(args.output, report)
     print(json.dumps({"event": "verification_done", "output": str(args.output)}))
 
 
@@ -416,21 +462,50 @@ def cmd_retrieval(args: argparse.Namespace) -> None:
     g_ids = np.array(gallery["identities"])
     q_embs = np.array(queries["embeddings"], dtype=np.float32)
     q_ids = np.array(queries["identities"])
-    g_sample_ids = np.array(gallery.get("sample_ids", [])) if "sample_ids" in gallery else None
-    q_sample_ids = np.array(queries.get("sample_ids", [])) if "sample_ids" in queries else None
-    if args.no_self_match:
-        if q_sample_ids is None or g_sample_ids is None:
-            print(json.dumps({"error": "--no-self-match requires 'sample_ids' in both gallery and query manifests"}))
-            raise SystemExit(1)
     try:
-        result = compute_retrieval_metrics(
-            q_embs, g_embs, q_ids, g_ids,
-            metric="cosine",
-            rank_ks=(1, 5, 10),
-            query_sample_ids=q_sample_ids,
-            gallery_sample_ids=g_sample_ids,
-            closed_set=not args.open_set,
-        )
+        g_template_ids, g_template_id_field = _template_ids(gallery, "gallery")
+        q_template_ids, q_template_id_field = _template_ids(queries, "queries")
+    except ValueError as error:
+        print(json.dumps({"error": str(error)}))
+        raise SystemExit(1)
+    if args.self_match_policy == "exclude" and (
+        q_template_ids is None or g_template_ids is None
+    ):
+        print(json.dumps({
+            "error": "self-match exclusion requires template_ids in both manifests "
+            "(deprecated sample_ids is accepted as an alias)"
+        }))
+        raise SystemExit(1)
+    try:
+        if args.open_set:
+            result = compute_retrieval_metrics(
+                q_embs,
+                g_embs,
+                q_ids,
+                g_ids,
+                metric="cosine",
+                rank_ks=(1, 5, 10),
+                query_sample_ids=(
+                    q_template_ids if args.self_match_policy == "exclude" else None
+                ),
+                gallery_sample_ids=(
+                    g_template_ids if args.self_match_policy == "exclude" else None
+                ),
+                closed_set=False,
+            )
+            evaluation_variant = "legacy_open_set_retrieval_diagnostic"
+        else:
+            scores = compute_cosine_score_matrix(q_embs, g_embs)
+            result = evaluate_multi_template_closed_set(
+                scores,
+                q_ids,
+                g_ids,
+                self_match_policy=args.self_match_policy,
+                query_template_ids=q_template_ids,
+                gallery_template_ids=g_template_ids,
+                rank_ks=(1, 5, 10),
+            )
+            evaluation_variant = "multi_template_closed_set"
     except RetrievalError as e:
         print(json.dumps({"error": str(e)}))
         raise SystemExit(1)
@@ -438,57 +513,44 @@ def cmd_retrieval(args: argparse.Namespace) -> None:
     prov["end_timestamp"] = datetime.now(timezone.utc).isoformat()
     report: dict[str, Any] = {
         "protocol": "retrieval",
-        "protocol_status": "VERIFIED",
+        "protocol_status": "UNVERIFIED",
         "provenance": prov,
         "gallery": _file_sha256(args.gallery),
         "queries": _file_sha256(args.queries),
         "schema": _file_sha256(SCHEMA_PATH) if SCHEMA_PATH.exists() else {"status": "NOT_FOUND"},
-        "self_match_excluded": args.no_self_match and q_sample_ids is not None,
+        "evaluation_variant": evaluation_variant,
+        "self_match_policy": args.self_match_policy,
+        "self_match_excluded": args.self_match_policy == "exclude",
+        "template_id_fields": {
+            "gallery": g_template_id_field,
+            "queries": q_template_id_field,
+        },
+        "valid_for_model_selection": False,
+        "valid_for_final_reporting": False,
         **result,
     }
-    rank_keys = [k for k in result if k.startswith("Rank-")]
-    if rank_keys:
-        rank_vals = np.array([result[k] for k in rank_keys], dtype=np.float64)
-        report["rank_bootstrap_ci"] = _bootstrap_ci(rank_vals, unit="rank-k")
-    query_aps = _per_query_aps(q_embs, g_embs, q_ids, g_ids, q_sample_ids, g_sample_ids)
-    if query_aps is not None and len(query_aps) > 0:
-        report["mAP_bootstrap_ci"] = _bootstrap_ci(np.array(query_aps, dtype=np.float64), unit="query")
-    _validate_report(report)
-    args.output.write_text(json.dumps(report, ensure_ascii=False, indent=2, allow_nan=False) + "\n")
+    if evaluation_variant == "multi_template_closed_set":
+        query_rows = result["query_rows"]
+        cluster_count = len({row["bootstrap_cluster_id"] for row in query_rows})
+        if cluster_count < 2:
+            report["identity_clustered_bootstrap"] = {
+                "state": "UNAVAILABLE",
+                "reason": "at least two query identities are required",
+                "cluster_count": cluster_count,
+            }
+        else:
+            metrics = ("AP", "INP", "reciprocal_rank", "Rank-1", "Rank-5", "Rank-10")
+            report["identity_clustered_bootstrap"] = {
+                "state": "AVAILABLE",
+                "metrics": {
+                    metric: identity_clustered_bootstrap_ci(
+                        query_rows, metric=metric, resamples=1000, seed=7
+                    )
+                    for metric in metrics
+                },
+            }
+    _write_report(args.output, report)
     print(json.dumps({"event": "retrieval_done", "output": str(args.output)}))
-
-
-def _per_query_aps(
-    q_embs, g_embs, q_ids, g_ids, q_sids, g_sids,
-) -> list[float] | None:
-    try:
-        from cvi.evaluation.retrieval import _compute_ap_inp
-        q = q_embs.copy()
-        g = g_embs.copy()
-        q_norm = np.linalg.norm(q, axis=1, keepdims=True)
-        g_norm = np.linalg.norm(g, axis=1, keepdims=True)
-        q = q / q_norm
-        g = g / g_norm
-        sims = q @ g.T
-        aps = []
-        for i in range(len(q_embs)):
-            row = sims[i].copy()
-            ip = g_ids == q_ids[i]
-            if q_sids is not None and g_sids is not None:
-                excl = np.array(q_sids[i] == g_sids, dtype=bool)
-                row[excl] = -np.inf
-                ip = ip & ~excl
-            nr = int(ip.sum())
-            if nr == 0:
-                aps.append(0.0)
-                continue
-            order = np.argsort(-row, kind="stable")
-            rp = ip[order]
-            ap, _ = _compute_ap_inp(rp, nr)
-            aps.append(ap)
-        return aps
-    except Exception:
-        return None
 
 
 # ---------------------------------------------------------------------------
@@ -498,22 +560,17 @@ def _per_query_aps(
 def cmd_open_set(args: argparse.Namespace) -> None:
     start_ts = datetime.now(timezone.utc).isoformat()
     gallery = load_embedding_manifest(args.gallery)
+    calibration_gallery = load_embedding_manifest(args.calibration_gallery)
+    calibration_queries = load_embedding_manifest(args.calibration_queries)
     test_queries = load_embedding_manifest(args.test_queries)
     g_embs = np.array(gallery["embeddings"], dtype=np.float32)
     g_ids = np.array(gallery["identities"])
     q_embs = np.array(test_queries["embeddings"], dtype=np.float32)
     q_ids = np.array(test_queries["identities"])
-    if args.calibration_queries:
-        cal_q = load_embedding_manifest(args.calibration_queries)
-        cal_q_embs = np.array(cal_q["embeddings"], dtype=np.float32)
-        cal_q_ids = np.array(cal_q["identities"])
-        cal_g_embs = np.array(gallery["embeddings"], dtype=np.float32)
-        cal_g_ids = np.array(gallery["identities"])
-    else:
-        cal_q_embs = None
-        cal_q_ids = None
-        cal_g_embs = None
-        cal_g_ids = None
+    cal_q_embs = np.array(calibration_queries["embeddings"], dtype=np.float32)
+    cal_q_ids = np.array(calibration_queries["identities"])
+    cal_g_embs = np.array(calibration_gallery["embeddings"], dtype=np.float32)
+    cal_g_ids = np.array(calibration_gallery["identities"])
     try:
         result: OpenSetResult = evaluate_open_set(
             q_embs, g_embs, q_ids, g_ids,
@@ -530,9 +587,11 @@ def cmd_open_set(args: argparse.Namespace) -> None:
     prov["end_timestamp"] = datetime.now(timezone.utc).isoformat()
     report: dict[str, Any] = {
         "protocol": "open_set",
-        "protocol_status": "VERIFIED",
+        "protocol_status": "UNVERIFIED",
         "provenance": prov,
         "gallery": _file_sha256(args.gallery),
+        "calibration_gallery": _file_sha256(args.calibration_gallery),
+        "calibration_queries": _file_sha256(args.calibration_queries),
         "test_queries": _file_sha256(args.test_queries),
         "schema": _file_sha256(SCHEMA_PATH) if SCHEMA_PATH.exists() else {"status": "NOT_FOUND"},
         "known_detection_AUROC": result.known_detection_auroc,
@@ -560,9 +619,148 @@ def cmd_open_set(args: argparse.Namespace) -> None:
             report["DIR_CI"][target_key] = _wilson_ci(dir_events, dir_trials)
         report.setdefault("FPIR_CI", {})
         report["FPIR_CI"][target_key] = _wilson_ci(fpir_events, fpir_trials)
-    _validate_report(report)
-    args.output.write_text(json.dumps(report, ensure_ascii=False, indent=2, allow_nan=False) + "\n")
+    _write_report(args.output, report)
     print(json.dumps({"event": "open_set_done", "output": str(args.output)}))
+
+
+# ---------------------------------------------------------------------------
+# Receipt-bound protected retrieval protocol
+# ---------------------------------------------------------------------------
+
+def cmd_protected(args: argparse.Namespace) -> None:
+    provenance = build_offline_tool_provenance(
+        Path(__file__),
+        additional_paths=(
+            Path(__file__).resolve().parents[1] / "src" / "cvi" / "protected_evaluation.py",
+            Path(__file__).resolve().parents[1] / "src" / "cvi" / "protected_io.py",
+            Path(__file__).resolve().parents[1] / "src" / "cvi" / "evaluation" / "retrieval.py",
+        ),
+    )
+    prepared = load_protected_evaluation(
+        preparation_directory=args.preparation_directory,
+        expected_plan_receipt_sha256=args.expected_plan_receipt_sha256,
+        expected_advanced_exposure_declaration_sha256=(
+            args.expected_advanced_exposure_declaration_sha256
+        ),
+        policy_path=args.policy,
+        split_assignment_path=args.split_assignment,
+        split_receipt_path=args.split_receipt,
+        exposure_ledger_path=args.exposure_ledger,
+        exposure_receipt_path=args.exposure_receipt,
+        gallery_path=args.gallery,
+        queries_path=args.queries,
+    )
+    # All byte, count, dimension, and score-matrix caps have passed before
+    # these dense arrays are allocated.
+    gallery_embeddings = np.asarray(
+        [record.embedding for record in prepared.gallery.records], dtype=np.float64
+    )
+    query_embeddings = np.asarray(
+        [record.embedding for record in prepared.queries.records], dtype=np.float64
+    )
+    gallery_identities = np.asarray(
+        [record.identity_token for record in prepared.gallery.records]
+    )
+    query_identities = np.asarray(
+        [record.identity_token for record in prepared.queries.records]
+    )
+    gallery_templates = np.asarray(
+        [record.template_token for record in prepared.gallery.records]
+    )
+    query_templates = np.asarray(
+        [record.template_token for record in prepared.queries.records]
+    )
+    scores = compute_cosine_score_matrix(query_embeddings, gallery_embeddings)
+    result = evaluate_multi_template_closed_set(
+        scores,
+        query_identities,
+        gallery_identities,
+        self_match_policy=prepared.policy.self_match_policy,
+        query_template_ids=query_templates,
+        gallery_template_ids=gallery_templates,
+        rank_ks=prepared.policy.rank_ks,
+    )
+    bootstrap_metrics = ("AP", "INP", "reciprocal_rank", *(
+        f"Rank-{value}" for value in prepared.policy.rank_ks
+    ))
+    bootstrap = [
+        identity_clustered_bootstrap_ci(
+            result["query_rows"],
+            metric=metric,
+            resamples=prepared.policy.bootstrap_resamples,
+            seed=prepared.policy.bootstrap_seed,
+        )
+        for metric in bootstrap_metrics
+    ]
+    plan = prepared.plan_receipt
+    policy = prepared.policy
+    report: dict[str, Any] = {
+        "schema_version": REPORT_SCHEMA_VERSION,
+        "protocol": "protected_retrieval",
+        "protocol_status": REPORT_PROTOCOL_STATUS,
+        "receipt_chain_verified": True,
+        "valid_for_model_selection": False,
+        "valid_for_final_reporting": False,
+        "evaluation_token": plan.evaluation_token,
+        "receipt_chain": {
+            "plan_receipt_sha256": plan.receipt_sha256,
+            "policy_receipt_sha256": prepared.policy_receipt.receipt_sha256,
+            "input_receipt_sha256": prepared.input_receipt.receipt_sha256,
+            "advanced_exposure_declaration_sha256": plan.advanced_exposure_declaration_sha256,
+            "split_assignment_sha256": plan.split_assignment_sha256,
+            "prior_exposure_ledger_sha256": plan.prior_exposure_ledger_sha256,
+            "prior_exposure_receipt_sha256": plan.prior_exposure_receipt_sha256,
+        },
+        "protocol_configuration": {
+            "metric": policy.metric,
+            "score_dtype": policy.score_dtype,
+            "self_match_policy": policy.self_match_policy,
+            "aggregation": result["aggregation"],
+            "tie_policy": result["tie_policy"],
+            "rank_ks": list(policy.rank_ks),
+            "bootstrap_resamples": policy.bootstrap_resamples,
+            "bootstrap_seed": policy.bootstrap_seed,
+        },
+        "input_summary": {
+            "gallery_templates": len(prepared.gallery.records),
+            "query_templates": len(prepared.queries.records),
+            "gallery_identities": len(set(gallery_identities.tolist())),
+            "query_identities": len(set(query_identities.tolist())),
+            "embedding_dimension": prepared.input_receipt.embedding_dimension,
+            "total_embedding_values": prepared.input_receipt.total_embedding_values,
+            "score_matrix_elements": prepared.input_receipt.score_matrix_elements,
+        },
+        "metrics": {
+            "mAP": result["mAP"],
+            "mINP": result["mINP"],
+            "MRR": result["MRR"],
+            "rank_at_k": [
+                {"k": value, "value": result[f"Rank-{value}"]}
+                for value in policy.rank_ks
+            ],
+            "identity_clustered_bootstrap": bootstrap,
+        },
+        "resource_bounds": {
+            "maximum_samples_per_input": policy.maximum_samples_per_input,
+            "maximum_embedding_dimension": policy.maximum_embedding_dimension,
+            "maximum_total_embedding_values": policy.maximum_total_embedding_values,
+            "maximum_score_matrix_elements": policy.maximum_score_matrix_elements,
+        },
+        "evaluator_provenance_sha256": content_sha256(provenance),
+        "interpretation": REPORT_INTERPRETATION,
+    }
+    receipt = publish_protected_evaluation_output(
+        output_directory=args.output_directory,
+        preparation=prepared,
+        report=report,
+        evaluator_provenance=provenance,
+    )
+    print(json.dumps({
+        "event": "protected_retrieval_done",
+        "output_directory": str(args.output_directory),
+        "plan_receipt_sha256": plan.receipt_sha256,
+        "output_receipt_sha256": receipt.receipt_sha256,
+    }, sort_keys=True))
 
 
 # ---------------------------------------------------------------------------
@@ -585,16 +783,46 @@ def main() -> None:
     p_ret.add_argument("--gallery", type=Path, required=True)
     p_ret.add_argument("--queries", type=Path, required=True)
     p_ret.add_argument("--output", type=Path, required=True)
-    p_ret.add_argument("--no-self-match", action="store_true")
+    self_match = p_ret.add_mutually_exclusive_group(required=True)
+    self_match.add_argument(
+        "--self-match-policy", choices=("include", "exclude")
+    )
+    self_match.add_argument(
+        "--no-self-match",
+        action="store_const",
+        const="exclude",
+        dest="self_match_policy",
+        help="deprecated alias for --self-match-policy exclude",
+    )
     p_ret.add_argument("--open-set", action="store_true")
     p_ret.set_defaults(func=cmd_retrieval)
 
     p_os = sub.add_parser("open-set")
     p_os.add_argument("--gallery", type=Path, required=True)
-    p_os.add_argument("--calibration-queries", type=Path, default=None)
+    p_os.add_argument("--calibration-gallery", type=Path, required=True)
+    p_os.add_argument("--calibration-queries", type=Path, required=True)
     p_os.add_argument("--test-queries", type=Path, required=True)
     p_os.add_argument("--output", type=Path, required=True)
     p_os.set_defaults(func=cmd_open_set)
+
+    p_protected = sub.add_parser(
+        "protected",
+        help="run receipt-bound protected retrieval from pinned embeddings",
+    )
+    p_protected.add_argument("--preparation-directory", required=True, type=Path)
+    p_protected.add_argument("--expected-plan-receipt-sha256", required=True)
+    p_protected.add_argument(
+        "--expected-advanced-exposure-declaration-sha256", required=True
+    )
+    p_protected.add_argument("--policy", required=True, type=Path)
+    p_protected.add_argument("--split-assignment", required=True, type=Path)
+    p_protected.add_argument("--split-receipt", required=True, type=Path)
+    p_protected.add_argument("--exposure-ledger", required=True, type=Path)
+    p_protected.add_argument("--exposure-receipt", required=True, type=Path)
+    p_protected.add_argument("--gallery", required=True, type=Path)
+    p_protected.add_argument("--queries", required=True, type=Path)
+    p_protected.add_argument("--output-directory", required=True, type=Path)
+    p_protected.set_defaults(func=cmd_protected)
 
     args = parser.parse_args()
     args.func(args)

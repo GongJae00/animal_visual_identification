@@ -17,6 +17,10 @@ import numpy as np
 import onnxruntime as ort
 from PIL import Image
 
+from cvi.evaluation.verification import (
+    compute_verification_metrics,
+    select_threshold_at_far,
+)
 from cvi.identity_registry import compute_registered_dog_id
 
 
@@ -85,39 +89,25 @@ def _crop_path(crops_dir: Path, protocol: str, shot: str, role: str,
 def _roc_auc(pos: list[float], neg: list[float]) -> float:
     if not pos or not neg:
         return 0.5
-    concat = np.array(pos + neg)
-    labels = np.array([1] * len(pos) + [0] * len(neg))
-    order = np.argsort(concat)
-    ls = labels[order]
-    rs = float(np.sum(np.where(ls == 1)[0] + 1))
-    return (rs - len(pos) * (len(pos) + 1) / 2) / (len(pos) * len(neg))
+    scores = np.asarray(pos + neg, dtype=np.float64)
+    labels = np.asarray([1] * len(pos) + [0] * len(neg), dtype=np.int64)
+    return compute_verification_metrics(scores, labels)["ROC_AUC"]
 
 
 def _tar_at_far(pos, neg, target: float) -> float:
     if not pos or not neg:
         return 0.0
-    pos_a, neg_a = np.array(pos), np.array(neg)
-    u = np.sort(np.unique(np.concatenate([pos_a, neg_a])))[::-1]
-    n_neg, n_pos = len(neg), len(pos)
-    neg_sort, pos_sort = np.sort(neg_a), np.sort(pos_a)
-    for t in u:
-        far = (n_neg - int(np.searchsorted(neg_sort, t, side="left"))) / n_neg
-        if far <= target:
-            return (n_pos - int(np.searchsorted(pos_sort, t, side="left"))) / n_pos
-    return 0.0
+    scores = np.asarray(pos + neg, dtype=np.float64)
+    labels = np.asarray([1] * len(pos) + [0] * len(neg), dtype=np.int64)
+    return select_threshold_at_far(scores, labels, target).calibration_tar
 
 
 def _eer(pos, neg) -> float:
     if not pos or not neg:
         return 0.5
-    pos_a, neg_a = np.sort(np.array(pos)), np.sort(np.array(neg))
-    scores = np.unique(np.concatenate([pos_a, neg_a]))
-    n_pos, n_neg = len(pos), len(neg)
-    neg_left = n_neg - np.searchsorted(neg_a, scores, side="left")
-    far = neg_left / n_neg
-    pos_left = np.searchsorted(pos_a, scores, side="left")
-    fnr = pos_left / n_pos
-    return float(np.min((far + fnr) / 2))
+    scores = np.asarray(pos + neg, dtype=np.float64)
+    labels = np.asarray([1] * len(pos) + [0] * len(neg), dtype=np.int64)
+    return compute_verification_metrics(scores, labels)["EER"]
 
 
 # ---------------------------------------------------------------------------
@@ -324,6 +314,12 @@ def main() -> None:
         help="Replace dataset_identity_id with deterministic registered_dog_id (UUIDv5)",
     )
     args = parser.parse_args()
+
+    raise RuntimeError(
+        "visual model baseline publication is disabled until records are "
+        "isolated by protocol, episode, gallery_size, shot, modality, and role, "
+        "and every use is bound to its exact crop artifact"
+    )
 
     if not args.model.exists():
         print(f"ERROR: model not found: {args.model}", flush=True)

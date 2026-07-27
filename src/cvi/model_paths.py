@@ -3,8 +3,8 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-# ── 데이터 저장 경로 ──
-# CVI_DATA_DIR=/mnt/r/...  or  ln -s /your/data/path ~/cvi_data
+# Data root
+# Set CVI_DATA_DIR to an absolute local data root, such as /path/to/cvi-data.
 DATA_DIR = Path(
     os.environ.get(
         "CVI_DATA_DIR",
@@ -12,7 +12,7 @@ DATA_DIR = Path(
     )
 )
 
-# 데이터 하위 디렉토리 (실제 SSD/canine_video_identity_secure 구조 기준)
+# Dataset and artifact subdirectories.
 DATASETS_DIR = DATA_DIR / "datasets"
 CHECKPOINTS_DIR = DATA_DIR / "checkpoints"
 CACHE_DIR = DATA_DIR / "cache"
@@ -21,12 +21,12 @@ EXPERIMENTS_DIR = DATA_DIR / "experiments"
 DOWNLOADS_DIR = DATA_DIR / "downloads"
 MANIFESTS_DIR = DATA_DIR / "manifests"
 
-# ── 레거시 하위 디렉토리 (optional, raw/processed/registry 구조 사용 시) ──
+# Optional legacy data-layout directories
 DATA_RAW_DIR = DATA_DIR / "raw"
 DATA_PROCESSED_DIR = DATA_DIR / "processed"
 DATA_REGISTRY_DIR = DATA_DIR / "registry"
 
-# ── 모델 저장 경로 ──
+# Model cache root
 MODELS_DIR = Path(
     os.environ.get(
         "CVI_MODELS_DIR",
@@ -34,32 +34,30 @@ MODELS_DIR = Path(
     )
 )
 
-# ── 지원 데이터셋 ──
-# url이 있으면 download_datasets.py가 자동 다운로드.
-# url이 없으면 수동 준비 (라이선스 동의 필요 등).
+# Dataset path metadata. Automatic acquisition is not admitted.
 SUPPORTED_DATASETS: dict[str, dict] = {
     "yt-bb-dog": {
         "name": "YouTube-BoundingBoxes Dog",
-        "dir": "yt-bb-dog-outer-official-2026-07-22",
+        "dir": "yt-bb-dog",
         "url": "https://www.lirmm.fr/YT-BB-Dog_Sibetan/",
-        "desc": "유튜브 영상에서 추출한 개 크롭 (27,036장, 2,723마리)",
+        "desc": "External dataset; automatic acquisition is disabled",
     },
     "dogfacenet": {
         "name": "DogFaceNet",
-        "dir": "dogfacenet-224-zenodo-12578449-v1",
-        "desc": "개 얼굴 인식 데이터셋 (8,363장, 1,393마리)",
+        "dir": "dogfacenet",
+        "desc": "External dataset; automatic acquisition is disabled",
     },
     "mpdd": {
         "name": "MPetDoorDataset",
-        "dir": "mpdd-mendeley-v5j6m8dzhv-v1",
+        "dir": "mpdd",
         "url": "https://github.com/hacilab/MPDD",
-        "desc": "펫도어 카메라 촬영 반려견 데이터셋 (1,657장) — 라이선스 동의 필요",
+        "desc": "External dataset; automatic acquisition is disabled",
     },
     "sibetan": {
         "name": "SiBeTan",
-        "dir": "sibetan-official-2026-07-22",
+        "dir": "sibetan",
         "url": "https://www.lirmm.fr/YT-BB-Dog_Sibetan/",
-        "desc": "롱텀 교차카메라 개 재식별 데이터셋 (1,755장, 59마리)",
+        "desc": "External dataset; automatic acquisition is disabled",
     },
 }
 
@@ -74,33 +72,34 @@ def processed_path(name: str) -> Path:
     return DATA_PROCESSED_DIR / SUPPORTED_DATASETS.get(name, {"dir": name})["dir"]
 
 
-# ── 사전훈련 ONNX 모델 경로 (checkpoints/deployment-eligible/onnx-models/) ──
+# Pretrained ONNX artifact paths
 DINOV2_SMALL_ONNX = CHECKPOINTS_DIR / "deployment-eligible" / "onnx-models" / "dinov2-small.onnx"
 MOBILENETV4_CONV_SMALL_ONNX = CHECKPOINTS_DIR / "deployment-eligible" / "onnx-models" / "mobilenetv4-conv-small.onnx"
 
-# ── 캐시 레지스트리 ──
+# Registry cache paths
 IDENTITY_REGISTRY_DB = CACHE_DIR / "registries" / "identity_registry.db"
 BINDING_JSON = CACHE_DIR / "registries" / "binding.json"
 
-# ── 모델 다운로드 URL ──
-DOGFLW_LANDMARK_URL = (
-    "https://huggingface.co/datasets/canine-video-identity/dogflw-models/resolve/main/"
-    "dogflw_landmark_full.tflite"
-)
+# Disabled DogFLW candidate
 DOGFLW_LANDMARK_PATH = MODELS_DIR / "dogflw_landmark_full.tflite"
-DOGFLW_LANDMARK_MD5 = "e4e0a6b0f8a9b1c2d3e4f5a6b7c8d9e0"
+# No publisher-authoritative checksum or redistributable model source is verified.
+DOGFLW_LANDMARK_MD5: str | None = None
 
+SUPERANIMAL_HF_REPO = "mwmathis/DeepLabCutModelZoo-SuperAnimal-Quadruped"
+SUPERANIMAL_REVISION = "1ad30fb80cd666f1e5c91578d1cf63bccfa84f80"
+SUPERANIMAL_WEIGHTS_SHA256 = (
+    "a42e58d56bb32f8b4f4fe17ea9ed9511cebc7b7949ac56b97fa6f3a49587c31e"
+)
 SUPERANIMAL_QUADRUPED_URL = (
-    "https://huggingface.co/mwmathis/DeepLabCutModelZoo-SuperAnimal-Quadruped/resolve/main/"
-    "superanimal_quadruped_hrnet_w32.pt"
+    f"https://huggingface.co/{SUPERANIMAL_HF_REPO}/resolve/"
+    f"{SUPERANIMAL_REVISION}/superanimal_quadruped_hrnet_w32.pt"
 )
 SUPERANIMAL_QUADRUPED_PATH = MODELS_DIR / "superanimal_quadruped_hrnet_w32.pt"
 SUPERANIMAL_ONNX_PATH = MODELS_DIR / "superanimal_quadruped.onnx"
 
-# ── MiewID-msv3 wildlife ReID model (not a nose-print model) ──
+# MiewID-msv3 wildlife ReID candidate (not a nose-print model)
 MIEWID_REID_ONNX_PATH = MODELS_DIR / "miewid_msv3_reid.onnx"
 # Legacy artifact path retained for discovery only; it is not canonical.
-MIEWID_NOSE_ONNX_PATH = MODELS_DIR / "miewid_nose.onnx"
 MIEWID_MSV3_HF_REPO = "conservationxlabs/miewid-msv3"
 MIEWID_MSV3_REVISION = "4f1d7f2b521149e5fe34bb85f377248ce9971a7d"
 MIEWID_MSV3_WEIGHTS_SHA256 = (

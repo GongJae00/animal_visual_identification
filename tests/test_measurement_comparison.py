@@ -67,7 +67,7 @@ def run_isolated_lane_benchmark(
             "run",
             "--isolated",
             "--extra",
-            "onnx-cuda" if cuda else "onnx-cpu",
+            "cuda" if cuda else "cpu",
             "python",
             "tests/lane_benchmark_harness.py",
             "--backend",
