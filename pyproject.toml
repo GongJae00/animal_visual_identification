@@ -104,3 +104,6 @@ module-name = "cvi"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
+markers = [
+    "controlled_host: requires a frozen host that emits no unsolicited protected-worker output",
+]

@@ -11,6 +11,8 @@ from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
+import pytest
+
 try:
     import numpy as np
     import onnx
@@ -346,6 +348,7 @@ class OnnxInferenceBenchmarkPolicyTests(unittest.TestCase):
 
 @unittest.skipUnless(OPTIONAL_ONNX_AVAILABLE, "requires ONNX dependencies")
 class OnnxInferenceBenchmarkIntegrationTests(unittest.TestCase):
+    @pytest.mark.controlled_host
     @unittest.skipUnless(
         OPTIONAL_CPU_ONNX_AVAILABLE or OPTIONAL_CUDA_ONNX_AVAILABLE,
         "requires one exact ONNX Runtime dependency lane",
@@ -555,6 +558,7 @@ class OnnxInferenceBenchmarkIntegrationTests(unittest.TestCase):
                 strict,
             )
 
+    @pytest.mark.controlled_host
     @unittest.skipUnless(
         OPTIONAL_CPU_ONNX_AVAILABLE or OPTIONAL_CUDA_ONNX_AVAILABLE,
         "requires one exact ONNX Runtime dependency lane",

@@ -43,8 +43,8 @@ jobs:
       - name: Check lockfile
         run: uv lock --check
 
-      - name: Run supported test suite
-        run: uv run --no-sync pytest
+      - name: Run portable test suite
+        run: uv run --no-sync pytest -m "not controlled_host"
 
       - name: Check source diff and compile Python
         run: |
