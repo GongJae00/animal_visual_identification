@@ -206,6 +206,7 @@ def backend_payload(
         enable_mem_pattern=False,
         enable_cpu_mem_arena=False,
         use_deterministic_compute=True,
+        session_log_severity_level=4,
         providers=providers,
         maximum_model_bytes=1_000_000,
     ).to_dict()
