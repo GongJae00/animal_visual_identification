@@ -16,6 +16,25 @@ _REGION_CENTERS = (
 )
 
 
+def signed_gem(
+    features: torch.Tensor,
+    weights: torch.Tensor,
+    power: torch.Tensor,
+) -> torch.Tensor:
+    """Pool signed features without discarding their negative components."""
+
+    denominator = weights.sum(dim=(2, 3)).clamp_min(1e-6)
+    positive = (
+        torch.sum(F.relu(features).pow(power) * weights, dim=(2, 3))
+        / denominator
+    ).pow(1.0 / power)
+    negative = (
+        torch.sum(F.relu(-features).pow(power) * weights, dim=(2, 3))
+        / denominator
+    ).pow(1.0 / power)
+    return positive - negative
+
+
 def anatomical_region_masks(
     height: int, width: int, *, device: torch.device, dtype: torch.dtype
 ) -> torch.Tensor:
@@ -70,10 +89,7 @@ class AnatomicalPartPool(nn.Module):
             attention = torch.softmax(logits.flatten(2), dim=-1).view_as(logits) * weights
             attention = attention / attention.sum(dim=(2, 3), keepdim=True).clamp_min(1e-6)
             attention_pool = torch.sum(features * attention, dim=(2, 3))
-            gem = (
-                torch.sum(features.clamp_min(1e-6).pow(power) * weights, dim=(2, 3))
-                / weights.sum(dim=(2, 3)).clamp_min(1e-6)
-            ).pow(1.0 / power)
+            gem = signed_gem(features, weights, power)
             pooled.extend(
                 [
                     torch.where(usable.flatten(1), attention_pool, torch.zeros_like(attention_pool)),
@@ -83,4 +99,4 @@ class AnatomicalPartPool(nn.Module):
         return F.normalize(self.projection(torch.cat(pooled, dim=1)), dim=1)
 
 
-__all__ = ["AnatomicalPartPool", "anatomical_region_masks"]
+__all__ = ["AnatomicalPartPool", "anatomical_region_masks", "signed_gem"]

@@ -24,8 +24,17 @@ class _DummyDino(nn.Module):
 
 
 class NoseIDModelTests(unittest.TestCase):
+    @staticmethod
+    def _model() -> NoseIDModel:
+        return NoseIDModel(
+            _DummyDino(),
+            image_mean=(0.485, 0.456, 0.406),
+            image_std=(0.229, 0.224, 0.225),
+            rescale_factor=1.0 / 255.0,
+        )
+
     def test_oracle_mask_path_produces_fixed_normalized_outputs(self) -> None:
-        model = NoseIDModel(_DummyDino()).eval()
+        model = self._model().eval()
         rgb = torch.rand((1, 3, 448, 448))
         keypoints = torch.tensor(
             [[
@@ -45,6 +54,7 @@ class NoseIDModelTests(unittest.TestCase):
                 runtime_quality,
                 semantic_probability=semantic,
                 invalid_probability=invalid,
+                source_valid_probability=torch.ones((1, 1, 448, 448)),
             )
         self.assertEqual(output["z_rgb"].shape, (1, 256))
         self.assertEqual(output["z_texture"].shape, (1, 256))
@@ -57,7 +67,7 @@ class NoseIDModelTests(unittest.TestCase):
         )
 
     def test_low_resolution_disables_texture_utility(self) -> None:
-        model = NoseIDModel(_DummyDino()).eval()
+        model = self._model().eval()
         rgb = torch.rand((1, 3, 448, 448))
         keypoints = torch.zeros((1, 6, 3))
         keypoints[:, :, 2] = 1.0
@@ -70,6 +80,7 @@ class NoseIDModelTests(unittest.TestCase):
                 torch.tensor([[1.0, 95.0 / 448.0, 1.0, 0.0]]),
                 semantic_probability=semantic,
                 invalid_probability=torch.zeros((1, 1, 448, 448)),
+                source_valid_probability=torch.ones((1, 1, 448, 448)),
             )
         self.assertEqual(float(output["branch_utilities"][0, 1]), 0.0)
 

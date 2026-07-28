@@ -4,7 +4,8 @@ from __future__ import annotations
 
 from collections import defaultdict
 import math
-from typing import Iterator, Sequence
+from collections.abc import Mapping, Sequence
+from typing import Iterator
 
 import torch
 from torch.utils.data import Sampler
@@ -45,15 +46,33 @@ class CrossSessionPKBatchSampler(Sampler[list[int]]):
             raise ValueError("every identity needs two sessions with two samples each")
         self.grouped = {identity: dict(sessions) for identity, sessions in grouped.items()}
         self.identities = tuple(sorted(self.grouped))
-        self.hard_neighbors = {
-            identity: tuple(neighbor for neighbor in neighbors if neighbor in self.grouped and neighbor != identity)
-            for identity, neighbors in (hard_neighbors or {}).items()
-        }
+        self.hard_neighbors: dict[str, tuple[str, ...]] = {}
+        self.set_hard_neighbors(hard_neighbors or {})
 
     def set_epoch(self, epoch: int) -> None:
         if epoch < 0:
             raise ValueError("epoch must be non-negative")
         self.epoch = epoch
+
+    def set_hard_neighbors(
+        self, hard_neighbors: Mapping[str, Sequence[str]]
+    ) -> None:
+        if not isinstance(hard_neighbors, Mapping):
+            raise TypeError("hard neighbors must be a mapping")
+        result: dict[str, tuple[str, ...]] = {}
+        for identity, neighbors in hard_neighbors.items():
+            if identity not in self.grouped:
+                raise ValueError("hard-neighbor anchor is not in the sampler")
+            selected: list[str] = []
+            for neighbor in neighbors:
+                if (
+                    neighbor in self.grouped
+                    and neighbor != identity
+                    and neighbor not in selected
+                ):
+                    selected.append(neighbor)
+            result[identity] = tuple(selected)
+        self.hard_neighbors = result
 
     def _select_samples(self, identity: str, generator: torch.Generator) -> list[int]:
         sessions = self.grouped[identity]

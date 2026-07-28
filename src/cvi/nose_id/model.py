@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+import math
 from types import SimpleNamespace
 
 import torch
@@ -86,6 +87,7 @@ class RGBLocalSemanticStream(nn.Module):
         semantic_probability: torch.Tensor,
         invalid_probability: torch.Tensor,
         aligned_keypoints: torch.Tensor,
+        source_valid_probability: torch.Tensor,
     ) -> torch.Tensor:
         mixture = torch.softmax(self.layer_mix_logits, dim=0)
         tokens = sum(
@@ -114,7 +116,7 @@ class RGBLocalSemanticStream(nn.Module):
         features = features.transpose(1, 2).reshape(-1, 384, 24, 24)
         rgb_mask = (
             semantic_probability[:, 1:2] + 0.35 * semantic_probability[:, 2:3]
-        ) * (1.0 - 0.5 * invalid_probability)
+        ) * (1.0 - 0.5 * invalid_probability) * source_valid_probability
         return self.pool(features, F.adaptive_avg_pool2d(rgb_mask, (24, 24)))
 
 
@@ -192,6 +194,7 @@ def _quality_vector(
     keypoints: torch.Tensor,
     semantic_probability: torch.Tensor,
     invalid_probability: torch.Tensor,
+    source_valid_probability: torch.Tensor,
     runtime_quality: torch.Tensor,
 ) -> torch.Tensor:
     detector_confidence = runtime_quality[:, 0].clamp(0, 1)
@@ -224,16 +227,39 @@ def _quality_vector(
             entropy_quality,
             sharpness,
             symmetry.clamp(0, 1),
-            torch.ones_like(detector_confidence),
+            source_valid_probability.mean(dim=(1, 2, 3)),
         ],
         dim=1,
     ).clamp(0, 1)
 
 
 class NoseIDModel(nn.Module):
-    def __init__(self, dino_backbone: nn.Module) -> None:
+    def __init__(
+        self,
+        dino_backbone: nn.Module,
+        *,
+        image_mean: tuple[float, float, float],
+        image_std: tuple[float, float, float],
+        rescale_factor: float,
+    ) -> None:
         super().__init__()
+        if len(image_mean) != 3 or len(image_std) != 3:
+            raise ValueError("DINO preprocessing mean/std must contain three values")
+        values = (*image_mean, *image_std, rescale_factor)
+        if any(not math.isfinite(value) for value in values):
+            raise ValueError("DINO preprocessing values must be finite")
+        if any(value <= 0.0 for value in image_std) or rescale_factor <= 0.0:
+            raise ValueError("DINO preprocessing std and rescale factor must be positive")
         self.dino = dino_backbone
+        self.register_buffer(
+            "image_mean", torch.tensor(image_mean, dtype=torch.float32).view(1, 3, 1, 1)
+        )
+        self.register_buffer(
+            "image_std", torch.tensor(image_std, dtype=torch.float32).view(1, 3, 1, 1)
+        )
+        self.register_buffer(
+            "pixel_scale", torch.tensor(255.0 * rescale_factor, dtype=torch.float32)
+        )
         for parameter in self.dino.parameters():
             parameter.requires_grad = False
         self.segmenter = FactorizedNoseSegmenter()
@@ -251,6 +277,16 @@ class NoseIDModel(nn.Module):
         self.fusion = nn.Sequential(
             nn.Linear(782, 512), nn.LayerNorm(512), nn.GELU(), nn.Dropout(0.1), nn.Linear(512, 512)
         )
+        nn.init.zeros_(self.gate_head[-1].weight)
+        with torch.no_grad():
+            self.gate_head[-1].bias.copy_(
+                torch.log(torch.tensor((0.45, 0.40, 0.15)))
+            )
+        nn.init.zeros_(self.utility_head.weight)
+        with torch.no_grad():
+            self.utility_head.bias.copy_(
+                torch.logit(torch.tensor((0.80, 0.70, 0.70)))
+            )
 
     def _dino_forward(self, rgb_336: torch.Tensor) -> Sequence[torch.Tensor]:
         with torch.set_grad_enabled(any(parameter.requires_grad for parameter in self.dino.parameters())):
@@ -268,6 +304,7 @@ class NoseIDModel(nn.Module):
         *,
         semantic_probability: torch.Tensor | None = None,
         invalid_probability: torch.Tensor | None = None,
+        source_valid_probability: torch.Tensor | None = None,
     ) -> dict[str, torch.Tensor]:
         if aligned_rgb.ndim != 4 or aligned_rgb.shape[1:] != (3, 448, 448):
             raise ValueError("aligned_rgb must have shape [B,3,448,448]")
@@ -275,22 +312,63 @@ class NoseIDModel(nn.Module):
         if aligned_keypoints.shape != (batch, 6, 3) or runtime_quality.shape != (batch, 4):
             raise ValueError("aligned keypoint or runtime quality shape differs")
         rgb_336 = F.interpolate(aligned_rgb, size=(336, 336), mode="bicubic", align_corners=False, antialias=True)
-        mean = aligned_rgb.new_tensor((0.485, 0.456, 0.406)).view(1, 3, 1, 1)
-        std = aligned_rgb.new_tensor((0.229, 0.224, 0.225)).view(1, 3, 1, 1)
-        hidden_states = self._dino_forward((rgb_336 - mean) / std)
-        if semantic_probability is None or invalid_probability is None:
+        mean = self.image_mean.to(dtype=aligned_rgb.dtype)
+        std = self.image_std.to(dtype=aligned_rgb.dtype)
+        pixel_scale = self.pixel_scale.to(dtype=aligned_rgb.dtype)
+        hidden_states = self._dino_forward((rgb_336 * pixel_scale - mean) / std)
+        if (
+            semantic_probability is None
+            or invalid_probability is None
+            or source_valid_probability is None
+        ):
             raise RuntimeError(
-                "predicted segmentation is disabled until an admitted segmenter loader exists"
+                "oracle segmentation and source-valid masks are required"
             )
-        if semantic_probability.shape != (batch, 3, 448, 448) or invalid_probability.shape != (batch, 1, 448, 448):
+        if (
+            semantic_probability.shape != (batch, 3, 448, 448)
+            or invalid_probability.shape != (batch, 1, 448, 448)
+            or source_valid_probability.shape != (batch, 1, 448, 448)
+        ):
             raise ValueError("factorized segmentation probability shape differs")
         semantic_probability = semantic_probability.clamp(0, 1)
+        semantic_probability = semantic_probability / semantic_probability.sum(
+            dim=1, keepdim=True
+        ).clamp_min(1e-6)
         invalid_probability = invalid_probability.clamp(0, 1)
-        texture_mask = semantic_probability[:, 1:2] * (1.0 - semantic_probability[:, 2:3]) * (1.0 - invalid_probability)
-        z_rgb = self.rgb_stream(hidden_states, semantic_probability, invalid_probability, aligned_keypoints)
+        source_valid_probability = source_valid_probability.clamp(0, 1)
+        maximum = aligned_rgb.max(dim=1, keepdim=True).values
+        minimum = aligned_rgb.min(dim=1, keepdim=True).values
+        saturation = (maximum - minimum) / maximum.clamp_min(1e-6)
+        luminance = aligned_rgb.mean(dim=1, keepdim=True)
+        highlight = ((luminance > 0.92) & (saturation < 0.12)).to(aligned_rgb.dtype)
+        highlight = highlight * semantic_probability[:, 1:2]
+        effective_invalid = torch.maximum(invalid_probability, 0.8 * highlight)
+        effective_invalid = torch.maximum(
+            effective_invalid, 1.0 - source_valid_probability
+        )
+        texture_mask = (
+            semantic_probability[:, 1:2]
+            * (1.0 - semantic_probability[:, 2:3])
+            * (1.0 - effective_invalid)
+            * source_valid_probability
+        )
+        z_rgb = self.rgb_stream(
+            hidden_states,
+            semantic_probability,
+            effective_invalid,
+            aligned_keypoints,
+            source_valid_probability,
+        )
         z_texture = self.texture_stream(self.frequency_bank(aligned_rgb, texture_mask), texture_mask)
         z_shape = self.shape_stream(aligned_keypoints, semantic_probability)
-        quality = _quality_vector(aligned_rgb, aligned_keypoints, semantic_probability, invalid_probability, runtime_quality)
+        quality = _quality_vector(
+            aligned_rgb,
+            aligned_keypoints,
+            semantic_probability,
+            effective_invalid,
+            source_valid_probability,
+            runtime_quality,
+        )
         quality_state = self.quality_head(torch.cat([quality, z_shape], dim=1))
         utilities = torch.sigmoid(self.utility_head(quality_state))
         native_short_side = runtime_quality[:, 1] * 448.0
@@ -327,9 +405,12 @@ class NoseIDModel(nn.Module):
             "branch_utilities": utilities,
             "branch_gates": gates,
             "nose_utility": torch.sum(gates * utilities, dim=1, keepdim=True),
-            "degradation_predictions": self.degradation_head(quality_state),
+            "degradation_predictions": torch.sigmoid(
+                self.degradation_head(quality_state)
+            ),
             "semantic_probability": semantic_probability,
-            "invalid_probability": invalid_probability,
+            "invalid_probability": effective_invalid,
+            "source_valid_probability": source_valid_probability,
         }
 
 

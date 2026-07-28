@@ -290,6 +290,15 @@ class NoseIDDataset(Dataset):
             raise ValueError(f"NoseID artifact differs: {relative}")
         return path
 
+    def load_source_image(self, index: int) -> Image.Image:
+        row = self.rows[index]
+        image_path = self._path(row.image_path, row.image_sha256)
+        with Image.open(image_path) as opened:
+            image = opened.convert("RGB").copy()
+        if image.size != (row.image_width, row.image_height):
+            raise ValueError("NoseID decoded image dimensions differ")
+        return image
+
     @staticmethod
     def _expand_mask(
         mask: np.ndarray,
@@ -309,11 +318,7 @@ class NoseIDDataset(Dataset):
 
     def __getitem__(self, index: int) -> dict[str, Any]:
         row = self.rows[index]
-        image_path = self._path(row.image_path, row.image_sha256)
-        with Image.open(image_path) as opened:
-            image = np.asarray(opened.convert("RGB"), dtype=np.uint8)
-        if image.shape[:2] != (row.image_height, row.image_width):
-            raise ValueError("NoseID decoded image dimensions differ")
+        image = np.asarray(self.load_source_image(index), dtype=np.uint8)
         confidence = np.where(row.keypoint_visibility == 2, 1.0, np.where(row.keypoint_visibility == 1, 0.5, 0.0))
         keypoints = NoseKeypoints(np.concatenate([row.keypoints_xy, confidence[:, None]], axis=1))
         short_side = min(row.nose_bbox_xyxy[2] - row.nose_bbox_xyxy[0], row.nose_bbox_xyxy[3] - row.nose_bbox_xyxy[1])
@@ -330,19 +335,48 @@ class NoseIDDataset(Dataset):
         invalid = self._expand_mask(
             invalid, row.invalid_mask_box_xyxy, image.shape[:2]
         )
-        semantic_aligned = cv2.warpAffine(semantic, aligned.transform, (448, 448), flags=cv2.INTER_NEAREST, borderMode=cv2.BORDER_REFLECT_101)
-        invalid_aligned = cv2.warpAffine(invalid, aligned.transform, (448, 448), flags=cv2.INTER_NEAREST, borderMode=cv2.BORDER_REFLECT_101)
+        semantic_aligned = cv2.warpAffine(
+            semantic,
+            aligned.transform,
+            (448, 448),
+            flags=cv2.INTER_NEAREST,
+            borderMode=cv2.BORDER_CONSTANT,
+            borderValue=0,
+        )
+        invalid_aligned = cv2.warpAffine(
+            invalid,
+            aligned.transform,
+            (448, 448),
+            flags=cv2.INTER_NEAREST,
+            borderMode=cv2.BORDER_CONSTANT,
+            borderValue=1,
+        )
+        source_valid_aligned = cv2.warpAffine(
+            np.ones(image.shape[:2], dtype=np.uint8),
+            aligned.transform,
+            (448, 448),
+            flags=cv2.INTER_NEAREST,
+            borderMode=cv2.BORDER_CONSTANT,
+            borderValue=0,
+        )
         if np.any(semantic_aligned > 2):
             raise ValueError("semantic mask contains an unknown class")
-        invalid_binary = (invalid_aligned > 0).astype(np.float32)
+        source_valid = (source_valid_aligned > 0).astype(np.float32)
+        invalid_binary = np.maximum(
+            invalid_aligned > 0, source_valid_aligned == 0
+        ).astype(np.float32)
         return {
             "aligned_rgb": torch.from_numpy(aligned.rgb),
             "aligned_kp": torch.from_numpy(aligned.keypoints_xyc),
             "semantic_mask": torch.from_numpy(semantic_aligned.astype(np.int64)),
             "invalid_mask": torch.from_numpy(invalid_binary[None]),
+            "source_valid_mask": torch.from_numpy(source_valid[None]),
             "identity_index": self.identity_to_index[row.registered_dog_id],
             "registered_dog_id": row.registered_dog_id,
             "session_id": row.session_id,
+            "camera_id": row.camera_id,
+            "video_id": row.video_id,
+            "timestamp_ms": row.timestamp_ms,
             "sample_id": row.sample_id,
             "native_short_side": float(short_side),
             "alignment_rms": aligned.normalized_residual,
