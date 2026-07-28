@@ -50,7 +50,7 @@ class FaceReIDDataset(Dataset):
         return {
             "rgb": tensor.clamp(0, 1),
             "identity_index": self.identity_to_index[row.registered_identity_id],
-            "registered_dog_id": row.registered_dog_id,
+            "registered_dog_id": row.registered_identity_id,
             "sample_id": row.sample_id,
             "session_id": row.capture_group_id or "unknown",
         }

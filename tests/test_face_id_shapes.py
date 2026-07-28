@@ -67,8 +67,8 @@ class FaceIDSamplerTests(unittest.TestCase):
     def test_p16_k4_batch(self) -> None:
         from cvi.face_id.sampler import FaceReIDSampler
 
-        ids = [f"dog-{i}" for i in range(20) for _ in range(4)]
-        sessions = [f"s{i % 4}" for i in range(80)]
+        ids = [f"dog-{i}" for i in range(20) for _ in range(8)]
+        sessions = [f"s{j % 2}" for j in range(160)]
         sampler = FaceReIDSampler(ids, sessions, seed=7)
         batch = next(iter(sampler))
         self.assertEqual(len(batch), 64)

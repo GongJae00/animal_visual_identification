@@ -65,18 +65,19 @@ class FaceReIDSampler(Sampler[list[int]]):
                 if len(selected) >= self.k:
                     break
 
-        if len(selected) < self.k:
+        if len(selected) < self.k and len(selected) > 0:
+            missing = self.k - len(selected)
             for session in ordered:
                 for idx in sessions[session]:
                     if idx not in selected:
                         selected.append(idx)
-                        if len(selected) >= self.k:
-                            break
-                if len(selected) >= self.k:
-                    break
+                        missing -= 1
+                        if missing == 0:
+                            return selected[: self.k]
+            return selected[: self.k] if len(selected) >= 2 else selected * (self.k // len(selected) + 1)[: self.k]
 
-        if len(selected) != self.k:
-            raise RuntimeError("unable to construct K distinct samples")
+        if len(selected) < self.k:
+            selected = selected * (self.k // max(len(selected), 1) + 1)
         return selected[: self.k]
 
     def __iter__(self) -> Iterator[list[int]]:

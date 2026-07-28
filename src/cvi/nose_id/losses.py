@@ -44,15 +44,15 @@ class SubCenterArcFace(nn.Module):
         cosine = torch.einsum("bd,ckd->bck", F.normalize(embeddings, dim=1), normalized_weight).max(dim=2).values
         target = cosine.gather(1, labels[:, None]).squeeze(1).clamp(-1 + 1e-7, 1 - 1e-7)
         margin = self.margin * margin_scale
-        cos_m = math.cos(margin)
-        sin_m = math.sin(margin)
+        cos_m = target.new_tensor(math.cos(margin))
+        sin_m = target.new_tensor(math.sin(margin))
         threshold = math.cos(math.pi - margin)
-        mm = math.sin(math.pi - margin) * margin
+        mm = target.new_tensor(math.sin(math.pi - margin) * margin)
         sine = torch.sqrt((1.0 - target.square()).clamp_min(1e-7))
         phi_raw = target * cos_m - sine * sin_m
         phi = torch.where(target > threshold, phi_raw, target - mm)
         logits = cosine.clone()
-        logits.scatter_(1, labels[:, None], phi[:, None])
+        logits.scatter_(1, labels[:, None], phi[:, None].to(dtype=logits.dtype))
         return logits * self.scale
 
 
