@@ -49,6 +49,11 @@ Do not install the `cpu` and `cuda` extras together: they select different
 ONNX Runtime and PyTorch distributions. Additional opt-in dependencies are
 available through the `data`, `models`, and `training` extras.
 
+Detection and pose adapters under `cvi.localization` are research-only and are
+not connected to `CVI`. Ultralytics is intentionally not a package extra;
+install it in a separate environment only after reviewing its AGPL terms and
+the OpenCV runtime conflict described in [Third-Party Licensing](THIRD_PARTY_LICENSES.md).
+
 ```bash
 uv run python -c "import cvi; print(cvi.__all__)"
 uv run pytest
@@ -126,6 +131,11 @@ handlers only print manual acquisition instructions, and some model candidates
 are disabled or have unresolved license status. Read
 [Data and Models](docs/DATA_AND_MODELS.md) before downloading or using any
 artifact.
+
+The external root uses content-oriented paths such as
+`datasets/<dataset-name>` and `checkpoints/<model-artifact-id>`. License and
+research/deployment admission are registry metadata, not directory names; a
+path alone never establishes that an artifact is deployment eligible.
 
 ## Repository Layout
 

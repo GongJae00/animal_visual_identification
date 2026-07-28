@@ -12,14 +12,13 @@ from cvi.evidence.model_contract import (
     DogFaceNetModelManifest,
     OnnxEvidenceContractError,
     OnnxEvidenceModelManifest,
-    OnnxPreprocessingContract,
     PetReIDModelManifest,
 )
 from cvi.model_contracts import (
     reject_unverified_superanimal_onnx,
     validated_onnx_bytes,
 )
-
+from cvi.provenance import content_sha256
 
 # ---------------------------------------------------------------------------
 # Abstract interface
@@ -29,16 +28,13 @@ from cvi.model_contracts import (
 class EvidenceExtractor(ABC):
     @property
     @abstractmethod
-    def output_dim(self) -> int:
-        ...
+    def output_dim(self) -> int: ...
 
     @abstractmethod
-    def extract(self, image: Image.Image) -> np.ndarray:
-        ...
+    def extract(self, image: Image.Image) -> np.ndarray: ...
 
     @abstractmethod
-    def extract_batch(self, images: list[Image.Image]) -> np.ndarray:
-        ...
+    def extract_batch(self, images: list[Image.Image]) -> np.ndarray: ...
 
     def close(self) -> None:
         pass
@@ -136,6 +132,16 @@ class OnnxExtractor(EvidenceExtractor):
     def model_sha256(self) -> str:
         return self._model_sha256
 
+    @property
+    def gallery_contract_fields(self) -> dict[str, str]:
+        return {
+            "model_sha256": self._model_sha256,
+            "model_manifest_sha256": content_sha256(self._manifest.to_dict()),
+            "preprocessing_sha256": content_sha256(
+                self._manifest.preprocessing.to_dict()
+            ),
+        }
+
     def preprocess(self, image: Image.Image) -> np.ndarray:
         _, _, height, width = self._manifest.input_shape
         resampling = {
@@ -184,7 +190,9 @@ class OnnxExtractor(EvidenceExtractor):
             raise OnnxEvidenceContractError("runtime output contains non-finite values")
         norms = np.linalg.norm(output, axis=1)
         if not np.isfinite(norms).all() or np.any(norms <= 0):
-            raise OnnxEvidenceContractError("runtime output must have finite nonzero norm")
+            raise OnnxEvidenceContractError(
+                "runtime output must have finite nonzero norm"
+            )
         return output
 
     @staticmethod
@@ -266,6 +274,10 @@ class DogFaceNetExtractor(EvidenceExtractor):
     def output_dim(self) -> int:
         return self._onnx.output_dim
 
+    @property
+    def gallery_contract_fields(self) -> dict[str, str]:
+        return self._onnx.gallery_contract_fields
+
     def extract(self, image: Image.Image) -> np.ndarray:
         return self._onnx.extract(image)
 
@@ -296,6 +308,10 @@ class ConvNeXtExtractor(EvidenceExtractor):
     def output_dim(self) -> int:
         return self._onnx.output_dim
 
+    @property
+    def gallery_contract_fields(self) -> dict[str, str]:
+        return self._onnx.gallery_contract_fields
+
     def extract(self, image: Image.Image) -> np.ndarray:
         return self._onnx.extract(image)
 
@@ -315,9 +331,13 @@ class SuperAnimalExtractor(EvidenceExtractor):
         "licensed for academic non-commercial use only."
     )
 
-    def __init__(self, model_path: Path, num_keypoints: int = 39,
-                 output_dim: int = 256,
-                 provider: str = "CPUExecutionProvider") -> None:
+    def __init__(
+        self,
+        model_path: Path,
+        num_keypoints: int = 39,
+        output_dim: int = 256,
+        provider: str = "CPUExecutionProvider",
+    ) -> None:
         raise RuntimeError(self._DISABLED_REASON)
 
     @property
@@ -354,6 +374,10 @@ class PetReIDExtractor(EvidenceExtractor):
     def output_dim(self) -> int:
         return self._onnx.output_dim
 
+    @property
+    def gallery_contract_fields(self) -> dict[str, str]:
+        return self._onnx.gallery_contract_fields
+
     def extract(self, image: Image.Image) -> np.ndarray:
         return self._onnx.extract(image)
 
@@ -375,8 +399,10 @@ class EvidenceExtractorRegistry:
 
     def get(self, name: str) -> EvidenceExtractor:
         if name not in self._extractors:
-            raise KeyError(f"no extractor registered for '{name}'; "
-                           f"available: {list(self._extractors)}")
+            raise KeyError(
+                f"no extractor registered for '{name}'; "
+                f"available: {list(self._extractors)}"
+            )
         return self._extractors[name]
 
     @property
@@ -404,11 +430,12 @@ class EvidenceExtractorRegistry:
             ext.close()
 
     @staticmethod
-    def from_onnx_dict(paths: dict[str, Path],
-                       input_sizes: dict[str, int] | None = None,
-                       output_dims: dict[str, int] | None = None,
-                       manifests: dict[str, OnnxEvidenceModelManifest] | None = None,
-                       ) -> EvidenceExtractorRegistry:
+    def from_onnx_dict(
+        paths: dict[str, Path],
+        input_sizes: dict[str, int] | None = None,
+        output_dims: dict[str, int] | None = None,
+        manifests: dict[str, OnnxEvidenceModelManifest] | None = None,
+    ) -> EvidenceExtractorRegistry:
         registry = EvidenceExtractorRegistry()
         for name, p in paths.items():
             if not p.exists():

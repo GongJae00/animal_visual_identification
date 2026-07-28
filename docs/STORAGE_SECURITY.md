@@ -13,15 +13,20 @@ The configured root may use this layout:
 
 ```text
 $CVI_DATA_DIR/
-  raw/
   downloads/
-  datasets/{research-only,deployment-eligible}/
-  checkpoints/{research-only,deployment-eligible}/
+  datasets/<dataset-name>/
+  checkpoints/<model-artifact-id>/
   experiments/
-  artifacts/
+  receipts/
   manifests/
   cache/
 ```
+
+Dataset and checkpoint directory names identify content, not permission or
+license status. Keep research/deployment admission, source terms, hashes, and
+revisions in the corresponding registry or receipt metadata. This avoids moving
+large immutable artifacts when an admission decision changes. Do not infer
+deployment eligibility from a filesystem path.
 
 Before use, verify that the root has restrictive ownership and access controls.
 Do not place sensitive CVI material in a directory with broad inherited access.

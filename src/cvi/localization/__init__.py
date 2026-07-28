@@ -1,24 +1,26 @@
 """Localization types, adapters, metrics, consensus, student, and benchmark harness."""
 
-from cvi.localization.types import (
-    DetectionBox,
-    Keypoint,
-    KeypointSet,
-    LocalizationBenchmarkEntry,
-    LocalizationResult,
-)
 from cvi.localization.adapters import (
     AbstractLocalizationAdapter,
-    OnnxLocalizationAdapter,
 )
-from cvi.localization.roi import (
-    expand_bbox,
-    face_roi_from_dog,
-    is_truncated,
-    square_padded_crop,
+from cvi.localization.benchmark import build_contact_sheet, run_benchmark
+from cvi.localization.consensus import (
+    ConsensusDogInstance,
+    FailureVector,
+    compute_error_correlation,
+    consensus_admission,
+    consensus_dog_bbox,
+    consensus_dog_instances,
+    consensus_keypoint,
+    robust_weighted_keypoint,
+    weighted_box_fusion,
 )
 from cvi.localization.quality import (
+    DogQuality,
+    FaceQuality,
+    NoseQuality,
     compute_iou,
+    detection_average_precision,
     detection_summary,
     estimate_blur,
     greedy_bipartite_match,
@@ -27,25 +29,28 @@ from cvi.localization.quality import (
     score_dog_quality,
     score_face_quality,
     score_nose_quality,
-    DogQuality,
-    FaceQuality,
-    NoseQuality,
 )
-from cvi.localization.consensus import (
-    compute_error_correlation,
-    consensus_admission,
-    consensus_dog_bbox,
-    consensus_keypoint,
-    robust_weighted_keypoint,
-    weighted_box_fusion,
-    FailureVector,
+from cvi.localization.roi import (
+    expand_bbox,
+    face_and_weak_nose_rois_from_pose,
+    face_roi_from_dog,
+    is_truncated,
+    square_padded_crop,
+    square_padded_crop_with_mask,
 )
 from cvi.localization.student import AbstractStudentTrainer, TeacherLabel
-from cvi.localization.benchmark import build_contact_sheet, run_benchmark
+from cvi.localization.types import (
+    DetectionBox,
+    Keypoint,
+    KeypointSet,
+    LocalizationBenchmarkEntry,
+    LocalizationResult,
+)
 
 __all__ = [
     "AbstractLocalizationAdapter",
     "AbstractStudentTrainer",
+    "ConsensusDogInstance",
     "DetectionBox",
     "DogQuality",
     "FaceQuality",
@@ -55,18 +60,20 @@ __all__ = [
     "LocalizationBenchmarkEntry",
     "LocalizationResult",
     "NoseQuality",
-    "OnnxLocalizationAdapter",
     "TeacherLabel",
     "build_contact_sheet",
     "compute_error_correlation",
     "compute_iou",
     "consensus_admission",
     "consensus_dog_bbox",
+    "consensus_dog_instances",
+    "detection_average_precision",
     "consensus_keypoint",
     "detection_summary",
     "estimate_blur",
     "expand_bbox",
     "face_roi_from_dog",
+    "face_and_weak_nose_rois_from_pose",
     "greedy_bipartite_match",
     "is_truncated",
     "normalized_mean_error",
@@ -77,5 +84,6 @@ __all__ = [
     "score_face_quality",
     "score_nose_quality",
     "square_padded_crop",
+    "square_padded_crop_with_mask",
     "weighted_box_fusion",
 ]

@@ -36,6 +36,18 @@ MODELS_DIR = Path(
 
 # Dataset path metadata. Automatic acquisition is not admitted.
 SUPPORTED_DATASETS: dict[str, dict] = {
+    "ap10k-dog": {
+        "name": "AP-10K domestic dog subset",
+        "dir": "ap10k",
+        "url": "https://github.com/AlexTheBad/AP-10K",
+        "desc": "External dataset; automatic acquisition is disabled",
+    },
+    "dogflw": {
+        "name": "Dog Facial Landmarks in the Wild",
+        "dir": "dogflw",
+        "url": "https://www.kaggle.com/datasets/georgemartvel/dogflw",
+        "desc": "External dataset; automatic acquisition is disabled",
+    },
     "yt-bb-dog": {
         "name": "YouTube-BoundingBoxes Dog",
         "dir": "yt-bb-dog",
@@ -44,13 +56,13 @@ SUPPORTED_DATASETS: dict[str, dict] = {
     },
     "dogfacenet": {
         "name": "DogFaceNet",
-        "dir": "dogfacenet",
+        "dir": "dogfacenet224",
         "desc": "External dataset; automatic acquisition is disabled",
     },
     "mpdd": {
-        "name": "MPetDoorDataset",
+        "name": "Multi-pose dog dataset",
         "dir": "mpdd",
-        "url": "https://github.com/hacilab/MPDD",
+        "url": "https://data.mendeley.com/datasets/v5j6m8dzhv/1",
         "desc": "External dataset; automatic acquisition is disabled",
     },
     "sibetan": {
@@ -64,17 +76,15 @@ SUPPORTED_DATASETS: dict[str, dict] = {
 
 def dataset_path(name: str) -> Path:
     if name not in SUPPORTED_DATASETS:
-        raise KeyError(f"Unknown dataset: {name}. Supported: {list(SUPPORTED_DATASETS)}")
+        raise KeyError(
+            f"Unknown dataset: {name}. Supported: {list(SUPPORTED_DATASETS)}"
+        )
     return DATASETS_DIR / SUPPORTED_DATASETS[name]["dir"]
 
 
 def processed_path(name: str) -> Path:
     return DATA_PROCESSED_DIR / SUPPORTED_DATASETS.get(name, {"dir": name})["dir"]
 
-
-# Pretrained ONNX artifact paths
-DINOV2_SMALL_ONNX = CHECKPOINTS_DIR / "deployment-eligible" / "onnx-models" / "dinov2-small.onnx"
-MOBILENETV4_CONV_SMALL_ONNX = CHECKPOINTS_DIR / "deployment-eligible" / "onnx-models" / "mobilenetv4-conv-small.onnx"
 
 # Registry cache paths
 IDENTITY_REGISTRY_DB = CACHE_DIR / "registries" / "identity_registry.db"

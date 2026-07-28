@@ -22,7 +22,7 @@ assume it becomes deployable.
 
 The public `CVI` API requires `cvi.retrieval_config.v2`. No retrieval JSON is
 shipped because artifact-backed channels need user-specific verified paths.
-Use the audited in-memory example in the [README](../README.md) and the field
+Use the schema-valid in-memory template in the [README](../README.md) and the field
 reference in [Configuration](../docs/CONFIGURATION.md).
 
 Before using any other example, identify the tool or module that consumes it,

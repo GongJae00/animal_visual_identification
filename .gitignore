@@ -50,7 +50,7 @@ exports/
 /models/*
 
 # Data and indexes
-/data/*
+data/
 datasets/
 cvi_index/
 *.db
@@ -71,6 +71,8 @@ logs/
 runs/
 wandb/
 mlruns/
+/manifests/
+/visualization/
 
 # Environment and secrets
 .env

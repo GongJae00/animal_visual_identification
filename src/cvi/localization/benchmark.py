@@ -1,24 +1,19 @@
-"""Deterministic localization benchmark runner with Pareto selection."""
+"""Deterministic localization benchmark runner and diagnostic renderer."""
 
 from __future__ import annotations
 
-import json
 import time
-from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageDraw
 
 from cvi.canid_data.types import UnifiedCanidSample
 from cvi.localization.adapters import AbstractLocalizationAdapter
 from cvi.localization.quality import (
-    compute_iou,
     detection_summary,
     greedy_bipartite_match,
-    normalized_mean_error,
-    pixel_correct_keypoint,
 )
 from cvi.localization.types import DetectionBox, KeypointSet, LocalizationResult
 
@@ -33,6 +28,11 @@ def run_benchmark(
     ground_truth_keypoints: dict[str, KeypointSet] | None = None,
 ) -> dict[str, Any]:
     """Run localization inference, optionally scoring against ground truth."""
+
+    if ground_truth_keypoints is not None:
+        raise NotImplementedError(
+            "keypoint benchmark scoring is not implemented; use a dedicated protocol"
+        )
 
     selected = samples[: min(len(samples), maximum_images)]
     results: list[LocalizationResult] = []
@@ -73,17 +73,7 @@ def run_benchmark(
             total_pred += len(pred_boxes)
             total_gt += len(gt_boxes)
             all_matches.extend(greedy_bipartite_match(pred_boxes, gt_boxes))
-        report["detection"] = detection_summary(
-            all_matches, total_pred, total_gt
-        )
-
-    if ground_truth_keypoints is not None:
-        per_point_errors: dict[str, list[float]] = defaultdict(list)
-        for _, pred_set in (
-            ("body_keypoints", None),
-            ("face_landmarks", None),
-        ):
-            pass
+        report["detection"] = detection_summary(all_matches, total_pred, total_gt)
 
     return report
 
@@ -110,7 +100,27 @@ def build_contact_sheet(
         image_path = data_root / sample.image_path
         if not image_path.is_file():
             continue
-        image = Image.open(image_path).convert("RGB").resize((224, 224))
+        original = Image.open(image_path).convert("RGB")
+        scale_x = 224.0 / original.width
+        scale_y = 224.0 / original.height
+        image = original.resize((224, 224))
+        draw = ImageDraw.Draw(image)
+        for box in result.dog_boxes:
+            draw.rectangle(
+                (
+                    box.x1 * scale_x,
+                    box.y1 * scale_y,
+                    box.x2 * scale_x,
+                    box.y2 * scale_y,
+                ),
+                outline=(0, 255, 0),
+                width=3,
+            )
+            draw.text(
+                (box.x1 * scale_x, max(0.0, box.y1 * scale_y - 12)),
+                f"dog {box.confidence:.2f}",
+                fill=(0, 255, 0),
+            )
 
         if canvas is None:
             canvas = Image.new("RGB", (224 * grid_size, 224 * grid_size), (0, 0, 0))

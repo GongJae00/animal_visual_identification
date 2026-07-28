@@ -39,5 +39,6 @@ WSL reports a different device minor for some `/usr/lib/wsl/lib` mappings than
 Microsoft WSL kernel, `/usr/lib/wsl/lib`, device major zero, and identical inode;
 all other device/inode mismatches still fail.
 
-Batch-invariance and production embedding receipts do not yet bind this runtime
-manifest. Result anchoring and those downstream bindings remain open gates.
+Batch-invariance and production embedding contracts can bind an admitted
+runtime-manifest digest. Each run must still validate the exact schema it uses;
+the existence of that binding machinery is not result or deployment admission.

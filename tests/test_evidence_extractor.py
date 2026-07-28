@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from hashlib import sha256
 import tempfile
 import unittest
+from hashlib import sha256
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -19,11 +19,13 @@ from cvi.evidence.model_contract import (
     PetReIDModelManifest,
 )
 from cvi.evidence_extractor import EvidenceExtractorRegistry
+from cvi.provenance import content_sha256
 
 
 def _require_onnx() -> bool:
     try:
         import onnx  # noqa: F401
+
         return True
     except ImportError:
         return False
@@ -32,6 +34,7 @@ def _require_onnx() -> bool:
 def _require_ort() -> bool:
     try:
         import onnxruntime  # noqa: F401
+
         return True
     except ImportError:
         return False
@@ -57,14 +60,16 @@ class _RecordingProviderSession:
         return list(self.providers)
 
     def get_inputs(self) -> list[SimpleNamespace]:
-        return [SimpleNamespace(
-            name="images", shape=["batch", 3, 8, 8], type="tensor(float)"
-        )]
+        return [
+            SimpleNamespace(
+                name="images", shape=["batch", 3, 8, 8], type="tensor(float)"
+            )
+        ]
 
     def get_outputs(self) -> list[SimpleNamespace]:
-        return [SimpleNamespace(
-            name="embedding", shape=["batch", 4], type="tensor(float)"
-        )]
+        return [
+            SimpleNamespace(name="embedding", shape=["batch", 4], type="tensor(float)")
+        ]
 
 
 class EvidenceExtractorRegistryTests(unittest.TestCase):
@@ -82,9 +87,15 @@ class EvidenceExtractorRegistryTests(unittest.TestCase):
 
         class _Fake:
             output_dim = 384
-            def extract(self, img): return np.zeros(384)
-            def extract_batch(self, imgs): return np.zeros((len(imgs), 384))
-            def close(self): pass
+
+            def extract(self, img):
+                return np.zeros(384)
+
+            def extract_batch(self, imgs):
+                return np.zeros((len(imgs), 384))
+
+            def close(self):
+                pass
 
         fake = _Fake()
         registry.register("visual", fake)
@@ -102,7 +113,8 @@ class EvidenceExtractorRegistryTests(unittest.TestCase):
         closed: list[str] = []
 
         class _Fake:
-            def close(self): closed.append("called")
+            def close(self):
+                closed.append("called")
 
         registry.register("a", _Fake())
         registry.register("b", _Fake())
@@ -120,9 +132,13 @@ class EvidenceExtractorRegistryTests(unittest.TestCase):
 @unittest.skipUnless(_require_ort(), "onnxruntime not available")
 class ExtractorConstructionTests(unittest.TestCase):
     def setUp(self) -> None:
-        from cvi.evidence_extractor import (  # noqa: late import for skip
-            ConvNeXtExtractor, DogFaceNetExtractor, OnnxExtractor, PetReIDExtractor,
+        from cvi.evidence_extractor import (
+            ConvNeXtExtractor,
+            DogFaceNetExtractor,
+            OnnxExtractor,
+            PetReIDExtractor,
         )
+
         self.ConvNeXtExtractor = ConvNeXtExtractor
         self.DogFaceNetExtractor = DogFaceNetExtractor
         self.OnnxExtractor = OnnxExtractor
@@ -225,7 +241,53 @@ class ExtractorConstructionTests(unittest.TestCase):
                     ):
                         extractor_type(path, generic)
                     specific = self._manifest(path, manifest_type=manifest_type)
-                    self.assertEqual(extractor_type(path, specific).output_dim, 4)
+                    extractor = extractor_type(path, specific)
+                    self.assertEqual(extractor.output_dim, 4)
+                    self.assertEqual(
+                        extractor.gallery_contract_fields,
+                        {
+                            "model_sha256": specific.model_sha256,
+                            "model_manifest_sha256": content_sha256(specific.to_dict()),
+                            "preprocessing_sha256": content_sha256(
+                                specific.preprocessing.to_dict()
+                            ),
+                        },
+                    )
+
+    def test_gallery_contract_binds_preprocessing_at_the_same_model_path(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / "model.onnx"
+            self._write_dummy_onnx(path)
+            first = self._manifest(path)
+            second = OnnxEvidenceModelManifest(
+                **{
+                    **first.to_dict(),
+                    "input_shape": first.input_shape,
+                    "preprocessing": OnnxPreprocessingContract(
+                        color_mode="RGB",
+                        layout="NCHW",
+                        dtype="float32",
+                        resize="bicubic",
+                        scale=1.0 / 255.0,
+                        mean=(0.5, 0.5, 0.5),
+                        std=(0.5, 0.5, 0.5),
+                    ),
+                    "usage_lane": first.usage_lane,
+                    "license_state": first.license_state,
+                }
+            )
+            first_fields = self.OnnxExtractor(path, first).gallery_contract_fields
+            second_fields = self.OnnxExtractor(path, second).gallery_contract_fields
+
+        self.assertEqual(first_fields["model_sha256"], second_fields["model_sha256"])
+        self.assertNotEqual(
+            first_fields["model_manifest_sha256"],
+            second_fields["model_manifest_sha256"],
+        )
+        self.assertNotEqual(
+            first_fields["preprocessing_sha256"],
+            second_fields["preprocessing_sha256"],
+        )
 
     def test_cuda_must_be_explicitly_available(self) -> None:
         import onnxruntime as ort
@@ -234,10 +296,15 @@ class ExtractorConstructionTests(unittest.TestCase):
             path = Path(tmpdir) / "model.onnx"
             self._write_dummy_onnx(path)
             manifest = self._manifest(path)
-            with patch.object(
-                ort, "get_available_providers", return_value=["CPUExecutionProvider"]
-            ), self.assertRaisesRegex(
-                OnnxEvidenceContractError, "requested but is not available"
+            with (
+                patch.object(
+                    ort,
+                    "get_available_providers",
+                    return_value=["CPUExecutionProvider"],
+                ),
+                self.assertRaisesRegex(
+                    OnnxEvidenceContractError, "requested but is not available"
+                ),
             ):
                 self.OnnxExtractor(path, manifest, use_cuda=True)
 
@@ -265,9 +332,7 @@ class ExtractorConstructionTests(unittest.TestCase):
                 patch.object(ort, "InferenceSession", side_effect=create_session),
             ):
                 self.OnnxExtractor(path, self._manifest(path))
-        self.assertEqual(
-            constructor_kwargs["providers"], ["CPUExecutionProvider"]
-        )
+        self.assertEqual(constructor_kwargs["providers"], ["CPUExecutionProvider"])
         self.assertEqual(constructor_kwargs["enable_fallback"], 0)
         self.assertEqual(options.entries, {})
         self.assertTrue(session.fallback_disabled)
@@ -302,13 +367,9 @@ class ExtractorConstructionTests(unittest.TestCase):
                 ),
             ):
                 self.OnnxExtractor(path, self._manifest(path), use_cuda=True)
-        self.assertEqual(
-            constructor_kwargs["providers"], ["CUDAExecutionProvider"]
-        )
+        self.assertEqual(constructor_kwargs["providers"], ["CUDAExecutionProvider"])
         self.assertEqual(constructor_kwargs["enable_fallback"], 0)
-        self.assertEqual(
-            options.entries, {"session.disable_cpu_ep_fallback": "1"}
-        )
+        self.assertEqual(options.entries, {"session.disable_cpu_ep_fallback": "1"})
         self.assertTrue(session.fallback_disabled)
 
     @staticmethod
@@ -346,7 +407,7 @@ class ExtractorConstructionTests(unittest.TestCase):
         extra_output: bool = False,
     ) -> None:
         import onnx
-        from onnx import helper, TensorProto, numpy_helper
+        from onnx import TensorProto, helper, numpy_helper
 
         w = numpy_helper.from_array(
             np.full((output_dim, 3), weight, dtype=np.float32), "W"
@@ -356,8 +417,15 @@ class ExtractorConstructionTests(unittest.TestCase):
                 "GlobalAveragePool", inputs=["images"], outputs=["pooled"]
             ),
             helper.make_node("Flatten", inputs=["pooled"], outputs=["flat"], axis=1),
-            helper.make_node("Gemm", inputs=["flat", "W"], outputs=["y"],
-                             alpha=1.0, beta=0.0, transA=0, transB=1),
+            helper.make_node(
+                "Gemm",
+                inputs=["flat", "W"],
+                outputs=["y"],
+                alpha=1.0,
+                beta=0.0,
+                transA=0,
+                transB=1,
+            ),
             helper.make_node("Identity", inputs=["y"], outputs=["embedding"]),
         ]
         outputs = [
@@ -372,7 +440,8 @@ class ExtractorConstructionTests(unittest.TestCase):
                 )
             )
         graph = helper.make_graph(
-            nodes, "test",
+            nodes,
+            "test",
             [helper.make_tensor_value_info("images", TensorProto.FLOAT, input_shape)],
             outputs,
             initializer=[w],

@@ -1,98 +1,137 @@
-"""Run zero-shot dog detection across canid datasets for qualitative audit."""
+"""Run a pinned dog detector and emit a content-bound prediction cache."""
 
 from __future__ import annotations
 
 import argparse
 import json
+import time
 from pathlib import Path
 
+import numpy as np
 from PIL import Image
 
 from cvi.canid_data.adapters import ADAPTERS
-from cvi.canid_data.source_lock import admitted_records, get_record
-from cvi.localization.benchmark import build_contact_sheet, run_benchmark
-from cvi.localization.types import LocalizationResult
+from cvi.canid_data.source_lock import get_record
+from cvi.localization.adapters import (
+    TorchvisionFasterRCNNDogAdapter,
+    UltralyticsDogAdapter,
+    UltralyticsDogPoseAdapter,
+)
+from cvi.localization.benchmark import build_contact_sheet
+from cvi.localization.prediction_cache import (
+    build_prediction_cache,
+    write_prediction_cache,
+)
+from cvi.localization.quality import detection_average_precision
+from cvi.localization.types import DetectionBox
 
 
-def _yolo_detect(image: Image.Image, *, image_id: str) -> LocalizationResult:
-    """Lazy YOLO detection — only imported on first call."""
-    from cvi.detection import DogDetector, Detection
-
-    detector = _yolo_detect._detector  # type: ignore[attr-defined]
-    raw = detector.detect(image)
-    boxes = [
-        Detection(
-            x1=int(d.x1), y1=int(d.y1), x2=int(d.x2), y2=int(d.y2),
-            confidence=d.confidence, class_id=d.class_id, class_name=d.class_name,
-        )
-        for d in raw
-    ]
-    return LocalizationResult(
-        image_id=image_id,
-        dog_boxes=tuple(
-            DetectionBox(
-                x1=float(b.x1), y1=float(b.y1), x2=float(b.x2), y2=float(b.y2),
-                confidence=b.confidence, class_name=b.class_name,
-            )
-            for b in boxes
-        ),
-        face_boxes=(),
-        nose_boxes=(),
-        body_keypoints=(),
-        face_landmarks=(),
-        model_name="yolo-legacy",
-        model_family="ultralytics-dog",
-        inference_ms=0.0,
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--dataset", default="yt-bb-dog", choices=sorted(ADAPTERS))
+    parser.add_argument("--model-path", type=Path, required=True)
+    parser.add_argument("--model-sha256", required=True)
+    parser.add_argument(
+        "--backend",
+        choices=("ultralytics", "torchvision-fasterrcnn", "ultralytics-pose"),
+        default="ultralytics",
     )
+    parser.add_argument("--device", default="cuda")
+    parser.add_argument("--max-images", type=int, default=64)
+    parser.add_argument("--split-role")
+    parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument("--prediction-cache", type=Path, required=True)
+    return parser.parse_args()
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--output-dir", type=Path, default=Path("reports/localization/zero-shot"))
-    parser.add_argument("--max-images", type=int, default=64)
-    parser.add_argument("--dataset", type=str, default="yt-bb-dog")
-    args = parser.parse_args()
-
+    args = parse_args()
+    if args.max_images <= 0:
+        raise ValueError("--max-images must be positive")
     record = get_record(args.dataset)
-    adapter = ADAPTERS[args.dataset]
     root = Path(record.data_root)
-    samples = adapter(root)[: args.max_images]
-
-    import torch
-    try:
-        from cvi.detection import DogDetector as DetectorClass
-        _yolo_detect._detector = DetectorClass(
-            model_path=None, device="cuda" if torch.cuda.is_available() else "cpu"
+    all_samples = ADAPTERS[args.dataset](root)
+    ground_truth: dict[str, list[DetectionBox]] | None = None
+    effective_split_role = args.split_role
+    if args.dataset == "ap10k-dog":
+        effective_split_role = args.split_role or "test"
+        grouped: dict[str, list] = {}
+        for sample in all_samples:
+            if sample.split_role == effective_split_role:
+                grouped.setdefault(sample.source_group_id, []).append(sample)
+        samples = tuple(rows[0] for _, rows in sorted(grouped.items()))[
+            : args.max_images
+        ]
+        ground_truth = {
+            rows[0].sample_id: [
+                DetectionBox(*sample.dog_boxes_xyxy, 1.0)
+                for sample in rows
+                if sample.dog_boxes_xyxy is not None
+            ]
+            for _, rows in sorted(grouped.items())[: args.max_images]
+        }
+    else:
+        selected = (
+            tuple(
+                sample for sample in all_samples if sample.split_role == args.split_role
+            )
+            if args.split_role
+            else all_samples
         )
-    except Exception as exc:
-        print(json.dumps({"error": f"YOLO detector failed: {exc}"}))
-        return
+        samples = selected[: args.max_images]
+    if not samples:
+        raise RuntimeError("selected dataset has no samples")
 
-    results: list[LocalizationResult] = []
-    for sample in samples:
-        image_path = root / sample.image_path
-        if not image_path.is_file():
-            continue
-        image = Image.open(image_path).convert("RGB")
-        result = _yolo_detect(image, image_id=sample.sample_id)
-        results.append(result)
+    adapter_class = {
+        "ultralytics": UltralyticsDogAdapter,
+        "torchvision-fasterrcnn": TorchvisionFasterRCNNDogAdapter,
+        "ultralytics-pose": UltralyticsDogPoseAdapter,
+    }[args.backend]
+    adapter = adapter_class(args.model_path, args.model_sha256, device=args.device)
+    results = []
+    try:
+        for sample in samples:
+            image = Image.open(root / sample.image_path).convert("RGB")
+            started = time.perf_counter()
+            result = adapter.detect(image, image_id=sample.sample_id)
+            object.__setattr__(
+                result, "inference_ms", (time.perf_counter() - started) * 1000.0
+            )
+            results.append(result)
+    finally:
+        adapter.close()
 
-    output = args.output_dir / args.dataset
-    build_contact_sheet(
-        tuple(results), samples, root, output, grid_size=8
-    )
-
-    stats = {
+    args.output_dir.mkdir(parents=True, exist_ok=True)
+    args.prediction_cache.parent.mkdir(parents=True, exist_ok=True)
+    build_contact_sheet(tuple(results), tuple(samples), root, args.output_dir)
+    model = adapter.to_dict()
+    bundle = build_prediction_cache(samples, results, model=model)
+    write_prediction_cache(args.prediction_cache, bundle)
+    timings = np.asarray([result.inference_ms for result in results], dtype=np.float64)
+    report = {
         "dataset": args.dataset,
+        "split_role": effective_split_role,
         "images": len(results),
-        "dog_detections": sum(len(r.dog_boxes) for r in results),
-        "detection_rate": (
-            sum(1 for r in results if r.dog_boxes) / max(len(results), 1)
-        ),
+        "dog_detections": sum(len(result.dog_boxes) for result in results),
+        "detection_rate": sum(bool(result.dog_boxes) for result in results)
+        / len(results),
+        "latency_ms_mean": float(timings.mean()),
+        "latency_ms_median": float(np.median(timings)),
+        "prediction_cache": str(args.prediction_cache),
+        "prediction_cache_sha256": bundle["cache_sha256"],
     }
-    output.mkdir(parents=True, exist_ok=True)
-    (output / "summary.json").write_text(json.dumps(stats, indent=2))
-    print(json.dumps(stats))
+    if ground_truth is not None:
+        predicted = {result.image_id: list(result.dog_boxes) for result in results}
+        report["detection"] = {
+            "AP50": detection_average_precision(
+                predicted, ground_truth, iou_threshold=0.50
+            ),
+            "AP75": detection_average_precision(
+                predicted, ground_truth, iou_threshold=0.75
+            ),
+        }
+    (args.output_dir / "summary.json").write_text(json.dumps(report, indent=2))
+    print(json.dumps(report, indent=2))
 
 
 if __name__ == "__main__":

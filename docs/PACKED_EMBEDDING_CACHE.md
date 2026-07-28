@@ -126,7 +126,7 @@ peak RSS
 process read bytes and major faults when available
 ```
 
-ext4 and the 4 TB DrvFS root receive separate decisions. The promotion
+ext4 and the target DrvFS filesystem receive separate decisions. The promotion
 workload uses the frozen real cache's `U` and `D`. The default protected
 comparison uses 12 paired repetitions per filesystem, randomized AB/BA order,
 a two-hour wall-time cap per filesystem, and a precomputed write cap. Hitting a

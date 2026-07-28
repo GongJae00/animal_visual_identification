@@ -4,18 +4,20 @@ import unittest
 
 from cvi.localization.quality import (
     compute_iou,
+    detection_average_precision,
     detection_summary,
     greedy_bipartite_match,
-    normalized_mean_error,
     pixel_correct_keypoint,
 )
 from cvi.localization.roi import (
     expand_bbox,
-    face_roi_from_dog,
     is_truncated,
-    square_padded_crop,
 )
-from cvi.localization.types import DetectionBox, Keypoint, KeypointSet, LocalizationResult
+from cvi.localization.types import (
+    DetectionBox,
+    Keypoint,
+    LocalizationResult,
+)
 
 
 class DetectionMetricTests(unittest.TestCase):
@@ -45,17 +47,37 @@ class DetectionMetricTests(unittest.TestCase):
         self.assertAlmostEqual(summary["AP50_precision"], 1.0)
         self.assertAlmostEqual(summary["AP50_recall"], 1.0)
 
+    def test_detection_average_precision_ranks_confidence(self) -> None:
+        ground_truth = {"image": [DetectionBox(0, 0, 10, 10, 1.0)]}
+        predictions = {
+            "image": [
+                DetectionBox(20, 20, 30, 30, 0.1),
+                DetectionBox(0, 0, 10, 10, 0.9),
+            ]
+        }
+        result = detection_average_precision(
+            predictions, ground_truth, iou_threshold=0.5
+        )
+        self.assertAlmostEqual(result["AP"], 1.0)
+        self.assertAlmostEqual(result["recall"], 1.0)
+
     def test_pck_is_head_size_normalized(self) -> None:
         pred_kp = Keypoint(5.0, 5.0, 1.0)
         gt_kp = Keypoint(0.0, 0.0, 1.0)
-        self.assertTrue(pixel_correct_keypoint(pred_kp, gt_kp, head_size=100.0, threshold=0.10))
-        self.assertFalse(pixel_correct_keypoint(pred_kp, gt_kp, head_size=10.0, threshold=0.10))
+        self.assertTrue(
+            pixel_correct_keypoint(pred_kp, gt_kp, head_size=100.0, threshold=0.10)
+        )
+        self.assertFalse(
+            pixel_correct_keypoint(pred_kp, gt_kp, head_size=10.0, threshold=0.10)
+        )
 
 
 class RoITests(unittest.TestCase):
     def test_expand_bbox_obeys_image_boundaries(self) -> None:
         bbox = DetectionBox(45, 45, 55, 55, 1.0)
-        x1, y1, x2, y2 = expand_bbox(bbox, scale=10.0, image_width=100, image_height=100)
+        x1, y1, x2, y2 = expand_bbox(
+            bbox, scale=10.0, image_width=100, image_height=100
+        )
         self.assertEqual(x1, 0)
         self.assertEqual(y1, 0)
         self.assertEqual(x2, 100)
@@ -82,9 +104,15 @@ class TypeValidationTests(unittest.TestCase):
     def test_localization_result_requires_nonempty_image_id(self) -> None:
         with self.assertRaises(ValueError):
             LocalizationResult(
-                image_id="", dog_boxes=(), face_boxes=(), nose_boxes=(),
-                body_keypoints=(), face_landmarks=(),
-                model_name="test", model_family="test", inference_ms=0.0,
+                image_id="",
+                dog_boxes=(),
+                face_boxes=(),
+                nose_boxes=(),
+                body_keypoints=(),
+                face_landmarks=(),
+                model_name="test",
+                model_family="test",
+                inference_ms=0.0,
             )
 
 

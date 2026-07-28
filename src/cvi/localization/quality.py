@@ -1,8 +1,9 @@
 """Detection metrics (supervised) and quality scoring (unsupervised, ROI-level).
 
-All quality features are computed from the image and predictions alone,
-without requiring ground-truth annotations.  Values are normalized to [0, 1]
-where higher is always better.
+Quality features are computed from the image and predictions without
+ground-truth annotations. Composite ``overall`` scores are normalized to
+``[0, 1]`` with higher values preferred; raw diagnostic feature direction is
+defined by each dataclass field.
 """
 
 from __future__ import annotations
@@ -17,8 +18,8 @@ from PIL import Image
 from cvi.localization.roi import is_truncated
 from cvi.localization.types import DetectionBox, Keypoint, KeypointSet
 
-
 # ── Supervised detection metrics ──────────────────────────────────────
+
 
 def compute_iou(predicted: DetectionBox, ground_truth: DetectionBox) -> float:
     x1 = max(predicted.x1, ground_truth.x1)
@@ -38,9 +39,7 @@ def pixel_correct_keypoint(
     threshold: float = 0.10,
 ) -> bool:
     distance = float(
-        np.linalg.norm(
-            (predicted.x - ground_truth.x, predicted.y - ground_truth.y)
-        )
+        np.linalg.norm((predicted.x - ground_truth.x, predicted.y - ground_truth.y))
     )
     return distance <= threshold * head_size
 
@@ -61,9 +60,9 @@ def normalized_mean_error(
             continue
         if visible_only and gt.confidence < 0.5:
             continue
-        distance = float(
-            np.linalg.norm((pred.x - gt.x, pred.y - gt.y))
-        ) / max(normalization, 1e-6)
+        distance = float(np.linalg.norm((pred.x - gt.x, pred.y - gt.y))) / max(
+            normalization, 1e-6
+        )
         errors.append(distance)
         per_point[name] = distance
     return {
@@ -106,8 +105,6 @@ def greedy_bipartite_match(
     *,
     iou_threshold: float = 0.50,
 ) -> list[tuple[DetectionBox, DetectionBox, float]]:
-    available_pred = list(range(len(predicted)))
-    available_gt = list(range(len(ground_truth)))
     pairs: list[tuple[int, int, float]] = []
     for pred_idx, pred in enumerate(predicted):
         for gt_idx, gt in enumerate(ground_truth):
@@ -126,7 +123,66 @@ def greedy_bipartite_match(
     return result
 
 
+def detection_average_precision(
+    predictions: dict[str, list[DetectionBox]],
+    ground_truth: dict[str, list[DetectionBox]],
+    *,
+    iou_threshold: float,
+) -> dict[str, float | int]:
+    """Compute 101-point interpolated AP for one class and IoU threshold."""
+
+    ranked = sorted(
+        (
+            (box.confidence, image_id, box)
+            for image_id, boxes in predictions.items()
+            for box in boxes
+        ),
+        key=lambda item: -item[0],
+    )
+    total_gt = sum(len(boxes) for boxes in ground_truth.values())
+    matched: dict[str, set[int]] = defaultdict(set)
+    true_positive: list[float] = []
+    false_positive: list[float] = []
+    for _, image_id, predicted in ranked:
+        candidates = ground_truth.get(image_id, [])
+        best_index = -1
+        best_iou = 0.0
+        for gt_index, target in enumerate(candidates):
+            if gt_index in matched[image_id]:
+                continue
+            iou = compute_iou(predicted, target)
+            if iou > best_iou:
+                best_iou = iou
+                best_index = gt_index
+        is_match = best_index >= 0 and best_iou >= iou_threshold
+        if is_match:
+            matched[image_id].add(best_index)
+        true_positive.append(float(is_match))
+        false_positive.append(float(not is_match))
+    if total_gt == 0:
+        raise ValueError("detection AP requires ground-truth boxes")
+    if not ranked:
+        return {"AP": 0.0, "recall": 0.0, "precision": 0.0, "ground_truth": total_gt}
+    tp = np.cumsum(np.asarray(true_positive))
+    fp = np.cumsum(np.asarray(false_positive))
+    recall = tp / total_gt
+    precision = tp / np.maximum(tp + fp, 1.0)
+    interpolated = [
+        float(np.max(precision[recall >= threshold]))
+        if np.any(recall >= threshold)
+        else 0.0
+        for threshold in np.linspace(0.0, 1.0, 101)
+    ]
+    return {
+        "AP": float(np.mean(interpolated)),
+        "recall": float(recall[-1]),
+        "precision": float(precision[-1]),
+        "ground_truth": total_gt,
+    }
+
+
 # ── ROI quality scoring (unsupervised) ────────────────────────────────
+
 
 @dataclass(frozen=True, slots=True)
 class DogQuality:
@@ -246,15 +302,12 @@ def score_face_quality(
         confidences = [kp.confidence for kp in landmarks.keypoints.values()]
         landmark_conf = float(np.mean(confidences)) if confidences else 0.0
         anchors = ("nose_center", "left_eye", "right_eye")
-        anchor_vis = float(
-            np.mean(
-                [
-                    landmarks.named(a).confidence
-                    for a in anchors
-                    if landmarks.named(a) is not None
-                ]
-            )
-        )
+        anchor_confidences = [
+            point.confidence
+            for anchor in anchors
+            if (point := landmarks.named(anchor)) is not None
+        ]
+        anchor_vis = float(np.mean(anchor_confidences)) if anchor_confidences else 0.0
     yaw = 1.0
     if landmarks is not None:
         left = landmarks.named("left_eye")
@@ -305,9 +358,13 @@ def score_nose_quality(
     overall = float(
         np.mean(
             [
-                anchor_agreement, native, blur,
-                1.0 - specular_ratio, trunc,
-                1.0 - muzzle_contamination, support_coverage,
+                anchor_agreement,
+                native,
+                blur,
+                1.0 - specular_ratio,
+                trunc,
+                1.0 - muzzle_contamination,
+                support_coverage,
             ]
         )
     )

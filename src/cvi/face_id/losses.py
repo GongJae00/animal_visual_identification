@@ -26,6 +26,8 @@ class FaceIDObjective(nn.Module):
         session_ids: torch.Tensor,
         *,
         second_view_embedding: torch.Tensor | None = None,
+        quality_target: torch.Tensor | None = None,
+        curriculum_stage: int = 0,
         margin_scale: float = 1.0,
     ) -> dict[str, torch.Tensor]:
         emb = output["embedding"]
@@ -37,17 +39,28 @@ class FaceIDObjective(nn.Module):
         consistency = emb.sum() * 0.0
         if second_view_embedding is not None:
             consistency = view_consistency_loss(
-                emb, second_view_embedding,
+                emb,
+                second_view_embedding,
                 torch.zeros((emb.shape[0], 6), device=emb.device),
                 torch.zeros((emb.shape[0], 6), device=emb.device),
             )
-        total = arc + 0.4 * supcon + 0.2 * triplet + 0.1 * consistency
+        quality = emb.sum() * 0.0
+        if quality_target is not None:
+            quality = F.smooth_l1_loss(output["quality"], quality_target)
+        total = arc + 0.1 * quality
+        if curriculum_stage >= 1:
+            total = total + 0.4 * supcon
+        if curriculum_stage >= 2:
+            total = total + 0.2 * triplet
+        if curriculum_stage >= 3:
+            total = total + 0.1 * consistency
         return {
             "total": total,
             "subcenter_arcface": arc,
             "supervised_contrastive": supcon,
             "batch_hard_triplet": triplet,
             "view_consistency": consistency,
+            "quality": quality,
         }
 
 

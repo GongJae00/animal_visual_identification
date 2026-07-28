@@ -8,6 +8,8 @@ from typing import Any
 
 import numpy as np
 
+from cvi.generated_identity_registry import compute_generated_identity_id
+
 
 class CaptureGroupKind(str, Enum):
     REAL_CAMERA_SESSION = "REAL_CAMERA_SESSION"
@@ -21,7 +23,8 @@ _DOG_BREED_UNKNOWN = "unknown"
 
 
 def _require_finite_bbox(
-    value: object, name: str,
+    value: object,
+    name: str,
 ) -> tuple[float, float, float, float] | None:
     if value is None:
         return None
@@ -34,7 +37,8 @@ def _require_finite_bbox(
 
 
 def _require_keypoints(
-    value: object, name: str,
+    value: object,
+    name: str,
 ) -> dict[str, tuple[float, float, float]] | None:
     if value is None:
         return None
@@ -67,6 +71,7 @@ class UnifiedCanidSample:
     species: str = "Canis lupus familiaris"
     breed: str | None = None
     registered_identity_id: str | None = None
+    generated_identity_id: str | None = None
     raw_identity_id: str | None = None
     dog_boxes_xyxy: tuple[float, float, float, float] | None = None
     body_keypoints: dict[str, tuple[float, float, float]] | None = None
@@ -89,16 +94,38 @@ class UnifiedCanidSample:
         if self.image_path:
             pass
         for name in (
-            "dog_boxes_xyxy", "face_box_xyxy", "head_roi_xyxy",
+            "dog_boxes_xyxy",
+            "face_box_xyxy",
+            "head_roi_xyxy",
         ):
-            object.__setattr__(self, name, _require_finite_bbox(getattr(self, name), name))
+            object.__setattr__(
+                self, name, _require_finite_bbox(getattr(self, name), name)
+            )
         for name in ("body_keypoints", "face_landmarks"):
-            object.__setattr__(self, name, _require_keypoints(getattr(self, name), name))
+            object.__setattr__(
+                self, name, _require_keypoints(getattr(self, name), name)
+            )
         if not isinstance(self.label_availability, dict):
             raise ValueError("label_availability must be a dict")
+        if self.generated_identity_id is not None:
+            metadata = self.metadata
+            generator_id = metadata.get("generated_identity_generator_id")
+            source_cluster_token = metadata.get(
+                "generated_identity_source_cluster_token"
+            )
+            if (
+                not isinstance(generator_id, str)
+                or not isinstance(source_cluster_token, str)
+                or self.generated_identity_id
+                != compute_generated_identity_id(generator_id, source_cluster_token)
+            ):
+                raise ValueError(
+                    "generated_identity_id requires matching generator and cluster-token metadata"
+                )
         avail = dict(self.label_availability)
         defaults = {
             "identity": self.raw_identity_id is not None,
+            "generated_identity": self.generated_identity_id is not None,
             "breed": self.breed is not None and self.breed != _DOG_BREED_UNKNOWN,
             "dog_bbox": self.dog_boxes_xyxy is not None,
             "face_bbox": self.face_box_xyxy is not None,

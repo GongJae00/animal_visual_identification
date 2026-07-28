@@ -2,8 +2,8 @@
 
 ## Retrieval Config V2
 
-The canonical configuration schema is `cvi.retrieval_config.v2`. The working
-in-memory example is maintained in the repository [README](../README.md). A
+The canonical configuration schema is `cvi.retrieval_config.v2`. A schema-valid
+in-memory template is maintained in the repository [README](../README.md). A
 ready-to-run retrieval JSON file is intentionally not shipped because
 artifact-backed channels require user-specific, locally verified paths.
 

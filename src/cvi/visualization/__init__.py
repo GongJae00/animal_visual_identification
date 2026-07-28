@@ -1,25 +1,18 @@
-"""Auto-save visual diagnostics at each experimental stage.
-
-Every function saves PNG/HTML to visualization/<stage>/ and returns paths.
-No external dependencies beyond PIL + numpy + torch.
-"""
+"""Visual diagnostic writers with caller-controlled output locations."""
 
 from __future__ import annotations
 
-from pathlib import Path
 import math
+from pathlib import Path
 
 import numpy as np
 import torch
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw
 from torch.nn import functional as F
 
 
-_STAGE_DIR = Path(__file__).resolve().parents[3] / "visualization"
-
-
-def _ensure_dir(stage: str) -> Path:
-    path = _STAGE_DIR / stage
+def _ensure_dir(output_dir: Path) -> Path:
+    path = Path(output_dir)
     path.mkdir(parents=True, exist_ok=True)
     return path
 
@@ -27,13 +20,13 @@ def _ensure_dir(stage: str) -> Path:
 def contact_sheet(
     images: list[Image.Image],
     *,
-    stage: str = "crops",
+    output_dir: Path,
     grid_size: int = 8,
     thumb_size: int = 224,
     title: str = "",
 ) -> Path:
     """Save a contact sheet grid of thumbnail images."""
-    out = _ensure_dir(stage)
+    out = _ensure_dir(output_dir)
     n = min(len(images), grid_size * grid_size)
     cols = min(grid_size, math.ceil(math.sqrt(n)))
     rows = math.ceil(n / cols)
@@ -55,11 +48,11 @@ def box_overlay(
     *,
     labels: list[str] | None = None,
     colors: list[tuple[int, int, int]] | None = None,
-    stage: str = "detection",
+    output_dir: Path,
     name: str = "overlay",
 ) -> Path:
     """Draw bounding boxes on an image and save."""
-    out = _ensure_dir(stage)
+    out = _ensure_dir(output_dir)
     draw_img = image.copy().convert("RGB")
     draw = ImageDraw.Draw(draw_img)
     if colors is None:
@@ -82,12 +75,12 @@ def keypoint_overlay(
     image: Image.Image,
     keypoints: dict[str, tuple[float, float, float]],
     *,
-    stage: str = "landmarks",
+    output_dir: Path,
     name: str = "keypoints",
     radius: int = 3,
 ) -> Path:
     """Draw keypoints with confidence-colored dots."""
-    out = _ensure_dir(stage)
+    out = _ensure_dir(output_dir)
     draw_img = image.copy().convert("RGB")
     draw = ImageDraw.Draw(draw_img)
 
@@ -98,7 +91,8 @@ def keypoint_overlay(
         g = int(255 * conf)
         draw.ellipse(
             [x - radius, y - radius, x + radius, y + radius],
-            fill=(r, g, 0), outline=(255, 255, 255),
+            fill=(r, g, 0),
+            outline=(255, 255, 255),
         )
 
     path = out / f"{name}.jpg"
@@ -110,7 +104,7 @@ def attention_heatmap(
     image: Image.Image,
     attention_weights: torch.Tensor,
     *,
-    stage: str = "attention",
+    output_dir: Path,
     name: str = "heatmap",
     patch_size: int = 14,
 ) -> Path:
@@ -133,15 +127,18 @@ def attention_heatmap(
         image.size, Image.Resampling.BILINEAR
     )
     heatmap_rgb = Image.fromarray(
-        np.stack([
-            np.asarray(heatmap),
-            np.zeros_like(np.asarray(heatmap)),
-            (255 - np.asarray(heatmap)) * 0.5,
-        ], axis=-1).astype(np.uint8)
+        np.stack(
+            [
+                np.asarray(heatmap),
+                np.zeros_like(np.asarray(heatmap)),
+                (255 - np.asarray(heatmap)) * 0.5,
+            ],
+            axis=-1,
+        ).astype(np.uint8)
     )
 
     blended = Image.blend(image.convert("RGB"), heatmap_rgb, 0.5)
-    out = _ensure_dir(stage)
+    out = _ensure_dir(output_dir)
     path = out / f"{name}.jpg"
     blended.save(path, quality=92)
     return path
@@ -150,11 +147,11 @@ def attention_heatmap(
 def channel_evidence_grid(
     images: dict[str, Image.Image],
     *,
-    stage: str = "evidence",
+    output_dir: Path,
     name: str = "channels",
 ) -> Path:
     """Show original + per-channel evidence crops side by side."""
-    out = _ensure_dir(stage)
+    out = _ensure_dir(output_dir)
     channels = sorted(images)
     if not channels:
         return out / f"{name}.jpg"
@@ -175,7 +172,7 @@ def gradcam_heatmap(
     image_tensor: torch.Tensor,
     target_layer: str,
     *,
-    stage: str = "gradcam",
+    output_dir: Path,
     name: str = "gradcam",
 ) -> Path:
     """Simple GradCAM — hook target layer, compute gradient-weighted activation map."""
@@ -235,15 +232,18 @@ def gradcam_heatmap(
         (image_tensor.permute(1, 2, 0).cpu().numpy() * 255).astype(np.uint8)
     )
     heatmap_rgb = Image.fromarray(
-        np.stack([
-            np.asarray(cam_img),
-            np.zeros_like(np.asarray(cam_img)),
-            (255 - np.asarray(cam_img)) * 0.5,
-        ], axis=-1).astype(np.uint8)
+        np.stack(
+            [
+                np.asarray(cam_img),
+                np.zeros_like(np.asarray(cam_img)),
+                (255 - np.asarray(cam_img)) * 0.5,
+            ],
+            axis=-1,
+        ).astype(np.uint8)
     )
     blended = Image.blend(original, heatmap_rgb, 0.4)
 
-    out = _ensure_dir(stage)
+    out = _ensure_dir(output_dir)
     path = out / f"{name}.jpg"
     blended.save(path, quality=92)
     return path

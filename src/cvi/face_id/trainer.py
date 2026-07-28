@@ -2,13 +2,10 @@
 
 from __future__ import annotations
 
-import math
-import time
+import hashlib
 from pathlib import Path
-from typing import Any
 
 import torch
-from torch.nn import functional as F
 from torch.utils.data import DataLoader
 
 from cvi.evidence.dinov2_contract import Dinov2LocalArtifactContract
@@ -24,6 +21,7 @@ def load_receipt_bound_frozen_dino(
 ) -> tuple[torch.nn.Module, Dinov2LocalArtifactContract]:
     """Reused from cvi.nose_id.trainer — identical contract."""
     from cvi.nose_id.trainer import load_receipt_bound_frozen_dino as _loader
+
     return _loader(
         model_directory=model_directory,
         weight_intake_bundle=weight_intake_bundle,
@@ -50,10 +48,12 @@ def build_faceid_optimizer(
 ) -> torch.optim.AdamW:
     for param in model.dino.parameters():
         param.requires_grad = False
-    params = [
-        p for p in model.parameters() if p.requires_grad
-    ] + list(objective.parameters())
-    return torch.optim.AdamW(params, lr=1e-3, weight_decay=0.05, betas=(0.9, 0.999), eps=1e-8)
+    params = [p for p in model.parameters() if p.requires_grad] + list(
+        objective.parameters()
+    )
+    return torch.optim.AdamW(
+        params, lr=1e-3, weight_decay=0.05, betas=(0.9, 0.999), eps=1e-8
+    )
 
 
 def train_faceid_epoch(
@@ -77,15 +77,37 @@ def train_faceid_epoch(
 
     for batch in loader:
         rgb = batch["rgb"].to(device=device, dtype=torch.float32)
-        labels = torch.as_tensor(batch["identity_index"], device=device, dtype=torch.long)
+        landmarks = batch.get("landmarks")
+        if landmarks is not None:
+            landmarks = landmarks.to(device=device, dtype=torch.float32)
+        quality_target = batch.get("quality_target")
+        if quality_target is not None:
+            quality_target = quality_target.to(device=device, dtype=torch.float32)
+        labels = torch.as_tensor(
+            batch["identity_index"], device=device, dtype=torch.long
+        )
         sessions = torch.as_tensor(
-            [hash(s) % 10000 for s in batch["session_id"]], device=device
+            [
+                int.from_bytes(hashlib.sha256(s.encode("utf-8")).digest()[:8], "big")
+                & ((1 << 63) - 1)
+                for s in batch["session_id"]
+            ],
+            device=device,
         )
 
         optimizer.zero_grad(set_to_none=True)
-        with torch.autocast(device_type=device.type, dtype=torch.bfloat16, enabled=use_amp):
-            output = model(rgb)
-            losses = objective(output, labels, sessions, margin_scale=margin_scale)
+        with torch.autocast(
+            device_type=device.type, dtype=torch.bfloat16, enabled=use_amp
+        ):
+            output = model(rgb, landmarks)
+            losses = objective(
+                output,
+                labels,
+                sessions,
+                quality_target=quality_target,
+                curriculum_stage=min(epoch, 3),
+                margin_scale=margin_scale,
+            )
 
         scaler.scale(losses["total"]).backward()
         scaler.unscale_(optimizer)

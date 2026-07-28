@@ -1,5 +1,26 @@
 # Changelog
 
+## Unreleased
+
+### Research Infrastructure
+
+- Added strict AP-10K and DogFLW adapters, content-bound localization caches,
+  instance-aware ROI manifests, and research-only face ReID tooling.
+- Added a content-addressed model catalog with logical role aliases; filesystem
+  paths no longer imply research or deployment admission.
+- Added a separate provisional generated-identity namespace with explicit
+  merge, supersede, and rejection states.
+
+### Security And Compliance
+
+- Bound generic ONNX model and preprocessing manifests to gallery contracts.
+- Made ROI crop paths, bytes, dimensions, identity propagation, and landmark
+  geometry fail closed.
+- Kept Ultralytics outside package extras; localization adapters require a
+  separately managed research environment.
+- Removed host-specific experiment scripts, generated dataset visualizations,
+  and stale internal architecture audit material from the public surface.
+
 ## 0.3.0 - 2026-07-27
 
 ### Breaking

@@ -28,8 +28,11 @@ def extract_face_embeddings(
 
     for batch in loader:
         rgb = batch["rgb"].to(device=device, dtype=torch.float32)
+        landmarks = batch.get("landmarks")
+        if landmarks is not None:
+            landmarks = landmarks.to(device=device, dtype=torch.float32)
         with torch.autocast(device_type=device.type, enabled=device.type == "cuda"):
-            output = model(rgb)
+            output = model(rgb, landmarks)
         embeddings.append(output["embedding"].float().cpu())
         qualities.append(output["quality"].float().cpu())
         identity_ids.extend(batch["registered_dog_id"])

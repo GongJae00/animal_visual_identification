@@ -38,6 +38,18 @@ _DATASETS: dict[str, dict[str, str]] = {
             "license receipt"
         ),
     },
+    "ap10k-dog": {
+        "mode": "disabled/manual",
+        "description": "AP-10K domestic dog subset",
+        "source": "https://github.com/AlexTheBad/AP-10K",
+        "reason": "no automatic acquisition contract is admitted",
+    },
+    "dogflw": {
+        "mode": "disabled/manual",
+        "description": "Dog Facial Landmarks in the Wild",
+        "source": "https://www.kaggle.com/datasets/georgemartvel/dogflw",
+        "reason": "no automatic acquisition contract is admitted",
+    },
     "yt-bb-dog": {
         "mode": "disabled/manual",
         "description": "YT-BB-Dog",
@@ -52,8 +64,8 @@ _DATASETS: dict[str, dict[str, str]] = {
     },
     "mpdd": {
         "mode": "disabled/manual",
-        "description": "MPetDoorDataset (MPDD)",
-        "source": "https://github.com/hacilab/MPDD",
+        "description": "Multi-pose dog dataset (MPDD)",
+        "source": "https://data.mendeley.com/datasets/v5j6m8dzhv/1",
         "reason": "no automatic acquisition contract is admitted",
     },
 }
