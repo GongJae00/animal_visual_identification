@@ -6,6 +6,7 @@ Produces a single ONNX file suitable for OnnxExtractor.
 from __future__ import annotations
 
 import argparse
+from functools import partial
 from pathlib import Path
 
 import torch
@@ -24,7 +25,9 @@ _BACKBONES = {
 }
 
 
-def reconstruct_model(payload: object) -> ArcFaceModel:
+def reconstruct_model(
+    payload: object, *, model_directory: Path | None = None
+) -> ArcFaceModel:
     if not isinstance(payload, dict) or payload.get("schema_version") != (
         "cvi.training_checkpoint.v1"
     ):
@@ -36,6 +39,10 @@ def reconstruct_model(payload: object) -> ArcFaceModel:
     backbone_factory = _BACKBONES.get(cfg.model_name)
     if backbone_factory is None:
         raise RuntimeError(f"unsupported checkpoint backbone {cfg.model_name!r}")
+    if model_directory is not None:
+        backbone_factory = partial(
+            backbone_factory, model_directory=model_directory
+        )
     model = ArcFaceModel(cfg, backbone_factory=backbone_factory)
     state = payload.get("model_state_dict")
     if not isinstance(state, dict):
@@ -47,13 +54,14 @@ def reconstruct_model(payload: object) -> ArcFaceModel:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--checkpoint", required=True, type=Path)
+    parser.add_argument("--model-dir", type=Path)
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--device", default="cpu")
     args = parser.parse_args()
 
     device = torch.device(args.device)
     payload = torch.load(args.checkpoint, map_location="cpu", weights_only=True)
-    model = reconstruct_model(payload)
+    model = reconstruct_model(payload, model_directory=args.model_dir)
     model.to(device).eval()
     args.output.parent.mkdir(parents=True, exist_ok=True)
     model.export_to_onnx(args.output)

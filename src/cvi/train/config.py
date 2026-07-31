@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from pathlib import Path
+from dataclasses import dataclass
 from typing import Any
 
 
@@ -19,6 +18,9 @@ class TrainConfig:
     epochs: int = 100
     lr: float = 3e-4
     lr_min: float = 1e-6
+    backbone_lr_scale: float = 0.1
+    freeze_backbone_epochs: int = 1
+    embedding_consistency_weight: float = 0.0
     warmup_epochs: int = 10
     weight_decay: float = 1e-4
     label_smoothing: float = 0.1
@@ -47,6 +49,16 @@ class TrainConfig:
             raise ValueError("num_workers must be non-negative")
         if self.lr <= 0.0 or self.lr_min < 0.0 or self.lr_min > self.lr:
             raise ValueError("learning-rate bounds are invalid")
+        if not 0.0 < self.backbone_lr_scale <= 1.0:
+            raise ValueError("backbone_lr_scale must be in (0, 1]")
+        if self.freeze_backbone_epochs < 0 or self.freeze_backbone_epochs > self.epochs:
+            raise ValueError("freeze_backbone_epochs must be in [0, epochs]")
+        if self.embedding_consistency_weight < 0.0:
+            raise ValueError("embedding_consistency_weight must be non-negative")
+        if not 0.0 <= self.label_smoothing < 1.0:
+            raise ValueError("label_smoothing must be in [0, 1)")
+        if self.early_stop_patience <= 0:
+            raise ValueError("early_stop_patience must be positive")
 
     def to_dict(self) -> dict[str, Any]:
         return {f.name: getattr(self, f.name) for f in self.__dataclass_fields__.values()}

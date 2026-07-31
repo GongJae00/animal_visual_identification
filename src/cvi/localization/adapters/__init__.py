@@ -13,32 +13,13 @@ from typing import Any
 from PIL import Image
 
 from cvi.localization.types import (
+    AP10K_BODY_17_KEYPOINT_NAMES,
+    AP10K_BODY_17_SCHEMA,
     DetectionBox,
     Keypoint,
     KeypointSet,
     LocalizationResult,
 )
-
-_AP10K_KEYPOINT_NAMES = (
-    "left_eye",
-    "right_eye",
-    "nose_center",
-    "neck",
-    "tail_base",
-    "left_shoulder",
-    "left_elbow",
-    "left_front_paw",
-    "right_shoulder",
-    "right_elbow",
-    "right_front_paw",
-    "left_hip",
-    "left_knee",
-    "left_back_paw",
-    "right_hip",
-    "right_knee",
-    "right_back_paw",
-)
-
 
 def _stage_verified_artifact(
     path: Path, expected_sha256: str
@@ -373,11 +354,11 @@ class UltralyticsDogPoseAdapter(AbstractLocalizationAdapter):
                         float(x), float(y), float(confidence[index, point_index])
                     )
                     for point_index, (name, (x, y)) in enumerate(
-                        zip(_AP10K_KEYPOINT_NAMES, xy[index], strict=True)
+                        zip(AP10K_BODY_17_KEYPOINT_NAMES, xy[index], strict=True)
                     )
                     if float(confidence[index, point_index]) > 0.0
                 }
-                point_sets.append(KeypointSet(points, "ap10k-dog-17"))
+                point_sets.append(KeypointSet(points, AP10K_BODY_17_SCHEMA))
         return LocalizationResult(
             image_id=image_id,
             dog_boxes=tuple(boxes),

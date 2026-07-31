@@ -7,9 +7,11 @@ import hashlib
 import json
 import subprocess
 import time
+from functools import partial
 from pathlib import Path
 
 import numpy as np
+import torch
 from PIL import Image
 
 from cvi.canid_data.adapters import ADAPTERS
@@ -22,6 +24,8 @@ from cvi.evidence.appearance import ReceiptBoundDinov2Small
 from cvi.localization.roi_manifest import read_roi_manifest
 from cvi.protected_io import write_private_json_bundle
 from cvi.provenance import content_sha256
+from cvi.trainer import ArcFaceModel, Dinov2Embedding, TrainConfig
+from cvi.training_admission import TrainingAdmissionReceipt
 
 _CHANNEL_PATH = {
     "source": "dog_crop_path",
@@ -39,6 +43,30 @@ def _sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def _reconstruct_dinov2_model(payload: object, model_directory: Path) -> ArcFaceModel:
+    if not isinstance(payload, dict) or payload.get("schema_version") != (
+        "cvi.training_checkpoint.v1"
+    ):
+        raise RuntimeError("unsupported or legacy training checkpoint")
+    config_payload = payload.get("config")
+    if not isinstance(config_payload, dict):
+        raise RuntimeError("checkpoint is missing its training configuration")
+    config = TrainConfig.from_dict(config_payload)
+    if config.model_name != "dinov2-small" or config.embedding_dim != 384:
+        raise RuntimeError("ROI ReID checkpoint must use DINOv2-small")
+    model = ArcFaceModel(
+        config,
+        backbone_factory=partial(
+            Dinov2Embedding, model_directory=model_directory
+        ),
+    )
+    state = payload.get("model_state_dict")
+    if not isinstance(state, dict):
+        raise RuntimeError("checkpoint is missing model_state_dict")
+    model.load_state_dict(state, strict=True)
+    return model
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dataset", required=True, choices=sorted(ADAPTERS))
@@ -47,10 +75,17 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--model-dir", type=Path, required=True)
     parser.add_argument("--weight-intake-bundle", type=Path, required=True)
     parser.add_argument("--preprocessor-intake-bundle", type=Path, required=True)
+    parser.add_argument("--checkpoint", type=Path)
+    parser.add_argument("--checkpoint-sha256")
     parser.add_argument("--device", default="cuda")
     parser.add_argument("--batch-size", type=int, default=32)
     parser.add_argument("--output", type=Path, required=True)
-    return parser.parse_args()
+    args = parser.parse_args()
+    if (args.checkpoint is None) != (args.checkpoint_sha256 is None):
+        parser.error("--checkpoint and --checkpoint-sha256 must be provided together")
+    if args.checkpoint is not None and args.channel == "source":
+        parser.error("trained checkpoint evaluation requires a materialized ROI channel")
+    return args
 
 
 def main() -> None:
@@ -91,13 +126,48 @@ def main() -> None:
             "ROI manifest does not contain a closed-set evaluation cohort"
         )
 
-    evidencer = ReceiptBoundDinov2Small(
-        model_directory=str(args.model_dir),
-        weight_intake_bundle=str(args.weight_intake_bundle),
-        preprocessor_intake_bundle=str(args.preprocessor_intake_bundle),
-        device=args.device,
-        max_batch_size=args.batch_size,
-    )
+    if args.checkpoint is None:
+        evidencer = ReceiptBoundDinov2Small(
+            model_directory=str(args.model_dir),
+            weight_intake_bundle=str(args.weight_intake_bundle),
+            preprocessor_intake_bundle=str(args.preprocessor_intake_bundle),
+            device=args.device,
+            max_batch_size=args.batch_size,
+        )
+        embedding_provenance = {
+            "weight_intake_bundle_sha256": _sha256(args.weight_intake_bundle),
+            "preprocessor_intake_bundle_sha256": _sha256(
+                args.preprocessor_intake_bundle
+            ),
+        }
+    else:
+        checkpoint_sha256 = _sha256(args.checkpoint)
+        if checkpoint_sha256 != args.checkpoint_sha256:
+            raise ValueError("training checkpoint SHA-256 differs")
+        payload = torch.load(args.checkpoint, map_location="cpu", weights_only=True)
+        model = _reconstruct_dinov2_model(payload, args.model_dir)
+        intake = payload.get("training_admission")
+        if not isinstance(intake, dict) or set(intake) != {"receipt_sha256", "receipt"}:
+            raise ValueError("training checkpoint lacks its admission receipt")
+        admission = TrainingAdmissionReceipt.from_dict(intake["receipt"])
+        if intake["receipt_sha256"] != admission.receipt_sha256:
+            raise ValueError("training checkpoint admission receipt hash differs")
+        evidencer = ReceiptBoundDinov2Small(
+            model_directory=str(args.model_dir),
+            weight_intake_bundle=str(args.weight_intake_bundle),
+            preprocessor_intake_bundle=str(args.preprocessor_intake_bundle),
+            device=args.device,
+            max_batch_size=args.batch_size,
+        )
+        if admission.model_receipt_sha256 != evidencer.weight_receipt_sha256:
+            raise ValueError("training checkpoint base model receipt differs")
+        model._backbone._backbone.to(torch.device(args.device)).eval()
+        evidencer._backbone = model._backbone._backbone
+        embedding_provenance = {
+            "training_checkpoint_sha256": checkpoint_sha256,
+            "selection_metric": payload["selection_metric"],
+            "selected_epoch": payload["epoch"],
+        }
     crop_root = args.roi_manifest.parent
 
     def extract(records: list[dict]) -> tuple[np.ndarray, float]:
@@ -188,10 +258,7 @@ def main() -> None:
         "provenance": {
             "code_commit": commit,
             "roi_manifest_sha256": content_sha256(manifest),
-            "weight_intake_bundle_sha256": _sha256(args.weight_intake_bundle),
-            "preprocessor_intake_bundle_sha256": _sha256(
-                args.preprocessor_intake_bundle
-            ),
+            **embedding_provenance,
             "dependency_lock_sha256": _sha256(
                 Path(__file__).resolve().parents[1] / "uv.lock"
             ),

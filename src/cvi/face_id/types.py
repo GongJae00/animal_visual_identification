@@ -26,8 +26,8 @@ class FaceIDOutput:
 
     def __post_init__(self) -> None:
         emb = np.asarray(self.embedding, dtype=np.float32)
-        if emb.shape != (256,) or not np.isfinite(emb).all():
-            raise ValueError("face embedding must be finite float32 [256]")
+        if emb.shape != (640,) or not np.isfinite(emb).all():
+            raise ValueError("face embedding must be finite float32 [640]")
         object.__setattr__(self, "embedding", emb)
 
 

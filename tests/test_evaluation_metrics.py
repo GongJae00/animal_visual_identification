@@ -334,6 +334,22 @@ class RetrievalMetricsTest(unittest.TestCase):
 
 
 class MultiTemplateClosedSetTest(unittest.TestCase):
+    def test_default_output_is_exactly_explicit_max_output(self):
+        kwargs = {
+            "query_template_scores": np.array([[0.9, 0.1, 0.8]]),
+            "query_identity_ids": np.array(["A"]),
+            "gallery_template_identity_ids": np.array(["A", "A", "B"]),
+            "self_match_policy": "include",
+            "rank_ks": (1, 2),
+        }
+
+        default = evaluate_multi_template_closed_set(**kwargs)
+        explicit = evaluate_multi_template_closed_set(**kwargs, aggregation="max")
+
+        self.assertEqual(default, explicit)
+        self.assertEqual(default["aggregation"], "max")
+        self.assertNotIn("aggregation_parameters", default)
+
     def test_frozen_max_aggregation_precedes_distinct_identity_ranking(self):
         result = evaluate_multi_template_closed_set(
             np.array([[0.9, 0.8, 0.7, 0.6]], dtype=np.float64),
@@ -359,6 +375,111 @@ class MultiTemplateClosedSetTest(unittest.TestCase):
 
         self.assertEqual(result["aggregation"], "max")
         self.assertEqual(result["Rank-1"], 1.0)
+
+    def test_mean_and_median_resist_one_extreme_in_a_larger_template_set(self):
+        kwargs = {
+            "query_template_scores": np.array([[0.8, 0.8, 0.95, 0.1, 0.1]]),
+            "query_identity_ids": np.array(["A"]),
+            "gallery_template_identity_ids": np.array(["A", "A", "B", "B", "B"]),
+            "self_match_policy": "include",
+            "rank_ks": (1, 2),
+        }
+
+        maximum = evaluate_multi_template_closed_set(**kwargs, aggregation="max")
+        mean = evaluate_multi_template_closed_set(**kwargs, aggregation="mean")
+        median = evaluate_multi_template_closed_set(**kwargs, aggregation="median")
+
+        self.assertEqual(maximum["query_rows"][0]["relevant_rank"], 2)
+        self.assertEqual(mean["query_rows"][0]["relevant_rank"], 1)
+        self.assertEqual(median["query_rows"][0]["relevant_rank"], 1)
+        self.assertEqual(mean["aggregation"], "mean")
+        self.assertEqual(median["aggregation"], "median")
+
+    def test_top_k_mean_uses_only_the_fixed_number_of_best_scores(self):
+        kwargs = {
+            "query_template_scores": np.array(
+                [[0.9, 0.8, 0.0, 0.75, 0.74, 0.73]]
+            ),
+            "query_identity_ids": np.array(["A"]),
+            "gallery_template_identity_ids": np.array(
+                ["A", "A", "A", "B", "B", "B"]
+            ),
+            "self_match_policy": "include",
+            "rank_ks": (1, 2),
+        }
+
+        all_template_mean = evaluate_multi_template_closed_set(
+            **kwargs, aggregation="mean"
+        )
+        top_two_mean = evaluate_multi_template_closed_set(
+            **kwargs, aggregation="top_k_mean", top_k=2
+        )
+
+        self.assertEqual(all_template_mean["query_rows"][0]["relevant_rank"], 2)
+        self.assertEqual(top_two_mean["query_rows"][0]["relevant_rank"], 1)
+        self.assertEqual(top_two_mean["aggregation"], "top_k_mean")
+        self.assertEqual(top_two_mean["aggregation_parameters"], {"top_k": 2})
+
+    def test_log_mean_exp_is_stable_and_normalized_for_template_count(self):
+        stable = evaluate_multi_template_closed_set(
+            np.array([[1000.0, -1000.0, 999.0]]),
+            np.array(["A"]),
+            np.array(["A", "A", "B"]),
+            self_match_policy="include",
+            aggregation="log_mean_exp",
+            temperature=0.5,
+            rank_ks=(1, 2),
+        )
+        one_impostor_template = evaluate_multi_template_closed_set(
+            np.array([[0.65, 0.6]]),
+            np.array(["A"]),
+            np.array(["A", "B"]),
+            self_match_policy="include",
+            aggregation="log_mean_exp",
+            temperature=1.0,
+            rank_ks=(1, 2),
+        )
+        duplicated_impostor_template = evaluate_multi_template_closed_set(
+            np.array([[0.65, 0.6, 0.6]]),
+            np.array(["A"]),
+            np.array(["A", "B", "B"]),
+            self_match_policy="include",
+            aggregation="log_mean_exp",
+            temperature=1.0,
+            rank_ks=(1, 2),
+        )
+
+        self.assertEqual(stable["query_rows"][0]["relevant_rank"], 1)
+        self.assertEqual(
+            stable["aggregation_parameters"], {"temperature": 0.5}
+        )
+        self.assertEqual(one_impostor_template["Rank-1"], 1.0)
+        self.assertEqual(duplicated_impostor_template["Rank-1"], 1.0)
+        self.assertEqual(
+            one_impostor_template["query_rows"],
+            duplicated_impostor_template["query_rows"],
+        )
+
+    def test_quality_weighted_mean_uses_gallery_template_quality(self):
+        kwargs = {
+            "query_template_scores": np.array([[0.9, 0.1, 0.6]]),
+            "query_identity_ids": np.array(["A"]),
+            "gallery_template_identity_ids": np.array(["A", "A", "B"]),
+            "self_match_policy": "include",
+            "aggregation": "quality_weighted_mean",
+            "rank_ks": (1, 2),
+        }
+
+        low_extreme_quality = evaluate_multi_template_closed_set(
+            **kwargs, gallery_template_quality=np.array([0.0, 1.0, 1.0])
+        )
+        high_extreme_quality = evaluate_multi_template_closed_set(
+            **kwargs, gallery_template_quality=np.array([1.0, 0.0, 1.0])
+        )
+
+        self.assertEqual(low_extreme_quality["query_rows"][0]["relevant_rank"], 2)
+        self.assertEqual(high_extreme_quality["query_rows"][0]["relevant_rank"], 1)
+        self.assertEqual(high_extreme_quality["aggregation"], "quality_weighted_mean")
 
     def test_identity_score_ties_keep_first_gallery_occurrence(self):
         result = evaluate_multi_template_closed_set(
@@ -422,6 +543,20 @@ class MultiTemplateClosedSetTest(unittest.TestCase):
         self.assertEqual(included["query_rows"][0]["relevant_rank"], 1)
         self.assertEqual(excluded["query_rows"][0]["relevant_rank"], 2)
 
+    def test_self_match_exclusion_is_ignored_by_non_max_aggregation(self):
+        result = evaluate_multi_template_closed_set(
+            np.array([[0.0, 0.8, 0.8, 0.7]]),
+            np.array(["A"]),
+            np.array(["A", "A", "A", "B"]),
+            self_match_policy="exclude",
+            query_template_ids=np.array(["same"]),
+            gallery_template_ids=np.array(["same", "a-2", "a-3", "b-1"]),
+            aggregation="mean",
+            rank_ks=(1, 2),
+        )
+
+        self.assertEqual(result["query_rows"][0]["relevant_rank"], 1)
+
     def test_self_match_exclusion_requires_template_ids(self):
         with self.assertRaises(SampleIdValidationError):
             evaluate_multi_template_closed_set(
@@ -452,6 +587,90 @@ class MultiTemplateClosedSetTest(unittest.TestCase):
                 query_template_ids=np.array(["same"]),
                 gallery_template_ids=np.array(["same", "other"]),
             )
+
+    def test_non_max_excluding_only_relevant_template_violates_closed_set(self):
+        with self.assertRaises(ClosedSetViolation):
+            evaluate_multi_template_closed_set(
+                np.array([[1.0, 0.5]]),
+                np.array(["A"]),
+                np.array(["A", "B"]),
+                self_match_policy="exclude",
+                query_template_ids=np.array(["same"]),
+                gallery_template_ids=np.array(["same", "other"]),
+                aggregation="median",
+            )
+
+    def test_template_aggregation_strict_validation(self):
+        kwargs = {
+            "query_template_scores": np.array([[0.8, 0.7]]),
+            "query_identity_ids": np.array(["A"]),
+            "gallery_template_identity_ids": np.array(["A", "B"]),
+            "self_match_policy": "include",
+            "rank_ks": (1,),
+        }
+
+        with self.assertRaisesRegex(RetrievalError, "unsupported template aggregation"):
+            evaluate_multi_template_closed_set(**kwargs, aggregation="mode")
+        for value in (None, 0, -1, True, 1.5):
+            with self.subTest(top_k=value):
+                call_kwargs = {} if value is None else {"top_k": value}
+                with self.assertRaisesRegex(RetrievalError, "top_k"):
+                    evaluate_multi_template_closed_set(
+                        **kwargs, aggregation="top_k_mean", **call_kwargs
+                    )
+        for value in (0.0, -1.0, np.nan, np.inf, True, 1.0j):
+            with self.subTest(temperature=value):
+                with self.assertRaisesRegex(RetrievalError, "temperature"):
+                    evaluate_multi_template_closed_set(
+                        **kwargs,
+                        aggregation="log_mean_exp",
+                        temperature=value,
+                    )
+        with self.assertRaisesRegex(RetrievalError, "top_k is only valid"):
+            evaluate_multi_template_closed_set(**kwargs, top_k=1)
+        with self.assertRaisesRegex(RetrievalError, "temperature is only valid"):
+            evaluate_multi_template_closed_set(**kwargs, temperature=1.0)
+
+        invalid_quality = (
+            np.array([[1.0], [1.0]]),
+            np.array([1.0]),
+            np.array([np.nan, 1.0]),
+            np.array([np.inf, 1.0]),
+            np.array([-0.1, 1.0]),
+            np.array([1.1, 1.0]),
+        )
+        with self.assertRaisesRegex(RetrievalError, "is required"):
+            evaluate_multi_template_closed_set(
+                **kwargs, aggregation="quality_weighted_mean"
+            )
+        for quality in invalid_quality:
+            with self.subTest(quality=quality):
+                with self.assertRaises(RetrievalError):
+                    evaluate_multi_template_closed_set(
+                        **kwargs,
+                        aggregation="quality_weighted_mean",
+                        gallery_template_quality=quality,
+                    )
+        with self.assertRaisesRegex(RetrievalError, "only valid"):
+            evaluate_multi_template_closed_set(
+                **kwargs, gallery_template_quality=np.ones(2)
+            )
+        with self.assertRaisesRegex(RetrievalError, "zero eligible quality weight"):
+            evaluate_multi_template_closed_set(
+                **kwargs,
+                aggregation="quality_weighted_mean",
+                gallery_template_quality=np.array([0.0, 1.0]),
+            )
+
+        for score in (np.nan, np.inf):
+            with self.subTest(score=score):
+                with self.assertRaisesRegex(RetrievalError, "non-finite"):
+                    evaluate_multi_template_closed_set(
+                        np.array([[score, 0.7]]),
+                        kwargs["query_identity_ids"],
+                        kwargs["gallery_template_identity_ids"],
+                        self_match_policy="include",
+                    )
 
     def test_identity_clustered_bootstrap_is_deterministic(self):
         rows = (

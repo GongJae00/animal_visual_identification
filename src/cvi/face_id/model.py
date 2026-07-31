@@ -97,6 +97,9 @@ class FaceRegionalEncoder(nn.Module):
 
 
 class FaceIDModel(nn.Module):
+    output_dim = 640
+    regional_scale = 0.25
+
     def __init__(
         self,
         dino_backbone: nn.Module,
@@ -117,13 +120,21 @@ class FaceIDModel(nn.Module):
             nn.Linear(256, 64), nn.GELU(), nn.Linear(64, 1)
         )
 
-    def _dino_forward(self, rgb: torch.Tensor) -> Sequence[torch.Tensor]:
+    def _dino_forward(
+        self, rgb: torch.Tensor
+    ) -> tuple[Sequence[torch.Tensor], torch.Tensor]:
         with torch.no_grad():
             output = self.dino(pixel_values=rgb, output_hidden_states=True)
         hidden = getattr(output, "hidden_states", None)
         if not isinstance(hidden, (tuple, list)) or len(hidden) < 13:
             raise RuntimeError("DINO backbone must return 13 hidden states")
-        return hidden
+        baseline = getattr(output, "pooler_output", None)
+        if not isinstance(baseline, torch.Tensor) or baseline.shape != (
+            rgb.shape[0],
+            384,
+        ):
+            raise RuntimeError("DINO backbone must return a 384D pooler output")
+        return hidden, F.normalize(baseline.float(), dim=1)
 
     def forward(
         self, rgb: torch.Tensor, landmarks: torch.Tensor | None = None
@@ -134,9 +145,13 @@ class FaceIDModel(nn.Module):
         std = self.image_std.to(dtype=rgb.dtype)
         ps = self.pixel_scale.to(dtype=rgb.dtype)
         normalized = (rgb * ps - mean) / std
-        hidden = self._dino_forward(normalized)
-        embedding = self.encoder(hidden, landmarks)
-        quality = torch.sigmoid(self.quality_head(embedding))
+        hidden, baseline = self._dino_forward(normalized)
+        regional = self.encoder(hidden, landmarks)
+        embedding = F.normalize(
+            torch.cat([baseline.to(regional.dtype), self.regional_scale * regional], dim=1),
+            dim=1,
+        )
+        quality = torch.sigmoid(self.quality_head(regional))
         return {"embedding": embedding, "quality": quality.squeeze(1)}
 
 

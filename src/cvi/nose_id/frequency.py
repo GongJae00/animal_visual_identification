@@ -4,11 +4,106 @@ from __future__ import annotations
 
 import math
 
+import cv2
+import numpy as np
 import torch
 from torch import nn
 from torch.nn import functional as F
 
 from cvi.nose_id.photometric import TexturePhotometricNormalizer
+
+
+def _descriptor_inputs(
+    luminance: np.ndarray, valid_mask: np.ndarray
+) -> tuple[np.ndarray, np.ndarray]:
+    image = np.asarray(luminance, dtype=np.float32)
+    mask = np.asarray(valid_mask) > 0.5
+    if image.ndim != 2 or mask.shape != image.shape or not np.isfinite(image).all():
+        raise ValueError("descriptor luminance and mask must be finite same-shaped 2D arrays")
+    return image, mask
+
+
+def gabor_descriptor(
+    luminance: np.ndarray, valid_mask: np.ndarray
+) -> np.ndarray:
+    """Return fixed, masked Gabor response summaries without learned parameters."""
+    image, mask = _descriptor_inputs(luminance, valid_mask)
+    supported = cv2.erode(
+        mask.astype(np.uint8), np.ones((9, 9), dtype=np.uint8)
+    ).astype(bool)
+    values: list[float] = []
+    for wavelength in (4.0, 8.0):
+        for orientation in (0.0, math.pi / 4.0, math.pi / 2.0, 3.0 * math.pi / 4.0):
+            kernel = cv2.getGaborKernel(
+                (9, 9), 2.0, orientation, wavelength, 0.5, 0.0, ktype=cv2.CV_32F
+            )
+            kernel -= kernel.mean()
+            response = cv2.filter2D(image, cv2.CV_32F, kernel, borderType=cv2.BORDER_REFLECT_101)
+            selected = np.abs(response[supported])
+            values.append(float(np.median(selected)) if selected.size else 0.0)
+    return np.asarray(values, dtype=np.float32)
+
+
+def lbp_descriptor(luminance: np.ndarray, valid_mask: np.ndarray) -> np.ndarray:
+    """Return a normalized 8-neighbour LBP histogram over observed interior pixels."""
+    image, mask = _descriptor_inputs(luminance, valid_mask)
+    if min(image.shape) < 3:
+        return np.zeros(256, dtype=np.float32)
+    center = image[1:-1, 1:-1]
+    code = np.zeros(center.shape, dtype=np.uint8)
+    neighbors = (
+        image[:-2, :-2], image[:-2, 1:-1], image[:-2, 2:], image[1:-1, 2:],
+        image[2:, 2:], image[2:, 1:-1], image[2:, :-2], image[1:-1, :-2],
+    )
+    for bit, neighbor in enumerate(neighbors):
+        code |= ((neighbor >= center).astype(np.uint8) << bit)
+    supported = cv2.erode(
+        mask.astype(np.uint8), np.ones((3, 3), dtype=np.uint8)
+    ).astype(bool)
+    interior_mask = supported[1:-1, 1:-1]
+    histogram = np.bincount(code[interior_mask], minlength=256).astype(np.float32)
+    total = float(histogram.sum())
+    if total > 0.0:
+        histogram /= total
+    return histogram
+
+
+def radial_frequency_descriptor(
+    luminance: np.ndarray, valid_mask: np.ndarray, *, bins: int = 8
+) -> np.ndarray:
+    """Summarize windowed radial Fourier power without interpreting missing pixels."""
+    image, mask = _descriptor_inputs(luminance, valid_mask)
+    if bins < 1:
+        raise ValueError("frequency bins must be positive")
+    selected = image[mask]
+    if selected.size < 2:
+        return np.zeros(bins, dtype=np.float32)
+    centered = np.where(mask, image - float(np.median(selected)), 0.0)
+    window_y = np.hanning(image.shape[0]).astype(np.float32)
+    window_x = np.hanning(image.shape[1]).astype(np.float32)
+    power = np.abs(np.fft.fftshift(np.fft.fft2(centered * np.outer(window_y, window_x)))) ** 2
+    y, x = np.indices(image.shape)
+    radius = np.hypot(y - (image.shape[0] - 1) / 2.0, x - (image.shape[1] - 1) / 2.0)
+    edges = np.linspace(0.0, float(radius.max()) + 1e-6, bins + 1)
+    output = np.zeros(bins, dtype=np.float64)
+    for index in range(bins):
+        annulus = (radius >= edges[index]) & (radius < edges[index + 1])
+        if np.any(annulus):
+            output[index] = np.log1p(np.median(power[annulus]))
+    norm = float(np.linalg.norm(output))
+    if norm > 0.0:
+        output /= norm
+    return output.astype(np.float32)
+
+
+def classical_texture_descriptors(
+    luminance: np.ndarray, valid_mask: np.ndarray
+) -> dict[str, np.ndarray]:
+    return {
+        "gabor": gabor_descriptor(luminance, valid_mask),
+        "lbp": lbp_descriptor(luminance, valid_mask),
+        "radial_frequency": radial_frequency_descriptor(luminance, valid_mask),
+    }
 
 
 def _gaussian_kernel(sigma: float) -> torch.Tensor:
@@ -125,4 +220,10 @@ class FixedFrequencyBank(nn.Module):
         return result
 
 
-__all__ = ["FixedFrequencyBank"]
+__all__ = [
+    "FixedFrequencyBank",
+    "classical_texture_descriptors",
+    "gabor_descriptor",
+    "lbp_descriptor",
+    "radial_frequency_descriptor",
+]

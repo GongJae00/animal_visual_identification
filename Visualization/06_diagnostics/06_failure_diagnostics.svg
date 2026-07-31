@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1050" viewBox="0 0 1800 1050">
+<rect x="0" y="0" width="1800" height="1050" rx="0" fill="#07121f"/>
+<line x1="40" y1="0" x2="40" y2="1050" stroke="#264052" stroke-width="1"/>
+<line x1="120" y1="0" x2="120" y2="1050" stroke="#264052" stroke-width="1"/>
+<line x1="200" y1="0" x2="200" y2="1050" stroke="#264052" stroke-width="1"/>
+<line x1="280" y1="0" x2="280" y2="1050" stroke="#264052" stroke-width="1"/>
+<line x1="360" y1="0" x2="360" y2="1050" stroke="#264052" stroke-width="1"/>
+<line x1="440" y1="0" x2="440" y2="1050" stroke="#264052" stroke-width="1"/>
+<line x1="520" y1="0" x2="520" y2="1050" stroke="#264052" stroke-width="1"/>
+<line x1="600" y1="0" x2="600" y2="1050" stroke="#264052" stroke-width="1"/>
+<line x1="680" y1="0" x2="680" y2="1050" stroke="#264052" stroke-width="1"/>
+<line x1="760" y1="0" x2="760" y2="1050" stroke="#264052" stroke-width="1"/>
+<line x1="840" y1="0" x2="840" y2="1050" stroke="#264052" stroke-width="1"/>
+<line x1="920" y1="0" x2="920" y2="1050" stroke="#264052" stroke-width="1"/>
+<line x1="1000" y1="0" x2="1000" y2="1050" stroke="#264052" stroke-width="1"/>
+<line x1="1080" y1="0" x2="1080" y2="1050" stroke="#264052" stroke-width="1"/>
+<line x1="1160" y1="0" x2="1160" y2="1050" stroke="#264052" stroke-width="1"/>
+<line x1="1240" y1="0" x2="1240" y2="1050" stroke="#264052" stroke-width="1"/>
+<line x1="1320" y1="0" x2="1320" y2="1050" stroke="#264052" stroke-width="1"/>
+<line x1="1400" y1="0" x2="1400" y2="1050" stroke="#264052" stroke-width="1"/>
+<line x1="1480" y1="0" x2="1480" y2="1050" stroke="#264052" stroke-width="1"/>
+<line x1="1560" y1="0" x2="1560" y2="1050" stroke="#264052" stroke-width="1"/>
+<line x1="1640" y1="0" x2="1640" y2="1050" stroke="#264052" stroke-width="1"/>
+<line x1="1720" y1="0" x2="1720" y2="1050" stroke="#264052" stroke-width="1"/>
+<line x1="0" y1="40" x2="1800" y2="40" stroke="#264052" stroke-width="1"/>
+<line x1="0" y1="120" x2="1800" y2="120" stroke="#264052" stroke-width="1"/>
+<line x1="0" y1="200" x2="1800" y2="200" stroke="#264052" stroke-width="1"/>
+<line x1="0" y1="280" x2="1800" y2="280" stroke="#264052" stroke-width="1"/>
+<line x1="0" y1="360" x2="1800" y2="360" stroke="#264052" stroke-width="1"/>
+<line x1="0" y1="440" x2="1800" y2="440" stroke="#264052" stroke-width="1"/>
+<line x1="0" y1="520" x2="1800" y2="520" stroke="#264052" stroke-width="1"/>
+<line x1="0" y1="600" x2="1800" y2="600" stroke="#264052" stroke-width="1"/>
+<line x1="0" y1="680" x2="1800" y2="680" stroke="#264052" stroke-width="1"/>
+<line x1="0" y1="760" x2="1800" y2="760" stroke="#264052" stroke-width="1"/>
+<line x1="0" y1="840" x2="1800" y2="840" stroke="#264052" stroke-width="1"/>
+<line x1="0" y1="920" x2="1800" y2="920" stroke="#264052" stroke-width="1"/>
+<line x1="0" y1="1000" x2="1800" y2="1000" stroke="#264052" stroke-width="1"/>
+<text x="70" y="75" fill="#b9e769" font-family="DejaVu Sans, sans-serif" font-size="20" font-weight="700" text-anchor="start">FIG 10</text>
+<text x="70" y="143" fill="#f4eddc" font-family="DejaVu Sans, sans-serif" font-size="48" font-weight="700" text-anchor="start">Failure diagnostics and next actions</text>
+<text x="72" y="182" fill="#91a4ae" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="400" text-anchor="start">Aggregate geometry isolates a regional collapse signal without inventing examples or causes.</text>
+<line x1="70" y1="205" x2="1730" y2="205" stroke="#264052" stroke-width="2"/>
+<line x1="70" y1="990" x2="1730" y2="990" stroke="#264052" stroke-width="2"/>
+<text x="70" y="1021" fill="#91a4ae" font-family="DejaVu Sans, sans-serif" font-size="16" font-weight="400" text-anchor="start">Source: actual final aggregate diagnostics | No raw vectors, per-query rows, spectra, or failure examples shown</text>
+<text x="90" y="277" fill="#91a4ae" font-family="DejaVu Sans, sans-serif" font-size="17" font-weight="700" text-anchor="start">EFFECTIVE-RANK UTILIZATION</text>
+<text x="90" y="334" fill="#ff775f" font-family="DejaVu Sans, sans-serif" font-size="19" font-weight="700" text-anchor="start">Appearance</text>
+<rect x="300" y="318" width="330" height="22" rx="11" fill="#0d1d2d" stroke="#264052" stroke-width="1"/>
+<rect x="300" y="318" width="53.65305458080915" height="22" rx="11" fill="#ff775f"/>
+<text x="650" y="331" fill="#f4eddc" font-family="DejaVu Sans, sans-serif" font-size="18" font-weight="400" text-anchor="start">16.3%</text>
+<text x="90" y="426" fill="#53d8e8" font-family="DejaVu Sans, sans-serif" font-size="19" font-weight="700" text-anchor="start">Face baseline</text>
+<rect x="300" y="410" width="330" height="22" rx="11" fill="#0d1d2d" stroke="#264052" stroke-width="1"/>
+<rect x="300" y="410" width="53.51236712753582" height="22" rx="11" fill="#53d8e8"/>
+<text x="650" y="423" fill="#f4eddc" font-family="DejaVu Sans, sans-serif" font-size="18" font-weight="400" text-anchor="start">16.2%</text>
+<text x="90" y="518" fill="#b9e769" font-family="DejaVu Sans, sans-serif" font-size="19" font-weight="700" text-anchor="start">Face final</text>
+<rect x="300" y="502" width="330" height="22" rx="11" fill="#0d1d2d" stroke="#264052" stroke-width="1"/>
+<rect x="300" y="502" width="32.10759335143372" height="22" rx="11" fill="#b9e769"/>
+<text x="650" y="515" fill="#f4eddc" font-family="DejaVu Sans, sans-serif" font-size="18" font-weight="400" text-anchor="start">9.7%</text>
+<text x="90" y="610" fill="#f4a259" font-family="DejaVu Sans, sans-serif" font-size="19" font-weight="700" text-anchor="start">Regional</text>
+<rect x="300" y="594" width="330" height="22" rx="11" fill="#0d1d2d" stroke="#264052" stroke-width="1"/>
+<rect x="300" y="594" width="24.573352827802662" height="22" rx="11" fill="#f4a259"/>
+<text x="650" y="607" fill="#f4eddc" font-family="DejaVu Sans, sans-serif" font-size="18" font-weight="400" text-anchor="start">7.4%</text>
+<text x="90" y="752" fill="#91a4ae" font-family="DejaVu Sans, sans-serif" font-size="17" font-weight="700" text-anchor="start">RAW NORM BEHAVIOR</text>
+<text x="90" y="799" fill="#b9e769" font-family="DejaVu Sans, sans-serif" font-size="19" font-weight="400" text-anchor="start">Face final: 1.000000 +/- 3.45e-08 (post-L2)</text>
+<text x="90" y="844" fill="#f4a259" font-family="DejaVu Sans, sans-serif" font-size="19" font-weight="400" text-anchor="start">Regional pre-L2: 40.919 +/- 0.070</text>
+<line x1="850" y1="245" x2="850" y2="925" stroke="#264052" stroke-width="2"/>
+<text x="920" y="277" fill="#f4a259" font-family="DejaVu Sans, sans-serif" font-size="17" font-weight="700" text-anchor="start">SIGNAL</text>
+<text x="920" y="338" fill="#f4a259" font-family="DejaVu Sans, sans-serif" font-size="28" font-weight="700" text-anchor="start">Regional centroid norm  0.999979</text>
+<text x="920" y="385" fill="#f4eddc" font-family="DejaVu Sans, sans-serif" font-size="20" font-weight="400" text-anchor="start">Near-unity centroid + low rank utilization</text>
+<text x="920" y="425" fill="#f4eddc" font-family="DejaVu Sans, sans-serif" font-size="20" font-weight="400" text-anchor="start">is consistent with directional collapse.</text>
+<text x="920" y="502" fill="#b9e769" font-family="DejaVu Sans, sans-serif" font-size="17" font-weight="700" text-anchor="start">ACTIONABLE NEXT STEPS</text>
+<text x="920" y="555" fill="#f4eddc" font-family="DejaVu Sans, sans-serif" font-size="20" font-weight="400" text-anchor="start">1  Audit regional training gradients and loss balance</text>
+<text x="920" y="617" fill="#f4eddc" font-family="DejaVu Sans, sans-serif" font-size="20" font-weight="400" text-anchor="start">2  Track pre/post-normalization rank during training</text>
+<text x="920" y="679" fill="#91a4ae" font-family="DejaVu Sans, sans-serif" font-size="20" font-weight="400" text-anchor="start">3  Use a new identity-disjoint calibration cohort</text>
+<text x="920" y="741" fill="#91a4ae" font-family="DejaVu Sans, sans-serif" font-size="20" font-weight="400" text-anchor="start">4  Re-evaluate fusion after a frozen selection protocol</text>
+<text x="920" y="843" fill="#91a4ae" font-family="DejaVu Sans, sans-serif" font-size="18" font-weight="400" text-anchor="start">Causality is not established by these diagnostics.</text>
+</svg>

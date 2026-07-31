@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import io
 import json
 import math
@@ -7,8 +8,7 @@ import os
 import random
 import time
 from collections.abc import Callable
-from collections import Counter, OrderedDict
-from dataclasses import dataclass, field
+from collections import Counter
 from pathlib import Path
 from typing import Any
 
@@ -17,7 +17,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader, Dataset, Sampler
-from torch.utils.data.distributed import DistributedSampler
 
 
 from cvi.public_crop_manifest import (
@@ -568,6 +567,46 @@ def _warmup_cosine_schedule(
     return lr_min + 0.5 * (lr_max - lr_min) * (1.0 + math.cos(math.pi * progress))
 
 
+def _selection_improves(
+    candidate: dict[str, float], incumbent: dict[str, float]
+) -> bool:
+    """Require a strict Pareto improvement without regressing Rank-1 or mAP."""
+
+    return (
+        candidate["rank1"] >= incumbent["rank1"]
+        and candidate["map"] >= incumbent["map"]
+        and (
+            candidate["rank1"] > incumbent["rank1"]
+            or candidate["map"] > incumbent["map"]
+        )
+    )
+
+
+def _metric_learning_loss(
+    model: nn.Module,
+    unwrapped_model: ArcFaceModel,
+    images: torch.Tensor,
+    labels: torch.Tensor,
+    *,
+    label_smoothing: float,
+    frozen_backbone: nn.Module | None,
+    consistency_weight: float,
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    features = model(images)
+    logits = unwrapped_model._head(features, labels)
+    classification = F.cross_entropy(
+        logits, labels, label_smoothing=label_smoothing
+    )
+    consistency = classification.new_zeros(())
+    if frozen_backbone is not None:
+        with torch.no_grad():
+            reference = frozen_backbone(images)
+        consistency = 1.0 - F.cosine_similarity(
+            features.float(), reference.float(), dim=1
+        ).mean()
+    return classification + consistency_weight * consistency, classification, consistency
+
+
 def _build_dataloader(
     dataset: Dataset,
     sampler: Sampler | None,
@@ -797,19 +836,35 @@ def train_model(
     output_directory.mkdir(parents=True, exist_ok=False)
     checkpoint_dir.mkdir()
     model = ArcFaceModel(config, backbone_factory=backbone_factory).to(device)
+    frozen_backbone = None
+    if config.embedding_consistency_weight > 0.0:
+        frozen_backbone = copy.deepcopy(model._backbone).to(device).eval()
+        for parameter in frozen_backbone.parameters():
+            parameter.requires_grad_(False)
 
     augment = RandAugment(n=2, m=9)
 
     if config.compile_model and hasattr(torch, "compile"):
         model = torch.compile(model, mode="max-autotune")
 
+    unwrapped_model = _unwrap_model(model)
     optimizer = torch.optim.AdamW(
-        model.parameters(), lr=config.lr, weight_decay=config.weight_decay
+        (
+            {
+                "params": unwrapped_model._backbone.parameters(),
+                "lr": config.lr * config.backbone_lr_scale,
+                "lr_scale": config.backbone_lr_scale,
+            },
+            {
+                "params": unwrapped_model._head.parameters(),
+                "lr": config.lr,
+                "lr_scale": 1.0,
+            },
+        ),
+        weight_decay=config.weight_decay,
     )
 
     scaler = torch.amp.GradScaler("cuda") if device.type == "cuda" and config.mixed_precision else None
-    best_val_rank1 = float("-inf")
-    best_checkpoint: str | None = None
     history: list[dict[str, Any]] = []
     global_step = 0
     processed_samples = 0
@@ -820,16 +875,47 @@ def train_model(
     norm_std = torch.tensor(
         [0.229, 0.224, 0.225], device=device
     ).view(1, 3, 1, 1)
+    pretrained_metrics = _evaluate_development_retrieval(
+        model, val_loader, device, norm_mean, norm_std
+    )
+    best_metrics = pretrained_metrics
+    best_checkpoint = str(checkpoint_dir / "best_model.pt")
+    torch.save(
+        _checkpoint_payload(
+            model=model,
+            optimizer=optimizer,
+            scaler=scaler,
+            config=config,
+            label_to_index=label_to_index,
+            epoch=0,
+            global_step=0,
+            selection_metric=pretrained_metrics,
+            admission_receipt=verified_admission,
+        ),
+        best_checkpoint,
+    )
+    selected_epoch = 0
+    epochs_without_improvement = 0
+    completed_epochs = 0
+    early_stopped = False
+    val_metrics = pretrained_metrics
 
     for epoch in range(config.epochs):
         lr = _warmup_cosine_schedule(
             epoch, config.epochs, config.warmup_epochs, config.lr, config.lr_min
         )
+        backbone_trainable = epoch >= config.freeze_backbone_epochs
+        for parameter in unwrapped_model._backbone.parameters():
+            parameter.requires_grad_(backbone_trainable)
         for param_group in optimizer.param_groups:
-            param_group["lr"] = lr
+            param_group["lr"] = lr * param_group["lr_scale"]
 
         model.train()
+        if not backbone_trainable:
+            unwrapped_model._backbone.eval()
         epoch_loss = 0.0
+        epoch_classification_loss = 0.0
+        epoch_consistency_loss = 0.0
         epoch_steps = 0
         for batch_idx, (images, labels) in enumerate(train_loader):
             images = images.to(device, non_blocking=True)
@@ -841,21 +927,39 @@ def train_model(
             optimizer.zero_grad()
             if scaler is not None:
                 with torch.amp.autocast("cuda"):
-                    logits = model.forward_train(images, labels)
-                    loss = F.cross_entropy(logits, labels)
+                    loss, classification_loss, consistency_loss = (
+                        _metric_learning_loss(
+                            model,
+                            unwrapped_model,
+                            images,
+                            labels,
+                            label_smoothing=config.label_smoothing,
+                            frozen_backbone=frozen_backbone,
+                            consistency_weight=config.embedding_consistency_weight,
+                        )
+                    )
                 scaler.scale(loss).backward()
                 scaler.unscale_(optimizer)
                 torch.nn.utils.clip_grad_norm_(model.parameters(), config.grad_clip_norm)
                 scaler.step(optimizer)
                 scaler.update()
             else:
-                logits = model.forward_train(images, labels)
-                loss = F.cross_entropy(logits, labels)
+                loss, classification_loss, consistency_loss = _metric_learning_loss(
+                    model,
+                    unwrapped_model,
+                    images,
+                    labels,
+                    label_smoothing=config.label_smoothing,
+                    frozen_backbone=frozen_backbone,
+                    consistency_weight=config.embedding_consistency_weight,
+                )
                 loss.backward()
                 torch.nn.utils.clip_grad_norm_(model.parameters(), config.grad_clip_norm)
                 optimizer.step()
 
             epoch_loss += loss.item()
+            epoch_classification_loss += classification_loss.item()
+            epoch_consistency_loss += consistency_loss.item()
             epoch_steps += 1
             global_step += 1
             processed_samples += int(labels.shape[0])
@@ -876,13 +980,17 @@ def train_model(
                 )
 
         avg_train_loss = epoch_loss / max(epoch_steps, 1)
+        avg_classification_loss = epoch_classification_loss / max(epoch_steps, 1)
+        avg_consistency_loss = epoch_consistency_loss / max(epoch_steps, 1)
 
         val_metrics = _evaluate_development_retrieval(
             model, val_loader, device, norm_mean, norm_std
         )
-        if val_metrics["rank1"] > best_val_rank1:
-            best_val_rank1 = val_metrics["rank1"]
-            best_checkpoint = str(checkpoint_dir / "best_model.pt")
+        completed_epochs = epoch + 1
+        if _selection_improves(val_metrics, best_metrics):
+            best_metrics = val_metrics
+            selected_epoch = completed_epochs
+            epochs_without_improvement = 0
             torch.save(
                 _checkpoint_payload(
                     model=model,
@@ -897,13 +1005,20 @@ def train_model(
                 ),
                 best_checkpoint,
             )
+        else:
+            if backbone_trainable:
+                epochs_without_improvement += 1
 
         epoch_record = {
             "epoch": epoch + 1,
             "train_loss": round(avg_train_loss, 4),
+            "classification_loss": round(avg_classification_loss, 4),
+            "embedding_consistency_loss": round(avg_consistency_loss, 6),
             "development_rank1": round(val_metrics["rank1"], 6),
             "development_map": round(val_metrics["map"], 6),
             "lr": round(lr, 8),
+            "backbone_lr": round(lr * config.backbone_lr_scale, 8),
+            "backbone_trainable": backbone_trainable,
         }
         history.append(epoch_record)
         print(json.dumps({"event": "train_epoch", **epoch_record}), flush=True)
@@ -925,6 +1040,10 @@ def train_model(
                 ckpt,
             )
 
+        if epochs_without_improvement >= config.early_stop_patience:
+            early_stopped = True
+            break
+
     last_checkpoint = str(checkpoint_dir / "last_model.pt")
     torch.save(
         _checkpoint_payload(
@@ -933,7 +1052,7 @@ def train_model(
             scaler=scaler,
             config=config,
             label_to_index=label_to_index,
-            epoch=config.epochs,
+            epoch=completed_epochs,
             global_step=global_step,
             selection_metric=val_metrics,
             admission_receipt=verified_admission,
@@ -957,6 +1076,11 @@ def train_model(
         "flops_estimate": estimate_flops(config, total_samples),
         "history": history,
         "best_checkpoint": best_checkpoint,
+        "pretrained_development_metrics": pretrained_metrics,
+        "best_development_metrics": best_metrics,
+        "selected_epoch": selected_epoch,
+        "completed_epochs": completed_epochs,
+        "early_stopped": early_stopped,
         "last_checkpoint": last_checkpoint,
         "total_steps": global_step,
         "processed_samples": processed_samples,

@@ -10,7 +10,7 @@ from typing import Any
 class FaceIDConfig:
     input_size: int = 224
     patch_size: int = 14
-    embedding_dim: int = 256
+    embedding_dim: int = 640
     num_regions: int = 5
     region_names: tuple[str, ...] = (
         "global", "eyes", "muzzle", "forehead", "ears_outer",

@@ -36,6 +36,14 @@ class SampleIdValidationError(RetrievalError):
 
 
 SelfMatchPolicy = Literal["include", "exclude"]
+TemplateAggregation = Literal[
+    "max",
+    "mean",
+    "median",
+    "top_k_mean",
+    "log_mean_exp",
+    "quality_weighted_mean",
+]
 
 
 def _as_hashable_ids(
@@ -206,12 +214,18 @@ def evaluate_multi_template_closed_set(
     query_template_ids: np.ndarray | None = None,
     gallery_template_ids: np.ndarray | None = None,
     rank_ks: tuple[int, ...] = (1, 5, 10),
+    aggregation: TemplateAggregation = "max",
+    top_k: int | None = None,
+    temperature: float | None = None,
+    gallery_template_quality: np.ndarray | None = None,
 ) -> dict[str, Any]:
-    """Evaluate closed-set retrieval after frozen max template aggregation.
+    """Evaluate closed-set retrieval after gallery-template aggregation.
 
     Gallery identities are frozen in first-template occurrence order. Scores
-    tied after max aggregation retain that order. With ``exclude``, exact
+    tied after aggregation retain that order. With ``exclude``, exact
     query/gallery template matches are removed before identity aggregation.
+    The default remains the persisted/runtime ``max`` contract; other methods
+    are research/evaluation-only alternatives.
     """
 
     scores = np.asarray(query_template_scores)
@@ -235,6 +249,69 @@ def evaluate_multi_template_closed_set(
     if not np.all(np.isfinite(scores)):
         raise RetrievalError("query_template_scores contain non-finite values")
     _validate_rank_ks(rank_ks)
+
+    supported_aggregations = (
+        "max",
+        "mean",
+        "median",
+        "top_k_mean",
+        "log_mean_exp",
+        "quality_weighted_mean",
+    )
+    if not isinstance(aggregation, str) or aggregation not in supported_aggregations:
+        raise RetrievalError(f"unsupported template aggregation: {aggregation!r}")
+    if aggregation == "top_k_mean":
+        if isinstance(top_k, bool) or not isinstance(top_k, int) or top_k <= 0:
+            raise RetrievalError("top_k must be a positive integer for top_k_mean")
+    elif top_k is not None:
+        raise RetrievalError("top_k is only valid for top_k_mean aggregation")
+    effective_temperature: float | None = None
+    if aggregation == "log_mean_exp":
+        if temperature is None:
+            effective_temperature = 1.0
+        elif (
+            isinstance(temperature, bool)
+            or not isinstance(temperature, (int, float, np.integer, np.floating))
+            or not np.isfinite(temperature)
+            or temperature <= 0.0
+        ):
+            raise RetrievalError(
+                "temperature must be a positive finite number for log_mean_exp"
+            )
+        else:
+            effective_temperature = float(temperature)
+    elif temperature is not None:
+        raise RetrievalError(
+            "temperature is only valid for log_mean_exp aggregation"
+        )
+
+    quality: np.ndarray | None = None
+    if aggregation == "quality_weighted_mean":
+        if gallery_template_quality is None:
+            raise RetrievalError(
+                "gallery_template_quality is required for quality_weighted_mean"
+            )
+        quality = np.asarray(gallery_template_quality)
+        if quality.ndim != 1 or quality.shape != (n_gallery_templates,):
+            raise RetrievalError(
+                "gallery_template_quality must be a 1-d vector aligned with gallery "
+                f"templates, got shape {quality.shape}"
+            )
+        if not (
+            np.issubdtype(quality.dtype, np.integer)
+            or np.issubdtype(quality.dtype, np.floating)
+        ):
+            raise RetrievalError("gallery_template_quality must contain real numbers")
+        quality = quality.astype(np.float64, copy=False)
+        if not np.all(np.isfinite(quality)):
+            raise RetrievalError("gallery_template_quality contains non-finite values")
+        if np.any((quality < 0.0) | (quality > 1.0)):
+            raise RetrievalError("gallery_template_quality values must be in [0, 1]")
+    elif gallery_template_quality is not None:
+        raise RetrievalError(
+            "gallery_template_quality is only valid for quality_weighted_mean "
+            "aggregation"
+        )
 
     query_ids = _as_hashable_ids(
         query_ids_array,
@@ -307,11 +384,63 @@ def evaluate_multi_template_closed_set(
                 continue
             scores[query_index, gallery_index] = -np.inf
 
+    for query_index, query_identity_id in enumerate(query_ids):
+        if query_identity_id not in identity_indices:
+            raise ClosedSetViolation(
+                f"query {query_index} (id={query_identity_id!r}) has no gallery identity"
+            )
+        relevant_scores = scores[query_index, gallery_groups[query_identity_id]]
+        if not np.any(np.isfinite(relevant_scores)):
+            raise ClosedSetViolation(
+                f"query {query_index} (id={query_identity_id!r}) has no eligible "
+                "gallery template after self-match policy"
+            )
+
     identity_scores = np.empty((n_query, len(identity_order)), dtype=np.float64)
     for identity_index, identity_id in enumerate(identity_order):
-        identity_scores[:, identity_index] = np.max(
-            scores[:, gallery_groups[identity_id]], axis=1
-        )
+        group_indices = gallery_groups[identity_id]
+        group_scores = scores[:, group_indices]
+        if aggregation == "max":
+            identity_scores[:, identity_index] = np.max(group_scores, axis=1)
+            continue
+        for query_index in range(n_query):
+            eligible = np.isfinite(group_scores[query_index])
+            eligible_scores = group_scores[query_index, eligible]
+            if len(eligible_scores) == 0:
+                identity_scores[query_index, identity_index] = -np.inf
+            elif aggregation == "mean":
+                identity_scores[query_index, identity_index] = np.mean(eligible_scores)
+            elif aggregation == "median":
+                identity_scores[query_index, identity_index] = np.median(
+                    eligible_scores
+                )
+            elif aggregation == "top_k_mean":
+                assert top_k is not None
+                selected = np.sort(eligible_scores)[-top_k:]
+                identity_scores[query_index, identity_index] = np.mean(selected)
+            elif aggregation == "log_mean_exp":
+                assert effective_temperature is not None
+                maximum = np.max(eligible_scores)
+                with np.errstate(over="ignore", under="ignore", invalid="ignore"):
+                    normalized_sum = np.sum(
+                        np.exp((eligible_scores - maximum) / effective_temperature)
+                    )
+                identity_scores[query_index, identity_index] = maximum + (
+                    effective_temperature
+                    * (np.log(normalized_sum) - np.log(len(eligible_scores)))
+                )
+            else:
+                assert quality is not None
+                eligible_quality = quality[np.asarray(group_indices)[eligible]]
+                total_quality = float(np.sum(eligible_quality))
+                if total_quality <= 0.0:
+                    raise RetrievalError(
+                        "quality_weighted_mean has zero eligible quality weight for "
+                        f"query {query_index}, gallery identity {identity_id!r}"
+                    )
+                identity_scores[query_index, identity_index] = np.average(
+                    eligible_scores, weights=eligible_quality
+                )
 
     query_rows: list[dict[str, Any]] = []
     rank_totals = {k: 0 for k in rank_ks}
@@ -350,7 +479,7 @@ def evaluate_multi_template_closed_set(
         "num_gallery_identities": len(identity_order),
         "closed_set": True,
         "ranking_unit": "gallery_identity",
-        "aggregation": "max",
+        "aggregation": aggregation,
         "tie_policy": "stable_first_gallery_identity_occurrence",
         "self_match_policy": self_match_policy,
         "gallery_identity_order": list(identity_order),
@@ -359,6 +488,10 @@ def evaluate_multi_template_closed_set(
         "mINP": float(np.mean([row["INP"] for row in query_rows])),
         "MRR": float(np.mean([row["reciprocal_rank"] for row in query_rows])),
     }
+    if aggregation == "top_k_mean":
+        result["aggregation_parameters"] = {"top_k": top_k}
+    elif aggregation == "log_mean_exp":
+        result["aggregation_parameters"] = {"temperature": effective_temperature}
     for k in rank_ks:
         result[f"Rank-{k}"] = rank_totals[k] / n_query
     return result

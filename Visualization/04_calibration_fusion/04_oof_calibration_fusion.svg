@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1050" viewBox="0 0 1800 1050">
+<rect x="0" y="0" width="1800" height="1050" rx="0" fill="#07121f"/>
+<line x1="40" y1="0" x2="40" y2="1050" stroke="#264052" stroke-width="1"/>
+<line x1="120" y1="0" x2="120" y2="1050" stroke="#264052" stroke-width="1"/>
+<line x1="200" y1="0" x2="200" y2="1050" stroke="#264052" stroke-width="1"/>
+<line x1="280" y1="0" x2="280" y2="1050" stroke="#264052" stroke-width="1"/>
+<line x1="360" y1="0" x2="360" y2="1050" stroke="#264052" stroke-width="1"/>
+<line x1="440" y1="0" x2="440" y2="1050" stroke="#264052" stroke-width="1"/>
+<line x1="520" y1="0" x2="520" y2="1050" stroke="#264052" stroke-width="1"/>
+<line x1="600" y1="0" x2="600" y2="1050" stroke="#264052" stroke-width="1"/>
+<line x1="680" y1="0" x2="680" y2="1050" stroke="#264052" stroke-width="1"/>
+<line x1="760" y1="0" x2="760" y2="1050" stroke="#264052" stroke-width="1"/>
+<line x1="840" y1="0" x2="840" y2="1050" stroke="#264052" stroke-width="1"/>
+<line x1="920" y1="0" x2="920" y2="1050" stroke="#264052" stroke-width="1"/>
+<line x1="1000" y1="0" x2="1000" y2="1050" stroke="#264052" stroke-width="1"/>
+<line x1="1080" y1="0" x2="1080" y2="1050" stroke="#264052" stroke-width="1"/>
+<line x1="1160" y1="0" x2="1160" y2="1050" stroke="#264052" stroke-width="1"/>
+<line x1="1240" y1="0" x2="1240" y2="1050" stroke="#264052" stroke-width="1"/>
+<line x1="1320" y1="0" x2="1320" y2="1050" stroke="#264052" stroke-width="1"/>
+<line x1="1400" y1="0" x2="1400" y2="1050" stroke="#264052" stroke-width="1"/>
+<line x1="1480" y1="0" x2="1480" y2="1050" stroke="#264052" stroke-width="1"/>
+<line x1="1560" y1="0" x2="1560" y2="1050" stroke="#264052" stroke-width="1"/>
+<line x1="1640" y1="0" x2="1640" y2="1050" stroke="#264052" stroke-width="1"/>
+<line x1="1720" y1="0" x2="1720" y2="1050" stroke="#264052" stroke-width="1"/>
+<line x1="0" y1="40" x2="1800" y2="40" stroke="#264052" stroke-width="1"/>
+<line x1="0" y1="120" x2="1800" y2="120" stroke="#264052" stroke-width="1"/>
+<line x1="0" y1="200" x2="1800" y2="200" stroke="#264052" stroke-width="1"/>
+<line x1="0" y1="280" x2="1800" y2="280" stroke="#264052" stroke-width="1"/>
+<line x1="0" y1="360" x2="1800" y2="360" stroke="#264052" stroke-width="1"/>
+<line x1="0" y1="440" x2="1800" y2="440" stroke="#264052" stroke-width="1"/>
+<line x1="0" y1="520" x2="1800" y2="520" stroke="#264052" stroke-width="1"/>
+<line x1="0" y1="600" x2="1800" y2="600" stroke="#264052" stroke-width="1"/>
+<line x1="0" y1="680" x2="1800" y2="680" stroke="#264052" stroke-width="1"/>
+<line x1="0" y1="760" x2="1800" y2="760" stroke="#264052" stroke-width="1"/>
+<line x1="0" y1="840" x2="1800" y2="840" stroke="#264052" stroke-width="1"/>
+<line x1="0" y1="920" x2="1800" y2="920" stroke="#264052" stroke-width="1"/>
+<line x1="0" y1="1000" x2="1800" y2="1000" stroke="#264052" stroke-width="1"/>
+<text x="70" y="75" fill="#b9e769" font-family="DejaVu Sans, sans-serif" font-size="20" font-weight="700" text-anchor="start">FIG 07</text>
+<text x="70" y="143" fill="#f4eddc" font-family="DejaVu Sans, sans-serif" font-size="48" font-weight="700" text-anchor="start">OOF calibration and fusion freeze</text>
+<text x="72" y="182" fill="#91a4ae" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="400" text-anchor="start">Identity-disjoint folds fit held-out probabilities before the one-time final boundary.</text>
+<line x1="70" y1="205" x2="1730" y2="205" stroke="#264052" stroke-width="2"/>
+<line x1="70" y1="990" x2="1730" y2="990" stroke="#264052" stroke-width="2"/>
+<text x="70" y="1021" fill="#91a4ae" font-family="DejaVu Sans, sans-serif" font-size="16" font-weight="400" text-anchor="start">Source: calibration fold protocol + oof_simplex.py | OOF provenance is caller-attested in the report</text>
+<text x="90" y="273" fill="#53d8e8" font-family="DejaVu Sans, sans-serif" font-size="18" font-weight="700" text-anchor="start">5 IDENTITY-DISJOINT FOLDS</text>
+<rect x="90" y="315" width="165" height="180" rx="15" fill="#11283a" stroke="#53d8e8" stroke-width="2"/>
+<text x="172" y="353" fill="#53d8e8" font-family="DejaVu Sans, sans-serif" font-size="18" font-weight="700" text-anchor="middle">FOLD 1</text>
+<text x="172" y="407" fill="#f4eddc" font-family="DejaVu Sans, sans-serif" font-size="17" font-weight="400" text-anchor="middle">fit on 4</text>
+<text x="172" y="445" fill="#91a4ae" font-family="DejaVu Sans, sans-serif" font-size="15" font-weight="400" text-anchor="middle">score held-out</text>
+<rect x="295" y="315" width="165" height="180" rx="15" fill="#11283a" stroke="#53d8e8" stroke-width="2"/>
+<text x="377" y="353" fill="#53d8e8" font-family="DejaVu Sans, sans-serif" font-size="18" font-weight="700" text-anchor="middle">FOLD 2</text>
+<text x="377" y="407" fill="#f4eddc" font-family="DejaVu Sans, sans-serif" font-size="17" font-weight="400" text-anchor="middle">fit on 4</text>
+<text x="377" y="445" fill="#91a4ae" font-family="DejaVu Sans, sans-serif" font-size="15" font-weight="400" text-anchor="middle">score held-out</text>
+<rect x="500" y="315" width="165" height="180" rx="15" fill="#11283a" stroke="#53d8e8" stroke-width="2"/>
+<text x="582" y="353" fill="#53d8e8" font-family="DejaVu Sans, sans-serif" font-size="18" font-weight="700" text-anchor="middle">FOLD 3</text>
+<text x="582" y="407" fill="#f4eddc" font-family="DejaVu Sans, sans-serif" font-size="17" font-weight="400" text-anchor="middle">fit on 4</text>
+<text x="582" y="445" fill="#91a4ae" font-family="DejaVu Sans, sans-serif" font-size="15" font-weight="400" text-anchor="middle">score held-out</text>
+<rect x="705" y="315" width="165" height="180" rx="15" fill="#11283a" stroke="#53d8e8" stroke-width="2"/>
+<text x="787" y="353" fill="#53d8e8" font-family="DejaVu Sans, sans-serif" font-size="18" font-weight="700" text-anchor="middle">FOLD 4</text>
+<text x="787" y="407" fill="#f4eddc" font-family="DejaVu Sans, sans-serif" font-size="17" font-weight="400" text-anchor="middle">fit on 4</text>
+<text x="787" y="445" fill="#91a4ae" font-family="DejaVu Sans, sans-serif" font-size="15" font-weight="400" text-anchor="middle">score held-out</text>
+<rect x="910" y="315" width="165" height="180" rx="15" fill="#11283a" stroke="#53d8e8" stroke-width="2"/>
+<text x="992" y="353" fill="#53d8e8" font-family="DejaVu Sans, sans-serif" font-size="18" font-weight="700" text-anchor="middle">FOLD 5</text>
+<text x="992" y="407" fill="#f4eddc" font-family="DejaVu Sans, sans-serif" font-size="17" font-weight="400" text-anchor="middle">fit on 4</text>
+<text x="992" y="445" fill="#91a4ae" font-family="DejaVu Sans, sans-serif" font-size="15" font-weight="400" text-anchor="middle">score held-out</text>
+<line x1="1120" y1="405" x2="1230" y2="405" stroke="#91a4ae" stroke-width="3"/>
+<polygon points="1230,405 1215.958679009754,412.67080861766726 1215.958679009754,397.32919138233274" fill="#91a4ae"/>
+<rect x="1230" y="315" width="470" height="180" rx="18" fill="#11283a" stroke="#f4a259" stroke-width="2"/>
+<text x="1254" y="357" fill="#f4a259" font-family="DejaVu Sans, sans-serif" font-size="24" font-weight="700" text-anchor="start">Isotonic OOF</text>
+<text x="1254" y="397" fill="#f4eddc" font-family="DejaVu Sans, sans-serif" font-size="17" font-weight="400" text-anchor="start">fold-specific calibration</text>
+<text x="1254" y="428" fill="#91a4ae" font-family="DejaVu Sans, sans-serif" font-size="17" font-weight="400" text-anchor="start">no held-out fold in fit</text>
+<line x1="1465" y1="495" x2="1465" y2="590" stroke="#91a4ae" stroke-width="3"/>
+<polygon points="1465,590 1457.3291913823327,575.9586790097541 1472.6708086176673,575.9586790097541" fill="#91a4ae"/>
+<rect x="1230" y="590" width="470" height="170" rx="18" fill="#11283a" stroke="#b9e769" stroke-width="2"/>
+<text x="1254" y="632" fill="#b9e769" font-family="DejaVu Sans, sans-serif" font-size="24" font-weight="700" text-anchor="start">Quality gate + simplex</text>
+<text x="1254" y="672" fill="#f4eddc" font-family="DejaVu Sans, sans-serif" font-size="17" font-weight="400" text-anchor="start">available channels only</text>
+<text x="1254" y="703" fill="#91a4ae" font-family="DejaVu Sans, sans-serif" font-size="17" font-weight="400" text-anchor="start">weighted Brier grid</text>
+<line x1="1230" y1="675" x2="1080" y2="675" stroke="#b9e769" stroke-width="3"/>
+<polygon points="1080,675 1094.041320990246,667.3291913823327 1094.041320990246,682.6708086176673" fill="#b9e769"/>
+<rect x="610" y="590" width="470" height="170" rx="18" fill="#11283a" stroke="#b9e769" stroke-width="2"/>
+<text x="634" y="632" fill="#b9e769" font-family="DejaVu Sans, sans-serif" font-size="24" font-weight="700" text-anchor="start">Freeze</text>
+<text x="634" y="672" fill="#f4eddc" font-family="DejaVu Sans, sans-serif" font-size="17" font-weight="400" text-anchor="start">weights + aggregation</text>
+<text x="634" y="703" fill="#91a4ae" font-family="DejaVu Sans, sans-serif" font-size="17" font-weight="400" text-anchor="start">before final inference</text>
+<line x1="535" y1="550" x2="535" y2="925" stroke="#b9e769" stroke-width="4"/>
+<text x="555" y="870" fill="#b9e769" font-family="DejaVu Sans, sans-serif" font-size="20" font-weight="700" text-anchor="start">ONE-TIME FINAL</text>
+<text x="555" y="905" fill="#91a4ae" font-family="DejaVu Sans, sans-serif" font-size="17" font-weight="400" text-anchor="start">No refit or reselection</text>
+</svg>

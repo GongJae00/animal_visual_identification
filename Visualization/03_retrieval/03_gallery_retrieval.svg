@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1050" viewBox="0 0 1800 1050">
+<rect x="0" y="0" width="1800" height="1050" rx="0" fill="#07121f"/>
+<line x1="40" y1="0" x2="40" y2="1050" stroke="#264052" stroke-width="1"/>
+<line x1="120" y1="0" x2="120" y2="1050" stroke="#264052" stroke-width="1"/>
+<line x1="200" y1="0" x2="200" y2="1050" stroke="#264052" stroke-width="1"/>
+<line x1="280" y1="0" x2="280" y2="1050" stroke="#264052" stroke-width="1"/>
+<line x1="360" y1="0" x2="360" y2="1050" stroke="#264052" stroke-width="1"/>
+<line x1="440" y1="0" x2="440" y2="1050" stroke="#264052" stroke-width="1"/>
+<line x1="520" y1="0" x2="520" y2="1050" stroke="#264052" stroke-width="1"/>
+<line x1="600" y1="0" x2="600" y2="1050" stroke="#264052" stroke-width="1"/>
+<line x1="680" y1="0" x2="680" y2="1050" stroke="#264052" stroke-width="1"/>
+<line x1="760" y1="0" x2="760" y2="1050" stroke="#264052" stroke-width="1"/>
+<line x1="840" y1="0" x2="840" y2="1050" stroke="#264052" stroke-width="1"/>
+<line x1="920" y1="0" x2="920" y2="1050" stroke="#264052" stroke-width="1"/>
+<line x1="1000" y1="0" x2="1000" y2="1050" stroke="#264052" stroke-width="1"/>
+<line x1="1080" y1="0" x2="1080" y2="1050" stroke="#264052" stroke-width="1"/>
+<line x1="1160" y1="0" x2="1160" y2="1050" stroke="#264052" stroke-width="1"/>
+<line x1="1240" y1="0" x2="1240" y2="1050" stroke="#264052" stroke-width="1"/>
+<line x1="1320" y1="0" x2="1320" y2="1050" stroke="#264052" stroke-width="1"/>
+<line x1="1400" y1="0" x2="1400" y2="1050" stroke="#264052" stroke-width="1"/>
+<line x1="1480" y1="0" x2="1480" y2="1050" stroke="#264052" stroke-width="1"/>
+<line x1="1560" y1="0" x2="1560" y2="1050" stroke="#264052" stroke-width="1"/>
+<line x1="1640" y1="0" x2="1640" y2="1050" stroke="#264052" stroke-width="1"/>
+<line x1="1720" y1="0" x2="1720" y2="1050" stroke="#264052" stroke-width="1"/>
+<line x1="0" y1="40" x2="1800" y2="40" stroke="#264052" stroke-width="1"/>
+<line x1="0" y1="120" x2="1800" y2="120" stroke="#264052" stroke-width="1"/>
+<line x1="0" y1="200" x2="1800" y2="200" stroke="#264052" stroke-width="1"/>
+<line x1="0" y1="280" x2="1800" y2="280" stroke="#264052" stroke-width="1"/>
+<line x1="0" y1="360" x2="1800" y2="360" stroke="#264052" stroke-width="1"/>
+<line x1="0" y1="440" x2="1800" y2="440" stroke="#264052" stroke-width="1"/>
+<line x1="0" y1="520" x2="1800" y2="520" stroke="#264052" stroke-width="1"/>
+<line x1="0" y1="600" x2="1800" y2="600" stroke="#264052" stroke-width="1"/>
+<line x1="0" y1="680" x2="1800" y2="680" stroke="#264052" stroke-width="1"/>
+<line x1="0" y1="760" x2="1800" y2="760" stroke="#264052" stroke-width="1"/>
+<line x1="0" y1="840" x2="1800" y2="840" stroke="#264052" stroke-width="1"/>
+<line x1="0" y1="920" x2="1800" y2="920" stroke="#264052" stroke-width="1"/>
+<line x1="0" y1="1000" x2="1800" y2="1000" stroke="#264052" stroke-width="1"/>
+<text x="70" y="75" fill="#b9e769" font-family="DejaVu Sans, sans-serif" font-size="20" font-weight="700" text-anchor="start">FIG 06</text>
+<text x="70" y="143" fill="#f4eddc" font-family="DejaVu Sans, sans-serif" font-size="48" font-weight="700" text-anchor="start">Gallery retrieval contract</text>
+<text x="72" y="182" fill="#91a4ae" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="400" text-anchor="start">Template scores become stable identity-level closed-set candidates.</text>
+<line x1="70" y1="205" x2="1730" y2="205" stroke="#264052" stroke-width="2"/>
+<line x1="70" y1="990" x2="1730" y2="990" stroke="#264052" stroke-width="2"/>
+<text x="70" y="1021" fill="#91a4ae" font-family="DejaVu Sans, sans-serif" font-size="16" font-weight="400" text-anchor="start">Source: src/cvi/evaluation/retrieval.py | Canonical aggregation=max; alternatives are research-only and not selected</text>
+<rect x="80" y="360" width="270" height="200" rx="18" fill="#11283a" stroke="#ff775f" stroke-width="2"/>
+<text x="104" y="402" fill="#ff775f" font-family="DejaVu Sans, sans-serif" font-size="24" font-weight="700" text-anchor="start">Query crop</text>
+<text x="104" y="442" fill="#f4eddc" font-family="DejaVu Sans, sans-serif" font-size="17" font-weight="400" text-anchor="start">embedding</text>
+<text x="104" y="473" fill="#91a4ae" font-family="DejaVu Sans, sans-serif" font-size="17" font-weight="400" text-anchor="start">L2 direction</text>
+<rect x="390" y="360" width="270" height="200" rx="18" fill="#11283a" stroke="#53d8e8" stroke-width="2"/>
+<text x="414" y="402" fill="#53d8e8" font-family="DejaVu Sans, sans-serif" font-size="24" font-weight="700" text-anchor="start">Gallery templates</text>
+<text x="414" y="442" fill="#f4eddc" font-family="DejaVu Sans, sans-serif" font-size="17" font-weight="400" text-anchor="start">many per identity</text>
+<text x="414" y="473" fill="#91a4ae" font-family="DejaVu Sans, sans-serif" font-size="17" font-weight="400" text-anchor="start">enrolled set</text>
+<rect x="720" y="360" width="270" height="200" rx="18" fill="#11283a" stroke="#f4eddc" stroke-width="2"/>
+<text x="744" y="402" fill="#f4eddc" font-family="DejaVu Sans, sans-serif" font-size="24" font-weight="700" text-anchor="start">Cosine matrix</text>
+<text x="744" y="442" fill="#f4eddc" font-family="DejaVu Sans, sans-serif" font-size="17" font-weight="400" text-anchor="start">query x template</text>
+<text x="744" y="473" fill="#91a4ae" font-family="DejaVu Sans, sans-serif" font-size="17" font-weight="400" text-anchor="start">exact scores</text>
+<rect x="1050" y="360" width="270" height="200" rx="18" fill="#11283a" stroke="#b9e769" stroke-width="2"/>
+<text x="1074" y="402" fill="#b9e769" font-family="DejaVu Sans, sans-serif" font-size="24" font-weight="700" text-anchor="start">Identity max</text>
+<text x="1074" y="442" fill="#f4eddc" font-family="DejaVu Sans, sans-serif" font-size="17" font-weight="400" text-anchor="start">canonical max</text>
+<text x="1074" y="473" fill="#91a4ae" font-family="DejaVu Sans, sans-serif" font-size="17" font-weight="400" text-anchor="start">per identity</text>
+<rect x="1380" y="360" width="270" height="200" rx="18" fill="#11283a" stroke="#b9e769" stroke-width="2"/>
+<text x="1404" y="402" fill="#b9e769" font-family="DejaVu Sans, sans-serif" font-size="24" font-weight="700" text-anchor="start">Stable ranking</text>
+<text x="1404" y="442" fill="#f4eddc" font-family="DejaVu Sans, sans-serif" font-size="17" font-weight="400" text-anchor="start">first occurrence</text>
+<text x="1404" y="473" fill="#91a4ae" font-family="DejaVu Sans, sans-serif" font-size="17" font-weight="400" text-anchor="start">closed-set output</text>
+<line x1="350" y1="460" x2="390" y2="460" stroke="#91a4ae" stroke-width="3"/>
+<polygon points="390,460 375.95867900975406,467.67080861766726 375.95867900975406,452.32919138233274" fill="#91a4ae"/>
+<line x1="680" y1="460" x2="720" y2="460" stroke="#91a4ae" stroke-width="3"/>
+<polygon points="720,460 705.9586790097541,467.67080861766726 705.9586790097541,452.32919138233274" fill="#91a4ae"/>
+<line x1="1010" y1="460" x2="1050" y2="460" stroke="#91a4ae" stroke-width="3"/>
+<polygon points="1050,460 1035.958679009754,467.67080861766726 1035.958679009754,452.32919138233274" fill="#91a4ae"/>
+<line x1="1340" y1="460" x2="1380" y2="460" stroke="#91a4ae" stroke-width="3"/>
+<polygon points="1380,460 1365.958679009754,467.67080861766726 1365.958679009754,452.32919138233274" fill="#91a4ae"/>
+<rect x="260" y="680" width="1280" height="180" rx="18" fill="#0d1d2d" stroke="#264052" stroke-width="2"/>
+<text x="300" y="728" fill="#91a4ae" font-family="DejaVu Sans, sans-serif" font-size="18" font-weight="700" text-anchor="start">RESEARCH ALTERNATIVES</text>
+<text x="300" y="789" fill="#f4eddc" font-family="DejaVu Sans, sans-serif" font-size="24" font-weight="400" text-anchor="start">mean  /  median  /  top-k mean  /  log-mean-exp  /  quality-weighted mean</text>
+<text x="300" y="833" fill="#91a4ae" font-family="DejaVu Sans, sans-serif" font-size="18" font-weight="400" text-anchor="start">Available for evaluation; calibration selected max for the reported three-shot result.</text>
+</svg>

@@ -100,7 +100,10 @@ def build_faceid_contract(
             "landmark_semantics": "face-roi-normalized-x-y-confidence",
         },
         "encoder": {
-            "embedding_dimension": 256,
+            "regional_embedding_dimension": 256,
+            "output_embedding_dimension": 640,
+            "baseline_embedding_dimension": 384,
+            "regional_scale": 0.25,
             "region_centers": [
                 [0.50, 0.50, 0.40, 0.40],
                 [0.35, 0.35, 0.15, 0.12],
@@ -108,7 +111,7 @@ def build_faceid_contract(
                 [0.50, 0.50, 0.18, 0.22],
                 [0.50, 0.25, 0.22, 0.14],
             ],
-            "output_semantics": "L2_NORMALIZED",
+            "output_semantics": "L2_NORMALIZED_BASELINE_REGIONAL_CONCATENATION",
             "quality_output_semantics": "SIGMOID_SCALAR",
         },
     }

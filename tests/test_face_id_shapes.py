@@ -6,7 +6,7 @@ import unittest
 import torch
 from torch import nn
 
-from cvi.face_id.model import FaceIDModel, FaceRegionalEncoder
+from cvi.face_id.model import FaceIDModel
 from cvi.face_id.losses import FaceIDObjective
 
 
@@ -19,7 +19,8 @@ class _DummyDino(nn.Module):
         b = pixel_values.shape[0]
         base = pixel_values.mean(dim=(1, 2, 3)).view(b, 1, 1) + self.param
         return SimpleNamespace(
-            hidden_states=tuple(base.expand(b, 257, 384) for _ in range(13))
+            hidden_states=tuple(base.expand(b, 257, 384) for _ in range(13)),
+            pooler_output=base.expand(b, 1, 384).squeeze(1),
         )
 
 
@@ -36,7 +37,7 @@ class FaceIDModelTests(unittest.TestCase):
         rgb = torch.rand((2, 3, 224, 224))
         with torch.no_grad():
             output = self.model(rgb)
-        self.assertEqual(output["embedding"].shape, (2, 256))
+        self.assertEqual(output["embedding"].shape, (2, 640))
         self.assertEqual(output["quality"].shape, (2,))
         norm = torch.linalg.vector_norm(output["embedding"], dim=1)
         torch.testing.assert_close(norm, torch.ones(2), atol=1e-5, rtol=1e-5)

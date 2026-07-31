@@ -8,6 +8,28 @@ from typing import Any
 import numpy as np
 
 
+AP10K_BODY_17_SCHEMA = "ap10k-dog-17"
+AP10K_BODY_17_KEYPOINT_NAMES = (
+    "left_eye",
+    "right_eye",
+    "nose_center",
+    "neck",
+    "tail_base",
+    "left_shoulder",
+    "left_elbow",
+    "left_front_paw",
+    "right_shoulder",
+    "right_elbow",
+    "right_front_paw",
+    "left_hip",
+    "left_knee",
+    "left_back_paw",
+    "right_hip",
+    "right_knee",
+    "right_back_paw",
+)
+
+
 @dataclass(frozen=True, slots=True)
 class DetectionBox:
     x1: float
@@ -102,6 +124,8 @@ class LocalizationBenchmarkEntry:
 
 __all__ = [
     "DetectionBox",
+    "AP10K_BODY_17_KEYPOINT_NAMES",
+    "AP10K_BODY_17_SCHEMA",
     "Keypoint",
     "KeypointSet",
     "LocalizationBenchmarkEntry",

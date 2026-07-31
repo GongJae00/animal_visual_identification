@@ -36,6 +36,7 @@ from cvi.evaluation.retrieval import (
     MetricInvariantError,
     SampleIdValidationError,
     SelfMatchPolicy,
+    TemplateAggregation,
     compute_cosine_score_matrix,
     compute_retrieval_metrics,
     evaluate_multi_template_closed_set,
@@ -51,6 +52,19 @@ from cvi.evaluation.open_set import (
     OpenSetError,
     OpenSetResult,
     evaluate_open_set,
+)
+from cvi.evaluation.embedding_diagnostics import (
+    EMBEDDING_DIAGNOSTICS_SCHEMA_VERSION,
+    EmbeddingDiagnosticsConfig,
+    EmbeddingDiagnosticsError,
+    compute_embedding_diagnostics,
+)
+from cvi.evaluation.robustness_protocol import (
+    ROBUSTNESS_PROTOCOL_SCHEMA_VERSION,
+    RobustnessProtocolConfig,
+    RobustnessProtocolError,
+    RobustnessProtocolResult,
+    build_dataset_balanced_oof_protocol,
 )
 
 __all__ = [
@@ -87,6 +101,7 @@ __all__ = [
     "MetricInvariantError",
     "SampleIdValidationError",
     "SelfMatchPolicy",
+    "TemplateAggregation",
     "compute_cosine_score_matrix",
     "compute_retrieval_metrics",
     "evaluate_multi_template_closed_set",
@@ -98,4 +113,13 @@ __all__ = [
     "OpenSetError",
     "OpenSetResult",
     "evaluate_open_set",
+    "EMBEDDING_DIAGNOSTICS_SCHEMA_VERSION",
+    "EmbeddingDiagnosticsConfig",
+    "EmbeddingDiagnosticsError",
+    "compute_embedding_diagnostics",
+    "ROBUSTNESS_PROTOCOL_SCHEMA_VERSION",
+    "RobustnessProtocolConfig",
+    "RobustnessProtocolError",
+    "RobustnessProtocolResult",
+    "build_dataset_balanced_oof_protocol",
 ]

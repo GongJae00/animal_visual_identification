@@ -58,6 +58,7 @@ def _artifact(
 class PublicCropManifestTests(unittest.TestCase):
     def test_verification_policy_is_immutable_and_positive(self) -> None:
         policy = PublicCropVerificationPolicy()
+        self.assertEqual(policy.maximum_artifacts, 100_000)
         with self.assertRaises(FrozenInstanceError):
             policy.maximum_artifacts = 1  # type: ignore[misc]
         with self.assertRaisesRegex(ValueError, "maximum_width"):

@@ -420,6 +420,18 @@ def build_binding(
     )
 
 
+def validate_assignment_receipt_binding(
+    assignment_payload: dict[str, Any],
+    receipt_payload: dict[str, Any],
+    expected_receipt_sha256: str,
+) -> None:
+    """Validate a protected assignment and receipt without evaluator labels."""
+
+    _validate_assignment_receipt(
+        assignment_payload, receipt_payload, expected_receipt_sha256
+    )
+
+
 def _validate_assignment_receipt(
     assignment_payload: dict[str, Any],
     receipt_payload: dict[str, Any],

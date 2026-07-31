@@ -3,7 +3,11 @@
 from cvi.localization.adapters import (
     AbstractLocalizationAdapter,
 )
-from cvi.localization.benchmark import build_contact_sheet, run_benchmark
+from cvi.localization.benchmark import (
+    ap10k_body17_pose_summary,
+    build_contact_sheet,
+    run_benchmark,
+)
 from cvi.localization.consensus import (
     ConsensusDogInstance,
     FailureVector,
@@ -40,6 +44,8 @@ from cvi.localization.roi import (
 )
 from cvi.localization.student import AbstractStudentTrainer, TeacherLabel
 from cvi.localization.types import (
+    AP10K_BODY_17_KEYPOINT_NAMES,
+    AP10K_BODY_17_SCHEMA,
     DetectionBox,
     Keypoint,
     KeypointSet,
@@ -50,6 +56,8 @@ from cvi.localization.types import (
 __all__ = [
     "AbstractLocalizationAdapter",
     "AbstractStudentTrainer",
+    "AP10K_BODY_17_KEYPOINT_NAMES",
+    "AP10K_BODY_17_SCHEMA",
     "ConsensusDogInstance",
     "DetectionBox",
     "DogQuality",
@@ -62,6 +70,7 @@ __all__ = [
     "NoseQuality",
     "TeacherLabel",
     "build_contact_sheet",
+    "ap10k_body17_pose_summary",
     "compute_error_correlation",
     "compute_iou",
     "consensus_admission",

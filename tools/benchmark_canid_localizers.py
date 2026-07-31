@@ -17,13 +17,67 @@ from cvi.localization.adapters import (
     UltralyticsDogAdapter,
     UltralyticsDogPoseAdapter,
 )
-from cvi.localization.benchmark import build_contact_sheet
+from cvi.localization.benchmark import (
+    ap10k_body17_pose_summary,
+    build_contact_sheet,
+)
 from cvi.localization.prediction_cache import (
     build_prediction_cache,
     write_prediction_cache,
 )
 from cvi.localization.quality import detection_average_precision
-from cvi.localization.types import DetectionBox
+from cvi.localization.types import (
+    AP10K_BODY_17_SCHEMA,
+    DetectionBox,
+    Keypoint,
+    KeypointSet,
+    LocalizationResult,
+)
+
+_SUMMARY_SCHEMA = "cvi.canid_localizer_benchmark_summary.v1"
+
+
+def _build_summary(
+    *,
+    dataset: str,
+    split_role: str | None,
+    results: list[LocalizationResult],
+    prediction_cache: Path,
+    prediction_cache_sha256: str,
+    ground_truth: dict[str, list[DetectionBox]] | None,
+    ground_truth_keypoints: dict[str, list[KeypointSet | None]] | None,
+) -> dict[str, object]:
+    timings = np.asarray([result.inference_ms for result in results], dtype=np.float64)
+    report: dict[str, object] = {
+        "schema_version": _SUMMARY_SCHEMA,
+        "dataset": dataset,
+        "split_role": split_role,
+        "images": len(results),
+        "dog_detections": sum(len(result.dog_boxes) for result in results),
+        "detection_rate": sum(bool(result.dog_boxes) for result in results)
+        / len(results),
+        "latency_ms_mean": float(timings.mean()),
+        "latency_ms_median": float(np.median(timings)),
+        "prediction_cache": str(prediction_cache),
+        "prediction_cache_sha256": prediction_cache_sha256,
+    }
+    if ground_truth is not None:
+        predicted = {result.image_id: list(result.dog_boxes) for result in results}
+        report["detection"] = {
+            "AP50": detection_average_precision(
+                predicted, ground_truth, iou_threshold=0.50
+            ),
+            "AP75": detection_average_precision(
+                predicted, ground_truth, iou_threshold=0.75
+            ),
+        }
+    if dataset == "ap10k-dog":
+        if ground_truth is None or ground_truth_keypoints is None:
+            raise ValueError("AP-10K summary requires bbox and body-17 ground truth")
+        report["pose"] = ap10k_body17_pose_summary(
+            results, ground_truth, ground_truth_keypoints
+        )
+    return report
 
 
 def parse_args() -> argparse.Namespace:
@@ -52,6 +106,7 @@ def main() -> None:
     root = Path(record.data_root)
     all_samples = ADAPTERS[args.dataset](root)
     ground_truth: dict[str, list[DetectionBox]] | None = None
+    ground_truth_keypoints: dict[str, list[KeypointSet | None]] | None = None
     effective_split_role = args.split_role
     if args.dataset == "ap10k-dog":
         effective_split_role = args.split_role or "test"
@@ -65,6 +120,26 @@ def main() -> None:
         ground_truth = {
             rows[0].sample_id: [
                 DetectionBox(*sample.dog_boxes_xyxy, 1.0)
+                for sample in rows
+                if sample.dog_boxes_xyxy is not None
+            ]
+            for _, rows in sorted(grouped.items())[: args.max_images]
+        }
+        ground_truth_keypoints = {
+            rows[0].sample_id: [
+                (
+                    KeypointSet(
+                        {
+                            name: Keypoint(x, y, visibility)
+                            for name, (x, y, visibility) in (
+                                sample.body_keypoints.items()
+                            )
+                        },
+                        AP10K_BODY_17_SCHEMA,
+                    )
+                    if sample.body_keypoints
+                    else None
+                )
                 for sample in rows
                 if sample.dog_boxes_xyxy is not None
             ]
@@ -107,29 +182,15 @@ def main() -> None:
     model = adapter.to_dict()
     bundle = build_prediction_cache(samples, results, model=model)
     write_prediction_cache(args.prediction_cache, bundle)
-    timings = np.asarray([result.inference_ms for result in results], dtype=np.float64)
-    report = {
-        "dataset": args.dataset,
-        "split_role": effective_split_role,
-        "images": len(results),
-        "dog_detections": sum(len(result.dog_boxes) for result in results),
-        "detection_rate": sum(bool(result.dog_boxes) for result in results)
-        / len(results),
-        "latency_ms_mean": float(timings.mean()),
-        "latency_ms_median": float(np.median(timings)),
-        "prediction_cache": str(args.prediction_cache),
-        "prediction_cache_sha256": bundle["cache_sha256"],
-    }
-    if ground_truth is not None:
-        predicted = {result.image_id: list(result.dog_boxes) for result in results}
-        report["detection"] = {
-            "AP50": detection_average_precision(
-                predicted, ground_truth, iou_threshold=0.50
-            ),
-            "AP75": detection_average_precision(
-                predicted, ground_truth, iou_threshold=0.75
-            ),
-        }
+    report = _build_summary(
+        dataset=args.dataset,
+        split_role=effective_split_role,
+        results=results,
+        prediction_cache=args.prediction_cache,
+        prediction_cache_sha256=bundle["cache_sha256"],
+        ground_truth=ground_truth,
+        ground_truth_keypoints=ground_truth_keypoints,
+    )
     (args.output_dir / "summary.json").write_text(json.dumps(report, indent=2))
     print(json.dumps(report, indent=2))
 

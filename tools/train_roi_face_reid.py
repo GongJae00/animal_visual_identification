@@ -157,7 +157,7 @@ def main() -> None:
         preprocessor_intake_bundle=args.preprocessor_intake_bundle,
     )
     model = build_faceid_model(backbone, contract).to(device)
-    objective = FaceIDObjective(256, len(train_index)).to(device)
+    objective = FaceIDObjective(model.output_dim, len(train_index)).to(device)
     optimizer = build_faceid_optimizer(model, objective)
     for group in optimizer.param_groups:
         group["lr"] = 3e-4

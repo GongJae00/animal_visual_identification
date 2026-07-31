@@ -23,7 +23,7 @@ _FORMAT_SUFFIX = {"JPEG": ".jpg", "PNG": ".png", "WEBP": ".webp"}
 class PublicCropVerificationPolicy:
     """Hard resource ceilings for untrusted reusable crop artifacts."""
 
-    maximum_artifacts: int = 10_000
+    maximum_artifacts: int = 100_000
     maximum_encoded_bytes_per_file: int = 67_108_864
     maximum_total_encoded_bytes: int = 8_589_934_592
     maximum_width: int = 8_192

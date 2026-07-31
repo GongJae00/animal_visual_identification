@@ -26,6 +26,8 @@ from cvi.trainer import (
     _evaluate_development_retrieval,
     evaluate_pretrained_development,
     _prepare_training_images,
+    _metric_learning_loss,
+    _selection_improves,
     _warmup_cosine_schedule,
     train_model,
 )
@@ -705,6 +707,62 @@ class _RecordingImageBackbone(torch.nn.Module):
 
 
 class TrainingArtifactTests(unittest.TestCase):
+    def test_checkpoint_selection_requires_non_regressing_rank1_and_map(self) -> None:
+        baseline = {"rank1": 0.8, "map": 0.7}
+        self.assertTrue(_selection_improves({"rank1": 0.81, "map": 0.7}, baseline))
+        self.assertTrue(_selection_improves({"rank1": 0.8, "map": 0.71}, baseline))
+        self.assertFalse(_selection_improves({"rank1": 0.82, "map": 0.69}, baseline))
+        self.assertFalse(_selection_improves({"rank1": 0.79, "map": 0.72}, baseline))
+        self.assertFalse(_selection_improves(dict(baseline), baseline))
+
+    def test_training_config_validates_regularization_and_early_stopping(self) -> None:
+        with self.assertRaisesRegex(ValueError, "label_smoothing"):
+            TrainConfig(label_smoothing=1.0)
+        with self.assertRaisesRegex(ValueError, "early_stop_patience"):
+            TrainConfig(early_stop_patience=0)
+        with self.assertRaisesRegex(ValueError, "backbone_lr_scale"):
+            TrainConfig(backbone_lr_scale=0.0)
+        with self.assertRaisesRegex(ValueError, "freeze_backbone_epochs"):
+            TrainConfig(epochs=1, freeze_backbone_epochs=2)
+        with self.assertRaisesRegex(ValueError, "embedding_consistency_weight"):
+            TrainConfig(embedding_consistency_weight=-1.0)
+
+    def test_metric_learning_consistency_penalizes_embedding_drift(self) -> None:
+        config = TrainConfig(
+            embedding_dim=2,
+            num_classes=2,
+            epochs=1,
+            freeze_backbone_epochs=0,
+        )
+        model = ArcFaceModel(config, backbone_factory=_VectorBackbone)
+        images = torch.tensor([[1.0, 0.0], [0.0, 1.0]])
+        labels = torch.tensor([0, 1])
+        matching_teacher = _VectorBackbone(embedding_dim=2)
+        _, _, matching = _metric_learning_loss(
+            model,
+            model,
+            images,
+            labels,
+            label_smoothing=0.0,
+            frozen_backbone=matching_teacher,
+            consistency_weight=2.0,
+        )
+        rotated_teacher = _VectorBackbone(embedding_dim=2)
+        rotated_teacher.forward = lambda value: torch.nn.functional.normalize(
+            value[:, [1, 0]], p=2, dim=1
+        )
+        _, _, drifted = _metric_learning_loss(
+            model,
+            model,
+            images,
+            labels,
+            label_smoothing=0.0,
+            frozen_backbone=rotated_teacher,
+            consistency_weight=2.0,
+        )
+        self.assertAlmostEqual(float(matching), 0.0)
+        self.assertGreater(float(drifted), float(matching))
+
     def test_compute_embeddings_normalizes_uint8_dataset_images(self) -> None:
         from torch.utils.data import DataLoader, TensorDataset
 
