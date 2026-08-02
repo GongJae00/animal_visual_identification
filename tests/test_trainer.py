@@ -11,39 +11,43 @@ from unittest.mock import patch
 
 import torch
 
-from cvi.trainer import (
+from representation_learning.trainer import (
     AdmittedCropDataset,
     ArcFaceHead,
     ArcFaceModel,
+    AppearanceBoundedResidual,
     ConvNeXtEmbedding,
     Dinov2Embedding,
     IdentityBalancedSampler,
     TrainConfig,
     _build_label_index,
+    _build_dataloader,
     _checkpoint_payload,
     compute_embeddings,
     _count_parameters,
+    _a4_metric_learning_loss,
     _evaluate_development_retrieval,
     evaluate_pretrained_development,
     _prepare_training_images,
+    _prepare_a4_training_images,
     _metric_learning_loss,
     _selection_improves,
     _warmup_cosine_schedule,
     train_model,
 )
-from cvi.train.augment import RandAugment
-from cvi.public_crop_manifest import (
+from representation_learning.train.augment import RandAugment
+from data_pipeline.public_crop_manifest import (
     PublicCropArtifact,
     PublicCropManifest,
     canonical_rgb_pixel_sha256,
     verify_public_crop_manifest,
 )
-from cvi.training_admission import (
+from identity_governance.training_admission import (
     TrainingAdmissionManifest,
     TrainingCropRow,
     admit_training,
 )
-from cvi.role_exposure import (
+from identity_governance.role_exposure import (
     ExposureDeclarationKind,
     ExposureStage,
     RoleExposureDeclaration,
@@ -134,6 +138,16 @@ class TrainConfigTests(unittest.TestCase):
         self.assertEqual(restored.epochs, 100)
         self.assertEqual(restored.batch_size, 128)
         self.assertEqual(restored.lr, 1e-3)
+
+    def test_a4_requires_explicit_positive_regularizers(self) -> None:
+        with self.assertRaises(ValueError):
+            TrainConfig(architecture="appearance_bounded_residual_v4")
+        config = TrainConfig(
+            architecture="appearance_bounded_residual_v4",
+            border_consistency_weight=0.5,
+            baseline_anchor_weight=1.0,
+        )
+        self.assertEqual(config.residual_scale, 0.1)
 
 
 class LabelIndexTests(unittest.TestCase):
@@ -303,6 +317,34 @@ class AdmittedCropDatasetTests(unittest.TestCase):
             self.assertEqual(tensor.dtype, torch.uint8)
             self.assertEqual(label, 0)
 
+    def test_sampler_labels_do_not_decode_uncached_images(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            manifest, rows = _crop_fixture(root)
+            dataset = AdmittedCropDataset(
+                root,
+                rows,
+                manifest,
+                {rows[0].public_subject_token: 7},
+                use_cache=False,
+            )
+            with patch(
+                "representation_learning.trainer.read_verified_crop_artifact",
+                side_effect=AssertionError("label enumeration decoded a crop"),
+            ):
+                self.assertEqual(dataset.labels, (7,))
+
+    def test_cuda_loader_pins_memory_with_workers(self) -> None:
+        from torch.utils.data import TensorDataset
+
+        loader = _build_dataloader(
+            TensorDataset(torch.zeros(2, 1), torch.zeros(2, dtype=torch.long)),
+            None,
+            TrainConfig(batch_size=1, num_workers=1),
+            torch.device("cuda"),
+        )
+        self.assertTrue(loader.pin_memory)
+
     def test_uncached_training_images_are_augmented(self) -> None:
         calls = 0
 
@@ -317,6 +359,20 @@ class AdmittedCropDatasetTests(unittest.TestCase):
         prepared = _prepare_training_images(images, augment, mean, std)  # type: ignore[arg-type]
         self.assertEqual(calls, 2)
         self.assertEqual(prepared.dtype, torch.float32)
+
+    def test_a4_border_challenge_preserves_the_central_source(self) -> None:
+        images = torch.full((2, 3, 224, 224), 128, dtype=torch.uint8)
+        mean = torch.zeros((1, 3, 1, 1))
+        std = torch.ones((1, 3, 1, 1))
+        clean, challenged = _prepare_a4_training_images(
+            images, mean, std
+        )
+        self.assertEqual(clean.shape, challenged.shape)
+        self.assertTrue(torch.equal(
+            clean[:, :, 40:-40, 40:-40],
+            challenged[:, :, 40:-40, 40:-40],
+        ))
+        self.assertFalse(torch.equal(clean, challenged))
 
 
 class AdmittedTrainingBoundaryTests(unittest.TestCase):
@@ -481,36 +537,19 @@ class AugmentationContractTests(unittest.TestCase):
         augment = RandAugment(n=2, m=9)
         operations = [augment._adjust_brightness, augment._solarize]
         with patch(
-            "cvi.train.augment.random.choice", side_effect=operations
-        ), patch("cvi.train.augment.random.uniform", return_value=0.5):
+            "representation_learning.train.augment.random.choice", side_effect=operations
+        ), patch("representation_learning.train.augment.random.uniform", return_value=0.5):
             result = augment(torch.ones((3, 4, 4)))
         self.assertGreaterEqual(float(result.min()), 0.0)
         self.assertLessEqual(float(result.max()), 1.0)
 
 
 class MultiHeadTrainingContractTests(unittest.TestCase):
-    def test_unauthenticated_training_crop_extractor_is_fail_closed(self) -> None:
-        completed = subprocess.run(
-            [
-                sys.executable,
-                "tools/extract_training_oracle_crops.py",
-                "--secure-root", "secure",
-                "--output-dir", "output",
-            ],
-            cwd=Path(__file__).resolve().parents[1],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        self.assertNotEqual(completed.returncode, 0)
-        self.assertIn("Training crop extraction is disabled", completed.stderr)
-        self.assertNotIn("Traceback", completed.stderr)
-
     def test_embedding_trainer_requires_immutable_admission_inputs(self) -> None:
         completed = subprocess.run(
             [
                 sys.executable,
-                "tools/train_embedding_model.py",
+                "workflows/train_embedding_model.py",
                 "--crop-root", "crops",
                 "--output-dir", "output",
             ],
@@ -528,7 +567,7 @@ class MultiHeadTrainingContractTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory) / "existing"
             output.mkdir()
-            command = [sys.executable, "tools/train_embedding_model.py"]
+            command = [sys.executable, "workflows/train_embedding_model.py"]
             for argument in (
                 "admission-manifest",
                 "admission-receipt",
@@ -561,27 +600,6 @@ class MultiHeadTrainingContractTests(unittest.TestCase):
         self.assertNotEqual(completed.returncode, 0)
         self.assertIn("--output-dir must not exist", completed.stderr)
         self.assertNotIn("Traceback", completed.stderr)
-
-    def test_unvalidated_multi_head_trainer_is_fail_closed(self) -> None:
-        completed = subprocess.run(
-            [
-                sys.executable,
-                "tools/train_multi_head_model.py",
-                "--assignment", "assignment.json",
-                "--split-receipt", "receipt.json",
-                "--registry-db", "registry.db",
-                "--crop-root", "crops",
-                "--output-dir", "output",
-            ],
-            cwd=Path(__file__).resolve().parents[1],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        self.assertNotEqual(completed.returncode, 0)
-        self.assertIn("Multi-head training is disabled", completed.stderr)
-        self.assertNotIn("Traceback", completed.stderr)
-
 
 class CountParametersTests(unittest.TestCase):
     def test_arcface_head_count(self) -> None:
@@ -813,7 +831,7 @@ class TrainingArtifactTests(unittest.TestCase):
         self.assertEqual(loaded["label_to_index"], {"dog-a": 0, "dog-b": 1})
 
     def test_default_checkpoint_reconstructs_with_matching_backbone(self) -> None:
-        from tools import export_onnx
+        from workflows import export_onnx
 
         cfg = TrainConfig(num_classes=2)
         model = ArcFaceModel(cfg, backbone_factory=_VectorBackbone)
@@ -875,6 +893,98 @@ class TrainingArtifactTests(unittest.TestCase):
 
 
 class ArcFaceModelTests(unittest.TestCase):
+    def test_a4_starts_at_frozen_baseline_and_respects_hard_bound(self) -> None:
+        baseline = _DummyBackbone(embedding_dim=64)
+        model = AppearanceBoundedResidual(baseline, 64, scale=0.1)
+        images = torch.randn(3, 3, 224, 224)
+        with torch.no_grad():
+            baseline_embeddings = baseline(images)
+            initial_embeddings = model(images)
+        self.assertTrue(torch.allclose(
+            initial_embeddings, baseline_embeddings, atol=1e-7, rtol=0.0
+        ))
+        self.assertTrue(all(not parameter.requires_grad for parameter in model.baseline.parameters()))
+        model.train()
+        self.assertFalse(model.baseline.training)
+        self.assertTrue(model.adapter.training)
+
+        with torch.no_grad():
+            model.adapter[-1].weight.fill_(1.0)
+            model.adapter[-1].bias.fill_(1.0)
+            adapted_embeddings = model(images)
+            raw_residual = model.adapter(baseline_embeddings)
+            bounded_residual = raw_residual / raw_residual.norm(
+                dim=1, keepdim=True
+            ).clamp_min(1.0)
+            expected = torch.nn.functional.normalize(
+                baseline_embeddings + 0.1 * bounded_residual, p=2, dim=1
+            )
+        self.assertTrue(torch.all(
+            (0.1 * bounded_residual).norm(dim=1) <= 0.100001
+        ))
+        self.assertTrue(torch.allclose(
+            adapted_embeddings, expected, atol=1e-7, rtol=0.0
+        ))
+
+    def test_a4_arcface_model_only_trains_adapter_and_head(self) -> None:
+        cfg = TrainConfig(
+            architecture="appearance_bounded_residual_v4",
+            embedding_dim=64,
+            num_classes=5,
+            border_consistency_weight=0.5,
+            baseline_anchor_weight=1.0,
+        )
+        model = ArcFaceModel(cfg, backbone_factory=_DummyBackbone)
+        self.assertIsInstance(model._backbone, AppearanceBoundedResidual)
+        self.assertTrue(all(
+            not parameter.requires_grad
+            for parameter in model._backbone.baseline.parameters()
+        ))
+        self.assertTrue(all(
+            parameter.requires_grad for parameter in model._backbone.adapter.parameters()
+        ))
+
+    def test_a4_losses_are_finite_and_update_the_adapter(self) -> None:
+        cfg = TrainConfig(
+            architecture="appearance_bounded_residual_v4",
+            embedding_dim=64,
+            num_classes=5,
+            border_consistency_weight=0.5,
+            baseline_anchor_weight=1.0,
+        )
+        model = ArcFaceModel(cfg, backbone_factory=_DummyBackbone)
+        with torch.no_grad():
+            torch.nn.init.normal_(model._backbone.adapter[-1].weight, std=0.01)
+        images = torch.randn(4, 3, 224, 224)
+        challenged = images + 0.1 * torch.randn_like(images)
+        labels = torch.tensor([0, 1, 2, 3])
+        with patch.object(
+            model._backbone.baseline,
+            "forward",
+            wraps=model._backbone.baseline.forward,
+        ) as baseline_forward:
+            total, classification, consistency, anchor = _a4_metric_learning_loss(
+                model,
+                model,
+                images,
+                challenged,
+                labels,
+                label_smoothing=0.1,
+                consistency_weight=0.5,
+                anchor_weight=1.0,
+            )
+        self.assertEqual(baseline_forward.call_count, 2)
+        self.assertTrue(all(torch.isfinite(value) for value in (
+            total, classification, consistency, anchor
+        )))
+        self.assertGreater(float(consistency.detach()), 0.0)
+        self.assertGreater(float(anchor.detach()), 0.0)
+        total.backward()
+        self.assertTrue(any(
+            parameter.grad is not None and parameter.grad.abs().sum() > 0
+            for parameter in model._backbone.adapter.parameters()
+        ))
+
     def test_forward_training(self) -> None:
         cfg = TrainConfig(embedding_dim=64, num_classes=5)
         model = ArcFaceModel(cfg, backbone_factory=_DummyBackbone)
@@ -962,7 +1072,7 @@ class ArcFaceModelTests(unittest.TestCase):
                 self.assertTrue(np.isfinite(embedding).all())
 
     def test_dinov2_compat_subclass(self) -> None:
-        from cvi.trainer import Dinov2ArcFaceModel
+        from representation_learning.trainer import Dinov2ArcFaceModel
         cfg = TrainConfig(embedding_dim=64, num_classes=5)
         model = Dinov2ArcFaceModel(cfg)
         self.assertIsInstance(model, ArcFaceModel)
@@ -1034,8 +1144,8 @@ class ConvNeXtOnnxExportTests(unittest.TestCase):
                 self.assertEqual(embedding.shape, (batch_size, 768))
                 self.assertTrue(np.isfinite(embedding).all())
 
-            from cvi.evidence_extractor import OnnxExtractor
-            from cvi.evidence.model_contract import (
+            from identity_methods.backbones.extractors import OnnxExtractor
+            from artifact_contracts.model_contract import (
                 OnnxEvidenceModelManifest,
                 OnnxPreprocessingContract,
             )

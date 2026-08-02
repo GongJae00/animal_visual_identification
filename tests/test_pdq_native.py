@@ -12,8 +12,8 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest import mock
 
-from cvi.pdq_contracts import PDQ_D4_ORIENTATIONS, PDQFingerprint
-from cvi.pdq_native import (
+from identity_methods.classical.pdq_contracts import PDQ_D4_ORIENTATIONS, PDQFingerprint
+from identity_methods.classical.pdq_native import (
     CANONICAL_INTAKE_BUNDLE_SHA256,
     CANONICAL_RETAINED_AGGREGATE_SHA256,
     CANONICAL_SOURCE_RECEIPT_SHA256,
@@ -31,18 +31,18 @@ from cvi.pdq_native import (
     hash_rgb_batch,
     verify_native_pdq_build,
 )
-from cvi.source_provenance import build_offline_tool_provenance
+from artifact_contracts.source_provenance import build_offline_tool_provenance
 
 
-SOURCE_BUNDLE = Path(os.environ.get("CVI_PDQ_SOURCE_BUNDLE") or os.devnull)
-WORKER_SOURCE = Path(__file__).parents[1] / "native/pdq_worker/main.cpp"
+SOURCE_BUNDLE = Path(os.environ.get("CANINE_IDENTITY_PDQ_SOURCE_BUNDLE") or os.devnull)
+WORKER_SOURCE = Path(__file__).parents[1] / "identity_methods/classical/native/pdq_worker/main.cpp"
 COMPILER = Path("/usr/bin/c++")
 NATIVE_AVAILABLE = SOURCE_BUNDLE.is_dir() and COMPILER.exists()
 
 
 def _builder_provenance() -> dict[str, object]:
     return build_offline_tool_provenance(
-        Path(__file__).parents[1] / "tools/build_native_pdq_worker.py"
+        Path(__file__).parents[1] / "workflows/build_native_pdq_worker.py"
     )
 
 
@@ -174,7 +174,7 @@ class NativePdqIntegrationTests(unittest.TestCase):
             ),
             "missing CLI": lambda value: value.__setitem__(
                 "code_source_files",
-                [row for row in value["code_source_files"] if row["relative_path"] != "tools/build_native_pdq_worker.py"],
+                [row for row in value["code_source_files"] if row["relative_path"] != "workflows/build_native_pdq_worker.py"],
             ),
         }
         for name, mutate in provenance_mutations.items():
@@ -199,7 +199,7 @@ class NativePdqIntegrationTests(unittest.TestCase):
         changed["runtime"]["platform_release"] += "-changed"
         changed["runtime_sha256"] = hashlib.sha256(b"not-the-runtime").hexdigest()
         with TemporaryDirectory() as temporary, mock.patch(
-            "cvi.pdq_native._current_builder_tool_provenance",
+            "identity_methods.classical.pdq_native._current_builder_tool_provenance",
             side_effect=[provenance, changed],
         ):
             output = Path(temporary) / "build"

@@ -6,7 +6,7 @@ import json
 import numpy as np
 import pytest
 
-from cvi.fusion import (
+from evidence_fusion import (
     OOF_SIMPLEX_SCHEMA_VERSION,
     OOFSimplexConfig,
     OOFSimplexError,

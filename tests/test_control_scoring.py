@@ -10,9 +10,9 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
-from cvi.acquisition import sha256_file
-from cvi.controls import ControlScoringRequest
-from cvi.control_scoring import (
+from data_pipeline.acquisition import sha256_file
+from evaluation.controls import ControlScoringRequest
+from evaluation.control_scoring import (
     ArtifactCacheBinding,
     ArtifactSourceKind,
     ControlBlindScoreReceipt,
@@ -27,20 +27,20 @@ from cvi.control_scoring import (
     score_control_requests_from_cache,
     verify_embedding_cache_files,
 )
-from cvi.control_transform import (
+from evaluation.control_transform import (
     ControlArtifactManifest,
     ControlTransformCost,
     ControlTransformReceipt,
     verify_control_artifact_files,
 )
-from cvi.crop_export import CropExportReceipt
-from cvi.provenance import content_sha256
-from cvi.scoring import (
+from data_pipeline.crop_export import CropExportReceipt
+from foundation.provenance import content_sha256
+from evaluation.scoring import (
     PairArtifactEntry,
     PairArtifactManifest,
     verify_pair_artifact_files,
 )
-from tools.score_visual_controls import main
+from workflows.score_visual_controls import main
 
 HASH_A = "a" * 64
 HASH_B = "b" * 64

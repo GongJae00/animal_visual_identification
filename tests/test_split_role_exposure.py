@@ -9,9 +9,9 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from types import SimpleNamespace
 
-from cvi.identity_registry import compute_public_subject_token
-from cvi.provenance import content_sha256
-from cvi.split_role_exposure import (
+from identity_governance.identity_registry import compute_public_subject_token
+from foundation.provenance import content_sha256
+from identity_governance.split_role_exposure import (
     ExposureDeclarationKind,
     ExposureStage,
     RoleExposureDeclaration,
@@ -96,7 +96,7 @@ class SplitRoleExposureTests(unittest.TestCase):
             completed = subprocess.run(
                 [
                     sys.executable,
-                    "tools/assemble_role_exposure_ledger.py",
+                    "workflows/assemble_role_exposure_ledger.py",
                     "--source-bundle",
                     str(root / "missing-source.json"),
                     "--declaration",

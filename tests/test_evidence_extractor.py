@@ -10,7 +10,7 @@ from unittest.mock import patch
 import numpy as np
 from PIL import Image
 
-from cvi.evidence.model_contract import (
+from artifact_contracts.model_contract import (
     ConvNeXtModelManifest,
     DogFaceNetModelManifest,
     OnnxEvidenceContractError,
@@ -18,8 +18,8 @@ from cvi.evidence.model_contract import (
     OnnxPreprocessingContract,
     PetReIDModelManifest,
 )
-from cvi.evidence_extractor import EvidenceExtractorRegistry
-from cvi.provenance import content_sha256
+from identity_methods.backbones.extractors import EvidenceExtractorRegistry
+from foundation.provenance import content_sha256
 
 
 def _require_onnx() -> bool:
@@ -132,7 +132,7 @@ class EvidenceExtractorRegistryTests(unittest.TestCase):
 @unittest.skipUnless(_require_ort(), "onnxruntime not available")
 class ExtractorConstructionTests(unittest.TestCase):
     def setUp(self) -> None:
-        from cvi.evidence_extractor import (
+        from identity_methods.backbones.extractors import (
             ConvNeXtExtractor,
             DogFaceNetExtractor,
             OnnxExtractor,

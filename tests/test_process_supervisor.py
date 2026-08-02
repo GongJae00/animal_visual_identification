@@ -5,7 +5,7 @@ import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from cvi.process_supervisor import (
+from operations.process_supervisor import (
     ProcessSupervisorPolicy,
     SupervisedProcessStatus,
     run_supervised_process,

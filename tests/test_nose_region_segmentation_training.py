@@ -13,19 +13,19 @@ import pytest
 import torch
 from PIL import Image
 
-from cvi.evidence.artifact_manifest import ExactOnnxRuntime, NoseMaskManifest, UsageLane
-from cvi.identity_registry import compute_registered_dog_id
-from cvi.nose_region.native_yt import (
+from artifact_contracts.artifact_manifest import ExactOnnxRuntime, NoseMaskManifest, UsageLane
+from identity_governance.identity_registry import compute_registered_dog_id
+from localization.nose_region.native_yt import (
     NativeYtSample,
     build_manifest_bundle,
     process_native_sample,
 )
-from cvi.nose_region.sam2_teacher import (
+from localization.nose_region.sam2_teacher import (
     SOURCE_IMAGE_MANIFEST_SCHEMA,
     produce_teacher_manifest,
     validate_source_image_manifest,
 )
-from cvi.nose_region.segmentation_training import (
+from localization.nose_region.segmentation_training import (
     INTERPRETATION,
     LICENSE_ID,
     NoseSegmentationDataset,
@@ -41,11 +41,11 @@ from cvi.nose_region.segmentation_training import (
     save_segmentation_checkpoint,
     segmentation_loss,
 )
-from cvi.protected_io import (
+from foundation.protected_io import (
     json_document_bytes,
     read_strict_json_document,
 )
-from cvi.provenance import content_sha256
+from foundation.provenance import content_sha256
 
 
 def _sha(value: str) -> str:
@@ -448,7 +448,7 @@ def test_actual_static_onnx_runtime_manifest_and_cpu_ort_parity(tmp_path: Path) 
 
 
 def test_cli_help_avoids_heavy_imports() -> None:
-    tool = Path(__file__).parents[1] / "tools" / "train_nose_segmentation_student.py"
+    tool = Path(__file__).parents[1] / "workflows" / "train_nose_segmentation_student.py"
     command = (
         "import runpy,sys; tool=sys.argv[1]; sys.argv=[tool,'--help']; "
         "\ntry: runpy.run_path(tool,run_name='__main__')"

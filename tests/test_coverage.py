@@ -3,8 +3,8 @@ from __future__ import annotations
 import json
 import unittest
 
-from cvi.contracts import Modality
-from cvi.coverage import CoverageAccumulator, CoveragePolicy, EvidenceObservation
+from artifact_contracts.contracts import Modality
+from evidence_fusion.coverage import CoverageAccumulator, CoveragePolicy, EvidenceObservation
 
 
 def policy() -> CoveragePolicy:

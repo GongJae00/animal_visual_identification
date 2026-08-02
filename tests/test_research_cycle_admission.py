@@ -9,21 +9,21 @@ from tempfile import TemporaryDirectory
 
 import pytest
 
-from cvi.identity_registry import (
+from identity_governance.identity_registry import (
     compute_identity_token,
     compute_public_subject_token,
     compute_sample_token,
     compute_sequence_token,
 )
-from cvi.protected_public_split import (
+from identity_governance.protected_public_split import (
     EvidenceRelation,
     FrozenPublicSplitEvidenceGraph,
     PublicSplitEvidenceEdge,
     PublicSplitSample,
     PublicSplitSourceBundle,
 )
-from cvi.provenance import content_sha256
-from cvi.research_cycle_admission import (
+from foundation.provenance import content_sha256
+from identity_governance.research_cycle_admission import (
     IdentityTargetMode,
     ResearchCycleManifest,
     ResearchLicenseLane,
@@ -33,7 +33,7 @@ from cvi.research_cycle_admission import (
     ResearchSourceRole,
     build_research_cycle_manifest,
 )
-from cvi.role_exposure import (
+from identity_governance.role_exposure import (
     ExposureDeclarationKind,
     ExposureStage,
     RoleExposureDeclaration,
@@ -394,7 +394,7 @@ def test_source_checkout_cli_builds_content_bound_manifest() -> None:
             paths[name].write_text(json.dumps(payload), encoding="utf-8")
         command = [
             sys.executable,
-            "tools/build_research_cycle_manifest.py",
+            "workflows/build_research_cycle_manifest.py",
             "--cycle-name",
             "fixture-cycle-2026",
             "--source-bundle",

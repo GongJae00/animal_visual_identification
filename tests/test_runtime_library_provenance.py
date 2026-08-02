@@ -6,9 +6,9 @@ from dataclasses import replace
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from cvi.acquisition import sha256_file
-from cvi.provenance import content_sha256
-from cvi.runtime_library_provenance import (
+from data_pipeline.acquisition import sha256_file
+from foundation.provenance import content_sha256
+from artifact_contracts.runtime_library_provenance import (
     ExpectedRuntimeBinary,
     RuntimeLibraryManifest,
     RuntimeLibraryPhase,

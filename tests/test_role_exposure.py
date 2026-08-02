@@ -4,7 +4,7 @@ import copy
 import hashlib
 import unittest
 
-from cvi.role_exposure import (
+from identity_governance.role_exposure import (
     CandidateRoleAssignment,
     CandidateRoleRecord,
     ExposureDeclarationKind,

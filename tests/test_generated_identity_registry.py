@@ -5,8 +5,8 @@ from copy import deepcopy
 
 import pytest
 
-from cvi.generated_identity_registry import (
-    CVI_GENERATED_DOG_NAMESPACE,
+from identity_governance.generated_identity_registry import (
+    GENERATED_DOG_NAMESPACE,
     GeneratedIdentityRegistry,
     GeneratedIdentityStatus,
     compute_generated_identity_id,
@@ -14,11 +14,11 @@ from cvi.generated_identity_registry import (
     create_provisional_identity,
     transition_generated_identity,
 )
-from cvi.identity_registry import compute_registered_dog_id
+from identity_governance.identity_registry import compute_registered_dog_id
 
 
 def test_generated_namespace_is_stable_and_separate() -> None:
-    assert str(CVI_GENERATED_DOG_NAMESPACE) == "6c7f371b-120e-530e-b814-a3f24a4d670a"
+    assert str(GENERATED_DOG_NAMESPACE) == "6c7f371b-120e-530e-b814-a3f24a4d670a"
     record = create_provisional_identity("cvi.track-cluster:v1", "video:1:cluster:2", 8)
     assert record.generated_identity_id != compute_registered_dog_id(
         "video:1:cluster:2"

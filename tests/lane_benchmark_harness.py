@@ -6,13 +6,13 @@ import argparse
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from cvi.onnx_inference_benchmark import (
+from operations.onnx_inference_benchmark import (
     OnnxBenchmarkBackend,
     OnnxInferenceBenchmarkPolicy,
     benchmark_onnx_inference,
 )
-from cvi.protected_io import read_strict_json_object, write_private_json_bundle
-from cvi.runtime_library_provenance import (
+from foundation.protected_io import read_strict_json_object, write_private_json_bundle
+from artifact_contracts.runtime_library_provenance import (
     RuntimeLibraryManifest,
     freeze_runtime_library_policy,
 )

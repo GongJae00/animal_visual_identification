@@ -11,8 +11,8 @@ from unittest.mock import patch
 import faiss
 import numpy as np
 
-import tools.migrate_gallery_v3_to_v4 as migration
-from cvi.identity_registry import compute_registered_dog_id
+import workflows.migrate_gallery_v3_to_v4 as migration
+from identity_governance.identity_registry import compute_registered_dog_id
 
 
 def _write_v3(source: Path) -> dict:

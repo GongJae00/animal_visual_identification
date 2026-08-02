@@ -6,8 +6,8 @@ import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from cvi.acquisition import sha256_file
-from cvi.controls import (
+from data_pipeline.acquisition import sha256_file
+from evaluation.controls import (
     ControlMaskEntry,
     ControlMaskManifest,
     MaskEvidence,
@@ -15,13 +15,13 @@ from cvi.controls import (
     MaskRole,
     verify_control_mask_files,
 )
-from cvi.mask_semantics import (
+from evaluation.mask_semantics import (
     MaskSemanticPolicy,
     _scan_binary_raw,
     build_mask_raw_decode_command,
     verify_mask_pixel_semantics,
 )
-from cvi.scoring import (
+from evaluation.scoring import (
     PairArtifactEntry,
     PairArtifactManifest,
     verify_pair_artifact_files,

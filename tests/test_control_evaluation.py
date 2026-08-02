@@ -9,18 +9,18 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
-from cvi.controls import (
+from evaluation.controls import (
     ControlEvaluationBinding,
     ControlPanelSummary,
     ControlStratumCount,
     VisualControlKind,
 )
-from cvi.control_evaluation import (
+from evaluation.control_evaluation import (
     ControlEvaluationPolicy,
     control_evaluation_bindings_from_payload,
     evaluate_sealed_control_scores,
 )
-from cvi.control_scoring import (
+from evaluation.control_scoring import (
     ArtifactCacheBinding,
     ControlBlindScore,
     ControlBlindScoreReceipt,
@@ -29,14 +29,14 @@ from cvi.control_scoring import (
     EmbeddingCacheManifest,
     embedding_cache_key,
 )
-from cvi.evaluation import (
+from evaluation import (
     ClusterBootstrapConfig,
     ClusterUnit,
     FrozenVerificationThreshold,
     VerificationDirection,
 )
-from cvi.dataset import EvaluationStage
-from cvi.pairing import (
+from data_pipeline.dataset import EvaluationStage
+from evaluation.pairing import (
     NegativeQuota,
     PairArtifactBinding,
     PairConstructionResult,
@@ -45,7 +45,7 @@ from cvi.pairing import (
     PairScoringRequest,
     PairStratum,
 )
-from tools.evaluate_visual_controls import main
+from workflows.evaluate_visual_controls import main
 
 HASH_A = "a" * 64
 HASH_B = "b" * 64

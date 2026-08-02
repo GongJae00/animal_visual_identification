@@ -3,26 +3,26 @@ from __future__ import annotations
 import unittest
 from pathlib import Path
 
-from cvi.localization.benchmark import ap10k_body17_pose_summary
-from cvi.localization.quality import (
+from localization.benchmark import ap10k_body17_pose_summary
+from localization.quality import (
     compute_iou,
     detection_average_precision,
     detection_summary,
     greedy_bipartite_match,
     pixel_correct_keypoint,
 )
-from cvi.localization.roi import (
+from localization.roi import (
     expand_bbox,
     is_truncated,
 )
-from cvi.localization.types import (
+from localization.types import (
     AP10K_BODY_17_SCHEMA,
     DetectionBox,
     Keypoint,
     KeypointSet,
     LocalizationResult,
 )
-from tools.benchmark_canid_localizers import _build_summary
+from workflows.benchmark_canid_localizers import _build_summary
 
 
 def _point_set(

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-CVI capacity is determined by stage invocation rates as well as per-call
+System capacity is determined by stage invocation rates as well as per-call
 latency. A faster kernel can still increase total cost if it is invoked more
 often. The first-order model therefore separates empty-cage and occupied-cage
 rates:
@@ -91,7 +91,7 @@ reported as 13 solely because of binary representation error.
 The checked-in example contains placeholders, not measurements:
 
 ```bash
-uv run python tools/evaluate_capacity.py \
-  configs/research/benchmarks/capacity.example.json \
+uv run python workflows/evaluate_capacity.py \
+  experiments/configs/benchmarks/capacity.example.json \
   --duration-seconds 86400
 ```

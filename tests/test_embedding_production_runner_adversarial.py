@@ -10,16 +10,16 @@ from tempfile import TemporaryDirectory
 from types import SimpleNamespace
 from unittest.mock import patch
 
-import cvi.embedding_production_runner as runner
-from cvi.embedding_production_runner import (
+import operations.embedding_production_runner as runner
+from operations.embedding_production_runner import (
     EmbeddingProductionPrecommitment,
     EmbeddingWorkerExecutionPolicy,
     read_embedding_production_outer_bundle,
     run_embedding_production_fresh_worker,
 )
-from cvi.process_supervisor import ProcessSupervisorPolicy
-from cvi.runtime_library_provenance import RuntimeLibraryPolicy
-from cvi.worker_environment import build_sanitized_worker_environment
+from operations.process_supervisor import ProcessSupervisorPolicy
+from artifact_contracts.runtime_library_provenance import RuntimeLibraryPolicy
+from operations.worker_environment import build_sanitized_worker_environment
 
 
 HASH_A = "a" * 64

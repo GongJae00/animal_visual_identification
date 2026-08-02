@@ -22,25 +22,25 @@ except ModuleNotFoundError:
 else:
     OPTIONAL_ONNX_AVAILABLE = True
 
-from cvi.acquisition import sha256_file
-from cvi.batch_invariance import (
+from data_pipeline.acquisition import sha256_file
+from evaluation.batch_invariance import (
     BatchInvarianceDecision,
     BatchInvariancePolicy,
     build_batch_invariance_precommitment,
     evaluate_batch_composition_invariance,
 )
-from cvi.control_scoring import (
+from evaluation.control_scoring import (
     ArtifactSourceKind,
     ControlScoringInventory,
     EmbeddingCachePolicy,
     ScoringArtifactEntry,
 )
-from cvi.embedding_producer import (
+from operations.embedding_producer import (
     EmbeddingProducerConfig,
     EmbeddingProductionPolicy,
     produce_embedding_cache,
 )
-from cvi.onnx_backend import (
+from operations.onnx_backend import (
     ImageChannelOrder,
     ImageInterpolation,
     ImagePreprocessingConfig,
@@ -54,13 +54,13 @@ from cvi.onnx_backend import (
     OnnxRuntimeCudaBackend,
     preprocess_image_batch,
 )
-from cvi.numerical_admission import (
+from evaluation.numerical_admission import (
     NumericalAdmissionDecision,
     NumericalDriftPolicy,
     compare_embedding_caches,
 )
-from cvi.provenance import content_sha256
-from cvi.runtime_library_provenance import (
+from foundation.provenance import content_sha256
+from artifact_contracts.runtime_library_provenance import (
     RuntimeLibraryManifest,
     RuntimeLibraryPhase,
 )

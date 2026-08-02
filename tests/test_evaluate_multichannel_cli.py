@@ -12,7 +12,7 @@ import numpy as np
 
 def _run(*args, check=True):
     result = subprocess.run(
-        [sys.executable, "-m", "tools.evaluate_multichannel"] + list(args),
+        [sys.executable, "-m", "workflows.evaluate_multichannel"] + list(args),
         capture_output=True,
         text=True,
         timeout=30,
@@ -329,7 +329,10 @@ class EvaluateMultichannelCliTest(unittest.TestCase):
         )
         report = json.loads(out.read_text())
         self.assertIn("schema_version", report["provenance"])
-        self.assertEqual(report["provenance"]["schema_version"], "cvi.evaluation.report.v2")
+        self.assertEqual(
+            report["provenance"]["schema_version"],
+            "cvi.evaluation.report.v2",
+        )
 
     # ---- Bootstrap CIs in retrieval ----
     def test_retrieval_bootstrap_ci_present(self):

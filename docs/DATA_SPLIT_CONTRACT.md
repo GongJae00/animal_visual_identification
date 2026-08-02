@@ -63,7 +63,7 @@ scores are observed.
 ## Validation
 
 ```bash
-uv run python tools/check_split_manifest.py \
+uv run python workflows/check_split_manifest.py \
   /protected/manifests/split.json
 ```
 

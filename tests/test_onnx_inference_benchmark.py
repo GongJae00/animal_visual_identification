@@ -25,53 +25,53 @@ except ModuleNotFoundError:
 else:
     OPTIONAL_ONNX_AVAILABLE = True
 
-from cvi.onnx_inference_benchmark import (
+from operations.onnx_inference_benchmark import (
     OnnxBenchmarkBackend,
     OnnxInferenceBenchmarkPolicy,
     OnnxInferenceBenchmarkSummary,
     benchmark_onnx_inference,
 )
-from cvi.acquisition import sha256_file
-from cvi.batch_invariance import (
+from data_pipeline.acquisition import sha256_file
+from evaluation.batch_invariance import (
     BatchInvariancePolicy,
     build_batch_invariance_precommitment,
 )
-from cvi.batch_invariance_runner import (
+from operations.batch_invariance_runner import (
     BatchFreshWorkerDiscovery,
     BatchFreshWorkerReceipt,
     BatchWorkerExecutionPolicy,
     run_batch_invariance_fresh_worker,
 )
-from cvi.control_scoring import (
+from evaluation.control_scoring import (
     ArtifactSourceKind,
     ControlScoringInventory,
     EmbeddingCachePolicy,
     ScoringArtifactEntry,
 )
-from cvi.embedding_producer import (
+from operations.embedding_producer import (
     EmbeddingProducerConfig,
     EmbeddingProductionPolicy,
 )
-from cvi.embedding_production_runner import (
+from operations.embedding_production_runner import (
     EmbeddingFreshWorkerDiscovery,
     EmbeddingFreshWorkerReceipt,
     EmbeddingWorkerExecutionPolicy,
     build_embedding_production_precommitment,
     run_embedding_production_fresh_worker,
 )
-from cvi.onnx_backend import (
+from operations.onnx_backend import (
     ImagePreprocessingConfig,
     OnnxRuntimeBackendConfig,
     OnnxRuntimeCpuBackend,
     OnnxRuntimeCudaBackend,
 )
-from cvi.process_supervisor import ProcessSupervisorPolicy
-from cvi.runtime_library_provenance import (
+from operations.process_supervisor import ProcessSupervisorPolicy
+from artifact_contracts.runtime_library_provenance import (
     RuntimeLibraryManifest,
     RuntimeLibraryPolicy,
     freeze_runtime_library_policy,
 )
-from cvi.worker_environment import build_sanitized_worker_environment
+from operations.worker_environment import build_sanitized_worker_environment
 
 try:
     version("onnxruntime-gpu")
@@ -124,7 +124,7 @@ def benchmark_policy(
 
 
 def preprocessing_payload() -> dict[str, object]:
-    from cvi.onnx_backend import (
+    from operations.onnx_backend import (
         ImageChannelOrder,
         ImageInterpolation,
         ImagePreprocessingConfig,
@@ -157,7 +157,7 @@ def backend_payload(
     *,
     cuda: bool,
 ) -> dict[str, object]:
-    from cvi.onnx_backend import (
+    from operations.onnx_backend import (
         ImagePreprocessingConfig,
         ImageTensorLayout,
         OnnxGraphOptimization,
@@ -334,7 +334,7 @@ class OnnxInferenceBenchmarkPolicyTests(unittest.TestCase):
         completed = subprocess.run(
             (
                 sys.executable,
-                "tools/benchmark_onnx_inference.py",
+                "workflows/benchmark_onnx_inference.py",
                 "--help",
             ),
             cwd=Path(__file__).resolve().parents[1],
@@ -753,7 +753,7 @@ class OnnxInferenceBenchmarkIntegrationTests(unittest.TestCase):
             freeze_receipt_path = root / "embedding-freeze-receipt.json"
             freeze_command = [
                 sys.executable,
-                "tools/freeze_embedding_runtime_library_policy.py",
+                "workflows/freeze_embedding_runtime_library_policy.py",
                 "--discovery-policy",
                 str(paths["runtime_policy"]),
             ]
@@ -785,7 +785,7 @@ class OnnxInferenceBenchmarkIntegrationTests(unittest.TestCase):
             duplicate_receipt = root / "duplicate-freeze-receipt.json"
             duplicate_command = [
                 sys.executable,
-                "tools/freeze_embedding_runtime_library_policy.py",
+                "workflows/freeze_embedding_runtime_library_policy.py",
                 "--discovery-policy", str(paths["runtime_policy"]),
                 "--discovery-receipt", str(discovery_receipts[0]),
                 "--discovery-receipt", str(discovery_receipts[0]),
@@ -980,7 +980,7 @@ class OnnxInferenceBenchmarkIntegrationTests(unittest.TestCase):
             subprocess.run(
                 (
                     sys.executable,
-                    "tools/benchmark_onnx_inference.py",
+                    "workflows/benchmark_onnx_inference.py",
                     "--backend",
                     "CPU",
                     "--model",
@@ -1026,7 +1026,7 @@ class OnnxInferenceBenchmarkIntegrationTests(unittest.TestCase):
             subprocess.run(
                 (
                     sys.executable,
-                    "tools/freeze_runtime_library_policy.py",
+                    "workflows/freeze_runtime_library_policy.py",
                     "--discovery-receipt",
                     str(receipt_path),
                     "--policy",

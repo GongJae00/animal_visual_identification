@@ -8,7 +8,7 @@ requirements are maintained here. A ready-to-run retrieval JSON file is
 intentionally not shipped because artifact-backed channels require
 user-specific, locally verified paths.
 
-`CVI` accepts a dictionary, JSON text, `pathlib.Path`, or string file path. JSON
+`IdentityEngine` accepts a dictionary, JSON text, `pathlib.Path`, or string file path. JSON
 is parsed strictly: duplicate keys, non-finite numbers, excessive structure,
 unknown top-level fields, and non-object roots are rejected.
 
@@ -44,13 +44,13 @@ changing them requires a separate gallery or an explicit migration.
 | `landmark_onnx` | Keypoint and graph models with both manifests and explicit device |
 | `nose_print_onnx` | Detector, embedding, ROI policy, manifests, device, and optional mask bundle |
 
-The legacy `dinov2` and `appearance` type names are rejected by `CVI`; there is
+The legacy `dinov2` and `appearance` type names are rejected by `IdentityEngine`; there is
 no public opt-in for the unpinned Torch Hub loader. For DINOv2, only the exact
 `dinov2_local` schema is accepted. Its `model_dir`, `weight_intake_bundle`, and
 `preprocessor_intake_bundle` must refer to admitted local artifacts, and
 `device` must be explicitly `cpu` or `cuda`.
 
-The exact accepted keys are enforced in `src/cvi/api.py`; extra keys are errors.
+The exact accepted keys are enforced in `canine_identity/engine.py`; extra keys are errors.
 Artifact presence alone is not performance or deployment admission. See
 [Data and Models](DATA_AND_MODELS.md) and
 [Known Limitations](KNOWN_LIMITATIONS.md).
@@ -69,8 +69,10 @@ committed.
 
 ## Other Config Files
 
-Files under `configs/` use multiple independent schemas for research contracts,
-data processing, ONNX measurement, and deployment experiments. They are not
-interchangeable with retrieval config v2 and should not be passed to `CVI`
-unless they explicitly declare the retrieval schema. See
-[`configs/README.md`](../configs/README.md).
+Tracked configs live with their owning packages: public examples under
+`canine_identity/configs/`, operational policies under `operations/configs/`,
+data policies under `data_pipeline/configs/`, schemas under
+`artifact_contracts/configs/`, and research definitions under
+`experiments/configs/`. Their independent schemas are not interchangeable with
+retrieval config v2 and must not be passed to `IdentityEngine` unless they
+explicitly declare that schema.

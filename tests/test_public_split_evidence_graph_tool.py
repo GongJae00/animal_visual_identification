@@ -21,7 +21,7 @@ class PublicSplitEvidenceGraphToolTests(unittest.TestCase):
         ):
             with self.subTest(tool=tool):
                 completed = subprocess.run(
-                    [sys.executable, str(ROOT / "tools" / tool), "--help"],
+                    [sys.executable, str(ROOT / "workflows" / tool), "--help"],
                     check=True,
                     capture_output=True,
                     text=True,

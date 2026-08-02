@@ -7,7 +7,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
-from cvi.geometric_verifier import (
+from identity_methods.classical.geometric_verifier import (
     GeometricAuditCapacityExceeded,
     GeometricCandidatePair,
     GeometricDecision,
@@ -22,7 +22,7 @@ from cvi.geometric_verifier import (
     _geometry_metrics,
     _transform_nondegenerate,
 )
-from cvi.provenance import content_sha256
+from foundation.provenance import content_sha256
 
 try:
     import cv2
@@ -77,7 +77,7 @@ def _request(images: list[object], *, d4: tuple[str, ...] = ("ORIGINAL",)) -> Ge
 class GeometricVerifierContractTests(unittest.TestCase):
     def test_policy_config_round_trip_and_initialization_warning(self) -> None:
         path = Path(
-            "configs/research/contracts/"
+            "experiments/configs/contracts/"
             "public_canine_geometric_verifier_policy.example.json"
         )
         policy = GeometricVerifierPolicy.from_dict(json.loads(path.read_text()))
@@ -137,7 +137,7 @@ class GeometricVerifierContractTests(unittest.TestCase):
                 ("phash_candidates_sha256", _token(6)),
             ),
         )
-        with patch("cvi.geometric_verifier._load_backend", return_value=None):
+        with patch("identity_methods.classical.geometric_verifier._load_backend", return_value=None):
             evidence = verify_geometric_request(
                 request, image_loader=lambda _: self.fail("loader must not run")
             )
@@ -163,7 +163,7 @@ class GeometricVerifierContractTests(unittest.TestCase):
         fake_numpy = type("FakeNumpy", (), {"__version__": "999"})()
         fake_cv2 = type("FakeCv2", (), {"__version__": "999"})()
         with patch(
-            "cvi.geometric_verifier._load_backend",
+            "identity_methods.classical.geometric_verifier._load_backend",
             return_value=(fake_numpy, fake_cv2),
         ):
             evidence = verify_geometric_request(
@@ -221,7 +221,7 @@ class GeometricVerifierContractTests(unittest.TestCase):
                 ("pdq_candidates_sha256", _token(6)),
             ),
         )
-        with patch("cvi.geometric_verifier._load_backend", return_value=None):
+        with patch("identity_methods.classical.geometric_verifier._load_backend", return_value=None):
             evidence = verify_geometric_request(request, image_loader=lambda _: None)
         with TemporaryDirectory() as temporary:
             output = Path(temporary) / "evidence.json"
@@ -253,7 +253,7 @@ class GeometricVerifierContractTests(unittest.TestCase):
                 ("pdq_candidates_sha256", _token(6)),
             ),
         )
-        with patch("cvi.geometric_verifier._load_backend", return_value=None):
+        with patch("identity_methods.classical.geometric_verifier._load_backend", return_value=None):
             evidence = verify_geometric_request(request, image_loader=lambda _: None)
         result = evidence.results[0]
         with self.assertRaisesRegex(ValueError, "decision/reason"):

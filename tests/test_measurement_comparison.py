@@ -10,32 +10,32 @@ from dataclasses import replace
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from cvi.acquisition import sha256_file
-from cvi.control_scoring import (
+from data_pipeline.acquisition import sha256_file
+from evaluation.control_scoring import (
     ArtifactCacheBinding,
     EmbeddingCacheEntry,
     EmbeddingCacheManifest,
     embedding_cache_key,
 )
-from cvi.embedding_producer import (
+from operations.embedding_producer import (
     EmbeddingBackendIdentity,
     EmbeddingProducerConfig,
 )
-from cvi.measurement_comparison import (
+from evaluation.measurement_comparison import (
     MeasurementAdmissionDecision,
     PairedInferenceMeasurementReceipt,
     compare_paired_inference_measurements,
 )
-from cvi.numerical_admission import (
+from evaluation.numerical_admission import (
     NumericalAdmissionDecision,
     NumericalDriftPolicy,
     compare_embedding_caches,
 )
-from cvi.onnx_inference_benchmark import (
+from operations.onnx_inference_benchmark import (
     OnnxBenchmarkBackend,
     OnnxInferenceBenchmarkSummary,
 )
-from cvi.optimization import PromotionDecision
+from representation_learning.optimization import PromotionDecision
 from tests.test_onnx_inference_benchmark import (
     OPTIONAL_CUDA_ONNX_AVAILABLE,
     benchmark_policy,
@@ -308,7 +308,7 @@ class PairedMeasurementComparisonTests(unittest.TestCase):
             subprocess.run(
                 (
                     sys.executable,
-                    "tools/compare_onnx_measurements.py",
+                    "workflows/compare_onnx_measurements.py",
                     "--reference-benchmark",
                     str(root / "reference-benchmark.json"),
                     "--candidate-benchmark",

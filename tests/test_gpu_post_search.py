@@ -9,7 +9,7 @@ import numpy as np
 
 class PostSearchTests(unittest.TestCase):
     def setUp(self) -> None:
-        from cvi.post_search import (AdaptiveFusion, OpenSetDecision,
+        from identity_retrieval.post_search import (AdaptiveFusion, OpenSetDecision,
                                      ScoreCalibrator, TemporalAggregator)
         self.Fusion = AdaptiveFusion
         self.OpenSet = OpenSetDecision
@@ -74,7 +74,7 @@ class PostSearchTests(unittest.TestCase):
         np.testing.assert_array_equal(result, expected)
 
     def test_calibrator_save_load(self) -> None:
-        from cvi.post_search import ScoreCalibrator
+        from identity_retrieval.post_search import ScoreCalibrator
         cal = ScoreCalibrator()
         cal.fit({"vis": np.array([0.1, 0.5, 0.9])}, np.array([0, 1, 1]))
         with tempfile.TemporaryDirectory() as directory:
@@ -87,7 +87,7 @@ class PostSearchTests(unittest.TestCase):
         self.assertAlmostEqual(val2, 0.0, places=1)
 
     def test_calibrator_uses_strict_json_not_pickle(self) -> None:
-        from cvi.post_search import ScoreCalibrator
+        from identity_retrieval.post_search import ScoreCalibrator
 
         cal = ScoreCalibrator()
         cal.fit({"vis": np.array([0.1, 0.5, 0.9])}, np.array([0, 1, 1]))
@@ -103,7 +103,7 @@ class PostSearchTests(unittest.TestCase):
                 ScoreCalibrator.load(path)
 
     def test_constant_score_calibrator_round_trip(self) -> None:
-        from cvi.post_search import ScoreCalibrator
+        from identity_retrieval.post_search import ScoreCalibrator
 
         cal = ScoreCalibrator()
         cal.fit({"vis": np.array([0.5, 0.5])}, np.array([0, 1]))
@@ -114,7 +114,7 @@ class PostSearchTests(unittest.TestCase):
         self.assertAlmostEqual(loaded.calibrate(0.5, "vis"), 0.5)
 
     def test_private_json_publication_rejects_nonfinite_values(self) -> None:
-        from cvi.protected_io import write_private_json_bundle
+        from foundation.protected_io import write_private_json_bundle
 
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "report.json"

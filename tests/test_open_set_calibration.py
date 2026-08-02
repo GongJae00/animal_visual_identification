@@ -8,7 +8,7 @@ import unittest
 from dataclasses import replace
 from pathlib import Path
 
-from cvi.open_set_calibration import (
+from evaluation.open_set_calibration import (
     AuthenticatedOpenSetCalibrationPanel,
     BlindOpenSetScoreRow,
     DistinctIdentityScore,
@@ -21,7 +21,7 @@ from cvi.open_set_calibration import (
     top_identity_evidence,
     zero_event_one_sided_upper_bound,
 )
-from cvi.protected_public_split import ProtectedPublicSplitPolicy
+from identity_governance.protected_public_split import ProtectedPublicSplitPolicy
 
 
 def _token(kind: str, value: object) -> str:
@@ -178,7 +178,7 @@ class OpenSetCalibrationTests(unittest.TestCase):
             replace(row, scores=row.scores[:-1])
         with self.assertRaisesRegex(ValueError, "semantics"):
             replace(row, score_semantics="PROTOTYPE_LEVEL")
-        source = ast.parse(Path("src/cvi/open_set_calibration.py").read_text())
+        source = ast.parse(Path("evaluation/open_set_calibration.py").read_text())
         forbidden = {"dog_id", "known_role", "unknown_role", "true_identity", "test_score"}
         names = {node.id for node in ast.walk(source) if isinstance(node, ast.Name)}
         self.assertFalse(forbidden & names)

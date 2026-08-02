@@ -17,13 +17,13 @@ except ModuleNotFoundError:
 else:
     PILLOW_AVAILABLE = True
 
-from cvi.public_canine_manifest import (
+from data_pipeline.public_canine_manifest import (
     CanineRegion,
     IdentitySemantics,
     PublicCanineManifest,
     PublicCanineRecord,
 )
-from cvi.public_image_content_audit import (
+from data_pipeline.public_image_content_audit import (
     ImageContentAuditPolicy,
     audit_public_canine_image_content,
 )

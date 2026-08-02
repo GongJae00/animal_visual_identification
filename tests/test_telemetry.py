@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import unittest
 
-from cvi.telemetry import (
+from operations.telemetry import (
     GpuTelemetryAccumulator,
     GpuTelemetrySample,
     parse_nvidia_smi_csv,

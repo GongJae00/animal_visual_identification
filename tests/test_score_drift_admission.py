@@ -12,11 +12,11 @@ from dataclasses import replace
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-import cvi.embedding_production_runner as embedding_runner
+import operations.embedding_production_runner as embedding_runner
 
-from cvi.acquisition import sha256_file
-from cvi.benchmark import TimingSummary
-from cvi.control_scoring import (
+from data_pipeline.acquisition import sha256_file
+from evaluation.benchmark import TimingSummary
+from evaluation.control_scoring import (
     ArtifactCacheBinding,
     ArtifactSourceKind,
     ControlScoringInventory,
@@ -27,32 +27,32 @@ from cvi.control_scoring import (
     embedding_cache_key,
     verify_embedding_cache_files,
 )
-from cvi.embedding_producer import (
+from operations.embedding_producer import (
     EmbeddingBackendIdentity,
     EmbeddingProducerConfig,
     EmbeddingProductionCost,
     EmbeddingProductionReceipt,
     EmbeddingRuntimeResources,
 )
-from cvi.embedding_production_runner import (
+from operations.embedding_production_runner import (
     EmbeddingFreshWorkerReceipt,
     EmbeddingProductionPrecommitment,
     EmbeddingWorkerExecutionPolicy,
 )
-from cvi.numerical_admission import (
+from evaluation.numerical_admission import (
     NumericalAdmissionDecision,
     NumericalDriftPolicy,
     compare_embedding_caches,
 )
-from cvi.optimization import PromotionDecision
-from cvi.process_supervisor import (
+from representation_learning.optimization import PromotionDecision
+from operations.process_supervisor import (
     ProcessSupervisorPolicy,
     SupervisedProcessResult,
     SupervisedProcessStatus,
 )
-from cvi.provenance import content_sha256
-from cvi.runtime_library_provenance import RuntimeLibraryManifest
-from cvi.score_drift_admission import (
+from foundation.provenance import content_sha256
+from artifact_contracts.runtime_library_provenance import RuntimeLibraryManifest
+from evaluation.score_drift_admission import (
     FrozenScoreMarginBoundary,
     RetrievalScoreRequest,
     RetrievalScoreWorkload,
@@ -68,7 +68,7 @@ from cvi.score_drift_admission import (
     validate_retrieval_workload_content_separation,
     verify_score_drift_receipt_external_anchors,
 )
-from cvi.worker_environment import build_sanitized_worker_environment
+from operations.worker_environment import build_sanitized_worker_environment
 
 HASH_A = "a" * 64
 HASH_B = "b" * 64
@@ -1227,7 +1227,7 @@ class ScoreDriftAdmissionTests(unittest.TestCase):
             generated_precommitment = root / "generated-precommitment.json"
             precommitment_command = [
                 sys.executable,
-                "tools/create_score_drift_precommitment.py",
+                "workflows/create_score_drift_precommitment.py",
             ]
             for name in (
                 "workload",
@@ -1325,7 +1325,7 @@ class ScoreDriftAdmissionTests(unittest.TestCase):
             generated_plan = root / "generated-plan.json"
             plan_command = [
                 sys.executable,
-                "tools/create_score_drift_plan.py",
+                "workflows/create_score_drift_plan.py",
             ]
             for name in (
                 "workload",
@@ -1379,7 +1379,7 @@ class ScoreDriftAdmissionTests(unittest.TestCase):
             output = root / "receipt.json"
             command = [
                 sys.executable,
-                "tools/compare_score_drift.py",
+                "workflows/compare_score_drift.py",
                 "--workload",
                 str(paths["workload"]),
                 "--inventory",
@@ -1438,7 +1438,7 @@ class ScoreDriftAdmissionTests(unittest.TestCase):
             self.assertEqual(os.stat(output).st_mode & 0o777, 0o600)
             verify_command = [
                 sys.executable,
-                "tools/verify_score_drift_receipt.py",
+                "workflows/verify_score_drift_receipt.py",
                 "--receipt",
                 str(output),
                 "--expected-precommitment-sha256",

@@ -7,7 +7,7 @@ artifacts and the float32 embedding cache used by the reference scorer. It does
 not choose a model, train a model, calibrate a biometric threshold, or prove
 that an optimized backend is safe.
 
-This research production path is not connected to the public `cvi.CVI` runtime
+This research production path is not connected to the public `canine_identity.IdentityEngine` runtime
 and is not a supported CPU or CUDA deployment facade.
 
 The backend receives only an ordered tuple of opaque artifact paths. The

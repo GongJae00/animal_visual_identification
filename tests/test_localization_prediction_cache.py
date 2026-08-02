@@ -9,20 +9,20 @@ from pathlib import Path
 
 from PIL import Image
 
-from cvi.canid_data.types import CaptureGroupKind, UnifiedCanidSample
-from cvi.identity_registry import compute_registered_dog_id
-from cvi.localization.prediction_cache import (
+from data_pipeline.types import CaptureGroupKind, UnifiedCanidSample
+from identity_governance.identity_registry import compute_registered_dog_id
+from localization.prediction_cache import (
     build_prediction_cache,
     validate_prediction_cache,
 )
-from cvi.localization.roi_manifest import build_roi_manifest, read_roi_manifest
-from cvi.localization.types import (
+from localization.roi_manifest import build_roi_manifest, read_roi_manifest
+from localization.types import (
     DetectionBox,
     Keypoint,
     KeypointSet,
     LocalizationResult,
 )
-from cvi.provenance import content_sha256
+from foundation.provenance import content_sha256
 
 
 def _sha256(path: Path) -> str:

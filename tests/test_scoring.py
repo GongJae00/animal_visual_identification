@@ -5,14 +5,14 @@ from dataclasses import replace
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from cvi.evaluation import (
+from evaluation import (
     ClusterBootstrapConfig,
     ClusterUnit,
     FrozenVerificationThreshold,
     VerificationDirection,
 )
-from cvi.dataset import EvaluationStage
-from cvi.pairing import (
+from data_pipeline.dataset import EvaluationStage
+from evaluation.pairing import (
     NegativeQuota,
     PairArtifactBinding,
     PairConstructionResult,
@@ -21,8 +21,8 @@ from cvi.pairing import (
     PairScoringRequest,
     PairStratum,
 )
-from cvi.provenance import content_sha256
-from cvi.scoring import (
+from foundation.provenance import content_sha256
+from evaluation.scoring import (
     BlindPairScore,
     BlindScoreReceipt,
     PairArtifactEntry,
@@ -31,7 +31,7 @@ from cvi.scoring import (
     join_blind_scores,
     verify_pair_artifact_files,
 )
-from cvi.acquisition import sha256_file
+from data_pipeline.acquisition import sha256_file
 
 HASH_A = "a" * 64
 HASH_B = "b" * 64

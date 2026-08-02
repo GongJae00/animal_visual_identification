@@ -4,9 +4,9 @@ import os
 import unittest
 from pathlib import Path
 
-from cvi.canid_data.source_lock import SOURCE_REGISTRY, admitted_records, get_record
-from cvi.canid_data.types import DatasetAdmission, UnifiedCanidSample
-from cvi.generated_identity_registry import create_provisional_identity
+from data_pipeline.source_lock import SOURCE_REGISTRY, admitted_records, get_record
+from data_pipeline.types import DatasetAdmission, UnifiedCanidSample
+from identity_governance.generated_identity_registry import create_provisional_identity
 
 
 class CanidRegistryTests(unittest.TestCase):
@@ -37,8 +37,20 @@ class CanidRegistryTests(unittest.TestCase):
         self.assertEqual(record.license_id, "CC-BY-4.0")
         self.assertEqual(record.total_identities, 59)
 
+    def test_mpdd_uses_audited_local_identity_count_and_unverified_groups(self) -> None:
+        record = get_record("mpdd")
+        self.assertEqual(record.total_identities, 191)
+        self.assertEqual(record.capture_group_kind.value, "POSE_VIEW_CLUSTER")
+
+    def test_dogfacenet_checksum_is_the_audited_archive(self) -> None:
+        record = get_record("dogfacenet224")
+        self.assertEqual(
+            record.sha256_checksums["DogFaceNet_224resized.zip"],
+            "b3b335180bfd8d18b17e13601c9b0fa9c7c92bf9c18d64fe2999597f2e71f871",
+        )
+
     def test_acquired_dataset_paths_use_flat_content_directories(self) -> None:
-        data_root = Path(os.environ.get("CVI_DATA_DIR", Path.home() / "cvi_data"))
+        data_root = Path(os.environ.get("CANINE_IDENTITY_DATA_DIR", Path.home() / "canine_identity_data"))
         expected = {
             "ap10k-dog": "ap10k",
             "dogflw": "dogflw",

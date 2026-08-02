@@ -9,13 +9,13 @@ import numpy as np
 import pytest
 from PIL import Image
 
-from cvi.identity_registry import (
+from identity_governance.identity_registry import (
     compute_identity_token,
     compute_registered_dog_id,
     compute_sample_token,
     compute_sequence_token,
 )
-from cvi.nose_region.native_yt import (
+from localization.nose_region.native_yt import (
     BUNDLE_SCHEMA,
     MANIFEST_SCHEMA,
     NativeYtSample,
@@ -24,9 +24,9 @@ from cvi.nose_region.native_yt import (
     read_nested_member_bytes,
     validate_manifest_bundle,
 )
-from cvi.provenance import content_sha256
-from cvi.protected_public_split import PublicSplitSample, PublicSplitSourceBundle
-from tools.extract_yt_native_nose_regions import (
+from foundation.provenance import content_sha256
+from identity_governance.protected_public_split import PublicSplitSample, PublicSplitSourceBundle
+from workflows.extract_yt_native_nose_regions import (
     _teacher_source_record,
     _validate_split_inputs,
 )

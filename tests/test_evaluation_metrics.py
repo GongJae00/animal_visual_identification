@@ -4,7 +4,7 @@ import unittest
 
 import numpy as np
 
-from cvi.evaluation.retrieval import (
+from evaluation.retrieval import (
     ClosedSetViolation,
     EmbeddingNormError,
     MetricInvariantError,
@@ -14,7 +14,7 @@ from cvi.evaluation.retrieval import (
     evaluate_multi_template_closed_set,
     identity_clustered_bootstrap_ci,
 )
-from cvi.evaluation.verification import (
+from evaluation.verification import (
     EmptyInputError,
     InvalidLabelError,
     LengthMismatchError,
@@ -328,7 +328,7 @@ class RetrievalMetricsTest(unittest.TestCase):
 
     def test_mINP_no_clipping_raises_on_broken_invariant(self):
         ranked_pos = np.array([True, False, False], dtype=bool)
-        from cvi.evaluation.retrieval import _compute_ap_inp
+        from evaluation.retrieval import _compute_ap_inp
         with self.assertRaises(MetricInvariantError):
             _compute_ap_inp(ranked_pos, n_relevant=5)
 

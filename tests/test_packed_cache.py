@@ -8,7 +8,7 @@ from dataclasses import replace
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from cvi.control_scoring import (
+from evaluation.control_scoring import (
     ArtifactCacheBinding,
     ArtifactSourceKind,
     ControlScoringInventory,
@@ -16,7 +16,7 @@ from cvi.control_scoring import (
     ScoringArtifactEntry,
     embedding_cache_key,
 )
-from cvi.packed_cache import (
+from evaluation.packed_cache import (
     PACKED_VECTOR_FILE_NAME,
     PackedEmbeddingCacheEntry,
     PackedEmbeddingCacheManifest,
@@ -24,7 +24,7 @@ from cvi.packed_cache import (
     PackedEmbeddingCacheVerification,
     verify_packed_embedding_cache_files,
 )
-from cvi.provenance import content_sha256
+from foundation.provenance import content_sha256
 
 
 def _opaque(label: str) -> str:

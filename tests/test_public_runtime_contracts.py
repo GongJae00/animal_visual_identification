@@ -11,9 +11,9 @@ from unittest.mock import patch
 import numpy as np
 from PIL import Image
 
-from cvi.api import CVI, Match
-from cvi.evidence.base import AbstractEvidencer
-from cvi.evidence.model_contract import (
+from canine_identity.engine import IdentityEngine, Match
+from evidence_fusion.base import AbstractEvidencer
+from artifact_contracts.model_contract import (
     ConvNeXtModelManifest,
     DogFaceNetModelManifest,
     OnnxEvidenceContractError,
@@ -22,7 +22,7 @@ from cvi.evidence.model_contract import (
     OnnxPreprocessingContract,
     PetReIDModelManifest,
 )
-from cvi.evidence.artifact_manifest import (
+from artifact_contracts.artifact_manifest import (
     ArtifactLicense,
     ImagePreprocessing,
     LandmarkGraphManifest,
@@ -30,11 +30,11 @@ from cvi.evidence.artifact_manifest import (
     LandmarkKeypointManifest,
     UsageLane,
 )
-from cvi.fusion.fuser import LearnedWeightFuser
-from cvi.index.hierarchical import SpeciesFilteredIndex
-from cvi.identity_registry import compute_registered_dog_id
-from cvi.pipeline.enroll import MultiEvidencePipeline
-from cvi.pipeline.search import IdentitySearchPipeline
+from evidence_fusion.fuser import LearnedWeightFuser
+from identity_retrieval.index.hierarchical import SpeciesFilteredIndex
+from identity_governance.identity_registry import compute_registered_dog_id
+from identity_retrieval.pipeline.enroll import MultiEvidencePipeline
+from identity_retrieval.pipeline.search import IdentitySearchPipeline
 
 
 class _FixedEvidencer(AbstractEvidencer):
@@ -535,7 +535,7 @@ class GalleryContractTests(unittest.TestCase):
         manifest_path = self.root / "gallery_manifest.json"
         manifest_path.write_bytes(b" " * 17)
         with (
-            patch("cvi.index.hierarchical._MAXIMUM_MANIFEST_BYTES", 16),
+            patch("identity_retrieval.index.hierarchical._MAXIMUM_MANIFEST_BYTES", 16),
             self.assertRaisesRegex(RuntimeError, "byte limit"),
         ):
             SpeciesFilteredIndex(self.root, dim=2, read_only=True)
@@ -562,7 +562,7 @@ class GalleryContractTests(unittest.TestCase):
         index.close()
 
         with (
-            patch("cvi.index.hierarchical._MAXIMUM_SIDECAR_JSON_BYTES", 16),
+            patch("identity_retrieval.index.hierarchical._MAXIMUM_SIDECAR_JSON_BYTES", 16),
             self.assertRaisesRegex(RuntimeError, "byte limit"),
         ):
             SpeciesFilteredIndex(self.root, dim=2, read_only=True)
@@ -581,7 +581,7 @@ class GalleryContractTests(unittest.TestCase):
         index.close()
 
         with (
-            patch("cvi.index.hierarchical.faiss.read_index") as read_index,
+            patch("identity_retrieval.index.hierarchical.faiss.read_index") as read_index,
             self.assertRaisesRegex(RuntimeError, "required index.*byte limit"),
         ):
             SpeciesFilteredIndex(self.root, dim=2, read_only=True)
@@ -607,7 +607,7 @@ class GalleryContractTests(unittest.TestCase):
                 index.enroll(np.array([0.0, 1.0]), dog_two)
 
                 with (
-                    patch(f"cvi.index.hierarchical.{limit_name}", 16),
+                    patch(f"identity_retrieval.index.hierarchical.{limit_name}", 16),
                     self.assertRaisesRegex(RuntimeError, message),
                 ):
                     index.save()
@@ -760,41 +760,27 @@ class PublicConfigurationTests(unittest.TestCase):
         match = Match("dog-1", 0.5, {}, {"template_id": "template-1"})
         self.assertEqual(match.to_dict()["metadata"]["template_id"], "template-1")
 
-    def test_legacy_root_exports_are_lazy_and_available(self) -> None:
-        import cvi
-        from cvi.inference import OnnxEmbeddingModel
-        from cvi.detection import DogDetector
-        from cvi.identity_registry import IdentityRegistry
-        from cvi.model_paths import MODELS_DIR
-        from cvi.trainer import TrainConfig
-
-        self.assertIs(cvi.TrainConfig, TrainConfig)
-        self.assertIs(cvi.OnnxEmbeddingModel, OnnxEmbeddingModel)
-        self.assertIs(cvi.DogDetector, DogDetector)
-        self.assertIs(cvi.IdentityRegistry, IdentityRegistry)
-        self.assertEqual(cvi.MODELS_DIR, MODELS_DIR)
-
     def test_configuration_requires_explicit_mode_and_channels(self) -> None:
         with self.assertRaisesRegex(ValueError, "explicit"):
-            CVI()
+            IdentityEngine()
         with self.assertRaisesRegex(ValueError, "explicit index_dir"):
-            CVI({
+            IdentityEngine({
                 "schema_version": "cvi.retrieval_config.v1",
                 "mode": "closed_set_retrieval",
                 "channels": {},
             })
         with self.assertRaisesRegex(ValueError, "channels"):
-            CVI({
+            IdentityEngine({
                 "schema_version": "cvi.retrieval_config.v1",
                 "mode": "closed_set_retrieval",
                 "index_dir": "/tmp/cvi-public-runtime-contract-gallery",
             })
         with self.assertRaisesRegex(ValueError, "schema_version"):
-            CVI({"mode": "closed_set_retrieval", "channels": {}})
+            IdentityEngine({"mode": "closed_set_retrieval", "channels": {}})
 
     def test_configuration_rejects_unknown_models(self) -> None:
         with self.assertRaisesRegex(ValueError, "unsupported channel"):
-            CVI({
+            IdentityEngine({
                 "schema_version": "cvi.retrieval_config.v1",
                 "mode": "closed_set_retrieval",
                 "index_dir": "/tmp/cvi-public-runtime-contract-gallery",
@@ -811,7 +797,7 @@ class PublicConfigurationTests(unittest.TestCase):
                     self.subTest(spec=spec),
                     self.assertRaisesRegex(ValueError, "unsupported channel type"),
                 ):
-                    CVI(self._config({"visual": spec}))
+                    IdentityEngine(self._config({"visual": spec}))
 
     def test_public_local_dinov2_is_receipt_bound_and_gallery_bound(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -827,10 +813,10 @@ class PublicConfigurationTests(unittest.TestCase):
             }
             _ConfiguredLocalDinov2Evidencer.calls.clear()
             with patch(
-                "cvi.evidence.appearance.ReceiptBoundDinov2Small",
+                "identity_methods.appearance.ReceiptBoundDinov2Small",
                 _ConfiguredLocalDinov2Evidencer,
             ):
-                runtime = CVI({
+                runtime = IdentityEngine({
                     **self._config({"visual": channel}),
                     "index_dir": str(root / "index"),
                 })
@@ -860,7 +846,7 @@ class PublicConfigurationTests(unittest.TestCase):
             }
             with (
                 patch(
-                    "cvi.evidence.appearance.ReceiptBoundDinov2Small",
+                    "identity_methods.appearance.ReceiptBoundDinov2Small",
                     _ConfiguredLocalDinov2Evidencer,
                 ),
                 patch.object(
@@ -870,7 +856,7 @@ class PublicConfigurationTests(unittest.TestCase):
                 ),
                 self.assertRaisesRegex(RuntimeError, "embedding contract"),
             ):
-                CVI({
+                IdentityEngine({
                     **self._config({"visual": channel}),
                     "index_dir": str(root / "index"),
                 })
@@ -892,11 +878,11 @@ class PublicConfigurationTests(unittest.TestCase):
         )
         for spec in invalid_specs:
             with self.subTest(spec=spec), self.assertRaises(ValueError):
-                CVI(self._config({"visual": spec}))
+                IdentityEngine(self._config({"visual": spec}))
 
     def test_configuration_rejects_heuristic_open_set(self) -> None:
         with self.assertRaisesRegex(ValueError, "frozen calibration"):
-            CVI({
+            IdentityEngine({
                 "schema_version": "cvi.retrieval_config.v1",
                 "mode": "closed_set_retrieval",
                 "channels": {"visual": {"type": "dinov2"}},
@@ -913,7 +899,7 @@ class PublicConfigurationTests(unittest.TestCase):
                 encoding="utf-8",
             )
             with self.assertRaisesRegex(ValueError, "duplicate"):
-                CVI(path)
+                IdentityEngine(path)
             path.write_text(
                 '{"schema_version":"cvi.retrieval_config.v1",'
                 '"mode":"closed_set_retrieval",'
@@ -922,9 +908,9 @@ class PublicConfigurationTests(unittest.TestCase):
                 encoding="utf-8",
             )
             with self.assertRaisesRegex(ValueError, "non-finite"):
-                CVI(path)
+                IdentityEngine(path)
         with self.assertRaisesRegex(ValueError, "finite JSON"):
-            CVI({
+            IdentityEngine({
                 "schema_version": "cvi.retrieval_config.v1",
                 "mode": "closed_set_retrieval",
                 "channels": {"visual": {"type": "dinov3"}},
@@ -937,14 +923,14 @@ class PublicConfigurationTests(unittest.TestCase):
             oversized = root / "oversized.json"
             oversized.write_bytes(b" " * (1_048_576 + 1))
             with self.assertRaisesRegex(ValueError, "bounded regular file"):
-                CVI(oversized)
+                IdentityEngine(oversized)
 
             target = root / "config-target.json"
             target.write_text("{}", encoding="utf-8")
             link = root / "config.json"
             link.symlink_to(target)
             with self.assertRaisesRegex(ValueError, "without following links"):
-                CVI(link)
+                IdentityEngine(link)
 
     def test_manifest_contracts_round_trip_and_reject_schema_substitution(self) -> None:
         cases = (
@@ -1014,19 +1000,19 @@ class PublicConfigurationTests(unittest.TestCase):
             _ConfiguredOnnxEvidencer.calls.clear()
             with (
                 patch(
-                    "cvi.evidence_extractor.DogFaceNetExtractor",
+                    "identity_methods.backbones.extractors.DogFaceNetExtractor",
                     _ConfiguredOnnxEvidencer,
                 ),
                 patch(
-                    "cvi.evidence_extractor.ConvNeXtExtractor",
+                    "identity_methods.backbones.extractors.ConvNeXtExtractor",
                     _ConfiguredOnnxEvidencer,
                 ),
                 patch(
-                    "cvi.evidence_extractor.PetReIDExtractor",
+                    "identity_methods.backbones.extractors.PetReIDExtractor",
                     _ConfiguredOnnxEvidencer,
                 ),
             ):
-                runtime = CVI({
+                runtime = IdentityEngine({
                     **self._config(channels),
                     "index_dir": str(root / "index"),
                 })
@@ -1067,10 +1053,10 @@ class PublicConfigurationTests(unittest.TestCase):
             }
             _ConfiguredLandmarkEvidencer.calls.clear()
             with patch(
-                "cvi.evidence.landmark_graph.LandmarkEvidencer",
+                "localization.landmark_graph.LandmarkEvidencer",
                 _ConfiguredLandmarkEvidencer,
             ):
-                runtime = CVI({
+                runtime = IdentityEngine({
                     **self._config({"landmark": channel}),
                     "index_dir": str(root / "index"),
                 })
@@ -1094,7 +1080,7 @@ class PublicConfigurationTests(unittest.TestCase):
                 "manifest_path": str(manifest_path),
             }
             with self.assertRaisesRegex(ValueError, "exact ONNX channel schema"):
-                CVI(self._config({
+                IdentityEngine(self._config({
                     "visual": {
                         "type": "dogfacenet_onnx",
                         "model_path": str(model_path),
@@ -1112,10 +1098,10 @@ class PublicConfigurationTests(unittest.TestCase):
                 encoding="utf-8",
             )
             with self.assertRaisesRegex(ValueError, "duplicate"):
-                CVI(self._config({"visual": channel}))
+                IdentityEngine(self._config({"visual": channel}))
 
     def test_public_arguments_are_bounded_canonical_and_finite(self) -> None:
-        runtime = CVI.__new__(CVI)
+        runtime = IdentityEngine.__new__(IdentityEngine)
         runtime._search = _PublicSearchRecorder()
         image = Image.new("RGB", (2, 2))
         with self.assertRaisesRegex(ValueError, "top_k"):
@@ -1145,12 +1131,12 @@ class PublicConfigurationTests(unittest.TestCase):
 
     def test_enrollment_identity_requires_canonical_uuidv5(self) -> None:
         value = "877d96de-ba43-542d-9523-5c20213bfc09"
-        self.assertEqual(CVI._validate_registered_dog_id(value), value)
+        self.assertEqual(IdentityEngine._validate_registered_dog_id(value), value)
         for invalid in ("bbo-bi", value.upper(), str(uuid.uuid4())):
             with self.subTest(invalid=invalid), self.assertRaisesRegex(
                 ValueError, "UUIDv5"
             ):
-                CVI._validate_registered_dog_id(invalid)
+                IdentityEngine._validate_registered_dog_id(invalid)
 
 
 if __name__ == "__main__":

@@ -3,14 +3,14 @@ from __future__ import annotations
 import unittest
 from unittest.mock import patch
 
-from cvi.protected_public_split import PublicSplitSample, PublicSplitSourceBundle
-from cvi.pdq_contracts import (
+from identity_governance.protected_public_split import PublicSplitSample, PublicSplitSourceBundle
+from identity_methods.classical.pdq_contracts import (
     PDQNearDuplicateCandidate,
     PDQSearchPolicy,
     PDQSearchResult,
 )
-from cvi.provenance import content_sha256
-from cvi.public_duplicate_adjudication import (
+from foundation.provenance import content_sha256
+from data_pipeline.public_duplicate_adjudication import (
     AdjudicationMode,
     AdjudicationLedger,
     CandidateAdjudication,
@@ -221,7 +221,7 @@ class PublicDuplicateAdjudicationTests(unittest.TestCase):
             ),
         }
         with patch(
-            "cvi.public_duplicate_adjudication.validate_dinov2_filter_for_corpus",
+            "data_pipeline.public_duplicate_adjudication.validate_dinov2_filter_for_corpus",
             return_value=(_token(990), dino_rows),
         ):
             chunk = build_adjudication_chunk(
@@ -279,7 +279,7 @@ class PublicDuplicateAdjudicationTests(unittest.TestCase):
             ),
         }
         with patch(
-            "cvi.public_duplicate_adjudication.validate_dinov2_filter_for_corpus",
+            "data_pipeline.public_duplicate_adjudication.validate_dinov2_filter_for_corpus",
             return_value=(_token(990), rows),
         ):
             chunk = build_adjudication_chunk(
@@ -327,7 +327,7 @@ class PublicDuplicateAdjudicationTests(unittest.TestCase):
         })
         source = PublicSplitSourceBundle(tuple(sorted(bindings.items())), base.samples)
         with patch(
-            "cvi.public_duplicate_adjudication.validate_admission_for_corpus",
+            "data_pipeline.public_duplicate_adjudication.validate_admission_for_corpus",
             return_value=_token(990),
         ):
             chunk = build_adjudication_chunk(

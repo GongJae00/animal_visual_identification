@@ -5,7 +5,7 @@ import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from tools.construct_verification_pairs import _write_bundle
+from workflows.construct_verification_pairs import _write_bundle
 
 
 class PairingToolTests(unittest.TestCase):

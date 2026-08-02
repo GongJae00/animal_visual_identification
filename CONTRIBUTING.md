@@ -1,7 +1,7 @@
 # Contributing
 
 Contributions that improve correctness, portability, documentation, tests, or
-reproducible evaluation are welcome. CVI is research software, so changes must
+reproducible evaluation are welcome. Canine Video Identity is research software, so changes must
 distinguish implemented behavior from proposed capability.
 
 ## Before Opening A Change
@@ -15,7 +15,7 @@ distinguish implemented behavior from proposed capability.
 
 ## Development Setup
 
-CVI development is supported on Linux with Python 3.12 and `uv`.
+Development is supported on Linux with Python 3.12 and `uv`.
 Choose one runtime lane:
 
 ```bash

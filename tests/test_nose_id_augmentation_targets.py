@@ -4,7 +4,7 @@ import unittest
 
 import torch
 
-from cvi.nose_id.augment import NoseIdentityAugment
+from identity_methods.nose.augment import NoseIdentityAugment
 
 
 class NoseIDAugmentationTargetTests(unittest.TestCase):

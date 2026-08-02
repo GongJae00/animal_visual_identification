@@ -4,7 +4,7 @@ import unittest
 
 import torch
 
-from cvi.nose_id.frequency import FixedFrequencyBank
+from identity_methods.nose.frequency import FixedFrequencyBank
 
 
 class NoseIDFrequencyTests(unittest.TestCase):

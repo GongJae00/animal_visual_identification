@@ -6,7 +6,7 @@ import unittest
 from dataclasses import replace
 from pathlib import Path
 
-from cvi.public_canine_manifest import (
+from data_pipeline.public_canine_manifest import (
     ArchiveReceiptBinding,
     CanineRegion,
     DOGFACE_DATASET,
@@ -28,7 +28,7 @@ from cvi.public_canine_manifest import (
 )
 
 
-_SECURE_ROOT = Path(os.environ.get("CVI_PUBLIC_CANINE_SECURE_ROOT") or os.devnull)
+_SECURE_ROOT = Path(os.environ.get("CANINE_IDENTITY_PUBLIC_CANINE_SECURE_ROOT") or os.devnull)
 _RECEIPT_DIGEST = hashlib.sha256(b"focused semantic parser test receipt").hexdigest()
 
 

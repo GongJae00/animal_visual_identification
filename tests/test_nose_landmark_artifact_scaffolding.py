@@ -10,7 +10,7 @@ import onnx
 from onnx import TensorProto, helper, numpy_helper
 from PIL import Image
 
-from cvi.evidence.artifact_manifest import (
+from artifact_contracts.artifact_manifest import (
     ArtifactContractError,
     ArtifactLicense,
     ClaheTransform,
@@ -23,13 +23,13 @@ from cvi.evidence.artifact_manifest import (
     NoseMaskManifest,
     UsageLane,
 )
-from cvi.evidence.base import EvidenceInsufficiency
-from cvi.evidence.landmark_graph import (
+from evidence_fusion.base import EvidenceInsufficiency
+from localization.landmark_graph import (
     LandmarkEvidencer,
     LandmarkGraphEmbedder,
     decode_landmark_heatmaps,
 )
-from cvi.evidence.nose_print import (
+from identity_methods.nose.extractor import (
     DNPMask,
     MagFaceNoseHead,
     NoseAbstainReason,

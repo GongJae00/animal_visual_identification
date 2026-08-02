@@ -54,8 +54,8 @@ Create `external_pins.json` in an independently controlled step, record its raw
 SHA-256, then run:
 
 ```bash
-uv run python tools/prepare_protected_evaluation.py \
-  --policy configs/research/contracts/protected_evaluation_policy.example.json \
+uv run python workflows/prepare_protected_evaluation.py \
+  --policy experiments/configs/contracts/protected_evaluation_policy.example.json \
   --external-pins /secure/external_pins.json \
   --expected-external-pins-raw-sha256 "$PINS_RAW_SHA256" \
   --split-assignment /secure/split_assignment.json \
@@ -70,7 +70,7 @@ uv run python tools/prepare_protected_evaluation.py \
 Archive the printed plan and exposure hashes before scoring:
 
 ```bash
-uv run python tools/evaluate_multichannel.py protected \
+uv run python workflows/evaluate_multichannel.py protected \
   --preparation-directory /secure/evaluation_preparation \
   --expected-plan-receipt-sha256 "$PLAN_SHA256" \
   --expected-advanced-exposure-declaration-sha256 "$EXPOSURE_SHA256" \
@@ -88,7 +88,7 @@ The output directory is atomically published with `report.json` and
 `output_receipt.json`. Archive the printed output-receipt hash, then verify:
 
 ```bash
-uv run python tools/verify_protected_evaluation.py \
+uv run python workflows/verify_protected_evaluation.py \
   --preparation-directory /secure/evaluation_preparation \
   --output-directory /secure/evaluation_output \
   --expected-plan-receipt-sha256 "$PLAN_SHA256" \
@@ -112,7 +112,7 @@ by this evaluator. A verified v3 report must not be promoted to model-selection
 or final-reporting evidence without such an independently governed review.
 
 The canonical v3 JSON Schema is the installed package resource
-`cvi/schemas/cvi.evaluation.report.v3.schema.json`. Validation and schema
+`artifact_contracts/schemas/cvi.evaluation.report.v3.schema.json`. Validation and schema
 receipt hashing load that resource through `importlib.resources`, so they do
 not depend on a source checkout or current working directory.
 

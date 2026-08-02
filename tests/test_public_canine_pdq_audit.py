@@ -5,9 +5,9 @@ from pathlib import Path
 from types import SimpleNamespace
 from tempfile import TemporaryDirectory
 
-from cvi.pdq_contracts import PDQFingerprint, PDQSearchPolicy
-from cvi.provenance import content_sha256
-from cvi.public_canine_pdq_audit import (
+from identity_methods.classical.pdq_contracts import PDQFingerprint, PDQSearchPolicy
+from foundation.provenance import content_sha256
+from identity_methods.classical.public_canine_pdq_audit import (
     PDQFingerprintChunk,
     build_pdq_evidence_bundle,
     merge_pdq_fingerprint_chunks,

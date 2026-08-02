@@ -6,8 +6,8 @@ from pathlib import Path
 import subprocess
 import sys
 
-from cvi.public_canine_manifest import PublicCanineManifest
-from cvi.public_canine_semantic_receipt import (
+from data_pipeline.public_canine_manifest import PublicCanineManifest
+from data_pipeline.public_canine_semantic_receipt import (
     PublicCanineSemanticReceipt,
     summarize_public_canine_manifest,
 )
@@ -21,7 +21,7 @@ class PublicCanineSemanticReceiptTests(unittest.TestCase):
                 sys.executable,
                 str(
                     Path(__file__).parents[1]
-                    / "tools"
+                    / "workflows"
                     / "audit_public_canine_semantics.py"
                 ),
                 "--help",
@@ -37,7 +37,7 @@ class PublicCanineSemanticReceiptTests(unittest.TestCase):
                 sys.executable,
                 str(
                     Path(__file__).parents[1]
-                    / "tools"
+                    / "workflows"
                     / "audit_public_canine_image_content.py"
                 ),
                 "--help",

@@ -4,7 +4,7 @@ import unittest
 
 import numpy as np
 
-from cvi.evaluation.calibration import (
+from evaluation.calibration import (
     compute_probability_calibration_metrics,
     fit_isotonic_calibration,
     CalibrationError,

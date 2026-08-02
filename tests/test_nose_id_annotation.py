@@ -13,13 +13,13 @@ from onnx import TensorProto, helper, numpy_helper
 from PIL import Image
 import pytest
 
-from cvi.evidence.artifact_manifest import (
+from artifact_contracts.artifact_manifest import (
     ArtifactLicense,
     ImagePreprocessing,
     NoseDetectorManifest,
     UsageLane,
 )
-from cvi.nose_id.annotation import (
+from identity_methods.nose.annotation import (
     ACQUISITION_SCHEMA,
     ANNOTATION_SCHEMA,
     AcquisitionRecord,
@@ -33,9 +33,9 @@ from cvi.nose_id.annotation import (
     validate_acquisition_records,
     validate_annotation_records,
 )
-from cvi.nose_id.types import NOSE_KEYPOINTS
-from cvi.provenance import content_sha256
-from tools.prepare_nose_annotation_batch import (
+from identity_methods.nose.types import NOSE_KEYPOINTS
+from foundation.provenance import content_sha256
+from workflows.prepare_nose_annotation_batch import (
     create_review_batch,
     validate_completed_batch,
 )

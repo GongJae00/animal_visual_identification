@@ -4,7 +4,7 @@ import unittest
 
 import torch
 
-from cvi.nose_id.losses import (
+from identity_methods.nose.losses import (
     batch_hard_triplet_loss,
     supervised_contrastive_loss,
 )

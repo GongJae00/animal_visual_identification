@@ -10,7 +10,7 @@ from dataclasses import replace
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from cvi.pretrained_weight_intake import (
+from artifact_contracts.pretrained_weight_intake import (
     PretrainedWeightChecksumAuthority,
     PretrainedWeightFileFormat,
     PretrainedWeightIntakeReceipt,
@@ -40,7 +40,7 @@ class PretrainedWeightIntakeTests(unittest.TestCase):
                 sys.executable,
                 str(
                     Path(__file__).parents[1]
-                    / "tools"
+                    / "workflows"
                     / "audit_pretrained_weight.py"
                 ),
                 "--help",

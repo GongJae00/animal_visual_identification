@@ -9,8 +9,8 @@ from pathlib import Path
 import pytest
 from PIL import Image
 
-from cvi.identity_registry import compute_registered_dog_id
-from cvi.nose_region.manifest import (
+from identity_governance.identity_registry import compute_registered_dog_id
+from localization.nose_region.manifest import (
     BUNDLE_SCHEMA,
     LICENSING_LANES,
     admitted_split_for_role,
@@ -23,7 +23,7 @@ from cvi.nose_region.manifest import (
     read_nose_region_manifest,
     validate_nose_region_manifest_bundle,
 )
-from cvi.provenance import content_sha256
+from foundation.provenance import content_sha256
 
 
 def _sha(label: str) -> str:

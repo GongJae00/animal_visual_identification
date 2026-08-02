@@ -4,16 +4,16 @@ import unittest
 from copy import deepcopy
 from dataclasses import replace
 
-from cvi.contracts import Modality
-from cvi.dataset import (
+from artifact_contracts.contracts import Modality
+from data_pipeline.dataset import (
     EvaluationStage,
     SplitManifest,
     SplitPolicy,
     SplitRole,
     TrackletRecord,
 )
-from cvi.evaluation import VerificationDirection
-from cvi.pairing import (
+from evaluation import VerificationDirection
+from evaluation.pairing import (
     DogAttributes,
     NegativeQuota,
     PairStratum,

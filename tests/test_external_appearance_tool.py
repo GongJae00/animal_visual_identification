@@ -9,8 +9,8 @@ import zipfile
 from pathlib import Path
 from types import SimpleNamespace
 
-from cvi.protected_public_split import PublicSplitSample, PublicSplitSourceBundle
-from tools import evaluate_external_appearance as tool
+from identity_governance.protected_public_split import PublicSplitSample, PublicSplitSourceBundle
+from workflows import evaluate_external_appearance as tool
 
 
 def _token(value: str) -> str:
@@ -319,7 +319,7 @@ class ExternalAppearanceToolTests(unittest.TestCase):
     def test_cli_help_has_no_filesystem_side_effects(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            script = Path("tools/evaluate_external_appearance.py").resolve()
+            script = Path("workflows/evaluate_external_appearance.py").resolve()
             completed = subprocess.run(
                 [sys.executable, script, "--help"],
                 check=True,
@@ -329,8 +329,6 @@ class ExternalAppearanceToolTests(unittest.TestCase):
             )
             self.assertIn("--checkpoint-sha256", completed.stdout)
             self.assertEqual(list(root.iterdir()), [])
-        baseline = Path("tools/evaluate_visual_model_baselines.py").read_text()
-        self.assertIn("visual model baseline publication is disabled", baseline)
 
 
 if __name__ == "__main__":

@@ -5,7 +5,7 @@ import unittest
 import torch
 from torch import nn
 
-from cvi.nose_id.trainer import _backward_cached_output
+from identity_methods.nose.trainer import _backward_cached_output
 
 
 class _ToyDropoutModel(nn.Module):

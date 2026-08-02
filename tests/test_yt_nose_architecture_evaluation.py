@@ -12,7 +12,7 @@ import numpy as np
 import pytest
 from PIL import Image
 
-from cvi.evidence.artifact_manifest import (
+from artifact_contracts.artifact_manifest import (
     ArtifactContractError,
     ArtifactLicense,
     ImagePreprocessing,
@@ -20,8 +20,8 @@ from cvi.evidence.artifact_manifest import (
     NoseMaskManifest,
     UsageLane,
 )
-from cvi.identity_registry import compute_registered_dog_id
-from cvi.nose_id.architecture_evaluation import (
+from identity_governance.identity_registry import compute_registered_dog_id
+from experiments.nose_architecture import (
     INTERPRETATION,
     METHODS,
     _filter_consistency_eval_population,
@@ -30,12 +30,12 @@ from cvi.nose_id.architecture_evaluation import (
     evaluate_nose_architectures,
     validate_report_bundle,
 )
-from cvi.nose_region.native_yt import (
+from localization.nose_region.native_yt import (
     NativeYtSample,
     build_manifest_bundle,
     process_native_sample,
 )
-from cvi.provenance import content_sha256
+from foundation.provenance import content_sha256
 
 
 pytest.importorskip("onnx")
@@ -661,7 +661,7 @@ def test_consistency_eval_population_filter_is_canonical_exact_and_at_least_20()
 
 
 def test_cli_help() -> None:
-    tool = Path(__file__).resolve().parents[1] / "tools" / "evaluate_yt_nose_architecture.py"
+    tool = Path(__file__).resolve().parents[1] / "workflows" / "evaluate_yt_nose_architecture.py"
     completed = subprocess.run(
         [sys.executable, str(tool), "--help"],
         check=False,

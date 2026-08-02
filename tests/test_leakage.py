@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import unittest
 
-from cvi.contracts import Modality
-from cvi.dataset import SplitRole, TrackletRecord
-from cvi.leakage import association_audit
+from artifact_contracts.contracts import Modality
+from data_pipeline.dataset import SplitRole, TrackletRecord
+from identity_governance.leakage import association_audit
 
 
 def record(

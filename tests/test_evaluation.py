@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import unittest
 
-from cvi.evaluation import (
+from evaluation import (
     ClusterBootstrapConfig,
     ClusterUnit,
     FrozenVerificationThreshold,

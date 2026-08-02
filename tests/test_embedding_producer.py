@@ -6,14 +6,14 @@ from dataclasses import replace
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from cvi.acquisition import sha256_file
-from cvi.control_scoring import (
+from data_pipeline.acquisition import sha256_file
+from evaluation.control_scoring import (
     ArtifactSourceKind,
     ControlScoringInventory,
     EmbeddingCachePolicy,
     ScoringArtifactEntry,
 )
-from cvi.embedding_producer import (
+from operations.embedding_producer import (
     EmbeddingBackendIdentity,
     EmbeddingProducerConfig,
     EmbeddingProductionPolicy,

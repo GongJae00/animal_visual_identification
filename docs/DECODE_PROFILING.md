@@ -7,7 +7,7 @@ on it. The portable reference is FFmpeg software decode. `cuda` is an optional
 guarded path and is never the only runnable configuration.
 
 ```bash
-uv run python tools/benchmark_decode.py /protected/path/source.mp4 \
+uv run python workflows/benchmark_decode.py /protected/path/source.mp4 \
   --source-id source-0001 \
   --source-sha256 SHA256_FROM_ACQUISITION_MANIFEST \
   --backend cpu \
@@ -23,7 +23,7 @@ For device-wide GPU telemetry, both telemetry arguments and the operator
 attestation are required:
 
 ```bash
-uv run python tools/benchmark_decode.py /protected/path/source.mp4 \
+uv run python workflows/benchmark_decode.py /protected/path/source.mp4 \
   --source-id source-0001 \
   --source-sha256 SHA256_FROM_ACQUISITION_MANIFEST \
   --backend cuda \

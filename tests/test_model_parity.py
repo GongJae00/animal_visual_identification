@@ -6,7 +6,7 @@ import unittest
 from hashlib import sha256
 from pathlib import Path
 
-from cvi.evidence.model_parity import (
+from artifact_contracts.model_parity import (
     ModelParityError,
     ModelParityReceipt,
     ModelUsageLane,
@@ -16,7 +16,7 @@ from cvi.evidence.model_parity import (
     load_model_parity_receipt,
     validate_parity_binding,
 )
-from tools.export_pretrained_to_onnx import export_dinov2_small
+from workflows.export_pretrained_to_onnx import export_dinov2_small
 
 
 def _receipt(*, lane: ModelUsageLane = ModelUsageLane.RESEARCH_ONLY) -> ModelParityReceipt:

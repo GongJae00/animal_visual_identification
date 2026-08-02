@@ -11,7 +11,7 @@ import numpy as np
 import pytest
 from PIL import Image
 
-from cvi.evidence.artifact_manifest import (
+from artifact_contracts.artifact_manifest import (
     ArtifactContractError,
     ArtifactLicense,
     ExactOnnxRuntime,
@@ -19,20 +19,20 @@ from cvi.evidence.artifact_manifest import (
     NoseMaskManifest,
     UsageLane,
 )
-from cvi.identity_registry import compute_registered_dog_id
-from cvi.nose_region.embedding_views import (
+from identity_governance.identity_registry import compute_registered_dog_id
+from localization.nose_region.embedding_views import (
     MANIFEST_FILENAME,
     load_embedding_views_manifest,
     prepare_embedding_views,
     reconstruct_student_masked_rgb,
     student_masked_rgb,
 )
-from cvi.nose_region.native_yt import (
+from localization.nose_region.native_yt import (
     NativeYtSample,
     build_manifest_bundle,
     process_native_sample,
 )
-from cvi.provenance import content_sha256
+from foundation.provenance import content_sha256
 
 
 pytest.importorskip("onnx")
@@ -186,7 +186,7 @@ def _fixture(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> dict[str, objec
     lineage_path = student_root / "artifact_lineage.json"
     lineage_path.write_text(json.dumps(lineage, sort_keys=True), encoding="utf-8")
 
-    import cvi.nose_region.segmentation_training as segmentation_training
+    import localization.nose_region.segmentation_training as segmentation_training
 
     validated: list[tuple[object, Path]] = []
 
@@ -249,7 +249,7 @@ def test_student_masked_rgb_matches_architecture_pixels(
     ).astype(np.uint8)
     assert np.array_equal(student_masked_rgb(crop, support), expected)
 
-    import cvi.nose_id.architecture_evaluation as architecture
+    import experiments.nose_architecture as architecture
 
     called = 0
     shared_helper = student_masked_rgb
@@ -349,7 +349,7 @@ def test_cache_and_source_tamper_fail_closed(
 
 def test_prepare_cli_help() -> None:
     completed = subprocess.run(
-        [sys.executable, "tools/prepare_nose_embedding_views.py", "--help"],
+        [sys.executable, "workflows/prepare_nose_embedding_views.py", "--help"],
         check=True,
         capture_output=True,
         text=True,

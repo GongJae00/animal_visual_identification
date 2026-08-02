@@ -49,7 +49,11 @@ jobs:
       - name: Check source diff and compile Python
         run: |
           git diff --check
-          uv run --no-sync python -m compileall -q src tools
+          uv run --no-sync python -m compileall -q \
+            apps artifact_contracts canine_identity data_pipeline evaluation \
+            evidence_fusion experiments foundation identity_governance \
+            identity_methods identity_retrieval localization operations \
+            representation_learning workflows
 
       - name: Build distributions
         run: uv build --out-dir dist
@@ -66,7 +70,7 @@ jobs:
           with zipfile.ZipFile(wheel_path) as wheel:
               names = set(wheel.namelist())
           assert any(name.endswith(".dist-info/licenses/LICENSE") for name in names)
-          assert "cvi/schemas/cvi.evaluation.report.v3.schema.json" in names
+          assert "artifact_contracts/schemas/cvi.evaluation.report.v3.schema.json" in names
           PY
           UV_PROJECT_ENVIRONMENT=.wheel-venv \
             uv sync --locked --extra cpu --no-dev
@@ -77,13 +81,14 @@ jobs:
           .wheel-venv/bin/python - <<'PY'
           from importlib import resources
 
-          import cvi
+          import canine_identity
           import torch
 
-          schema = resources.files("cvi").joinpath(
+          schema = resources.files("artifact_contracts").joinpath(
               "schemas/cvi.evaluation.report.v3.schema.json"
           )
           assert schema.is_file()
-          assert cvi.CVI.__module__ == "cvi.api"
+          assert canine_identity.__all__ == ["IdentityEngine", "Match"]
+          assert canine_identity.IdentityEngine.__module__ == "canine_identity.engine"
           assert torch.version.cuda is None
           PY

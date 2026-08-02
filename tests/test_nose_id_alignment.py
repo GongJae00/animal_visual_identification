@@ -4,7 +4,7 @@ import unittest
 
 import numpy as np
 
-from cvi.nose_id.alignment import (
+from identity_methods.nose.alignment import (
     AlignmentError,
     CANONICAL_KEYPOINTS,
     estimate_similarity_transform,

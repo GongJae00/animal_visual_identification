@@ -80,7 +80,7 @@ The construction tool writes four new files in one protected directory and
 refuses overwrite:
 
 ```bash
-uv run python tools/construct_verification_pairs.py \
+uv run python workflows/construct_verification_pairs.py \
   --split-manifest /protected/split.json \
   --dog-attributes /protected/dog_attributes.json \
   --pairing-policy /protected/pairing_policy.json \

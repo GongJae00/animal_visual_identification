@@ -6,13 +6,13 @@ import json
 import numpy as np
 import pytest
 
-from cvi.evaluation import (
+from evaluation import (
     ROBUSTNESS_PROTOCOL_SCHEMA_VERSION,
     RobustnessProtocolConfig,
     RobustnessProtocolError,
     build_dataset_balanced_oof_protocol,
 )
-from cvi.role_exposure import ExposureStage
+from identity_governance.role_exposure import ExposureStage
 
 
 def _fixture() -> tuple[np.ndarray, np.ndarray]:

@@ -11,18 +11,18 @@ from dataclasses import replace
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from cvi.acquisition import sha256_file
-from cvi.control_scoring import (
+from data_pipeline.acquisition import sha256_file
+from evaluation.control_scoring import (
     ArtifactCacheBinding,
     EmbeddingCacheEntry,
     EmbeddingCacheManifest,
     embedding_cache_key,
 )
-from cvi.embedding_producer import (
+from operations.embedding_producer import (
     EmbeddingBackendIdentity,
     EmbeddingProducerConfig,
 )
-from cvi.numerical_admission import (
+from evaluation.numerical_admission import (
     NumericalAdmissionDecision,
     NumericalAdmissionReceipt,
     NumericalDriftPolicy,
@@ -412,7 +412,7 @@ class NumericalAdmissionTests(unittest.TestCase):
             output = root / "numerical.json"
             command = (
                 sys.executable,
-                "tools/compare_embedding_caches.py",
+                "workflows/compare_embedding_caches.py",
                 "--reference-cache-directory",
                 str(reference_root),
                 "--candidate-cache-directory",

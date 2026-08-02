@@ -12,14 +12,14 @@ import pytest
 import torch
 from PIL import Image
 
-from cvi.evidence.artifact_manifest import (
+from artifact_contracts.artifact_manifest import (
     ExactOnnxRuntime,
     NoseEmbeddingManifest,
     UsageLane,
     preprocess_image,
 )
-from cvi.evidence.model_parity import ParityFixtureKind, ParityThresholds
-from cvi.nose_region.embedding_training import (
+from artifact_contracts.model_parity import ParityFixtureKind, ParityThresholds
+from localization.nose_region.embedding_training import (
     ArcFaceClassificationHead,
     DEV_INTERPRETATION,
     EMBEDDING_DIM,
@@ -35,9 +35,9 @@ from cvi.nose_region.embedding_training import (
     produce_parity_receipt,
     replace_embedding_checkpoint,
 )
-from cvi.nose_region.embedding_views import student_masked_rgb
-from cvi.nose_region import embedding_consistency_training as consistency
-from cvi.nose_region.embedding_consistency_training import (
+from localization.nose_region.embedding_views import student_masked_rgb
+from localization.nose_region import embedding_consistency_training as consistency
+from localization.nose_region.embedding_consistency_training import (
     build_consistency_checkpoint,
     build_identity_partitions,
     deterministic_mild_degradation,
@@ -685,7 +685,7 @@ def test_consistency_tiny_static_onnx_ort_parity_and_runtime_id(tmp_path: Path) 
 
 def test_consistency_cli_help() -> None:
     completed = subprocess.run(
-        [sys.executable, "tools/train_nose_region_consistency.py", "--help"],
+        [sys.executable, "workflows/train_nose_region_consistency.py", "--help"],
         check=True,
         capture_output=True,
         text=True,

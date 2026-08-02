@@ -37,7 +37,7 @@ may be security-relevant.
 
 ## Deployment Warning
 
-CVI is not a production identity service. It does not provide authentication,
+Canine Video Identity is not a production identity service. It does not provide authentication,
 authorization, transport security, encryption at rest, tenancy isolation,
 retention enforcement, or privacy consent workflows. The public runtime returns
 closed-set candidates and does not provide calibrated unknown rejection.

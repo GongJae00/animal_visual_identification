@@ -10,26 +10,26 @@ import numpy as np
 import pytest
 from PIL import Image
 
-from cvi.evidence.artifact_manifest import (
+from artifact_contracts.artifact_manifest import (
     ArtifactContractError,
     ArtifactLicense,
     ImagePreprocessing,
     NoseEmbeddingManifest,
     UsageLane,
 )
-from cvi.identity_registry import compute_registered_dog_id
-from cvi.nose_id.fusion_scaling_evaluation import (
+from identity_governance.identity_registry import compute_registered_dog_id
+from experiments.nose_fusion_scaling import (
     INTERPRETATION,
     METHODS,
     evaluate_fusion_scaling,
     validate_report_bundle,
 )
-from cvi.nose_region.native_yt import (
+from localization.nose_region.native_yt import (
     NativeYtSample,
     build_manifest_bundle,
     process_native_sample,
 )
-from cvi.provenance import content_sha256
+from foundation.provenance import content_sha256
 
 
 pytest.importorskip("onnx")
@@ -314,9 +314,9 @@ def test_real_onnx_fixed_population_exact_fusion_pairing_metrics_and_bootstrap(
         fixture["onnx_path"].read_bytes()
     ).hexdigest()
     assert set(report["code_sha256s"]) >= {
-        "src/cvi/nose_id/fusion_scaling_evaluation.py",
-        "src/cvi/nose_id/temporal.py",
-        "tools/evaluate_yt_nose_fusion_scaling.py",
+        "experiments/nose_fusion_scaling.py",
+        "identity_methods/nose/temporal.py",
+        "workflows/evaluate_yt_nose_fusion_scaling.py",
     }
 
     second = _evaluate(fixture, tmp_path / "fusion-scaling-second.json")

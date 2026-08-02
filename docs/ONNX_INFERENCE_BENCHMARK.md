@@ -29,7 +29,7 @@ reusable absolute-path runtime policy.
 The phases are deliberately separate:
 
 - supervisor process wall time includes Python startup through worker exit;
-- dependency import time covers the delayed CVI backend import and config parse;
+- dependency import time covers the delayed operations backend import and config parse;
 - session construction includes ONNX/NumPy/Pillow imports, model checking,
   provider setup, and CUDA/cuDNN preload where applicable;
 - preprocessing time constructs and hashes one exact input tensor;
@@ -51,43 +51,43 @@ true before `docs/PAIRED_INFERENCE_COMPARISON.md` accepts a pair.
 CPU example:
 
 ```bash
-export CVI_CPU_PYTHON=/path/to/cpu-environment/bin/python
-export CVI_MODEL=/path/to/model.onnx
-export CVI_ARTIFACT_A=/path/to/crop-a.png
-export CVI_ARTIFACT_B=/path/to/crop-b.png
-export CVI_CPU_RUNTIME_POLICY=/path/to/cpu-runtime-policy.json
-export CVI_BENCHMARK_RECEIPTS=/path/to/benchmark-receipts
+export CANINE_IDENTITY_CPU_PYTHON=/path/to/cpu-environment/bin/python
+export CANINE_IDENTITY_MODEL=/path/to/model.onnx
+export CANINE_IDENTITY_ARTIFACT_A=/path/to/crop-a.png
+export CANINE_IDENTITY_ARTIFACT_B=/path/to/crop-b.png
+export CANINE_IDENTITY_CPU_RUNTIME_POLICY=/path/to/cpu-runtime-policy.json
+export CANINE_IDENTITY_BENCHMARK_RECEIPTS=/path/to/benchmark-receipts
 
-"$CVI_CPU_PYTHON" tools/benchmark_onnx_inference.py \
+"$CANINE_IDENTITY_CPU_PYTHON" workflows/benchmark_onnx_inference.py \
   --backend CPU \
-  --model "$CVI_MODEL" \
-  --backend-config configs/deployment/onnx_cpu_backend.example.json \
-  --preprocessing configs/pipeline/evidence/image_preprocessing.example.json \
-  --artifact "$CVI_ARTIFACT_A" --artifact "$CVI_ARTIFACT_B" \
+  --model "$CANINE_IDENTITY_MODEL" \
+  --backend-config operations/configs/onnx_cpu_backend.example.json \
+  --preprocessing canine_identity/configs/evidence/image_preprocessing.example.json \
+  --artifact "$CANINE_IDENTITY_ARTIFACT_A" --artifact "$CANINE_IDENTITY_ARTIFACT_B" \
   --dependency-lock uv.lock \
-  --runtime-library-policy "$CVI_CPU_RUNTIME_POLICY" \
+  --runtime-library-policy "$CANINE_IDENTITY_CPU_RUNTIME_POLICY" \
   --code-revision REVISION \
-  --policy configs/deployment/onnx_inference_benchmark_cpu.example.json \
-  --receipt "$CVI_BENCHMARK_RECEIPTS/cpu.json"
+  --policy operations/configs/onnx_inference_benchmark_cpu.example.json \
+  --receipt "$CANINE_IDENTITY_BENCHMARK_RECEIPTS/cpu.json"
 ```
 
 CUDA example:
 
 ```bash
-export CVI_CUDA_PYTHON=/path/to/cuda-environment/bin/python
-export CVI_CUDA_RUNTIME_POLICY=/path/to/cuda-runtime-policy.json
+export CANINE_IDENTITY_CUDA_PYTHON=/path/to/cuda-environment/bin/python
+export CANINE_IDENTITY_CUDA_RUNTIME_POLICY=/path/to/cuda-runtime-policy.json
 
-"$CVI_CUDA_PYTHON" tools/benchmark_onnx_inference.py \
+"$CANINE_IDENTITY_CUDA_PYTHON" workflows/benchmark_onnx_inference.py \
   --backend CUDA \
-  --model "$CVI_MODEL" \
-  --backend-config configs/deployment/onnx_cuda_backend.example.json \
-  --preprocessing configs/pipeline/evidence/image_preprocessing.example.json \
-  --artifact "$CVI_ARTIFACT_A" --artifact "$CVI_ARTIFACT_B" \
+  --model "$CANINE_IDENTITY_MODEL" \
+  --backend-config operations/configs/onnx_cuda_backend.example.json \
+  --preprocessing canine_identity/configs/evidence/image_preprocessing.example.json \
+  --artifact "$CANINE_IDENTITY_ARTIFACT_A" --artifact "$CANINE_IDENTITY_ARTIFACT_B" \
   --dependency-lock uv.lock \
-  --runtime-library-policy "$CVI_CUDA_RUNTIME_POLICY" \
+  --runtime-library-policy "$CANINE_IDENTITY_CUDA_RUNTIME_POLICY" \
   --code-revision REVISION \
-  --policy configs/deployment/onnx_inference_benchmark_cuda.example.json \
-  --receipt "$CVI_BENCHMARK_RECEIPTS/cuda.json"
+  --policy operations/configs/onnx_inference_benchmark_cuda.example.json \
+  --receipt "$CANINE_IDENTITY_BENCHMARK_RECEIPTS/cuda.json"
 ```
 
 Use a scheduler or bounded-job wrapper when required by local policy, but keep
@@ -98,6 +98,6 @@ model shape and preprocessing before use. Example values are not performance
 targets.
 
 `DISCOVERY_ONLY` receipts are inventory evidence, not admissible measurements.
-`tools/freeze_runtime_library_policy.py` converts consistent discovery workers
+`workflows/freeze_runtime_library_policy.py` converts consistent discovery workers
 to a candidate policy; that policy must be inspected and used in a second run
 whose runtime decision is `PASS`.

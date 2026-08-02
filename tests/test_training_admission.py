@@ -8,21 +8,21 @@ from tempfile import TemporaryDirectory
 
 from PIL import Image
 
-from cvi.public_crop_manifest import (
+from data_pipeline.public_crop_manifest import (
     PublicCropArtifact,
     PublicCropManifest,
     canonical_rgb_pixel_sha256,
     read_verified_crop_artifact,
     verify_public_crop_manifest,
 )
-from cvi.training_admission import (
+from identity_governance.training_admission import (
     TrainingAdmissionManifest,
     TrainingAdmissionReceipt,
     TrainingCropRow,
     admit_training,
     verify_training_admission_receipt,
 )
-from cvi.role_exposure import (
+from identity_governance.role_exposure import (
     ExposureDeclarationKind,
     ExposureStage,
     RoleExposureDeclaration,

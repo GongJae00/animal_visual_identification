@@ -10,7 +10,7 @@
 2. 현재 CVI와 가장 가까운 직접 비교 대상은 BIFOR의 `YT-BB-Dog -> Sibetan` 영상 ReID다. BIFOR는 다른 날짜와 카메라가 포함된 Sibetan에서 Rank-1 82.7%, mAP 69.8%를 보고했다. 현재 CVI의 post-hoc CAL/EVAL-separated 결과는 Rank-1 75.78%, mAP 81.96%지만 같은 YT-BB video track 안의 앞 5장과 뒤 5장을 비교한 결과다. CVI Rank-1은 수치상 6.92%p 낮고 mAP는 12.16%p 높지만, BIFOR는 여러 positive sequence를 갖는 cross-day/camera 문제이고 CVI는 identity당 gallery가 하나인 same-track 문제여서 우열을 주장할 수 없다.
 3. 대규모 얼굴 기준인 PetFace는 dog seen-ID Top-1 77.86%, unseen-ID verification AUC 99.45%를 보고했다. 최근 CVI Nose subarchitecture의 fused Rank-1 75.78%와 수치상 2.08%p 차이지만, PetFace의 얼굴 이미지 분류와 CVI의 native nose-region track 검색은 서로 다른 과제다. 이 75.78%는 Appearance+Face+Nose 전체 architecture의 최종 성능이 아니다.
 4. 고해상도 코무늬 연구는 매우 높은 수치를 보고한다. Bae et al.은 수동 crop한 302마리 스마트폰 코무늬에서 Rank-1 98.972%를 보고했다. CVI보다 수치상 23.20%p 높지만, fold의 identity 분리 여부가 명확하지 않고 입력 해상도·촬영 통제·평가 방식이 다르다.
-5. CVI의 전체 연구 목표는 Appearance(전체 crop/전신 외형), Face, Nose를 함께 사용하고 quality, missing evidence, temporal aggregation, calibrated fusion으로 결합하는 multi-evidence canine video ReID다. 최근 실험은 이 중 Nose evidence를 깊게 구현·검증한 단계다. 단일 새 backbone보다 여러 evidence를 감사 가능하게 결합하는 architecture가 핵심 후보이며, 이 offline research workflow 전체가 canonical public `cvi.CVI` runtime에 연결된 제품 capability는 아니다.
+5. 전체 연구 목표는 Appearance(전체 crop/전신 외형), Face, Nose를 함께 사용하고 quality, missing evidence, temporal aggregation, calibrated fusion으로 결합하는 multi-evidence canine video ReID다. 최근 실험은 이 중 Nose evidence를 깊게 구현·검증한 단계다. 단일 새 backbone보다 여러 evidence를 감사 가능하게 결합하는 architecture가 핵심 후보이며, 이 offline research workflow 전체가 public `canine_identity.IdentityEngine` runtime에 연결된 제품 capability는 아니다.
 6. 현재 결과만으로도 workshop, applied computer vision, reproducibility/system 논문 초안은 가능하다. 그러나 강한 biometric 또는 일반화 ReID 논문을 위해서는 새로운 cross-session/camera cohort, 외부 benchmark, open-set unknown rejection, 동일 protocol의 강한 baseline 비교가 필요하다.
 7. 현재 project artifact metadata는 DogFLW를 사용한 localizer와 downstream artifact를 `CC-BY-NC-4.0-derived`, `RESEARCH_ONLY`로 분류한다. 이는 상업 사용을 자동 허용한다는 결론을 피하기 위한 보수적 내부 정책이다. trained model의 법적 파생물 지위에 대한 확정적 법률 의견은 아니다.
 
@@ -133,7 +133,7 @@ CVPR 2022 Biometrics Workshop의 Pet Biometric Challenge는 1:1 nose-print verif
 
 ### 6.1 Public runtime 경계
 
-`cvi.CVI`는 사용자가 제공한 crop을 enrollment하고 closed-set 후보를 반환한다. video decoding, detection, tracking, frame selection, temporal aggregation, unknown rejection은 canonical public capability가 아니다. 자세한 경계는 `README.md`, `AGENTS.md`, `docs/KNOWN_LIMITATIONS.md`에 기록되어 있다.
+`canine_identity.IdentityEngine`은 사용자가 제공한 crop을 enrollment하고 closed-set 후보를 반환한다. video decoding, detection, tracking, frame selection, temporal aggregation, unknown rejection은 canonical public capability가 아니다. 자세한 경계는 `README.md`, `AGENTS.md`, `docs/KNOWN_LIMITATIONS.md`에 기록되어 있다.
 
 ### 6.2 전체 multi-evidence research architecture
 
@@ -156,13 +156,13 @@ CVI는 코만 보는 구조가 아니다. 논문화할 전체 architecture를 �
 | Evidence | 하는 일 | 현재 위치 |
 |---|---|---|
 | Appearance | 전체 dog crop의 broad visual identity signal을 384D 계열 embedding으로 표현 | crop-level research/evidence path가 있으며 전체 multi-channel baseline 역할 |
-| Face | 얼굴 global 및 regional 특징으로 appearance와 다른 단서를 제공 | research evaluation과 fusion path가 존재하며 동일 cohort 재평가가 필요 |
+| Face | 얼굴 global 및 regional 특징으로 appearance와 다른 단서를 제공 | frozen F0를 same-track unified cohort에서 평가했지만 Appearance 대비 추가 이득은 미확립 |
 | Nose | raw, student-masked, restoration branch와 K5 temporal score를 제공 | 현재 가장 깊게 구현·검증된 신규 evidence branch |
 | Quality/availability | 저화질·ROI 실패·optional evidence 누락을 숨기지 않고 기록 | strict contract와 research fusion에서 사용 |
-| Temporal aggregation | frame 하나보다 여러 frame의 안정된 identity evidence를 사용 | Nose K1/K3/K5에서 실제 검증, 전체 A/F/N 통합은 후속 평가 필요 |
-| Calibrated fusion | Appearance, Face, Nose의 서로 다른 score scale을 calibration 후 결합 | fusion utilities와 branch 실험이 존재하지만 A+F+N unified report는 아직 필요 |
+| Temporal aggregation | frame 하나보다 여러 frame의 안정된 identity evidence를 사용 | Nose K1/K3/K5와 frozen A0/F0/N3 공통 K5 same-track diagnostic에서 검증 |
+| Calibrated fusion | Appearance, Face, Nose의 서로 다른 score scale을 calibration 후 결합 | DEV 29에서 weight를 고정해 EVAL 105에 적용했으나 Appearance baseline 개선에는 실패 |
 
-따라서 아래 표와 75.78% 결과는 **전체 CVI 중 최근 Nose subarchitecture의 상세 evidence**다. 전체 논문의 최종 main table은 동일한 cross-session cohort에서 `Appearance`, `Face`, `Nose`, `A+F`, `A+F+N`, temporal fusion을 모두 비교해야 한다.
+따라서 아래 표와 75.78% 결과는 **전체 CVI 중 최근 Nose subarchitecture의 상세 evidence**다. 별도의 same-track unified diagnostic은 첫 공통 baseline을 제공하지만 최종 main table은 동일한 cross-session cohort에서 `Appearance`, `Face`, `Nose`, `A+F`, `A+F+N`, temporal fusion을 다시 비교해야 한다.
 
 ### 6.3 최근 Nose subarchitecture pipeline
 
@@ -176,6 +176,22 @@ CVI는 코만 보는 구조가 아니다. 논문화할 전체 architecture를 �
 | Embedding consistency v3 | raw parent anchor + masked/degraded/native temporal consistency | SSL TRAIN 777 identities; parent-unseen DEV 77/EVAL 228 |
 | Temporal fusion | frame별 L2 -> K개 균등 평균 -> 최종 L2 | K=1/3/5 비교, K5 선택 |
 | Architecture fusion | raw K5, student-mask K5, restoration score를 row z-score 후 nonnegative simplex search | embedding optimization에서 제외된 228 identities를 post-hoc CAL 67/EVAL 161로 재분할 |
+
+### 6.4 Frozen A0/F0/N3 공통 cohort diagnostic
+
+기존 trained Appearance-v3와 Face-v4는 대상 YT identity에 노출됐으므로 공통 평가에서 제외했다. Appearance와 Face에는 frozen DINOv2-small, Nose에는 consistency-v3 raw embedding을 사용했다. Face crop availability만 보면 DEV 40/EVAL 142였지만 다중견 image에서 대상 identity와 Face를 결합할 수 없는 경우를 fail-closed로 제외해 DEV 29/EVAL 105를 사용했다.
+
+| Method | EVAL Rank-1 | EVAL Rank-5 | EVAL MRR/mAP |
+|---|---:|---:|---:|
+| A0 frozen Appearance K5 | 94.29% | 99.05% | 96.56% |
+| F0 frozen Face K5 | 89.52% | 95.24% | 92.24% |
+| N3 consistency raw Nose K5 | 77.14% | 86.67% | 82.16% |
+| A0+F0 | 94.29% | 99.05% | 96.03% |
+| A0+F0+N3 | 94.29% | 99.05% | 96.03% |
+
+DEV-only simplex calibration은 A/F/N weight `0.75/0.25/0.00`을 선택했다. A0+F0+N3의 A0 대비 Rank-1 delta는 `0.00%p`, 95% identity-bootstrap CI `[-2.86, +2.86]%p`이고 MRR delta는 `-0.53%p`, CI `[-1.97, +0.95]%p`다. 즉 첫 공통 cohort에서도 Face와 Nose의 추가 가치가 입증되지 않았다. Gallery/query가 같은 track의 앞·뒤 frame이므로 이 수치는 cross-session 최종 성능이 아니다.
+
+근거 artifact는 `yt-unified-multievidence-a0-f0-n3-v1-20260802.json`, report payload `report_sha256=1d66e4a87e34db37f786d38e42cb8fbe080b50ba2bf7a87293c66e5a626b4352`다.
 
 학습·평가 population을 수치로 풀면 다음과 같다.
 
@@ -225,11 +241,11 @@ point estimate는 모두 양수지만 CI가 0을 포함한다. 따라서 "fusion
 
 - `nose-region-embedding-consistency-v3-20260730`, lineage payload `lineage_sha256=46b70a9222d154a5661b221f64ea8f2a9451eeec050e10621806c38dcab1c15e`
 - `yt-nose-architecture-eval-v4-consistency-heldout-20260730.json`, report payload `report_sha256=7d9fa6ea1f2010fcaa764893d59e9870c35a0375a6b266e108b09adc58e59e0e`
-- 구현: `src/cvi/nose_region/embedding_consistency_training.py`, `src/cvi/nose_id/architecture_evaluation.py`
+- 구현: `localization/nose_region/embedding_consistency_training.py`, `experiments/nose_architecture.py`
 
 ## 7. 선행연구와 최근 CVI Nose subarchitecture의 성능 비교
 
-Appearance+Face+Nose 전체 unified architecture의 동일-cohort report는 아직 없으므로, 아래 비교는 전체 CVI 최종 성능표가 아니다.
+Appearance+Face+Nose의 same-track 동일-cohort diagnostic은 생겼지만 cross-session final report는 아직 없으므로, 아래 비교는 전체 CVI 최종 성능표가 아니다.
 
 ### 7.1 숫자 차이표
 
@@ -312,7 +328,7 @@ Nose 연구는 이 전체 논문의 중요한 신규 branch이자 상세 ablatio
 2. frame-level evidence를 track-level로 집계하고 development identity에서만 score를 calibration하는 temporal fusion protocol.
 3. AP-10K와 DogFLW localization, SAM 2.1 teacher, MobileNetV4 student를 연결한 weakly supervised native-video Nose branch.
 4. raw parent signal을 보존하면서 masked/degraded/native temporal views를 정렬하는 Nose consistency fine-tuning.
-5. `Appearance`, `Face`, `Nose`, `A+F`, `A+F+N`을 동일 identity/session split에서 비교하는 exposure-audited ablation.
+5. `Appearance`, `Face`, `Nose`, `A+F`, `A+F+N`의 same-track exposure-audited baseline과 후속 cross-session ablation.
 6. source, split, checkpoint, ONNX, code까지 content-bound하는 reproducibility artifact contract.
 
 ### 9.2 현재만으로 주장하기 어려운 것

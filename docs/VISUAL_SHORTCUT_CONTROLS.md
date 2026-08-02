@@ -154,7 +154,7 @@ inference-config hashes; the plan alone does not certify a cache implementation.
 
 ## Planning CLI
 
-`tools/plan_visual_shortcut_controls.py` reconstructs the separated pair
+`workflows/plan_visual_shortcut_controls.py` reconstructs the separated pair
 bundle, reparses the crop receipt, rehashes the current base-crop directory,
 rehashes the closed mask directory, validates the transform config manifest
 against every non-original recipe, and then creates six mode-0600,
@@ -171,13 +171,13 @@ All outputs share one protected directory and are published as one
 all-or-cleaned bundle. If any panel misses its declared minimum matched-pair
 count, no output is written.
 
-`tools/execute_visual_control_transforms.py` then consumes the protected task
+`workflows/execute_visual_control_transforms.py` then consumes the protected task
 file, crop receipt, closed base and mask directories, both mask-verification
 receipts, the same config manifest, and an execution policy. It writes a
 closed control-artifact directory plus one mode-0600, no-overwrite receipt:
 
 ```bash
-uv run python tools/execute_visual_control_transforms.py \
+uv run python workflows/execute_visual_control_transforms.py \
   --transform-tasks PROTECTED/control-transform.json \
   --crop-export-receipt PROTECTED/crop-export-receipt.json \
   --base-artifact-directory DATA/oracle-crops \
@@ -237,7 +237,7 @@ bytes, and chunk size. The receipt reports:
 - neural embedding calls saved relative to naive pair-side execution;
 - peak raw vector chunk bytes.
 
-`tools/score_visual_controls.py` accepts only opaque request IDs and artifact
+`workflows/score_visual_controls.py` accepts only opaque request IDs and artifact
 tokens plus authenticated artifact/cache receipts. It has no ground-truth,
 dog, session, cage, camera, stratum, panel, or control-kind input. It atomically
 writes a mode-0600 inventory, cache verification, and blind score receipt.
@@ -245,7 +245,7 @@ The embedding producer is intentionally outside this reference scorer and must
 create a manifest bound to the actual frozen model/inference lineage.
 
 ```bash
-uv run python tools/score_visual_controls.py \
+uv run python workflows/score_visual_controls.py \
   --scoring-requests PROTECTED/control-scoring.json \
   --crop-export-receipt PROTECTED/crop-export-receipt.json \
   --base-artifact-directory DATA/oracle-crops \
@@ -263,7 +263,7 @@ uv run python tools/score_visual_controls.py \
 
 ## Sealed matched-panel evaluation
 
-Only `tools/evaluate_visual_controls.py` receives both blind scores and sealed
+Only `workflows/evaluate_visual_controls.py` receives both blind scores and sealed
 registered-dog/session truth. The evaluator requires:
 
 - the pair-set hash in the sealed binding payload to equal the reconstructed
@@ -292,7 +292,7 @@ receipt records joined bindings, metric rows, sort items, paired terms, and
 maximum rows per control.
 
 ```bash
-uv run python tools/evaluate_visual_controls.py \
+uv run python workflows/evaluate_visual_controls.py \
   --pair-scoring-requests PROTECTED/pair-scoring.json \
   --pair-artifact-bindings PROTECTED/pair-bindings.json \
   --pair-ground-truth PROTECTED/pair-ground-truth.json \

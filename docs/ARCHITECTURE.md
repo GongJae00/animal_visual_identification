@@ -1,113 +1,68 @@
 # Architecture
 
-## Current Implementation
+This document is the authority for repository ownership and dependency direction. Persisted `cvi.*` values are historical schema identifiers; they are not Python namespaces.
 
-The canonical runtime is `cvi.CVI`, defined in `src/cvi/api.py`. It accepts a
-user-provided `PIL.Image` crop and performs local, crop-level closed-set
-retrieval. It does not invoke video decoding, detection, tracking, or temporal
-aggregation.
+## Public Runtime
+
+`canine_identity.IdentityEngine` is the only public runtime. It accepts caller-provided `PIL.Image` crops and performs strict closed-set enrollment and retrieval. It does not decode video or invoke detection, tracking, temporal aggregation, open-set rejection, or a serving facade.
 
 ```text
-strict config v2
-       |
-       v
-configured evidence extractors
-       |
-       v
-EvidenceObservation per channel
-       |
-       +--> required channel unavailable: fail closed
-       +--> optional channel unavailable: record absence
-       |
-       v
-versioned gallery
-  required vectors: dense FAISS IndexFlatIP storage
-  optional vectors: sparse sidecar storage
-       |
-       v
-exact available-intersection weighted cosine scoring
-       |
-       v
-maximum template score per registered UUIDv5 identity
-       |
-       v
-ordered Match candidates
+explicit config v2
+    -> receipt-bound evidence extractors
+    -> required/optional EvidenceObservation handling
+    -> gallery manifest v4 and content-addressed sidecars
+    -> exact available-intersection weighted cosine
+    -> maximum template score per registered UUIDv5 identity
+    -> ordered Match values
 ```
 
-### Configuration And Construction
+The public package contains only `engine.py` and exports `IdentityEngine` and `Match`. Gallery bytes, scorer ordering, identity aggregation, and UUID rules remain versioned contracts.
 
-`CVI` accepts a Python dictionary, strict JSON text, or a JSON file path. It
-rejects unknown keys, duplicate JSON keys, non-finite values, unsupported modes,
-implicit optional evidence, and enabled open-set behavior. Config v2 requires
-`optional_channels`, and at least one configured channel must remain required.
+## Package Ownership
 
-Each channel is constructed from its exact channel schema. `CVI` rejects the
-legacy `dinov2` and `appearance` types and has no public branch that executes an
-unpinned Torch Hub loader. The retained `dinov2_local` channel validates
-receipt-bound local model and preprocessing artifacts, loads local files only,
-and disables remote-code trust. Other ONNX, landmark, nose, and MiewID paths
-likewise require their corresponding local files and manifests. The repository
-does not bundle those artifacts.
-
-### Enrollment
-
-`CVI.enroll` requires a canonical UUIDv5 registered identity. The helper
-`compute_registered_dog_id` deterministically derives it from a stable source
-identity using the CVI namespace. The pipeline hashes image mode, dimensions,
-and pixels, extracts each configured channel, validates finite non-zero vectors,
-and rejects conflicting template content or idempotency keys.
-
-Multiple templates may be enrolled for one identity. A single image payload
-cannot be bound to different identities in one gallery.
-
-### Search And Scoring
-
-Search extracts the same evidence contract used to create the gallery. Required
-channels must be available for every query and template. Optional channels are
-scored only when present on both sides. Configured weights are renormalized over
-that intersection, and each channel contributes cosine similarity.
-
-The current gallery implementation evaluates stored templates exactly and then
-keeps the maximum-scoring template for each identity. `Match` exposes the
-candidate identity, similarity, channel evidence, availability, scorer hash,
-and exactness marker. No acceptance threshold is applied by `CVI`.
-
-### Persistence And Concurrency
-
-`src/cvi/index/hierarchical.py` persists gallery manifest v4 plus
-content-addressed index and sidecar files. Loading validates the embedding
-contract, dimensions, scorer, cardinalities, hashes, normalized vectors, and
-template metadata. Publishing uses temporary files followed by `os.replace`.
-
-The writable gallery uses a non-blocking `fcntl` lock and permits one writer.
-This makes Linux/POSIX filesystem semantics part of the current support
-boundary. The public API does not expose a read-only multi-process service
-contract.
-
-### Implemented But Non-Canonical Components
-
-The repository also contains detection, evaluation, training, temporal,
-open-set, ONNX measurement, and protected-evaluation components. Their presence
-does not mean they are connected to `CVI` or admitted for production use.
-Notably, `CVIDeploymentCPU` and `CVIDeploymentCUDA` intentionally fail closed,
-and `CVI` rejects enabled open-set configuration.
-
-## Module Map
-
-| Module | Current role |
+| Path | Responsibility |
 |---|---|
-| `src/cvi/api.py` | Public configuration, enrollment, search, explanation, and persistence |
-| `src/cvi/pipeline/` | Evidence orchestration for crop enrollment and search |
-| `src/cvi/evidence/` | Extractors, availability, model manifests, and parity contracts |
-| `src/cvi/fusion/` | Weight representation and research calibration/aggregation utilities |
-| `src/cvi/index/` | Versioned gallery storage and exact candidate scoring |
-| `src/cvi/identity_registry.py` | Deterministic UUIDv5 identity registry |
-| `src/cvi/evaluation/` | Metric implementations outside the canonical decision path |
-| `src/cvi/deployment/` | Disabled deployment facades reserved for future integration |
+| `foundation/` | Deterministic hashing, protected I/O, publication, and retained-file primitives |
+| `artifact_contracts/` | Model, source, runtime-library, intake, parity, and schema resources |
+| `data_pipeline/` | Dataset adapters, acquisition, manifests, crop export, and duplicate evidence intake |
+| `identity_governance/` | UUID registries, duplicate closure, split roles, exposure, and training/research admission |
+| `localization/` | Detection, ROI geometry, prediction caches, and Nose-region materialization/training |
+| `identity_methods/` | Backbones plus Appearance, Face, Nose, and classical identity methods |
+| `representation_learning/` | Trainable representations, heads, objectives, and training orchestration |
+| `evidence_fusion/` | Evidence observations, quality, calibration state, score fusion, and temporal research utilities |
+| `identity_retrieval/` | Gallery persistence, exact scoring, and crop enrollment/search pipelines |
+| `evaluation/` | Verification, retrieval, calibration, robustness, controls, cache evaluation, and protected evaluation |
+| `canine_identity/` | Public crop-level runtime only |
+| `operations/` | Isolated workers, runtime discovery, ONNX execution, supervision, and telemetry |
+| `workflows/` | Source-checkout commands that orchestrate owned packages |
+| `experiments/` | Research-only branch comparisons and major experiment configs |
+| `apps/report/` | Optional report generation application; generated reports remain outside Git |
+| `setup/` | Environment, bootstrap, and release guidance |
+| `tests/` | Behavioral, contract, security, numerical, packaging, and dependency-boundary tests |
 
-## Roadmap
+`Visualization/` is reserved with `.gitkeep`; it does not contain or imply current result artifacts. `paper/` contains guidance only until a manuscript and evidence scope are explicitly approved.
 
-Future integration is gate-driven rather than a statement of current
-capability. See [Roadmap](ROADMAP.md) for the required evidence, calibration,
-video, and deployment gates, and [Known Limitations](KNOWN_LIMITATIONS.md) for
-the present boundary.
+## Dependency Direction
+
+`tests/test_dependency_boundaries.py` enforces these rules with an AST import scan:
+
+1. `foundation` imports no other internal package.
+2. `artifact_contracts` depends only on itself and `foundation`.
+3. Algorithm packages do not import `evaluation` or `operations`.
+4. `canine_identity` does not import learning, evaluation, operations, experiments, workflows, or apps.
+5. `evaluation` may consume all algorithm packages.
+6. `operations` may wrap algorithms and evaluation, but algorithms do not import it.
+
+## Provenance Compatibility
+
+Source provenance v2 binds a logical component and entry points to the recursive closure of repository-local Python imports. Physical path moves therefore produce explicit new provenance instead of pretending old file hashes still describe current code.
+
+Historical compatibility is narrow:
+
+- Face F4/F5 checkpoint validation accepts only the recorded pre-move architecture and dataset hashes. New Face contracts use `canine_identity.faceid_architecture_input_contract.v3` and source closure v2.
+- Existing PDQ receipts continue to parse and verify `cvi.offline_tool_provenance.v1`; newly built provenance uses the logical v2 closure.
+- Existing gallery, checkpoint, receipt, and evaluation schema identifiers remain unchanged unless the source-provenance metadata itself is explicitly versioned.
+
+## External Artifacts
+
+Raw datasets, licensed source archives, weights, checkpoints, galleries, caches, and mutable run outputs stay outside Git. Tracked JSON files are contracts or major experiment definitions, not results. See [Data and Models](DATA_AND_MODELS.md) and [Storage Security](STORAGE_SECURITY.md).

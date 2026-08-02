@@ -50,7 +50,7 @@ an admission receipt. Then freeze a candidate policy from the supervised
 discovery bundles:
 
 ```bash
-uv run python tools/freeze_batch_runtime_library_policy.py \
+uv run python workflows/freeze_batch_runtime_library_policy.py \
   --discovery-policy RUNTIME_DISCOVERY_POLICY.json \
   --discovery-manifest BATCH_RUNTIME_DISCOVERY_1.json \
   --discovery-manifest BATCH_RUNTIME_DISCOVERY_2.json \
@@ -64,7 +64,7 @@ strict rerun; the freeze receipt explicitly does not authorize its own
 discovery run. Create a new precommitment for the strict policy after review.
 
 ```bash
-uv run python tools/create_batch_invariance_precommitment.py \
+uv run python workflows/create_batch_invariance_precommitment.py \
   --inventory INVENTORY.json \
   --artifact-paths ARTIFACT_PATHS.json \
   --producer-config PRODUCER_CONFIG.json \
@@ -72,9 +72,9 @@ uv run python tools/create_batch_invariance_precommitment.py \
   --model-lineage MODEL_LINEAGE.json \
   --preprocessing-config PREPROCESSING.json \
   --dependency-lock uv.lock \
-  --policy configs/research/benchmarks/batch_invariance_policy.example.json \
+  --policy experiments/configs/benchmarks/batch_invariance_policy.example.json \
   --runtime-library-policy STRICT_RUNTIME_LIBRARY_POLICY.json \
-  --worker-execution-policy configs/deployment/batch_worker_execution_policy.example.json \
+  --worker-execution-policy operations/configs/batch_worker_execution_policy.example.json \
   --python-executable .venv-cpu/bin/python \
   --prior-attempt-ledger-sha256 PRIOR_LEDGER_SHA256 \
   --candidate-attempt-token CANDIDATE_ATTEMPT_SHA256 \
@@ -83,7 +83,7 @@ uv run python tools/create_batch_invariance_precommitment.py \
 ```
 
 ```bash
-uv run python tools/evaluate_batch_invariance.py \
+uv run python workflows/evaluate_batch_invariance.py \
   --backend cpu \
   --inventory INVENTORY.json \
   --artifact-paths ARTIFACT_PATHS.json \
@@ -93,11 +93,11 @@ uv run python tools/evaluate_batch_invariance.py \
   --model MODEL.onnx \
   --model-lineage MODEL_LINEAGE.json \
   --dependency-lock uv.lock \
-  --policy configs/research/benchmarks/batch_invariance_policy.example.json \
+  --policy experiments/configs/benchmarks/batch_invariance_policy.example.json \
   --precommitment BATCH_PRECOMMITMENT.json \
   --expected-precommitment-sha256 ARCHIVED_PRECOMMITMENT_SHA256 \
   --runtime-library-policy STRICT_RUNTIME_LIBRARY_POLICY.json \
-  --worker-execution-policy configs/deployment/batch_worker_execution_policy.example.json \
+  --worker-execution-policy operations/configs/batch_worker_execution_policy.example.json \
   --python-executable .venv-cpu/bin/python \
   --receipt BATCH_INVARIANCE_RECEIPT.json
 ```
@@ -107,7 +107,7 @@ requires both independent anchors; editing a failure into a structurally valid
 success changes the final hash and is rejected.
 
 ```bash
-uv run python tools/verify_batch_invariance_receipt.py \
+uv run python workflows/verify_batch_invariance_receipt.py \
   --receipt BATCH_INVARIANCE_RECEIPT.json \
   --expected-precommitment-sha256 ARCHIVED_PRECOMMITMENT_SHA256 \
   --expected-receipt-sha256 ARCHIVED_RECEIPT_SHA256

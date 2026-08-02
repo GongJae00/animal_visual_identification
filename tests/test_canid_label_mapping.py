@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import unittest
 
-from cvi.canid_data.label_map import (
+from data_pipeline.label_map import (
     CANID_KEYPOINT_ALIASES,
     CANID_SPECIES,
     is_known_canid_species,

@@ -10,7 +10,7 @@ from dataclasses import replace
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from cvi.pretrained_supporting_asset_intake import (
+from artifact_contracts.pretrained_supporting_asset_intake import (
     MAXIMUM_JSON_ARRAY_LENGTH,
     MAXIMUM_JSON_DEPTH,
     MAXIMUM_JSON_KEYS,
@@ -22,7 +22,7 @@ from cvi.pretrained_supporting_asset_intake import (
     parse_bounded_strict_json_object,
     validate_pretrained_supporting_asset_receipt_binding,
 )
-from cvi.pretrained_weight_intake import (
+from artifact_contracts.pretrained_weight_intake import (
     PretrainedWeightChecksumAuthority,
     PretrainedWeightFileFormat,
     PretrainedWeightIntakeReceipt,
@@ -30,7 +30,7 @@ from cvi.pretrained_weight_intake import (
     PretrainedWeightUsageLane,
     audit_pretrained_weight_file,
 )
-from cvi.provenance import content_sha256
+from foundation.provenance import content_sha256
 
 
 def _sha256(path: Path) -> str:
@@ -281,6 +281,7 @@ class PretrainedSupportingAssetIntakeTests(unittest.TestCase):
     def test_repository_dinov2_preprocessor_contract_fixes_exact_source(self) -> None:
         contract_path = (
             Path(__file__).parents[1]
+            / "artifact_contracts"
             / "configs"
             / "pretrained-weights"
             / "dinov2-small-preprocessor-hf-ed25f3a3.json"
@@ -403,7 +404,7 @@ class PretrainedSupportingAssetIntakeTests(unittest.TestCase):
     def test_cli_writes_once_and_help_does_not_require_model_framework(self) -> None:
         tool = (
             Path(__file__).parents[1]
-            / "tools"
+            / "workflows"
             / "audit_pretrained_supporting_asset.py"
         )
         help_result = subprocess.run(

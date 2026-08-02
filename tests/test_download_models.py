@@ -7,12 +7,12 @@ import sys
 
 
 ROOT = Path(__file__).resolve().parents[1]
-SCRIPT = ROOT / "tools" / "download_models.py"
+SCRIPT = ROOT / "workflows" / "download_models.py"
 
 
 def _run_downloader(tmp_path: Path, *args: str) -> subprocess.CompletedProcess[str]:
     environment = os.environ.copy()
-    environment["CVI_MODELS_DIR"] = str(tmp_path / "models")
+    environment["CANINE_IDENTITY_MODELS_DIR"] = str(tmp_path / "models")
     return subprocess.run(
         [sys.executable, str(SCRIPT), *args],
         cwd=ROOT,
@@ -71,11 +71,11 @@ def guarded_import(name, *args, **kwargs):
     return original_import(name, *args, **kwargs)
 
 builtins.__import__ = guarded_import
-sys.argv = ["tools/download_models.py", "--model", "miewid"]
-runpy.run_path("tools/download_models.py", run_name="__main__")
+sys.argv = ["workflows/download_models.py", "--model", "miewid"]
+runpy.run_path("workflows/download_models.py", run_name="__main__")
 """
     environment = os.environ.copy()
-    environment["CVI_MODELS_DIR"] = str(tmp_path / "models")
+    environment["CANINE_IDENTITY_MODELS_DIR"] = str(tmp_path / "models")
     completed = subprocess.run(
         [sys.executable, "-c", guarded],
         cwd=ROOT,

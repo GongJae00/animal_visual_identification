@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import unittest
 
-from tools.evaluate_multichannel import (
+from workflows.evaluate_multichannel import (
     relaxed_status_from_warnings,
     validate_split_disjoint,
 )

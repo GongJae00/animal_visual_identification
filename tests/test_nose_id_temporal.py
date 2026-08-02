@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from cvi.nose_id.temporal import aggregate_nose_embeddings
+from identity_methods.nose.temporal import aggregate_nose_embeddings
 
 
 def _unit(index: int, dimension: int = 8) -> np.ndarray:

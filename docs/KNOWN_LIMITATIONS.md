@@ -5,7 +5,7 @@ artifact hashes, internal receipts, or claims of final biometric performance.
 
 ## Recognition Boundary
 
-- `CVI` accepts already-cropped still images. It does not decode video, detect
+- `IdentityEngine` accepts already-cropped still images. It does not decode video, detect
   dogs, associate tracks, select frames, or aggregate a track.
 - Retrieval is closed-set candidate ranking. A returned top match is not an
   authenticated identity decision, and no-match or unknown-dog rejection is
@@ -18,7 +18,7 @@ artifact hashes, internal receipts, or claims of final biometric performance.
 
 ## Evidence And Models
 
-- `CVI` rejects the legacy `dinov2` and `appearance` channel types. The public
+- `IdentityEngine` rejects the legacy `dinov2` and `appearance` channel types. The public
   runtime does not provide an opt-in to execute the unpinned Torch Hub loader.
 - Optional channel implementations require exact local model, preprocessing,
   manifest, and in some cases parity artifacts. Those artifacts are not bundled.
@@ -34,7 +34,7 @@ artifact hashes, internal receipts, or claims of final biometric performance.
 
 ## Calibration And Evaluation
 
-- `CVI` rejects open-set enablement. Metric and calibration modules elsewhere in
+- `IdentityEngine` rejects open-set enablement. Metric and calibration modules elsewhere in
   the repository are research utilities, not an operational threshold.
 - No frozen threshold is shipped for known, unknown, or review decisions.
 - No released result supports a biometric performance, subgroup, domain-shift,
@@ -49,7 +49,7 @@ artifact hashes, internal receipts, or claims of final biometric performance.
 - A gallery permits one POSIX-locked writer. There is no supported distributed
   writer, transaction service, replication protocol, backup workflow, or online
   migration service.
-- The deployment facades in `src/cvi/deployment/` intentionally raise errors.
+- Operations facades intentionally remain disconnected from the public runtime.
   ONNX CPU/CUDA components are measurement and artifact-validation tools until
   they are connected to the canonical gallery and decision contract.
 - Linux with POSIX filesystem semantics is the supported environment. Native
@@ -62,7 +62,7 @@ artifact hashes, internal receipts, or claims of final biometric performance.
   manual acquisition instructions rather than downloading files.
 - Third-party terms may restrict access, redistribution, research, or commercial
   use. The repository license does not override those terms.
-- CVI provides no service authentication, authorization, encryption, consent,
+- The project provides no service authentication, authorization, encryption, consent,
   retention, deletion, or audit-log product. Identity mappings and animal/owner
   imagery require an external privacy and security design.
 - Model and data files are untrusted inputs. Download and conversion tools do

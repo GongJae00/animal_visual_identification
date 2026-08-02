@@ -9,12 +9,13 @@ from unittest import mock
 import numpy as np
 from PIL import Image
 
-from cvi.detection import (
+from localization.detection import (
     Detection,
     DogDetector,
     DogDetectorConfig,
     FrameSelector,
     QualityMetrics,
+    suppress_contained_duplicates,
 )
 
 
@@ -45,6 +46,17 @@ class DetectionTests(unittest.TestCase):
         self.assertEqual(dd["x1"], 10)
         self.assertEqual(dd["class"], "dog")
         self.assertAlmostEqual(dd["confidence"], 0.95)
+
+    def test_suppresses_contained_duplicate_but_preserves_distinct_dogs(self) -> None:
+        detections = [
+            Detection(10, 10, 90, 90, 0.9, 16, "dog"),
+            Detection(8, 8, 95, 98, 0.7, 16, "dog"),
+            Detection(120, 10, 190, 90, 0.8, 16, "dog"),
+        ]
+
+        kept = suppress_contained_duplicates(detections, iou_threshold=0.45)
+
+        self.assertEqual([item.confidence for item in kept], [0.9, 0.8])
 
 
 class QualityMetricsTests(unittest.TestCase):
@@ -135,6 +147,10 @@ class FrameSelectorTests(unittest.TestCase):
         selected = self.selector.select([])
         self.assertEqual(selected, [])
 
+    def test_minimum_sharpness_is_applied(self) -> None:
+        selector = FrameSelector(top_k_frames=3, min_sharpness=1e9)
+        self.assertEqual(selector.select([(0, self.img, self.det)]), [])
+
 
 class DogDetectorYOLOTests(unittest.TestCase):
     def test_config_defaults(self) -> None:
@@ -144,7 +160,7 @@ class DogDetectorYOLOTests(unittest.TestCase):
         self.assertAlmostEqual(cfg.conf_threshold, 0.25)
         self.assertEqual(cfg.target_size, 224)
 
-    @mock.patch("cvi.detection.YOLO")
+    @mock.patch("localization.detection.YOLO")
     def test_detector_creation(self, yolo: mock.Mock) -> None:
         with tempfile.NamedTemporaryFile(suffix=".pt") as model:
             model.write(b"pinned detector fixture")
@@ -164,7 +180,7 @@ class DogDetectorYOLOTests(unittest.TestCase):
             det.close()
             self.assertFalse(staged_path.exists())
 
-    @mock.patch("cvi.detection.YOLO")
+    @mock.patch("localization.detection.YOLO")
     def test_detector_rejects_implicit_download(self, yolo: mock.Mock) -> None:
         with self.assertRaisesRegex(RuntimeError, "explicit local"):
             DogDetector(DogDetectorConfig(device="cpu"))

@@ -8,7 +8,7 @@ import unittest
 from dataclasses import fields, replace
 from pathlib import Path
 
-from cvi.pdq_contracts import (
+from identity_methods.classical.pdq_contracts import (
     PDQ_D4_ORIENTATIONS,
     PDQ_ELIGIBLE_SEARCHED,
     PDQ_INELIGIBLE_LOW_QUALITY,
@@ -18,7 +18,7 @@ from cvi.pdq_contracts import (
     PDQNearDuplicateCandidate,
     PDQSearchPolicy,
 )
-from cvi.pdq_mih import (
+from identity_methods.classical.pdq_mih import (
     MIH_KEYS_PER_ORIENTATION,
     PDQCapacityExceeded,
     estimate_compact_mih_storage,
@@ -141,8 +141,8 @@ class PDQContractTests(unittest.TestCase):
 
         path = (
             Path(__file__).parents[1]
+            / "experiments"
             / "configs"
-            / "research"
             / "contracts"
             / "public_canine_pdq_policy.example.json"
         )

@@ -7,7 +7,7 @@ from pathlib import Path
 import numpy as np
 import torch
 
-from cvi.multi_head import (
+from representation_learning.multi_head import (
     MultiHeadBackbone,
     MultiHeadConfig,
     MultiHeadModel,

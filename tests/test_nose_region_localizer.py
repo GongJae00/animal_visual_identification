@@ -13,15 +13,15 @@ from PIL import Image
 import torch
 from torch import nn
 
-import cvi.nose_region.localizer as localizer_module
-from cvi.evidence.artifact_manifest import (
+import localization.nose_region.localizer as localizer_module
+from artifact_contracts.artifact_manifest import (
     ArtifactLicense,
     ExactOnnxRuntime,
     ImagePreprocessing,
     NoseDetectorManifest,
     UsageLane,
 )
-from cvi.nose_region.localizer import (
+from localization.nose_region.localizer import (
     AP10K_SUPPORTED_INDICES,
     KEYPOINT_ORDER,
     LetterboxTransform,
@@ -370,7 +370,7 @@ def test_metrics_report_nme_and_coverage() -> None:
 
 
 def test_training_cli_help_does_not_require_training_execution() -> None:
-    tool = Path(__file__).resolve().parents[1] / "tools" / "train_nose_localizer.py"
+    tool = Path(__file__).resolve().parents[1] / "workflows" / "train_nose_localizer.py"
     completed = subprocess.run(
         [sys.executable, str(tool), "--help"],
         check=False,

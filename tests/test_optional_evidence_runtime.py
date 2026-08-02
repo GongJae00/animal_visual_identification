@@ -13,19 +13,19 @@ import faiss
 import numpy as np
 from PIL import Image
 
-from cvi.api import CVI, Match
-from cvi.evidence.base import (
+from canine_identity.engine import IdentityEngine, Match
+from evidence_fusion.base import (
     AbstractEvidencer,
     EvidenceObservation,
     EvidenceUnavailableReason,
     RequiredEvidenceUnavailableError,
 )
-from cvi.fusion.fuser import LearnedWeightFuser
-from cvi.identity_registry import compute_registered_dog_id
-from cvi.index.hierarchical import SpeciesFilteredIndex
-from cvi.pipeline.enroll import MultiEvidencePipeline
-from cvi.pipeline.search import IdentitySearchPipeline
-from tools.migrate_gallery_v3_to_v4 import migrate_gallery
+from evidence_fusion.fuser import LearnedWeightFuser
+from identity_governance.identity_registry import compute_registered_dog_id
+from identity_retrieval.index.hierarchical import SpeciesFilteredIndex
+from identity_retrieval.pipeline.enroll import MultiEvidencePipeline
+from identity_retrieval.pipeline.search import IdentitySearchPipeline
+from workflows.migrate_gallery_v3_to_v4 import migrate_gallery
 
 
 class _FixedEvidence(AbstractEvidencer):
@@ -275,7 +275,7 @@ class ExactOptionalGalleryTests(unittest.TestCase):
         index.close()
 
         with (
-            patch("cvi.index.hierarchical.np.load") as np_load,
+            patch("identity_retrieval.index.hierarchical.np.load") as np_load,
             self.assertRaisesRegex(RuntimeError, "optional vectors.*byte limit"),
         ):
             SpeciesFilteredIndex(
@@ -301,7 +301,7 @@ class ExactOptionalGalleryTests(unittest.TestCase):
         index.close()
 
         with (
-            patch("cvi.index.hierarchical.np.load") as np_load,
+            patch("identity_retrieval.index.hierarchical.np.load") as np_load,
             self.assertRaisesRegex(RuntimeError, "member.*invalid"),
         ):
             SpeciesFilteredIndex(
@@ -331,7 +331,7 @@ class ExactOptionalGalleryTests(unittest.TestCase):
         index.close()
 
         with (
-            patch("cvi.index.hierarchical.np.load") as np_load,
+            patch("identity_retrieval.index.hierarchical.np.load") as np_load,
             self.assertRaisesRegex(RuntimeError, "dtype or shape"),
         ):
             SpeciesFilteredIndex(
@@ -383,7 +383,7 @@ class ConfigAndMigrationTests(unittest.TestCase):
             "optional": _FixedEvidence(np.asarray([0.0, 1.0], np.float32)),
         }
         with tempfile.TemporaryDirectory() as directory, patch.object(
-            CVI, "_build_evidence", return_value=fixed
+            IdentityEngine, "_build_evidence", return_value=fixed
         ):
             config = {
                 "schema_version": "cvi.retrieval_config.v2",
@@ -392,10 +392,10 @@ class ConfigAndMigrationTests(unittest.TestCase):
                 "channels": {"required": {}, "optional": {}},
             }
             with self.assertRaisesRegex(ValueError, "explicit optional_channels"):
-                CVI(config)
+                IdentityEngine(config)
             with self.assertRaisesRegex(ValueError, "at least one"):
-                CVI({**config, "optional_channels": ["required", "optional"]})
-            runtime = CVI({**config, "optional_channels": ["optional"]})
+                IdentityEngine({**config, "optional_channels": ["required", "optional"]})
+            runtime = IdentityEngine({**config, "optional_channels": ["optional"]})
             try:
                 channels = runtime._index._embedding_contract["channels"]
                 self.assertEqual([channel["optional"] for channel in channels], [
@@ -414,9 +414,9 @@ class ConfigAndMigrationTests(unittest.TestCase):
     def test_legacy_v1_is_all_required_only(self) -> None:
         fixed = {"required": _FixedEvidence(np.asarray([1.0, 0.0], np.float32))}
         with tempfile.TemporaryDirectory() as directory, patch.object(
-            CVI, "_build_evidence", return_value=fixed
+            IdentityEngine, "_build_evidence", return_value=fixed
         ):
-            runtime = CVI({
+            runtime = IdentityEngine({
                 "schema_version": "cvi.retrieval_config.v1",
                 "mode": "closed_set_retrieval",
                 "index_dir": directory,
@@ -430,7 +430,7 @@ class ConfigAndMigrationTests(unittest.TestCase):
                 runtime._index.close()
 
     def test_nose_bundle_schema_is_composite_and_exact(self) -> None:
-        runtime = CVI.__new__(CVI)
+        runtime = IdentityEngine.__new__(IdentityEngine)
         runtime._config = {
             "channels": {
                 "nose": {
@@ -451,7 +451,7 @@ class ConfigAndMigrationTests(unittest.TestCase):
             embedding_manifest_path.write_text("{}", encoding="utf-8")
             detector_manifest = object()
             embedding_manifest = object()
-            runtime = CVI.__new__(CVI)
+            runtime = IdentityEngine.__new__(IdentityEngine)
             runtime._config = {"channels": {"nose": {
                 "type": "nose_print_onnx",
                 "detector_model_path": str(root / "detector.onnx"),
@@ -469,15 +469,15 @@ class ConfigAndMigrationTests(unittest.TestCase):
             _ConfiguredNoseEvidence.calls.clear()
             with (
                 patch(
-                    "cvi.evidence.artifact_manifest.NoseDetectorManifest.from_dict",
+                    "artifact_contracts.artifact_manifest.NoseDetectorManifest.from_dict",
                     return_value=detector_manifest,
                 ),
                 patch(
-                    "cvi.evidence.artifact_manifest.NoseEmbeddingManifest.from_dict",
+                    "artifact_contracts.artifact_manifest.NoseEmbeddingManifest.from_dict",
                     return_value=embedding_manifest,
                 ),
                 patch(
-                    "cvi.evidence.nose_print.NosePrintExtractor",
+                    "identity_methods.nose.extractor.NosePrintExtractor",
                     _ConfiguredNoseEvidence,
                 ),
             ):

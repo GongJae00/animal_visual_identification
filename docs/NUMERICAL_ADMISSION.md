@@ -65,7 +65,7 @@ subgroup, coverage, and resource evidence in `docs/OPTIMIZATION_CONTRACT.md`.
 The protected CLI creates a content-hashed, mode-0600, no-overwrite bundle:
 
 ```bash
-uv run python tools/compare_embedding_caches.py \
+uv run python workflows/compare_embedding_caches.py \
   --reference-cache-directory REFERENCE_CACHE \
   --candidate-cache-directory CANDIDATE_CACHE \
   --reference-cache-manifest REFERENCE_MANIFEST.json \

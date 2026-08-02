@@ -9,18 +9,18 @@ from dataclasses import replace
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from cvi.pdq_official_regression import (
+from identity_methods.classical.pdq_official_regression import (
     CANONICAL_NATIVE_BINARY_SHA256,
     PDQOfficialRegressionReceipt,
     _verify_expected_output,
     publish_official_pdq_regression,
     run_official_pdq_regression,
 )
-from cvi.source_provenance import build_offline_tool_provenance
+from artifact_contracts.source_provenance import build_offline_tool_provenance
 
 
 ROOT = Path(__file__).parents[1]
-SOURCE_ROOT = Path(os.environ.get("CVI_PDQ_OFFICIAL_SOURCE_ROOT") or os.devnull)
+SOURCE_ROOT = Path(os.environ.get("CANINE_IDENTITY_PDQ_OFFICIAL_SOURCE_ROOT") or os.devnull)
 REGRESSION_BUNDLE = SOURCE_ROOT / "pdq-regression-intake-v1"
 NATIVE_WORKER = SOURCE_ROOT / "pdq-native-worker-v4"
 AVAILABLE = REGRESSION_BUNDLE.is_dir() and NATIVE_WORKER.is_dir()
@@ -28,7 +28,7 @@ AVAILABLE = REGRESSION_BUNDLE.is_dir() and NATIVE_WORKER.is_dir()
 
 def _provenance() -> dict[str, object]:
     return build_offline_tool_provenance(
-        ROOT / "tools/admit_native_pdq_regression.py"
+        ROOT / "workflows/admit_native_pdq_regression.py"
     )
 
 

@@ -6,13 +6,13 @@ Keep source code separate from private datasets, embeddings, checkpoints, and
 experiment outputs. Configure the data root explicitly for each machine:
 
 ```bash
-export CVI_DATA_DIR=/path/to/cvi-data
+export CANINE_IDENTITY_DATA_DIR=/path/to/canine-identity-data
 ```
 
 The configured root may use this layout:
 
 ```text
-$CVI_DATA_DIR/
+$CANINE_IDENTITY_DATA_DIR/
   downloads/
   datasets/<dataset-name>/
   checkpoints/<model-artifact-id>/
@@ -29,7 +29,7 @@ large immutable artifacts when an admission decision changes. Do not infer
 deployment eligibility from a filesystem path.
 
 Before use, verify that the root has restrictive ownership and access controls.
-Do not place sensitive CVI material in a directory with broad inherited access.
+Do not place sensitive project material in a directory with broad inherited access.
 
 ## DrvFS semantics
 
@@ -64,7 +64,7 @@ cache. Neither is admissible without the externally archived outer receipt and
 attempt-ledger head. Recovery must inspect and quarantine such orphans rather
 than silently reusing them.
 
-This protects against ordinary concurrent CVI jobs and worktree/data-pipeline
+This protects against ordinary concurrent project jobs and worktree/data-pipeline
 changes. It is not an isolation boundary against a hostile process running as
 the same OS user.
 

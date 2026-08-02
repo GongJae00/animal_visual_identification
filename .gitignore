@@ -47,12 +47,11 @@ htmlcov/
 *.joblib
 checkpoints/
 exports/
-/models/*
+/models/
 
 # Data and indexes
-data/
-datasets/
-cvi_index/
+/datasets/
+/cvi_index/
 *.db
 *.db-*
 *.sqlite
@@ -63,16 +62,17 @@ cvi_index/
 *.index
 
 # Outputs and logs
-outputs/
-results/
-artifacts/
-logs/
+/outputs/
+/results/
+/artifacts/
+/logs/
 *.log
-runs/
+/runs/
 wandb/
 mlruns/
 /manifests/
-/visualization/
+/Visualization/*
+!/Visualization/.gitkeep
 
 # Environment and secrets
 .env
@@ -99,7 +99,6 @@ Thumbs.db
 /node_modules/
 /audit/
 /workspace/
-/paper/
 
 # Docker
 docker-compose.override.yml

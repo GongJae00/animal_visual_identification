@@ -5,14 +5,14 @@ import unittest
 from dataclasses import replace
 from pathlib import Path
 
-from cvi.pdq_regression_source_intake import (
+from identity_methods.classical.pdq_regression_source_intake import (
     PDQ_REGRESSION_ASSET_PATHS,
     PDQ_REGRESSION_COMMIT_SHA,
     PDQ_REGRESSION_SELECTED_PATHS,
     PDQ_REGRESSION_TREE_SHA,
     validate_pdq_regression_source_contract,
 )
-from cvi.pdq_source_intake import PdqSelectedSourceMember, PdqSourceContract
+from identity_methods.classical.pdq_source_intake import PdqSelectedSourceMember, PdqSourceContract
 
 
 class PdqRegressionSourceIntakeTests(unittest.TestCase):
@@ -20,7 +20,7 @@ class PdqRegressionSourceIntakeTests(unittest.TestCase):
     def _contract() -> PdqSourceContract:
         path = (
             Path(__file__).parents[1]
-            / "configs/pdq/threatexchange-pdq-regression-baefb4ed.json"
+            / "artifact_contracts/configs/pdq/threatexchange-pdq-regression-baefb4ed.json"
         )
         return PdqSourceContract.from_dict(
             json.loads(path.read_text(encoding="utf-8"))
@@ -89,7 +89,7 @@ class PdqRegressionSourceIntakeTests(unittest.TestCase):
     def test_source_only_contract_remains_the_exact_twelve_member_profile(self) -> None:
         source_only_path = (
             Path(__file__).parents[1]
-            / "configs/pdq/threatexchange-pdq-baefb4ed.json"
+            / "artifact_contracts/configs/pdq/threatexchange-pdq-baefb4ed.json"
         )
         source_only = PdqSourceContract.from_dict(
             json.loads(source_only_path.read_text(encoding="utf-8"))

@@ -1,58 +1,55 @@
 # Roadmap
 
-This roadmap is a sequence of admission gates, not a delivery schedule or a
-performance promise. A later stage does not become current scope until its
-implementation, artifacts, tests, and evaluation evidence are public and
-reproducible.
+This roadmap defines future evidence gates, not completed work, a schedule, or a performance promise. The public runtime remains crop-level closed-set retrieval until a gate is implemented, artifact-bound, tested, and independently evaluated.
 
-## 1. Reproducible Appearance Baseline
+## Data Gate
 
-- Replace the unpinned Torch Hub example path with a fully source-bound local
-  artifact and preprocessing contract for routine evaluation.
-- Publish an identity-disjoint protocol with duplicate, sequence, and crop
-  leakage controls.
-- Report retrieval and verification metrics with protocol definitions and
-  uncertainty, without promoting them to an open-set decision.
+- Keep source archives and extracted data outside Git.
+- Require identity/session/source-video disjointness where the protocol claims it.
+- Close allocation over exact, near-duplicate, dependency, and unresolved-review components.
+- Preserve a future sealed target cohort with no development exposure.
 
-## 2. Data And Model Governance
+Promotion requires deterministic manifests, authenticated source receipts, duplicate-closure evidence, and zero prohibited cross-partition identity exposure.
 
-- Resolve code, weight, and dataset licenses for every candidate artifact.
-- Document acquisition boundaries and immutable provenance without bundling
-  restricted files.
-- Define privacy, retention, deletion, and access requirements for real animal
-  and owner data before operational collection.
+## Localization Gate
 
-## 3. Calibrated Decision Boundary
+- Admit a full-frame dog detector and target-association tracker.
+- Materialize Face and Nose-region crops in publisher source coordinates.
+- Record pose, resolution, uncertainty, and missing evidence without invalidating other branches.
+- Select frames by quality and diversity rather than availability alone.
 
-- Separate development, calibration, and final evaluation identities.
-- Freeze a threshold-selection procedure and evaluate unknown-dog exposure,
-  accepted wrong-identity risk, and review coverage.
-- Connect open-set behavior to `CVI` only after the boundary is versioned and
-  artifact-bound.
+Promotion requires precommitted recall, precision, track-purity, and target-association bounds on an appropriate independent cohort.
 
-## 4. Evidence Admission
+## Representation Gates
 
-- Evaluate each proposed channel against the frozen appearance baseline.
-- Require exact model/export/preprocessing parity and explicit missing-evidence
-  behavior.
-- Admit a channel only if a leakage-controlled ablation shows useful identity
-  information, calibrated score compatibility, and justified compute cost.
+Appearance candidates must improve the frozen reference across more than one source domain without a material regression or background shortcut failure.
 
-## 5. Video Integration
+Face candidates must improve identity-disjoint Face evaluation and show reproducible complementary value when fused with Appearance.
 
-- Define a pinned detector and crop contract before connecting detection.
-- Add sequence-aware tracking, frame-quality selection, and temporal aggregation
-  with tests for ordering, dropped frames, occlusion, and identity switches.
-- Evaluate track-level behavior independently from crop-level behavior.
+Nose-region candidates must pass manual ROI/mask checks, preserve a raw-pixel control, and show positive complementary value under explicit availability.
 
-## 6. Deployment Hardening
+## Fusion And Temporal Gate
 
-- Connect strict CPU and guarded CUDA inference to the same canonical gallery
-  and decision contracts.
-- Define read-only serving, gallery update, migration, backup, rollback, and
-  multi-process behavior.
-- Add resource limits, observability, dependency review, privacy controls, and
-  threat-model testing before presenting CVI as a service.
+- Fit calibration and fusion only on development/calibration identities.
+- Compare A, F, N, pairwise combinations, and A+F+N on fixed panels.
+- Stress missing modalities and report branch-specific effective sample counts.
+- Compare single-frame, quality-selected, diversity-selected, and multi-prototype aggregation on cross-session tracks.
 
-Current boundaries remain authoritative in
-[Architecture](ARCHITECTURE.md) and [Known Limitations](KNOWN_LIMITATIONS.md).
+Promotion requires a frozen policy with a positive uncertainty bound over the strongest available baseline and no hidden evaluation-label selection.
+
+## Open-Set Gate
+
+- Add genuine and impostor probes with independent unknown identities.
+- Bind thresholds to model, preprocessing, gallery scale, precision, and score semantics.
+- Report DIR/TPIR at FPIR, accepted wrong identity, known rejection, unknown acceptance, and review coverage.
+
+Open-set behavior remains outside `IdentityEngine` until the independent target cohort meets the precommitted assurance requirement.
+
+## Runtime Gate
+
+- Admit only research artifacts that pass model, preprocessing, parity, license, and source-provenance contracts.
+- Verify CPU behavior and guarded CUDA behavior without eager optional imports.
+- Preserve or explicitly migrate gallery and receipt formats.
+- Define service, authentication, privacy, deletion, and audit ownership before claiming deployment support.
+
+See [Research Progress](RESEARCH_PROGRESS.md) for completed research-only observations and [Known Limitations](KNOWN_LIMITATIONS.md) for the current boundary.

@@ -11,8 +11,8 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
-from cvi.acquisition import sha256_file
-from cvi.controls import (
+from data_pipeline.acquisition import sha256_file
+from evaluation.controls import (
     ControlMaskEntry,
     ControlMaskManifest,
     MaskEvidence,
@@ -23,26 +23,26 @@ from cvi.controls import (
     VisualControlPolicy,
     VisualControlRecipe,
 )
-from cvi.crop_export import CropExportReceipt
-from cvi.control_transform import (
+from data_pipeline.crop_export import CropExportReceipt
+from evaluation.control_transform import (
     ControlTransformConfig,
     ControlTransformConfigManifest,
 )
-from cvi.mask_semantics import MaskSemanticPolicy
-from cvi.pairing import (
+from evaluation.mask_semantics import MaskSemanticPolicy
+from evaluation.pairing import (
     PairArtifactBinding,
     PairConstructionResult,
     PairGroundTruth,
     PairScoringRequest,
     PairStratum,
 )
-from cvi.provenance import content_sha256
-from cvi.scoring import (
+from foundation.provenance import content_sha256
+from evaluation.scoring import (
     PairArtifactEntry,
     PairArtifactManifest,
     PairArtifactVerification,
 )
-from tools.plan_visual_shortcut_controls import main
+from workflows.plan_visual_shortcut_controls import main
 
 HASH_A = "a" * 64
 HASH_B = "b" * 64

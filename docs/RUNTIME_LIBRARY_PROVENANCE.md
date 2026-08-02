@@ -1,6 +1,6 @@
 # Runtime Library Provenance
 
-Version strings do not prove which executable binaries were used. CVI therefore
+Version strings do not prove which executable binaries were used. The project therefore
 tracks file-backed executable mappings from `/proc/self/maps` at dependency,
 session-ready, first-output, and final-output boundaries.
 
@@ -23,9 +23,9 @@ host-specific discovery receipts and strict policies outside the repository,
 with locations configured explicitly:
 
 ```bash
-export CVI_CPU_PYTHON=/path/to/cpu-environment/bin/python
-export CVI_CUDA_PYTHON=/path/to/cuda-environment/bin/python
-export CVI_RUNTIME_POLICY_DIR=/path/to/runtime-policies
+export CANINE_IDENTITY_CPU_PYTHON=/path/to/cpu-environment/bin/python
+export CANINE_IDENTITY_CUDA_PYTHON=/path/to/cuda-environment/bin/python
+export CANINE_IDENTITY_RUNTIME_POLICY_DIR=/path/to/runtime-policies
 ```
 
 A strict run admits only its workload, host binaries, and recorded code

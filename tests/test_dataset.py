@@ -3,8 +3,8 @@ from __future__ import annotations
 import json
 import unittest
 
-from cvi.contracts import Modality
-from cvi.dataset import (
+from artifact_contracts.contracts import Modality
+from data_pipeline.dataset import (
     PresenceState,
     RoleModalityRule,
     SplitManifest,

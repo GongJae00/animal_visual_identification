@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import unittest
 
-from cvi.duplicate_graph_capacity import analyze_duplicate_graph_capacity
-from cvi.protected_public_split import (
+from identity_governance.duplicate_graph_capacity import analyze_duplicate_graph_capacity
+from identity_governance.protected_public_split import (
     EvidenceRelation,
     FrozenPublicSplitEvidenceGraph,
     ProtectedPublicSplitPolicy,
@@ -11,7 +11,7 @@ from cvi.protected_public_split import (
     PublicSplitSample,
     PublicSplitSourceBundle,
 )
-from cvi.provenance import content_sha256
+from foundation.provenance import content_sha256
 
 
 def _token(value: int) -> str:

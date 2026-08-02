@@ -9,7 +9,7 @@ from dataclasses import replace
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from cvi.public_dataset import (
+from data_pipeline.public_dataset import (
     DatasetUsageLane,
     PublicDatasetArchivePolicy,
     PublicDatasetArchiveReceipt,

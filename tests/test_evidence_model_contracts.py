@@ -15,8 +15,8 @@ import numpy as np
 import onnx
 from PIL import Image
 
-from cvi.api import CVI
-from cvi.evidence.artifact_manifest import (
+from canine_identity.engine import IdentityEngine
+from artifact_contracts.artifact_manifest import (
     ArtifactContractError,
     ArtifactLicense,
     ExactOnnxRuntime,
@@ -24,38 +24,37 @@ from cvi.evidence.artifact_manifest import (
     NoseEmbeddingManifest,
     UsageLane,
 )
-from cvi.evidence.landmark_graph import LandmarkEvidencer
-from cvi.evidence.miewid import (
+from localization.landmark_graph import LandmarkEvidencer
+from identity_methods.backbones.miewid import (
     MIEWID_OUTPUT_DIM,
     MiewIDArtifactManifest,
     MiewIDModelContractError,
     MiewIDReIDExtractor,
 )
-from cvi.evidence.model_parity import (
+from artifact_contracts.model_parity import (
     ModelParityReceipt,
     ModelUsageLane,
     ParityFixtureKind,
     ParityFixtureResult,
     ParityThresholds,
 )
-from cvi.evidence.nose_print import (
+from identity_methods.nose.extractor import (
     DNPMask,
     MiewIDNoseExtractor,
     YoloNoseDetector,
 )
-from cvi.evidence_extractor import (
+from identity_methods.backbones.extractors import (
     EvidenceExtractorRegistry,
     OnnxExtractor,
     SuperAnimalExtractor,
 )
-from cvi.inference import OnnxEmbeddingModel
-from cvi.model_paths import (
+from artifact_contracts.model_paths import (
     MIEWID_MSV3_HF_REPO,
     MIEWID_MSV3_REVISION,
     MIEWID_MSV3_WEIGHTS_SHA256,
 )
-from cvi.provenance import content_sha256
-from tools.download_models import _convert_superanimal_to_onnx, download_model
+from foundation.provenance import content_sha256
+from workflows.download_models import _convert_superanimal_to_onnx, download_model
 
 
 class _TensorInfo:
@@ -583,7 +582,7 @@ class EvidenceModelContractTests(unittest.TestCase):
             self._write_miewid_parity(artifact, receipt)
             manifest = self._miewid_manifest(artifact, receipt)
             manifest_path.write_text(json.dumps(manifest.to_dict()))
-            runtime = CVI.__new__(CVI)
+            runtime = IdentityEngine.__new__(IdentityEngine)
             runtime._config = {  # type: ignore[attr-defined]
                 "channels": {
                     "wildlife": {
@@ -596,7 +595,7 @@ class EvidenceModelContractTests(unittest.TestCase):
             }
             sentinel = object()
             with patch(
-                "cvi.evidence.miewid.MiewIDReIDExtractor",
+                "identity_methods.backbones.miewid.MiewIDReIDExtractor",
                 return_value=sentinel,
             ) as extractor:
                 evidence = runtime._build_evidence()
@@ -671,9 +670,6 @@ class EvidenceModelContractTests(unittest.TestCase):
                 EvidenceExtractorRegistry.from_onnx_dict(
                     {"visual": Path(artifact.name)}, input_sizes={"visual": 384}
                 )
-            with self.assertRaisesRegex(RuntimeError, "replacement ONNX contract"):
-                OnnxEmbeddingModel(Path(artifact.name))
-
         with tempfile.NamedTemporaryFile(prefix="superanimal-", suffix=".onnx") as artifact:
             with self.assertRaisesRegex(RuntimeError, "ONNX artifacts are disabled"):
                 OnnxExtractor(Path(artifact.name))
@@ -690,14 +686,14 @@ class EvidenceModelContractTests(unittest.TestCase):
                 _convert_superanimal_to_onnx(source, output)
             self.assertEqual(output.read_bytes(), before)
 
-        with patch("tools.download_models._download_hf") as download:
+        with patch("workflows.download_models._download_hf") as download:
             with self.assertRaisesRegex(RuntimeError, "SuperAnimal is disabled"):
                 download_model("superanimal")
             download.assert_not_called()
 
     def test_superanimal_cli_and_environment_check_report_disabled(self) -> None:
         completed = subprocess.run(
-            [sys.executable, "tools/download_models.py", "--model", "superanimal"],
+            [sys.executable, "workflows/download_models.py", "--model", "superanimal"],
             cwd=Path(__file__).resolve().parents[1],
             capture_output=True,
             text=True,
@@ -713,7 +709,7 @@ class EvidenceModelContractTests(unittest.TestCase):
         self.assertIn("SuperAnimal runtime: DISABLED", script)
         self.assertNotIn("--model superanimal", script)
         downloader = (
-            Path(__file__).resolve().parents[1] / "tools" / "download_models.py"
+            Path(__file__).resolve().parents[1] / "workflows" / "download_models.py"
         ).read_text()
         self.assertIn("external_data=False", downloader)
 

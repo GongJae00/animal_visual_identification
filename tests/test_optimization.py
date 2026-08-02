@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import unittest
 
-from cvi.optimization import (
+from representation_learning.optimization import (
     ImprovementMetric,
     PromotionDecision,
     ProtectedMetric,
@@ -11,7 +11,7 @@ from cvi.optimization import (
     evaluate_promotion,
     gallery_bytes,
 )
-from cvi.provenance import content_sha256
+from foundation.provenance import content_sha256
 
 
 class OptimizationTests(unittest.TestCase):

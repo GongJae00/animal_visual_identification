@@ -12,7 +12,7 @@ An absolute recording start time is required because container PTS commonly
 does not establish facility wall-clock time.
 
 ```bash
-uv run python tools/probe_video.py /protected/path/source.mp4 \
+uv run python workflows/probe_video.py /protected/path/source.mp4 \
   --source-id source-0001 \
   --camera-id camera-01 \
   --cage-id cage-01 \
@@ -40,7 +40,7 @@ a day/night switch must later be divided into contiguous `RGB`,
 Validate a JSON manifest with:
 
 ```bash
-uv run python tools/check_acquisition_manifest.py \
+uv run python workflows/check_acquisition_manifest.py \
   /protected/manifests/acquisition.json
 ```
 
@@ -71,7 +71,7 @@ integrity statistics. Packet-level extraction and frame-level decoding costs
 must be measured separately on admitted camera files.
 
 ```bash
-uv run python tools/audit_timestamps.py /protected/path/source.mp4 \
+uv run python workflows/audit_timestamps.py /protected/path/source.mp4 \
   --expected-fps 29.97 \
   --level frame
 ```

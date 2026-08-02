@@ -127,7 +127,7 @@ attempt token must be unique and the prior ledger head/sequence must come from
 the append-only optimization-attempt controller:
 
 ```bash
-uv run python tools/create_score_drift_precommitment.py \
+uv run python workflows/create_score_drift_precommitment.py \
   --workload RETRIEVAL_WORKLOAD.json \
   --inventory INVENTORY.json \
   --reference-production REFERENCE_PRODUCTION_BUNDLE.json \
@@ -137,7 +137,7 @@ uv run python tools/create_score_drift_precommitment.py \
   --candidate-producer-config CANDIDATE_CONFIG.json \
   --numerical-policy NUMERICAL_POLICY.json \
   --frozen-boundary FROZEN_BOUNDARY.json \
-  --score-drift-policy configs/research/contracts/score_drift_policy.example.json \
+  --score-drift-policy experiments/configs/contracts/score_drift_policy.example.json \
   --cache-policy CACHE_POLICY.json \
   --prior-attempt-ledger-sha256 PRIOR_LEDGER_HEAD \
   --candidate-attempt-token UNIQUE_ATTEMPT_TOKEN \
@@ -149,7 +149,7 @@ Only after candidate production and numerical comparison, advance the external
 attempt ledger and bind the resulting artifacts in a post-production plan:
 
 ```bash
-uv run python tools/create_score_drift_plan.py \
+uv run python workflows/create_score_drift_plan.py \
   --workload RETRIEVAL_WORKLOAD.json \
   --inventory INVENTORY.json \
   --reference-production REFERENCE_PRODUCTION_BUNDLE.json \
@@ -163,7 +163,7 @@ uv run python tools/create_score_drift_plan.py \
   --numerical-admission NUMERICAL_BUNDLE.json \
   --numerical-policy NUMERICAL_POLICY.json \
   --frozen-boundary FROZEN_BOUNDARY.json \
-  --score-drift-policy configs/research/contracts/score_drift_policy.example.json \
+  --score-drift-policy experiments/configs/contracts/score_drift_policy.example.json \
   --cache-policy CACHE_POLICY.json \
   --precommitment SCORE_DRIFT_PRECOMMITMENT.json \
   --plan SCORE_DRIFT_PLAN.json
@@ -178,7 +178,7 @@ cannot prove external storage by itself.
 Then execute only that frozen plan:
 
 ```bash
-uv run python tools/compare_score_drift.py \
+uv run python workflows/compare_score_drift.py \
   --workload RETRIEVAL_WORKLOAD.json \
   --inventory INVENTORY.json \
   --reference-cache-directory REFERENCE_CACHE \
@@ -198,7 +198,7 @@ uv run python tools/compare_score_drift.py \
   --numerical-admission NUMERICAL_BUNDLE.json \
   --numerical-policy NUMERICAL_POLICY.json \
   --frozen-boundary FROZEN_BOUNDARY.json \
-  --score-drift-policy configs/research/contracts/score_drift_policy.example.json \
+  --score-drift-policy experiments/configs/contracts/score_drift_policy.example.json \
   --cache-policy CACHE_POLICY.json \
   --admission-plan SCORE_DRIFT_PLAN.json \
   --expected-precommitment-sha256 ARCHIVED_PRECOMMITMENT_HASH \
@@ -211,7 +211,7 @@ receipt hash outside the candidate process. Downstream consumers verify all
 three archived values:
 
 ```bash
-uv run python tools/verify_score_drift_receipt.py \
+uv run python workflows/verify_score_drift_receipt.py \
   --receipt SCORE_DRIFT_RECEIPT.json \
   --expected-precommitment-sha256 ARCHIVED_PRECOMMITMENT_HASH \
   --expected-admission-plan-sha256 ARCHIVED_PLAN_HASH \

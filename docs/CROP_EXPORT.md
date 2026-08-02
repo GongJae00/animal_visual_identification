@@ -45,7 +45,7 @@ protected raw acquisition replacements.
 
 ## Protected CLI
 
-`tools/export_oracle_crops.py` reconstructs the four separated pair artifacts,
+`workflows/export_oracle_crops.py` reconstructs the four separated pair artifacts,
 requires their common hashes and exact content-addressed result to agree, reads
 strict duplicate-key-free JSON without symlinks, exports the crops, and writes
 a mode-0600 no-overwrite receipt. Receipt publication is preflighted before
@@ -53,13 +53,13 @@ export; if the final receipt write fails, only the crops created by that run
 are removed.
 
 ```bash
-uv run python tools/export_oracle_crops.py \
+uv run python workflows/export_oracle_crops.py \
   --scoring-requests /protected/pairs/scoring.json \
   --artifact-bindings /protected/pairs/bindings.json \
   --ground-truth /protected/pairs/ground-truth.json \
   --pair-summary /protected/pairs/summary.json \
   --crop-sources /protected/crops/sources.json \
-  --export-policy configs/data/crop_export_policy.example.json \
+  --export-policy data_pipeline/configs/crop_export_policy.example.json \
   --output-directory /protected/crops/token-images \
   --receipt-output /protected/crops/export-receipt.json
 ```

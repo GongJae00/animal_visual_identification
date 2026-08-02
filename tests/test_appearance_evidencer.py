@@ -13,23 +13,23 @@ import numpy as np
 import torch
 from PIL import Image
 
-from cvi.evidence.appearance import (
+from identity_methods.appearance import (
     Dinov2WithUncertainty,
     ReceiptBoundDinov2Small,
 )
-from cvi.pretrained_supporting_asset_intake import (
+from artifact_contracts.pretrained_supporting_asset_intake import (
     PretrainedSupportingAssetKind,
     PretrainedSupportingAssetSourceContract,
     audit_pretrained_supporting_asset,
 )
-from cvi.pretrained_weight_intake import (
+from artifact_contracts.pretrained_weight_intake import (
     PretrainedWeightChecksumAuthority,
     PretrainedWeightFileFormat,
     PretrainedWeightSourceContract,
     PretrainedWeightUsageLane,
     audit_pretrained_weight_file,
 )
-from cvi.provenance import content_sha256
+from foundation.provenance import content_sha256
 
 
 def _sha256(path: Path) -> str:

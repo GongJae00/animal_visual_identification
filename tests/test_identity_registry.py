@@ -10,8 +10,8 @@ import uuid
 from copy import deepcopy
 from pathlib import Path
 
-from cvi.identity_registry import (
-    CVI_REGISTERED_DOG_NAMESPACE,
+from identity_governance.identity_registry import (
+    REGISTERED_DOG_NAMESPACE,
     IdentityRegistry,
     IdentityRegistryRecord,
     compute_identity_token,
@@ -47,7 +47,7 @@ def _registry_payload(*dataset_identity_ids: str) -> dict:
     return {
         "schema_version": "cvi.identity_registry.v1",
         "generated_at": "2026-07-26T00:00:00+00:00",
-        "namespace_uuid": str(CVI_REGISTERED_DOG_NAMESPACE),
+        "namespace_uuid": str(REGISTERED_DOG_NAMESPACE),
         "registrations": [record.to_dict() for record in records],
     }
 
@@ -113,7 +113,7 @@ class RegisteredDogIdTests(unittest.TestCase):
 
     def test_namespace_is_stable(self) -> None:
         self.assertEqual(
-            str(CVI_REGISTERED_DOG_NAMESPACE),
+            str(REGISTERED_DOG_NAMESPACE),
             "877d96de-ba43-542d-9523-5c20213bfc09",
         )
 
@@ -454,7 +454,7 @@ class RegistryBuilderBoundaryTests(unittest.TestCase):
                     "uv",
                     "run",
                     "python",
-                    "tools/build_identity_registry.py",
+                    "workflows/build_identity_registry.py",
                     "--source-bundle",
                     str(root / "missing-source.json"),
                     "--db-output",

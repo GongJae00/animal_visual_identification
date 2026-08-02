@@ -13,8 +13,8 @@ from pathlib import Path
 
 import numpy as np
 
-from cvi.identity_registry import (
-    CVI_REGISTERED_DOG_NAMESPACE,
+from identity_governance.identity_registry import (
+    REGISTERED_DOG_NAMESPACE,
     compute_identity_token,
     compute_registered_dog_id,
     compute_sample_token,
@@ -22,8 +22,8 @@ from cvi.identity_registry import (
     register_records,
     load_registry_manifest,
 )
-from cvi.provenance import content_sha256
-from cvi.split_registry_binding import (
+from foundation.provenance import content_sha256
+from identity_governance.split_registry_binding import (
     IdentityBinding,
     IdentityRoleSummary,
     SplitRegistryBinding,
@@ -202,7 +202,7 @@ def _make_registry_manifest(db_path: Path) -> dict:
     manifest = {
         "schema_version": "cvi.identity_registry_manifest.v1",
         "generated_at": "2026-07-26T00:00:00+00:00",
-        "namespace_uuid": str(CVI_REGISTERED_DOG_NAMESPACE),
+        "namespace_uuid": str(REGISTERED_DOG_NAMESPACE),
         "registrations": [record.to_dict() for record in registry.records],
         "source_bundle_sha256": "4" * 64,
         "tool_provenance": {"tool": "integration-test"},
@@ -435,7 +435,7 @@ class RegistryAugmentationTest(unittest.TestCase):
     """Test the augment_labels_with_registry tool logic."""
 
     def test_augment_labels(self) -> None:
-        from cvi.identity_registry import compute_registered_dog_id as _crid
+        from identity_governance.identity_registry import compute_registered_dog_id as _crid
 
         labels = {
             "schema_version": "cvi.protected_public_split_labels.v1",

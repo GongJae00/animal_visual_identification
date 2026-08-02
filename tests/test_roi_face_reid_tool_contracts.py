@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from cvi.face_id import checkpoint as faceid_checkpoint
+from identity_methods.face import checkpoint as faceid_checkpoint
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -209,8 +209,8 @@ def test_partition_rejects_same_manifest_identity_overlap_and_role_mismatch() ->
 @pytest.mark.parametrize(
     "script, expected_help",
     [
-        ("tools/train_roi_face_reid.py", "{cpu,cuda}"),
-        ("tools/evaluate_trained_face_reid.py", "--expected-split-role"),
+        ("workflows/train_roi_face_reid.py", "{cpu,cuda}"),
+        ("workflows/evaluate_trained_face_reid.py", "--expected-split-role"),
     ],
 )
 def test_help_does_not_import_model_runtime_or_create_outputs(

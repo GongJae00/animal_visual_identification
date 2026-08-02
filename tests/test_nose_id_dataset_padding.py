@@ -9,8 +9,8 @@ import uuid
 import numpy as np
 from PIL import Image
 
-from cvi.nose_id.alignment import CANONICAL_KEYPOINTS
-from cvi.nose_id.dataset import NoseIDDataset, NoseIDSample
+from identity_methods.nose.alignment import CANONICAL_KEYPOINTS
+from identity_methods.nose.dataset import NoseIDDataset, NoseIDSample
 
 
 def _write_image(path: Path, value: np.ndarray) -> str:

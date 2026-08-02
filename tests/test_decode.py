@@ -3,7 +3,7 @@ from __future__ import annotations
 import unittest
 from pathlib import Path
 
-from cvi.decode import (
+from data_pipeline.decode import (
     DecodeBackend,
     DecodeConfig,
     build_decode_command,

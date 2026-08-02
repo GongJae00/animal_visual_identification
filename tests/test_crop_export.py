@@ -7,9 +7,9 @@ import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from cvi.acquisition import sha256_file
-from cvi.contracts import Modality
-from cvi.crop_export import (
+from data_pipeline.acquisition import sha256_file
+from artifact_contracts.contracts import Modality
+from data_pipeline.crop_export import (
     CropBox,
     CropExportPolicy,
     OracleCropSource,
@@ -17,7 +17,7 @@ from cvi.crop_export import (
     export_oracle_crops,
     probe_still_image,
 )
-from cvi.pairing import (
+from evaluation.pairing import (
     PairArtifactBinding,
     PairConstructionResult,
     PairGroundTruth,

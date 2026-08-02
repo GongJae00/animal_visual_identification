@@ -8,8 +8,8 @@ from unittest.mock import patch
 import numpy as np
 from PIL import Image
 
-from cvi.evidence.base import AbstractEvidencer
-from cvi.evidence.quality import (
+from evidence_fusion.base import AbstractEvidencer
+from evidence_fusion.quality import (
     QualityDiagnostics,
     QualityLimits,
     QualityMapping,
@@ -18,7 +18,7 @@ from cvi.evidence.quality import (
     estimate_blur,
     observe_quality,
 )
-from cvi.pipeline.enroll import MultiEvidencePipeline
+from identity_retrieval.pipeline.enroll import MultiEvidencePipeline
 
 
 class _TestEvidencer(AbstractEvidencer):

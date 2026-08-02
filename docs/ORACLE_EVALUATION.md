@@ -35,7 +35,7 @@ where \(c\) is confidence and \(n\) is the number of trials. At 95% confidence,
 at most \(10^{-4}\).
 
 Pair-level intervals assume independent events. Repeated dogs, sessions, or
-templates violate this assumption. CVI therefore also requires a content-
+templates violate this assumption. The evaluator therefore also requires a content-
 addressed whole-cluster percentile bootstrap with a predeclared query-dog or
 query-session unit, at least 1,000 resamples, a fixed seed, and the same
 confidence level as the frozen threshold. Pair multiplication from adjacent

@@ -12,7 +12,7 @@ from tempfile import TemporaryDirectory
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from cvi.batch_invariance import (
+from evaluation.batch_invariance import (
     BatchInvarianceDecision,
     BatchInvariancePolicy,
     BatchInvariancePrecommitment,
@@ -22,37 +22,37 @@ from cvi.batch_invariance import (
     evaluate_batch_composition_invariance,
     verify_batch_invariance_receipt_external_anchors,
 )
-from cvi.batch_invariance_runner import (
+from operations.batch_invariance_runner import (
     BatchFreshWorkerDiscovery,
     BatchFreshWorkerReceipt,
     BatchWorkerExecutionPolicy,
     run_batch_invariance_fresh_worker,
 )
-from cvi.control_scoring import (
+from evaluation.control_scoring import (
     ArtifactSourceKind,
     ControlScoringInventory,
     ScoringArtifactEntry,
 )
-from cvi.embedding_producer import (
+from operations.embedding_producer import (
     EmbeddingBackendIdentity,
     EmbeddingProducerConfig,
     EmbeddingRuntimeResources,
 )
-from cvi.optimization import PromotionDecision
-from cvi.process_supervisor import (
+from representation_learning.optimization import PromotionDecision
+from operations.process_supervisor import (
     ProcessSupervisorPolicy,
     SupervisedProcessResult,
     SupervisedProcessStatus,
 )
-from cvi.provenance import content_sha256
-from cvi.runtime_library_provenance import (
+from foundation.provenance import content_sha256
+from artifact_contracts.runtime_library_provenance import (
     ExpectedRuntimeBinary,
     RuntimeBinaryEntry,
     RuntimeLibraryManifest,
     RuntimeLibraryPhase,
     RuntimeLibraryPolicy,
 )
-from cvi.worker_environment import (
+from operations.worker_environment import (
     ISOLATED_WORKER_BOOTSTRAP,
     build_sanitized_worker_environment,
 )
@@ -419,7 +419,7 @@ class BatchInvarianceTests(unittest.TestCase):
                 worker_environment_identity_sha256="5" * 64,
             )
             with patch(
-                "cvi.batch_invariance_runner.run_supervised_process"
+                "operations.batch_invariance_runner.run_supervised_process"
             ) as launch:
                 with self.assertRaisesRegex(ValueError, "execution policy"):
                     run_batch_invariance_fresh_worker(
@@ -549,7 +549,7 @@ class BatchInvarianceTests(unittest.TestCase):
             repository = Path(__file__).resolve().parents[1]
             command = [
                 sys.executable,
-                "tools/create_batch_invariance_precommitment.py",
+                "workflows/create_batch_invariance_precommitment.py",
                 "--inventory", str(inventory_path),
                 "--artifact-paths", str(artifact_paths_path),
                 "--producer-config", str(producer_path),
@@ -598,7 +598,7 @@ class BatchInvarianceTests(unittest.TestCase):
                 command=(
                     sys.executable, "-I", "-B", "-c",
                     ISOLATED_WORKER_BOOTSTRAP,
-                    "cvi.batch_invariance_worker", "/tmp/request",
+                    "operations.batch_invariance_worker", "/tmp/request",
                     "--request", "/tmp/request", "--result", "/tmp/result",
                 ),
                 policy_sha256=worker_policy.supervisor.policy_sha256,
@@ -640,7 +640,7 @@ class BatchInvarianceTests(unittest.TestCase):
             verified = subprocess.run(
                 [
                     sys.executable,
-                    "tools/verify_batch_invariance_receipt.py",
+                    "workflows/verify_batch_invariance_receipt.py",
                     "--receipt", str(receipt_path),
                     "--expected-precommitment-sha256",
                     receipt.batch_receipt.precommitment_sha256,
@@ -656,7 +656,7 @@ class BatchInvarianceTests(unittest.TestCase):
                 subprocess.run(
                     [
                         sys.executable,
-                        "tools/verify_batch_invariance_receipt.py",
+                        "workflows/verify_batch_invariance_receipt.py",
                         "--receipt", str(receipt_path),
                         "--expected-precommitment-sha256",
                         receipt.batch_receipt.precommitment_sha256,
@@ -713,7 +713,7 @@ class BatchInvarianceTests(unittest.TestCase):
                 subprocess.run(
                     [
                         sys.executable,
-                        "tools/verify_batch_invariance_receipt.py",
+                        "workflows/verify_batch_invariance_receipt.py",
                         "--receipt", str(receipt_path),
                         "--expected-precommitment-sha256",
                         receipt.batch_receipt.precommitment_sha256,
@@ -734,7 +734,7 @@ class BatchInvarianceTests(unittest.TestCase):
                 subprocess.run(
                     [
                         sys.executable,
-                        "tools/verify_batch_invariance_receipt.py",
+                        "workflows/verify_batch_invariance_receipt.py",
                         "--receipt", str(receipt_path),
                         "--expected-precommitment-sha256",
                         batch_receipt.precommitment_sha256,
@@ -802,7 +802,7 @@ class BatchInvarianceTests(unittest.TestCase):
                 command=(
                     sys.executable, "-I", "-B", "-c",
                     ISOLATED_WORKER_BOOTSTRAP,
-                    "cvi.batch_invariance_worker", "/tmp/request",
+                    "operations.batch_invariance_worker", "/tmp/request",
                     "--request", "/tmp/request", "--result", "/tmp/result",
                 ),
                 policy_sha256=execution_policy.supervisor.policy_sha256,
@@ -853,7 +853,7 @@ class BatchInvarianceTests(unittest.TestCase):
             completed = subprocess.run(
                 [
                     sys.executable,
-                    "tools/freeze_batch_runtime_library_policy.py",
+                    "workflows/freeze_batch_runtime_library_policy.py",
                     "--discovery-policy", str(discovery_policy_path),
                     "--discovery-manifest", str(discovery_paths[0]),
                     "--discovery-manifest", str(discovery_paths[1]),

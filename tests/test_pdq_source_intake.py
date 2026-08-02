@@ -13,8 +13,8 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest import mock
 
-import cvi.pdq_source_intake as pdq_intake_module
-from cvi.pdq_source_intake import (
+import identity_methods.classical.pdq_source_intake as pdq_intake_module
+from identity_methods.classical.pdq_source_intake import (
     PdqSelectedSourceMember,
     PdqSourceContract,
     PdqSourceIntakePolicy,
@@ -22,7 +22,7 @@ from cvi.pdq_source_intake import (
     audit_pdq_source_archive,
     publish_pdq_source_bundle,
 )
-from cvi.pretrained_supporting_asset_intake import (
+from artifact_contracts.pretrained_supporting_asset_intake import (
     MAXIMUM_ASSET_BYTES,
     MAXIMUM_JSON_ARRAY_LENGTH,
     MAXIMUM_JSON_DEPTH,
@@ -553,7 +553,7 @@ class PdqSourceIntakeTests(unittest.TestCase):
                 )
 
     def test_cli_writes_once_and_never_executes_retained_source(self) -> None:
-        tool = Path(__file__).parents[1] / "tools/intake_threatexchange_pdq.py"
+        tool = Path(__file__).parents[1] / "workflows/intake_threatexchange_pdq.py"
         help_result = subprocess.run(
             [sys.executable, str(tool), "--help"],
             check=True,
@@ -592,7 +592,7 @@ class PdqSourceIntakeTests(unittest.TestCase):
     def test_repository_contract_matches_observed_official_fixed_metadata(self) -> None:
         contract_path = (
             Path(__file__).parents[1]
-            / "configs/pdq/threatexchange-pdq-baefb4ed.json"
+            / "artifact_contracts/configs/pdq/threatexchange-pdq-baefb4ed.json"
         )
         contract = PdqSourceContract.from_dict(
             json.loads(contract_path.read_text(encoding="utf-8"))

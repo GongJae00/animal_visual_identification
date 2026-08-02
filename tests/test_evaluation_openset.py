@@ -4,7 +4,7 @@ import unittest
 
 import numpy as np
 
-from cvi.evaluation.open_set import OpenSetError, evaluate_open_set
+from evaluation.open_set import OpenSetError, evaluate_open_set
 
 GALLERY = np.array([[1, 0], [0, 1]], dtype=np.float64)
 GALLERY_IDS = np.array([0, 1], dtype=np.int64)

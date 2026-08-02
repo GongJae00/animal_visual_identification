@@ -4,7 +4,7 @@ import unittest
 
 import torch
 
-from cvi.fusion.quality_fuser import QualityFusionMLP, fuse_channel_scores
+from evidence_fusion.quality_fuser import QualityFusionMLP, fuse_channel_scores
 
 
 class QualityFusionTests(unittest.TestCase):

@@ -2,6 +2,39 @@
 
 ## Unreleased
 
+## 0.4.0 - 2026-08-03
+
+### Breaking
+
+- Replaced the `cvi.CVI` import surface with
+  `canine_identity.IdentityEngine`; `Match` remains the public result type.
+- Reorganized the former `src/cvi` tree into functional top-level packages for
+  data, identity governance, localization, identity methods, learning, fusion,
+  retrieval, evaluation, runtime, and operations.
+- Moved source-checkout commands from `tools/` to `workflows/` and removed
+  unsupported compatibility exports, deployment facades, and duplicate runtime
+  scaffolding.
+
+### Architecture And Performance
+
+- Added recursive logical source provenance v2 while retaining narrow readers
+  for persisted Face and PDQ v1 evidence.
+- Added dependency-boundary tests that keep evaluation and operations out of the
+  public runtime and algorithm packages.
+- Removed duplicate A4 frozen-backbone inference, decode-only label collection,
+  eager gallery metadata copies, and an unnecessary retrieval score-matrix copy.
+- Added a single-distribution build containing all functional packages and the
+  versioned evaluation schemas.
+
+### Validation
+
+- Reproduced the full 15-epoch A4 training trajectory, selected epoch, and DEV
+  metrics after the migration.
+- Reproduced all eight DogFaceNet, MPDD, and SiBeTan external protocol results;
+  the new report differs only by the newly generated checkpoint hash.
+- Verified the complete test suite, wheel contents, isolated package import,
+  documentation links, lockfile, and source diff.
+
 ### Research Infrastructure
 
 - Added strict AP-10K and DogFLW adapters, content-bound localization caches,

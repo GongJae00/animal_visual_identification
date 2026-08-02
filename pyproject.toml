@@ -1,6 +1,6 @@
 [project]
 name = "canine-video-identity"
-version = "0.3.0"
+version = "0.4.0"
 description = "Research infrastructure for contract-bound canine visual identity retrieval"
 readme = "README.md"
 authors = [
@@ -99,11 +99,28 @@ conflicts = [
 ]
 
 [tool.uv.build-backend]
-module-name = "cvi"
+module-name = [
+    "apps",
+    "artifact_contracts",
+    "canine_identity",
+    "data_pipeline",
+    "evaluation",
+    "evidence_fusion",
+    "experiments",
+    "foundation",
+    "identity_governance",
+    "identity_methods",
+    "identity_retrieval",
+    "localization",
+    "operations",
+    "representation_learning",
+    "workflows",
+]
+module-root = ""
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["src"]
+pythonpath = ["."]
 markers = [
     "controlled_host: requires a frozen host that emits no unsolicited protected-worker output",
 ]

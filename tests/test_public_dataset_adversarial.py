@@ -10,9 +10,9 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest import mock
 
-import cvi.protected_publication as protected_publication
-import cvi.public_dataset_extraction as extraction_module
-from cvi.public_dataset import (
+import foundation.protected_publication as protected_publication
+import data_pipeline.public_dataset_extraction as extraction_module
+from data_pipeline.public_dataset import (
     ArchiveSuffixCount,
     DatasetUsageLane,
     PublicDatasetArchivePolicy,
@@ -20,7 +20,7 @@ from cvi.public_dataset import (
     SourceChecksumAuthority,
     audit_public_dataset_zip,
 )
-from cvi.public_dataset_extraction import (
+from data_pipeline.public_dataset_extraction import (
     ExtractedPublicDatasetFile,
     extract_audited_public_dataset_zip,
 )

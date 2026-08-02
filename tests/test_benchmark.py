@@ -2,13 +2,13 @@ from __future__ import annotations
 
 import unittest
 
-from cvi.benchmark import (
+from evaluation.benchmark import (
     BenchmarkReceipt,
     MetricInterval,
     TimingSummary,
     measure_operation,
 )
-from cvi.optimization import PromotionDecision
+from representation_learning.optimization import PromotionDecision
 
 
 class BenchmarkTests(unittest.TestCase):

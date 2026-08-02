@@ -4,13 +4,13 @@ import unittest
 
 import numpy as np
 
-from cvi.evaluation.verification import (
+from evaluation.verification import (
     compute_verification_curve,
     select_threshold_at_far,
     evaluate_at_threshold,
     EvaluationError,
 )
-from cvi.evaluation.protected_verification import (
+from evaluation.protected_verification import (
     wilson_rate,
     zero_event_exact_upper_bound,
     required_zero_event_trials,

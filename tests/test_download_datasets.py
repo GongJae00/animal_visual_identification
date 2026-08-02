@@ -8,7 +8,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
-from tools import download_datasets
+from workflows import download_datasets
 
 
 class DatasetDownloaderTests(unittest.TestCase):

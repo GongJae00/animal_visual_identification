@@ -9,7 +9,7 @@ from types import SimpleNamespace
 import pytest
 from PIL import Image
 
-from tools import generate_report_visualizations as tool
+from apps.report import generate as tool
 
 
 def _metric(rank1: float, mrr: float, *, queries: int = 20, identities: int = 5, templates: int = 5) -> dict:

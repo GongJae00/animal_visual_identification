@@ -5,7 +5,7 @@ import unittest
 
 import numpy as np
 
-from cvi.evaluation import (
+from evaluation import (
     EMBEDDING_DIAGNOSTICS_SCHEMA_VERSION,
     EmbeddingDiagnosticsConfig,
     EmbeddingDiagnosticsError,

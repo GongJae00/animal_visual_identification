@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import unittest
 
-from cvi.nose_id.sampler import CrossSessionPKBatchSampler
+from identity_methods.nose.sampler import CrossSessionPKBatchSampler
 
 
 class NoseIDSamplerTests(unittest.TestCase):

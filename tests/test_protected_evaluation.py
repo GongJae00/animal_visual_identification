@@ -8,7 +8,7 @@ import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from cvi.protected_evaluation import (
+from evaluation.protected_evaluation import (
     REPORT_INTERPRETATION,
     REPORT_PROTOCOL_STATUS,
     ProtectedEmbeddingManifest,
@@ -19,9 +19,9 @@ from cvi.protected_evaluation import (
     validate_protected_report,
     verify_protected_evaluation_output,
 )
-from cvi.protected_io import read_strict_json_document
-from cvi.provenance import content_sha256
-from cvi.role_exposure import (
+from foundation.protected_io import read_strict_json_document
+from foundation.provenance import content_sha256
+from identity_governance.role_exposure import (
     ExposureDeclarationKind,
     ExposureStage,
     RoleExposureDeclaration,
@@ -42,9 +42,9 @@ def _write(path: Path, payload: object) -> None:
 class ProtectedEvaluationTests(unittest.TestCase):
     def test_protected_cli_help_surfaces_are_available(self) -> None:
         commands = (
-            [sys.executable, "tools/prepare_protected_evaluation.py", "--help"],
-            [sys.executable, "-m", "tools.evaluate_multichannel", "protected", "--help"],
-            [sys.executable, "tools/verify_protected_evaluation.py", "--help"],
+            [sys.executable, "workflows/prepare_protected_evaluation.py", "--help"],
+            [sys.executable, "-m", "workflows.evaluate_multichannel", "protected", "--help"],
+            [sys.executable, "workflows/verify_protected_evaluation.py", "--help"],
         )
         for command in commands:
             completed = subprocess.run(
@@ -197,7 +197,7 @@ class ProtectedEvaluationTests(unittest.TestCase):
                 read_strict_json_document(path)
 
     def test_exact_key_dataclasses_reject_unknown_fields(self) -> None:
-        payload = json.loads(Path("configs/research/contracts/protected_evaluation_policy.example.json").read_text())
+        payload = json.loads(Path("experiments/configs/contracts/protected_evaluation_policy.example.json").read_text())
         payload["unknown"] = True
         with self.assertRaisesRegex(ValueError, "keys differ"):
             ProtectedEvaluationPolicy.from_dict(payload)
@@ -215,7 +215,7 @@ class ProtectedEvaluationTests(unittest.TestCase):
             )
             output = root / "output"
             command = [
-                sys.executable, "-m", "tools.evaluate_multichannel", "protected",
+                sys.executable, "-m", "workflows.evaluate_multichannel", "protected",
                 "--preparation-directory", str(preparation),
                 "--expected-plan-receipt-sha256", plan.receipt_sha256,
                 "--expected-advanced-exposure-declaration-sha256", plan.advanced_exposure_declaration_sha256,

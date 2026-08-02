@@ -9,16 +9,16 @@ from unittest.mock import patch
 import numpy as np
 import pytest
 
-from cvi.identity_registry import compute_identity_token
-from cvi.provenance import content_sha256
-from cvi.role_exposure import (
+from identity_governance.identity_registry import compute_identity_token
+from foundation.provenance import content_sha256
+from identity_governance.role_exposure import (
     ExposureDeclarationKind,
     ExposureStage,
     RoleExposureDeclaration,
     RoleExposureDeclarationRecord,
     merge_role_exposure_declarations,
 )
-from tools import evaluate_dogface_holdout_fusion as tool
+from workflows import evaluate_dogface_holdout_fusion as tool
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -353,7 +353,7 @@ def test_overwrite_refusal_and_parser_subcommands(tmp_path: Path) -> None:
     assert evaluate.command == "evaluate"
 
     completed = subprocess.run(
-        [sys.executable, ROOT / "tools/evaluate_dogface_holdout_fusion.py", "--help"],
+        [sys.executable, ROOT / "workflows/evaluate_dogface_holdout_fusion.py", "--help"],
         cwd=tmp_path,
         check=True,
         capture_output=True,

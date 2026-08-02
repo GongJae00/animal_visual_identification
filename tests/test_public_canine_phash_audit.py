@@ -19,16 +19,16 @@ except ModuleNotFoundError:
 else:
     PILLOW_AVAILABLE = True
 
-from cvi.phash_mih import CandidateLimitExceeded, PHashFingerprint, opaque_sample_id
-from cvi.protected_io import read_strict_json_object
-from cvi.provenance import content_sha256
-from cvi.public_canine_manifest import (
+from identity_methods.classical.phash_mih import CandidateLimitExceeded, PHashFingerprint, opaque_sample_id
+from foundation.protected_io import read_strict_json_object
+from foundation.provenance import content_sha256
+from data_pipeline.public_canine_manifest import (
     CanineRegion,
     IdentitySemantics,
     PublicCanineManifest,
     PublicCanineRecord,
 )
-from cvi.public_canine_phash_audit import (
+from identity_methods.classical.public_canine_phash_audit import (
     PublicCaninePHashPolicy,
     PublicCaninePHashSource,
     _AuthenticatedSource,
@@ -42,7 +42,7 @@ from cvi.public_canine_phash_audit import (
     read_public_canine_phash_sources,
     run_public_canine_phash_audit,
 )
-from cvi.public_image_content_audit import (
+from data_pipeline.public_image_content_audit import (
     ImageContentAuditPolicy,
     audit_public_canine_image_content,
 )
@@ -119,7 +119,7 @@ class PublicCaninePHashConfigTests(unittest.TestCase):
         completed = subprocess.run(
             [
                 sys.executable,
-                str(Path(__file__).parents[1] / "tools" / "audit_public_canine_phash.py"),
+                str(Path(__file__).parents[1] / "workflows" / "audit_public_canine_phash.py"),
                 "--help",
             ],
             check=True,
@@ -129,8 +129,8 @@ class PublicCaninePHashConfigTests(unittest.TestCase):
         self.assertIn("--binding-output", completed.stdout)
         policy = read_public_canine_phash_policy(
             Path(__file__).parents[1]
+            / "experiments"
             / "configs"
-            / "research"
             / "contracts"
             / "public_canine_phash_policy.example.json"
         )
@@ -358,10 +358,10 @@ class PublicCaninePHashPublicationTests(unittest.TestCase):
                 minimum_temporary_free_bytes_after_stage=1,
             )
             with patch(
-                "cvi.public_canine_phash_audit._authenticate_source",
+                "identity_methods.classical.public_canine_phash_audit._authenticate_source",
                 side_effect=authenticated,
             ), patch(
-                "cvi.public_canine_phash_audit._fingerprint_source",
+                "identity_methods.classical.public_canine_phash_audit._fingerprint_source",
                 side_effect=side_effect,
             ):
                 evidence_sha, binding_sha = run_public_canine_phash_audit(
@@ -386,10 +386,10 @@ class PublicCaninePHashPublicationTests(unittest.TestCase):
             )
             with self.assertRaises(FileExistsError):
                 with patch(
-                    "cvi.public_canine_phash_audit._authenticate_source",
+                    "identity_methods.classical.public_canine_phash_audit._authenticate_source",
                     side_effect=authenticated,
                 ), patch(
-                    "cvi.public_canine_phash_audit._fingerprint_source",
+                    "identity_methods.classical.public_canine_phash_audit._fingerprint_source",
                     side_effect=side_effect,
                 ):
                     run_public_canine_phash_audit(
@@ -426,10 +426,10 @@ class PublicCaninePHashPublicationTests(unittest.TestCase):
             ]
             evidence_path, binding_path = root / "evidence.json", root / "binding.json"
             with patch(
-                "cvi.public_canine_phash_audit._authenticate_source",
+                "identity_methods.classical.public_canine_phash_audit._authenticate_source",
                 side_effect=authenticated,
             ), patch(
-                "cvi.public_canine_phash_audit._fingerprint_source",
+                "identity_methods.classical.public_canine_phash_audit._fingerprint_source",
                 side_effect=side_effect,
             ):
                 with self.assertRaises(CandidateLimitExceeded):
