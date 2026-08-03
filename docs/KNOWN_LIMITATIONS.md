@@ -31,6 +31,10 @@ artifact hashes, internal receipts, or claims of final biometric performance.
 - DogFLW download support does not create an admitted identity-evidence channel.
 - Nose-print, landmark-graph, evidential-uncertainty, and multi-channel identity
   value have not been established by a released leakage-controlled ablation.
+- The N4 residual metric adapter is an offline research candidate over frozen N3
+  embeddings. Its positive publisher-panel result is same-track, and a frozen
+  SiBeTan substitution did not improve Rank-1. It is not an admitted runtime
+  channel or evidence of physical nose-ridge topology.
 
 ## Calibration And Evaluation
 

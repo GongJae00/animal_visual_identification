@@ -1,14 +1,20 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
 
 from experiments.sibetan_multievidence import (
     BRANCHES,
     evaluate_effective_k_panel,
     evaluate_fixed_panel,
+    evaluate_n4_substitution,
     face_reliability,
     fit_effective_k_weights,
     nose_reliability,
+)
+from workflows.evaluate_sibetan_multievidence import (
+    _adapt_nose_embeddings,
+    _validate_n4_runtime_bindings,
 )
 
 
@@ -187,3 +193,77 @@ def test_continuous_reliability_downweights_tiny_profile_without_rejecting() -> 
     assert 0.0 < weak < strong <= 1.0
     assert 0.0 < face_reliability(upstream_overall=0.2, native_short_side=8)
     assert face_reliability(upstream_overall=0.8, native_short_side=128) == 0.8
+
+
+def test_n4_substitution_preserves_availability_and_reports_paired_delta() -> None:
+    gallery, queries = _panel()
+    baseline = {
+        "g-a": np.array([1.0, 0.0]), "g-b": np.array([0.7, 0.7]),
+        "q-a": np.array([0.8, 0.2]), "q-b": np.array([1.0, 0.0]),
+    }
+    adapted = {
+        "g-a": np.array([1.0, 0.0]), "g-b": np.array([0.0, 1.0]),
+        "q-a": np.array([1.0, 0.0]), "q-b": np.array([0.0, 1.0]),
+    }
+    embeddings = {branch: baseline for branch in BRANCHES}
+    quality = {branch: {token: 1.0 for token in baseline} for branch in BRANCHES}
+
+    result = evaluate_n4_substitution(
+        gallery=gallery,
+        queries=queries,
+        embeddings=embeddings,
+        adapted_nose_embeddings=adapted,
+        transfer_weights=FUSION_WEIGHTS,
+        quality=quality,
+        bootstrap_resamples=10,
+        bootstrap_seed=3,
+    )
+
+    nose = result["methods"][BRANCHES[2]]
+    assert result["availability_quality_and_frozen_weights_unchanged"] is True
+    assert nose["baseline_N3_metrics"]["Rank-1"] == 0.5
+    assert nose["candidate_N4_metrics"]["Rank-1"] == 1.0
+    assert nose["rescue_break"]["rescue_count"] == 1
+    assert nose["rescue_break"]["break_count"] == 0
+    assert nose["paired_N4_minus_N3_bootstrap_cis"]["Rank-1"]["estimate"] == 0.5
+
+
+def test_n4_substitution_rejects_changed_availability() -> None:
+    gallery, queries = _panel()
+    vectors = {
+        "g-a": np.array([1.0, 0.0]), "g-b": np.array([0.0, 1.0]),
+        "q-a": np.array([1.0, 0.1]), "q-b": np.array([0.1, 1.0]),
+    }
+    embeddings = {branch: vectors for branch in BRANCHES}
+    quality = {branch: {token: 1.0 for token in vectors} for branch in BRANCHES}
+
+    with pytest.raises(ValueError, match="exact N3 availability"):
+        evaluate_n4_substitution(
+            gallery=gallery,
+            queries=queries,
+            embeddings=embeddings,
+            adapted_nose_embeddings={key: value for key, value in vectors.items() if key != "q-b"},
+            transfer_weights=FUSION_WEIGHTS,
+            quality=quality,
+            bootstrap_resamples=2,
+            bootstrap_seed=0,
+        )
+
+
+def test_n4_runtime_binding_and_empty_availability_fail_closed() -> None:
+    checkpoint = {
+        "bindings": {
+            "n3": {
+                "onnx_sha256": "1" * 64,
+                "runtime_manifest_payload_sha256": "2" * 64,
+            }
+        }
+    }
+    _validate_n4_runtime_bindings(
+        checkpoint, runtime_manifest_sha256="2" * 64, onnx_sha256="1" * 64
+    )
+    with pytest.raises(ValueError, match="preprocessing"):
+        _validate_n4_runtime_bindings(
+            checkpoint, runtime_manifest_sha256="3" * 64, onnx_sha256="1" * 64
+        )
+    assert _adapt_nose_embeddings(checkpoint, {}) == {}

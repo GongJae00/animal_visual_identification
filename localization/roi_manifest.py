@@ -795,17 +795,15 @@ def _validate_manifest(manifest: Any, root: Path) -> None:
             )
 
 
-def read_roi_manifest(path: Path) -> dict[str, Any]:
-    document = read_strict_json_document(
-        path,
-        maximum_bytes=536_870_912,
-        maximum_nodes=10_000_000,
-        maximum_keys=5_000_000,
-        maximum_array_length=1_000_000,
-    )
-    bundle = document.payload
+def validate_roi_manifest_bundle(bundle: object, *, root: Path) -> dict[str, Any]:
+    """Validate one already-read ROI bundle against its artifact root."""
+
     expected = {"schema_version", "manifest_sha256", "manifest"}
-    if set(bundle) != expected or bundle["schema_version"] != _BUNDLE_SCHEMA:
+    if (
+        not isinstance(bundle, dict)
+        or set(bundle) != expected
+        or bundle["schema_version"] != _BUNDLE_SCHEMA
+    ):
         raise ValueError("ROI manifest bundle schema differs")
     manifest = bundle["manifest"]
     _require_sha256(bundle["manifest_sha256"], "manifest_sha256")
@@ -814,9 +812,23 @@ def read_roi_manifest(path: Path) -> dict[str, Any]:
         or content_sha256(manifest) != bundle["manifest_sha256"]
     ):
         raise ValueError("ROI manifest bundle digest differs")
-    root = path.parent.resolve(strict=True)
-    _validate_manifest(manifest, root)
+    _validate_manifest(manifest, root.resolve(strict=True))
     return manifest
 
 
-__all__ = ["build_roi_manifest", "read_roi_manifest"]
+def read_roi_manifest(path: Path) -> dict[str, Any]:
+    document = read_strict_json_document(
+        path,
+        maximum_bytes=536_870_912,
+        maximum_nodes=10_000_000,
+        maximum_keys=5_000_000,
+        maximum_array_length=1_000_000,
+    )
+    return validate_roi_manifest_bundle(document.payload, root=path.parent)
+
+
+__all__ = [
+    "build_roi_manifest",
+    "read_roi_manifest",
+    "validate_roi_manifest_bundle",
+]

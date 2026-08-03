@@ -8,7 +8,7 @@ from typing import Any, Mapping, Sequence
 
 import numpy as np
 
-from evaluation.retrieval import compute_cosine_score_matrix
+from evaluation.retrieval import compute_cosine_score_matrix, identity_clustered_bootstrap_ci
 from foundation.provenance import content_sha256
 
 
@@ -264,10 +264,129 @@ def _metrics(rows: Sequence[Mapping[str, Any]]) -> dict[str, float | int]:
     }
 
 
+def evaluate_n4_substitution(
+    *,
+    gallery: Sequence[Mapping[str, str]],
+    queries: Sequence[Mapping[str, str]],
+    embeddings: Mapping[str, Mapping[str, np.ndarray]],
+    adapted_nose_embeddings: Mapping[str, np.ndarray],
+    transfer_weights: Mapping[str, Mapping[str, float]],
+    quality: Mapping[str, Mapping[str, float]],
+    bootstrap_resamples: int,
+    bootstrap_seed: int,
+) -> dict[str, Any]:
+    """Compare N3 and N4 with identical panel, availability, quality, and weights."""
+
+    if (
+        isinstance(bootstrap_resamples, bool)
+        or not isinstance(bootstrap_resamples, int)
+        or bootstrap_resamples < 1
+        or isinstance(bootstrap_seed, bool)
+        or not isinstance(bootstrap_seed, int)
+        or bootstrap_seed < 0
+    ):
+        raise ValueError("N4 substitution bootstrap configuration differs")
+    if set(adapted_nose_embeddings) != set(embeddings[BRANCHES[2]]):
+        raise ValueError("N4 substitution must preserve exact N3 availability")
+    candidate_embeddings = {
+        branch: dict(values) for branch, values in embeddings.items()
+    }
+    candidate_embeddings[BRANCHES[2]] = {
+        token: _normalize_vector(vector)
+        for token, vector in adapted_nose_embeddings.items()
+    }
+    baseline = evaluate_effective_k_panel(
+        gallery=gallery,
+        queries=queries,
+        embeddings=embeddings,
+        transfer_weights=transfer_weights,
+        quality=quality,
+    )
+    candidate = evaluate_effective_k_panel(
+        gallery=gallery,
+        queries=queries,
+        embeddings=candidate_embeddings,
+        transfer_weights=transfer_weights,
+        quality=quality,
+    )
+    if (
+        baseline["fixed_population"] != candidate["fixed_population"]
+        or baseline["branch_availability"] != candidate["branch_availability"]
+    ):
+        raise RuntimeError("N4 substitution changed fixed population or availability")
+
+    comparisons = {}
+    for method_index, (method, branches) in enumerate(METHOD_BRANCHES.items()):
+        if BRANCHES[2] not in branches:
+            continue
+        before = baseline["methods"][method]
+        after = candidate["methods"][method]
+        before_rows = before["query_rows"]
+        after_rows = after["query_rows"]
+        if [row["sample_token"] for row in before_rows] != [
+            row["sample_token"] for row in after_rows
+        ]:
+            raise RuntimeError("N4 substitution changed paired query population")
+        paired_cis = None
+        rescue_break = None
+        if before_rows:
+            paired_cis = {
+                metric: identity_clustered_bootstrap_ci(
+                    [
+                        {
+                            "bootstrap_cluster_id": after_row["bootstrap_cluster_id"],
+                            "delta": after_row[metric] - before_row[metric],
+                        }
+                        for before_row, after_row in zip(
+                            before_rows, after_rows, strict=True
+                        )
+                    ],
+                    metric="delta",
+                    resamples=bootstrap_resamples,
+                    seed=bootstrap_seed + method_index,
+                )
+                for metric in ("Rank-1", "Rank-5", "Rank-10", "reciprocal_rank")
+            }
+            rescue_count = sum(
+                before_row["Rank-1"] == 0.0 and after_row["Rank-1"] == 1.0
+                for before_row, after_row in zip(before_rows, after_rows, strict=True)
+            )
+            break_count = sum(
+                before_row["Rank-1"] == 1.0 and after_row["Rank-1"] == 0.0
+                for before_row, after_row in zip(before_rows, after_rows, strict=True)
+            )
+            rescue_break = {
+                "paired_query_count": len(before_rows),
+                "rescue_count": rescue_count,
+                "break_count": break_count,
+                "rescue_fraction": rescue_count / len(before_rows),
+                "break_fraction": break_count / len(before_rows),
+            }
+        comparisons[method] = {
+            "branches": list(branches),
+            "weights": before["weights"],
+            "evaluated_query_count": before["evaluated_query_count"],
+            "query_coverage": before["query_coverage"],
+            "baseline_N3_metrics": before["metrics"],
+            "candidate_N4_metrics": after["metrics"],
+            "paired_N4_minus_N3_bootstrap_cis": paired_cis,
+            "rescue_break": rescue_break,
+            "candidate_N4_query_rows": after_rows,
+        }
+    return {
+        "substitution": "N3_EMBEDDING_VECTOR_ONLY",
+        "availability_quality_and_frozen_weights_unchanged": True,
+        "fixed_population": baseline["fixed_population"],
+        "branch_availability": baseline["branch_availability"][BRANCHES[2]],
+        "methods": comparisons,
+    }
+
+
 __all__ = [
     "BRANCHES",
     "METHOD_BRANCHES",
     "evaluate_fixed_panel",
+    "evaluate_n4_substitution",
     "frozen_transfer_weights",
     "evaluate_effective_k_panel",
     "fit_effective_k_weights",

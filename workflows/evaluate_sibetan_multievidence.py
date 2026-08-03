@@ -12,10 +12,12 @@ from pathlib import Path
 import numpy as np
 import torch
 
+from artifact_contracts.source_provenance import build_source_provenance
 from experiments.sibetan_evidence import validate_evidence_bundle_v2
 from experiments.sibetan_multievidence import (
     BRANCHES,
     evaluate_effective_k_panel,
+    evaluate_n4_substitution,
     face_reliability,
     frozen_transfer_weights,
     nose_reliability,
@@ -59,6 +61,8 @@ else:
 
 REPORT_SCHEMA = "cvi.sibetan_multievidence_evaluation.v2"
 BUNDLE_SCHEMA = "cvi.sibetan_multievidence_evaluation_bundle.v2"
+N4_REPORT_SCHEMA = "cvi.sibetan_n4_metric_adapter_evaluation.v1"
+N4_BUNDLE_SCHEMA = "cvi.sibetan_n4_metric_adapter_evaluation_bundle.v1"
 INTERPRETATION = (
     "EXPOSED_SIBETAN_CROSS_SEQUENCE_FROZEN_TRANSFER_DIAGNOSTIC_"
     "NOT_FINAL_OR_BIOMETRIC_VALIDATION"
@@ -108,6 +112,30 @@ def _row_metrics(rows):
     }
 
 
+def _validate_n4_runtime_bindings(
+    checkpoint, *, runtime_manifest_sha256: str, onnx_sha256: str
+) -> None:
+    if checkpoint["bindings"]["n3"]["onnx_sha256"] != onnx_sha256:
+        raise ValueError("N4 adapter and SiBeTan N3 runtime differ")
+    if (
+        checkpoint["bindings"]["n3"]["runtime_manifest_payload_sha256"]
+        != runtime_manifest_sha256
+    ):
+        raise ValueError("N4 adapter and SiBeTan N3 preprocessing differ")
+
+
+def _adapt_nose_embeddings(checkpoint, embeddings):
+    if not embeddings:
+        return {}
+    from experiments.n4_metric_adapter import apply_adapter
+
+    tokens = sorted(embeddings)
+    adapted = apply_adapter(
+        checkpoint, np.stack([embeddings[token] for token in tokens])
+    )
+    return dict(zip(tokens, adapted, strict=True))
+
+
 def _parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--assignment", type=Path, required=True)
@@ -129,6 +157,8 @@ def _parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--nose-manifest-sha256", required=True)
     parser.add_argument("--nose-onnx", type=Path, required=True)
     parser.add_argument("--nose-onnx-sha256", required=True)
+    parser.add_argument("--n4-checkpoint", type=Path)
+    parser.add_argument("--n4-checkpoint-sha256")
     parser.add_argument("--device", choices=("cpu", "cuda"), default="cpu")
     parser.add_argument("--nose-device", choices=("cpu", "cuda"), default="cpu")
     parser.add_argument("--batch-size", type=int, default=32)
@@ -138,6 +168,8 @@ def _parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     args = parser.parse_args(argv)
     if args.batch_size < 1 or args.bootstrap_resamples < 1 or args.bootstrap_seed < 0:
         parser.error("batch size/resamples must be positive and seed non-negative")
+    if (args.n4_checkpoint is None) != (args.n4_checkpoint_sha256 is None):
+        parser.error("N4 checkpoint and SHA-256 must be provided together")
     return args
 
 
@@ -212,6 +244,19 @@ def main(argv: Sequence[str] | None = None) -> None:
     nose_runtime = ExactOnnxRuntime(
         args.nose_onnx, nose_manifest, use_cuda=args.nose_device == "cuda"
     )
+    n4_checkpoint = None
+    if args.n4_checkpoint is not None:
+        from experiments.n4_metric_adapter import load_adapter_checkpoint
+
+        n4_checkpoint = load_adapter_checkpoint(
+            args.n4_checkpoint,
+            expected_file_sha256=args.n4_checkpoint_sha256,
+        )
+        _validate_n4_runtime_bindings(
+            n4_checkpoint,
+            runtime_manifest_sha256=nose_document.canonical_payload_sha256,
+            onnx_sha256=args.nose_onnx_sha256,
+        )
 
     selected_tokens = sorted(locations)
     row_by_token = {}
@@ -287,6 +332,11 @@ def main(argv: Sequence[str] | None = None) -> None:
             blur_score=float(quality["blur_score"]),
             contrast_score=float(quality["contrast_score"]),
         )
+    adapted_nose_embeddings = None
+    if n4_checkpoint is not None:
+        adapted_nose_embeddings = _adapt_nose_embeddings(
+            n4_checkpoint, embeddings[BRANCHES[2]]
+        )
 
     panel_results = []
     for population in populations:
@@ -321,6 +371,22 @@ def main(argv: Sequence[str] | None = None) -> None:
             embeddings=panel_embeddings,
             transfer_weights=transfer_weights, quality=panel_quality,
         )
+        n4_substitution = None
+        if adapted_nose_embeddings is not None:
+            n4_substitution = evaluate_n4_substitution(
+                gallery=gallery_rows,
+                queries=query_rows,
+                embeddings=panel_embeddings,
+                adapted_nose_embeddings={
+                    token: vector
+                    for token, vector in adapted_nose_embeddings.items()
+                    if token in panel_tokens
+                },
+                transfer_weights=transfer_weights,
+                quality=panel_quality,
+                bootstrap_resamples=args.bootstrap_resamples,
+                bootstrap_seed=args.bootstrap_seed + population.key.shot * 1_000,
+            )
         appearance_rows = {
             row["sample_token"]: row
             for row in result["methods"][BRANCHES[0]]["query_rows"]
@@ -397,13 +463,34 @@ def main(argv: Sequence[str] | None = None) -> None:
                     "purpose": "REPRODUCE_ESTABLISHED_PROTECTED_APPEARANCE_BASELINE_ONLY",
                     "metrics": external_control["metrics"],
                 },
+                **(
+                    {"n4_metric_adapter_substitution": n4_substitution}
+                    if n4_substitution is not None
+                    else {}
+                ),
                 **result,
             }
         )
+    n4_enabled = n4_checkpoint is not None
     report = {
-        "schema_version": REPORT_SCHEMA,
-        "status": "PASS_EXPOSED_SIBETAN_FROZEN_TRANSFER_DIAGNOSTIC",
+        "schema_version": N4_REPORT_SCHEMA if n4_enabled else REPORT_SCHEMA,
+        "status": (
+            "PASS_EXPOSED_SIBETAN_N4_SUBSTITUTION_DIAGNOSTIC"
+            if n4_enabled
+            else "PASS_EXPOSED_SIBETAN_FROZEN_TRANSFER_DIAGNOSTIC"
+        ),
         "interpretation": INTERPRETATION,
+        **(
+            {
+                "execution": {
+                    "device": args.device,
+                    "nose_device": args.nose_device,
+                    "batch_size": args.batch_size,
+                }
+            }
+            if n4_enabled
+            else {}
+        ),
         "protocol": {
             "panel_membership": "IMMUTABLE_PROTECTED_K1_K3_K5",
             "missing_evidence": "MASKED_WITHOUT_SENTINEL_BACKFILL_OR_IDENTITY_FILTERING",
@@ -415,6 +502,16 @@ def main(argv: Sequence[str] | None = None) -> None:
             "transfer_preprocessing": "RECEIPT_BOUND_SHORTEST_EDGE_CENTER_CROP",
             "external_control_used_in_fusion": False,
             "reliability": "YT_DEV_FROZEN_CONTINUOUS_FACE_AND_NOSE_QUALITY",
+            **(
+                {
+                    "n4_substitution": "N3_EMBEDDING_VECTOR_ONLY",
+                    "n4_selection": n4_checkpoint["config"]["selection"],
+                    "sibetan_labels_used_for_n4_selection": False,
+                    "n4_availability_quality_and_frozen_weights_unchanged": True,
+                }
+                if n4_enabled
+                else {}
+            ),
             "bootstrap": {
                 "cluster_unit": "protected_identity_token",
                 "resamples": args.bootstrap_resamples,
@@ -436,21 +533,28 @@ def main(argv: Sequence[str] | None = None) -> None:
             "frozen_dinov2_sha256": dino.model_sha256,
             "nose_runtime_manifest_sha256": nose_document.canonical_payload_sha256,
             "nose_onnx_sha256": args.nose_onnx_sha256,
+            **(
+                {
+                    "n4_checkpoint_file_sha256": args.n4_checkpoint_sha256,
+                    "n4_checkpoint_payload_sha256": n4_checkpoint[
+                        "checkpoint_payload_sha256"
+                    ],
+                }
+                if n4_enabled
+                else {}
+            ),
             "publisher_archives": publisher_provenance,
             "code_sha256s": {
-                relative: _sha(repository / relative)
-                for relative in (
-                    "experiments/sibetan_evidence.py",
-                    "experiments/sibetan_multievidence.py",
-                    "evaluation/retrieval.py",
-                    "workflows/evaluate_sibetan_multievidence.py",
-                )
+                row["relative_path"]: row["content_sha256"]
+                for row in build_source_provenance(
+                    (repository / "workflows/evaluate_sibetan_multievidence.py",)
+                )["code_source_files"]
             },
         },
     }
     report = json.loads(json.dumps(report, allow_nan=False))
     bundle = {
-        "schema_version": BUNDLE_SCHEMA,
+        "schema_version": N4_BUNDLE_SCHEMA if n4_enabled else BUNDLE_SCHEMA,
         "report_sha256": content_sha256(report),
         "report": report,
     }

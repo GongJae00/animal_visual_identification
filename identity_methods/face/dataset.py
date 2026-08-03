@@ -115,6 +115,38 @@ class FaceReIDDataset(Dataset):
         }
 
 
+def prepare_roi_face_input(
+    image: Image.Image, record: dict[str, Any], *, align: bool = False
+) -> dict[str, Any]:
+    """Prepare one already-bound crop without reopening its source path."""
+
+    rgb = np.asarray(image.convert("RGB"), dtype=np.float32) / 255.0
+    if rgb.ndim != 3 or rgb.shape[2] != 3 or not np.isfinite(rgb).all():
+        raise ValueError("ROI FaceID crop must be finite RGB")
+    landmarks = torch.zeros((17, 3), dtype=torch.float32)
+    face_crop_rect = record["face_crop_rect_xyxy"]
+    if face_crop_rect is not None and record["body_keypoints"] is not None:
+        for point_index, name in enumerate(_POSE_ORDER):
+            point = record["body_keypoints"].get(name)
+            if point is not None:
+                normalized_x, normalized_y = normalize_source_point_to_square_crop(
+                    point[0], point[1], face_crop_rect
+                )
+                landmarks[point_index] = torch.tensor(
+                    [normalized_x, normalized_y, point[2]]
+                )
+    alignment_applied = False
+    if align:
+        rgb, alignment_applied = align_face_rgb(rgb, landmarks)
+    return {
+        "rgb": torch.from_numpy(
+            np.ascontiguousarray(rgb.transpose(2, 0, 1))
+        ).clamp(0, 1),
+        "landmarks": landmarks,
+        "alignment_applied": alignment_applied,
+    }
+
+
 class RoiFaceReIDDataset(Dataset):
     """Landmark-aware FaceID samples exported by the localization pipeline."""
 
@@ -145,23 +177,10 @@ class RoiFaceReIDDataset(Dataset):
     def __getitem__(self, index: int) -> dict[str, Any]:
         record = self.records[index]
         with Image.open(self.crop_root / record["face_crop_path"]) as opened:
-            rgb = np.asarray(opened.convert("RGB"), dtype=np.float32) / 255.0
-        landmarks = torch.zeros((17, 3), dtype=torch.float32)
-        face_crop_rect = record["face_crop_rect_xyxy"]
-        if face_crop_rect is not None and record["body_keypoints"] is not None:
-            for point_index, name in enumerate(_POSE_ORDER):
-                point = record["body_keypoints"].get(name)
-                if point is not None:
-                    normalized_x, normalized_y = normalize_source_point_to_square_crop(
-                        point[0], point[1], face_crop_rect
-                    )
-                    landmarks[point_index] = torch.tensor(
-                        [normalized_x, normalized_y, point[2]]
-                    )
-        alignment_applied = False
-        if self.align:
-            rgb, alignment_applied = align_face_rgb(rgb, landmarks)
-        tensor = torch.from_numpy(np.ascontiguousarray(rgb.transpose(2, 0, 1)))
+            image = opened.convert("RGB")
+            image.load()
+        prepared = prepare_roi_face_input(image, record, align=self.align)
+        tensor = prepared["rgb"]
         second = None
         if self.augment is not None:
             if self.paired_augment:
@@ -171,13 +190,13 @@ class RoiFaceReIDDataset(Dataset):
         identity = record["registered_identity_id"]
         result = {
             "rgb": tensor.clamp(0, 1),
-            "landmarks": landmarks,
+            "landmarks": prepared["landmarks"],
             "quality_target": float(record["face_quality"]["overall"]),
             "identity_index": self.identity_to_index[identity],
             "registered_dog_id": identity,
             "sample_id": record["sample_id"],
             "session_id": record["capture_group_id"] or "unknown",
-            "alignment_applied": alignment_applied,
+            "alignment_applied": prepared["alignment_applied"],
         }
         if second is not None:
             result["second_rgb"] = second.clamp(0, 1)
@@ -207,4 +226,5 @@ __all__ = [
     "RoiFaceReIDDataset",
     "align_face_rgb",
     "build_dogface_dataset",
+    "prepare_roi_face_input",
 ]
