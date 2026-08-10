@@ -91,6 +91,8 @@ data = [
     { name = "pyarrow" },
 ]
 models = [
+    { name = "einops" },
+    { name = "kornia" },
     { name = "safetensors" },
     { name = "timm" },
 ]
@@ -109,10 +111,12 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "einops", marker = "extra == 'models'", specifier = ">=0.8,<1" },
     { name = "faiss-cpu", marker = "extra == 'cpu'", specifier = ">=1.9.0" },
     { name = "faiss-gpu", marker = "extra == 'cuda'", specifier = ">=1.7.4" },
     { name = "huggingface-hub", specifier = ">=1.24.0" },
     { name = "jsonschema", specifier = ">=4.26.0" },
+    { name = "kornia", marker = "extra == 'models'", specifier = ">=0.8,<1" },
     { name = "numpy", specifier = ">=2.5,<3" },
     { name = "onnx", marker = "extra == 'cpu'", specifier = ">=1.19" },
     { name = "onnx", marker = "extra == 'cuda'", specifier = ">=1.19" },
@@ -307,6 +311,15 @@ nvrtc = [
 ]
 nvtx = [
     { name = "nvidia-nvtx", marker = "(platform_machine != 'aarch64' and platform_machine != 'x86_64' and extra == 'extra-21-canine-video-identity-cpu' and extra == 'extra-21-canine-video-identity-cuda') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra != 'extra-21-canine-video-identity-cpu' and extra != 'extra-21-canine-video-identity-cuda') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra != 'extra-21-canine-video-identity-cpu' and extra != 'extra-21-canine-video-identity-cuda') or (platform_machine == 'aarch64' and extra == 'extra-21-canine-video-identity-cpu' and extra == 'extra-21-canine-video-identity-cuda') or (platform_machine == 'x86_64' and extra == 'extra-21-canine-video-identity-cpu' and extra == 'extra-21-canine-video-identity-cuda') or (sys_platform != 'linux' and extra == 'extra-21-canine-video-identity-cpu' and extra == 'extra-21-canine-video-identity-cuda')" },
+]
+
+[[package]]
+name = "einops"
+version = "0.8.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/2c/77/850bef8d72ffb9219f0b1aac23fbc1bf7d038ee6ea666f331fa273031aa2/einops-0.8.2.tar.gz", hash = "sha256:609da665570e5e265e27283aab09e7f279ade90c4f01bcfca111f3d3e13f2827", size = 56261, upload-time = "2026-01-26T04:13:17.638Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/2a/09/f8d8f8f31e4483c10a906437b4ce31bdf3d6d417b73fe33f1a8b59e34228/einops-0.8.2-py3-none-any.whl", hash = "sha256:54058201ac7087911181bfec4af6091bb59380360f069276601256a76af08193", size = 65638, upload-time = "2026-01-26T04:13:18.546Z" },
 ]
 
 [[package]]
@@ -526,6 +539,36 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/19/74/a633ee74eb36c44aa6d1095e7cc5569bebf04342ee146178e2d36600708b/jsonschema_specifications-2025.9.1.tar.gz", hash = "sha256:b540987f239e745613c7a9176f3edb72b832a4ac465cf02712288397832b5e8d", size = 32855, upload-time = "2025-09-08T01:34:59.186Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/41/45/1a4ed80516f02155c51f51e8cedb3c1902296743db0bbc66608a0db2814f/jsonschema_specifications-2025.9.1-py3-none-any.whl", hash = "sha256:98802fee3a11ee76ecaca44429fda8a41bff98b00a0f2838151b113f210cc6fe", size = 18437, upload-time = "2025-09-08T01:34:57.871Z" },
+]
+
+[[package]]
+name = "kornia"
+version = "0.8.3"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "kornia-rs" },
+    { name = "packaging" },
+    { name = "torch", version = "2.11.0+cu128", source = { registry = "https://download.pytorch.org/whl/cu128" }, marker = "extra == 'extra-21-canine-video-identity-cuda'" },
+    { name = "torch", version = "2.13.0", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "(sys_platform == 'darwin' and extra == 'extra-21-canine-video-identity-cpu') or (extra == 'extra-21-canine-video-identity-cpu' and extra == 'extra-21-canine-video-identity-cuda')" },
+    { name = "torch", version = "2.13.0", source = { registry = "https://pypi.org/simple" }, marker = "(extra == 'extra-21-canine-video-identity-cpu' and extra == 'extra-21-canine-video-identity-cuda') or (extra != 'extra-21-canine-video-identity-cpu' and extra != 'extra-21-canine-video-identity-cuda')" },
+    { name = "torch", version = "2.13.0+cpu", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "(sys_platform != 'darwin' and extra == 'extra-21-canine-video-identity-cpu') or (extra == 'extra-21-canine-video-identity-cpu' and extra == 'extra-21-canine-video-identity-cuda')" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/1a/80/460e9dad0c1b68f3e83f198f3983638d62f910a88542b492290010d25f50/kornia-0.8.3.tar.gz", hash = "sha256:c06887374eaf39fb614a77ca054383e6cc2092cb7225e45437111b4984d0f866", size = 727384, upload-time = "2026-05-19T20:23:35.048Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/85/05/0c1cc486e87d2a5ad6649eb96a8ccaa7c6002d8d73d676c13e2102f286c1/kornia-0.8.3-py3-none-any.whl", hash = "sha256:0b15f5d359aeafd7ff54ea631ed1943a3eb295c4a6dae3f745ddeada25e33289", size = 1189381, upload-time = "2026-05-19T20:23:33.209Z" },
+]
+
+[[package]]
+name = "kornia-rs"
+version = "0.1.14"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/09/0f/cd6985790031ad2f0d4fcdfdb9763a177bebb970edddc6fe29f9e6afd902/kornia_rs-0.1.14.tar.gz", hash = "sha256:7584f654a9db2b41bee05c9aaf865608b665e2f7195096372e001b6f220de1d2", size = 2556658, upload-time = "2026-05-19T07:45:06.366Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/d9/e3/e57480f38e395262616afd8efe91d0a1f7a4b875b52c9890e31aa85a057c/kornia_rs-0.1.14-cp312-cp312-macosx_10_12_x86_64.whl", hash = "sha256:76faf5389b1ea53452fc08561622ccad8ce81c8ff1857c4742be6ae4e82bf078", size = 3555313, upload-time = "2026-05-19T07:46:01.714Z" },
+    { url = "https://files.pythonhosted.org/packages/e4/4f/2935c5186cce45bfa85b587883d627627427bceb61d0b0e0aa0267339910/kornia_rs-0.1.14-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:0025db9854f3a34c66123c2646d52e71a534678d9343f3c897192136b2c3ddaf", size = 3349262, upload-time = "2026-05-19T07:45:47.689Z" },
+    { url = "https://files.pythonhosted.org/packages/d1/f5/dc5e8f69130de7ed8d59500789bc0cf1658ada8d5360164e416622cb47f1/kornia_rs-0.1.14-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:747b26a3ce0cad76aa1047ed65f95dcd649286a2d5417d8ad93f03bb1909238d", size = 3381293, upload-time = "2026-05-19T07:45:10.552Z" },
+    { url = "https://files.pythonhosted.org/packages/72/7f/01c9456a09a3a5731bf986724f6f6ff70d627ac8072cf298d842ec204692/kornia_rs-0.1.14-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:396f84661fcf260885c3f9db717caf6904eafd44857dca17be09a835bd7da8d9", size = 3695565, upload-time = "2026-05-19T07:45:30.01Z" },
+    { url = "https://files.pythonhosted.org/packages/e0/6f/01e0e2cf90c47ecf26656263cdabe491a1b206c94c0c30a1dd7e4d13ed29/kornia_rs-0.1.14-cp312-cp312-win_amd64.whl", hash = "sha256:ac4bbd0a8fd73b5058a39707c790fecec4c5204a42d1f5af17f1fa57cc83d406", size = 3367565, upload-time = "2026-05-19T07:46:16.682Z" },
 ]
 
 [[package]]
