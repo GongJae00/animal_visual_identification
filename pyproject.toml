@@ -56,6 +56,9 @@ models = [
 data = [
     "pyarrow>=21,<22",
 ]
+visualization = [
+    "matplotlib>=3.10,<4",
+]
 
 [project.urls]
 Homepage = "https://github.com/GongJae00/canine_video_identity"
@@ -116,6 +119,7 @@ module-name = [
     "localization",
     "operations",
     "representation_learning",
+    "vis",
     "workflows",
 ]
 module-root = ""

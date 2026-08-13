@@ -20,6 +20,7 @@ INTERNAL_PACKAGES = {
     "localization",
     "operations",
     "representation_learning",
+    "vis",
     "workflows",
 }
 ALGORITHM_PACKAGES = {

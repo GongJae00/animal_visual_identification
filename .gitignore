@@ -71,8 +71,7 @@ exports/
 wandb/
 mlruns/
 /manifests/
-/Visualization/*
-!/Visualization/.gitkeep
+/Visualization/
 
 # Environment and secrets
 .env
