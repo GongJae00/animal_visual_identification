@@ -5,12 +5,12 @@ Admission decisions are versioned and must not be silently changed.
 
 from __future__ import annotations
 
+from artifact_contracts.model_paths import DATASETS_DIR
 from data_pipeline.types import (
     CanidDatasetRecord,
     CaptureGroupKind,
     DatasetAdmission,
 )
-from artifact_contracts.model_paths import DATASETS_DIR
 
 
 def _dataset_root(directory: str) -> str:
@@ -107,8 +107,8 @@ SOURCE_REGISTRY: tuple[CanidDatasetRecord, ...] = (
         has_breed=False,
         has_nose_mask=False,
         admission=DatasetAdmission.ADMIT_VALIDATION_ONLY,
-        notes="Audited archive has 1,657 images of 191 dogs. Filename camera and "
-        "sequence fields are unverified tokens; retained for validation only.",
+        notes="Audited archive has 1,657 images of 191 dogs. Filename cNsN/cN_sN "
+        "camera and sequence fields remain unverified; retained for validation only.",
     ),
     CanidDatasetRecord(
         canonical_name="sibetan",
@@ -157,6 +157,62 @@ SOURCE_REGISTRY: tuple[CanidDatasetRecord, ...] = (
         "lifelong dog identity). train=19,932, test=7,104 images. "
         "Identities are video-track, not cross-video verified.",
     ),
+    CanidDatasetRecord(
+        canonical_name="oxford-pets-dog",
+        official_name="Oxford-IIIT Pet (dog subset)",
+        version="publisher-splits-v1",
+        license_id="Research-only; original-source terms apply",
+        url="https://www.robots.ox.ac.uk/~vgg/data/pets/",
+        data_root=_dataset_root("oxford-iiit-pet"),
+        sha256_checksums={
+            "annotations/README": (
+                "e31ae5da0d657c614e055a08c2045c4d49f770f41361321f017ddf15df7ebcd6"
+            ),
+            "annotations/list.txt": (
+                "6a54ab256e22f7a33c6f17a7669e58ea5f6f9c7a080ec2622c205aefd4b354da"
+            ),
+            "annotations/trainval.txt": (
+                "408f3f609481b939c94634169e6413414b733a3faeba440cbdcc5c02142eebdc"
+            ),
+            "annotations/test.txt": (
+                "a5454003774ffe01f4f322756d3ba5495bae21cb30bb217ab285dbfa2bef245c"
+            ),
+        },
+        total_images=4978,
+        total_identities=0,
+        capture_group_kind=CaptureGroupKind.UNKNOWN,
+        has_dog_bbox=False,
+        has_face_bbox=False,
+        has_face_landmarks=False,
+        has_body_keypoints=False,
+        has_breed=True,
+        has_nose_mask=False,
+        admission=DatasetAdmission.ADMIT_TEACHER_ONLY,
+        notes="Publisher trainval/test dog subset with trimaps and optional XML head "
+        "ROIs. No per-animal identity or capture grouping; research purposes only.",
+    ),
+    CanidDatasetRecord(
+        canonical_name="petface-dog",
+        official_name="PetFace dog subset",
+        version="eccv-2024-local-archive-intake-v1",
+        license_id="PetFace research-only; no redistribution",
+        url="https://dahlian00.github.io/PetFacePage/",
+        data_root=_dataset_root("petface"),
+        sha256_checksums={},
+        total_images=0,
+        total_identities=0,
+        capture_group_kind=CaptureGroupKind.ALBUM_OR_SOURCE_GROUP,
+        has_dog_bbox=False,
+        has_face_bbox=False,
+        has_face_landmarks=False,
+        has_body_keypoints=False,
+        has_breed=False,
+        has_nose_mask=False,
+        admission=DatasetAdmission.BLOCKED_ACCESS,
+        notes="Local archives contain publisher split metadata and a research-only, "
+        "no-redistribution README. Source receipt and publisher-bound archive "
+        "checksums are absent, so this is intake-only and not admitted.",
+    ),
     # --- NOT YET ACQUIRED ---
     CanidDatasetRecord(
         canonical_name="dog-pose",
@@ -199,27 +255,6 @@ SOURCE_REGISTRY: tuple[CanidDatasetRecord, ...] = (
         notes="Not yet acquired. 12,000 images with 2D keypoints and breed "
         "labels from Stanford Dogs dataset. Commercial use restricted.",
     ),
-    CanidDatasetRecord(
-        canonical_name="oxford-pets-dog",
-        official_name="Oxford-IIIT Pet (dog subset)",
-        version="unacquired",
-        license_id="CC-BY-SA-4.0",
-        url="https://www.robots.ox.ac.uk/~vgg/data/pets/",
-        data_root="",
-        sha256_checksums={},
-        total_images=0,
-        total_identities=0,
-        capture_group_kind=CaptureGroupKind.ALBUM_OR_SOURCE_GROUP,
-        has_dog_bbox=False,
-        has_face_bbox=False,
-        has_face_landmarks=False,
-        has_body_keypoints=False,
-        has_breed=True,
-        has_nose_mask=False,
-        admission=DatasetAdmission.BLOCKED_ACCESS,
-        notes="Not yet acquired. 25 dog breeds with trimap segmentation. "
-        "No per-instance identity labels. Useful for breed classification.",
-    ),
 )
 
 
@@ -243,4 +278,4 @@ def admitted_records() -> tuple[CanidDatasetRecord, ...]:
     )
 
 
-__all__ = ["SOURCE_REGISTRY", "get_record", "admitted_records"]
+__all__ = ["SOURCE_REGISTRY", "admitted_records", "get_record"]

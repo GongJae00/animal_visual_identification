@@ -1,59 +1,69 @@
 from __future__ import annotations
 
+import io
 from pathlib import Path
 from typing import Any
 
-import numpy as np
 import torch
 from PIL import Image
-from torch.utils.data import Dataset, DataLoader, Sampler
+from torch.utils.data import Dataset
+
+from data_pipeline.adapters import (
+    PetFaceDogSplitSample,
+    load_petface_dog_split,
+    read_petface_dog_images,
+)
+from data_pipeline.source_lock import get_record
+from data_pipeline.types import DatasetAdmission
 
 
 class PetFaceDataset(Dataset):
-    def __init__(self, root: Path, transform: Any | None = None,
-                 split: str = "train"):
-        self._root = root
-        self._transform = transform
-        self._samples: list[tuple[Path, int, str]] = []
-        self._class_to_idx: dict[str, int] = {}
-        self._load_split(split)
+    """Map-style view over official PetFace dog metadata and the local dog archive."""
 
-    def _load_split(self, split: str) -> None:
-        split_file = self._root / f"{split}.txt"
-        if split_file.exists():
-            for line in split_file.read_text().strip().splitlines():
-                parts = line.strip().split()
-                if len(parts) >= 3:
-                    rel_path, klass, family = parts[0], parts[1], parts[2]
-                    if klass not in self._class_to_idx:
-                        self._class_to_idx[klass] = len(self._class_to_idx)
-                    full_path = self._root / rel_path
-                    if full_path.exists():
-                        self._samples.append((full_path, self._class_to_idx[klass], family))
-        else:
-            for img_path in sorted(self._root.rglob("*.jpg")):
-                klass = img_path.parent.name
-                if klass not in self._class_to_idx:
-                    self._class_to_idx[klass] = len(self._class_to_idx)
-                self._samples.append((img_path, self._class_to_idx[klass], "canine"))
+    def __init__(
+        self,
+        root: Path,
+        transform: Any | None = None,
+        split: str = "train",
+        *,
+        maximum_samples: int | None = None,
+    ):
+        if get_record("petface-dog").admission is not DatasetAdmission.ADMIT_TRAIN:
+            raise RuntimeError("PetFace training is blocked by the source admission registry")
+        self._root = Path(root)
+        self._transform = transform
+        self._samples: tuple[PetFaceDogSplitSample, ...] = load_petface_dog_split(
+            self._root, split, maximum_samples=maximum_samples
+        )
+        classes = sorted({sample.raw_identity_id for sample in self._samples})
+        self._class_to_idx = {identity: index for index, identity in enumerate(classes)}
 
     def __len__(self) -> int:
         return len(self._samples)
 
     def __getitem__(self, idx: int) -> tuple[torch.Tensor, int]:
-        path, label, _ = self._samples[idx]
-        img = Image.open(path).convert("RGB")
+        sample = self._samples[idx]
+        payload = read_petface_dog_images(self._root, (sample.archive_member,))[
+            sample.archive_member
+        ]
+        with Image.open(io.BytesIO(payload)) as opened:
+            img = opened.convert("RGB")
         if self._transform:
             img_t = self._transform(img)
         else:
             import torchvision.transforms as T
-            t = T.Compose([
-                T.Resize((224, 224)),
-                T.ToTensor(),
-                T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-            ])
+
+            t = T.Compose(
+                [
+                    T.Resize((224, 224)),
+                    T.ToTensor(),
+                    T.Normalize(
+                        mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
+                    ),
+                ]
+            )
             img_t = t(img)
-        return img_t, label
+        return img_t, self._class_to_idx[sample.raw_identity_id]
 
     @property
     def num_classes(self) -> int:

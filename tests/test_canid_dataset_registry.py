@@ -42,6 +42,25 @@ class CanidRegistryTests(unittest.TestCase):
         self.assertEqual(record.total_identities, 191)
         self.assertEqual(record.capture_group_kind.value, "POSE_VIEW_CLUSTER")
 
+    def test_oxford_is_teacher_only_and_has_no_identity_claim(self) -> None:
+        record = get_record("oxford-pets-dog")
+        self.assertEqual(record.admission, DatasetAdmission.ADMIT_TEACHER_ONLY)
+        self.assertEqual(record.total_images, 4978)
+        self.assertEqual(record.total_identities, 0)
+        self.assertIn("Research-only", record.license_id)
+
+    def test_petface_remains_blocked_pending_source_binding(self) -> None:
+        record = get_record("petface-dog")
+        self.assertEqual(record.admission, DatasetAdmission.BLOCKED_ACCESS)
+        self.assertEqual(record.sha256_checksums, {})
+        data_root = Path(
+            os.environ.get(
+                "CANINE_IDENTITY_DATA_DIR", Path.home() / "canine_identity_data"
+            )
+        )
+        self.assertEqual(record.data_root, str(data_root / "datasets" / "petface"))
+        self.assertNotIn(record, admitted_records())
+
     def test_dogfacenet_checksum_is_the_audited_archive(self) -> None:
         record = get_record("dogfacenet224")
         self.assertEqual(
@@ -56,6 +75,7 @@ class CanidRegistryTests(unittest.TestCase):
             "dogflw": "dogflw",
             "dogfacenet224": "dogfacenet224",
             "mpdd": "mpdd",
+            "oxford-pets-dog": "oxford-iiit-pet",
             "sibetan": "sibetan",
             "yt-bb-dog": "yt-bb-dog",
         }
