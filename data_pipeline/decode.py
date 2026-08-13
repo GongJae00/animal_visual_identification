@@ -4,18 +4,32 @@ from __future__ import annotations
 
 import re
 import subprocess
+from collections.abc import Callable
 from dataclasses import dataclass
 from enum import StrEnum
 from math import isfinite
 from pathlib import Path
 from statistics import fmean
 from time import perf_counter_ns
-from typing import Any
+from typing import Any, Protocol
 
 from data_pipeline.acquisition import probe_video_file, sha256_file
-from evaluation.benchmark import TimingSummary
 from foundation.provenance import content_sha256
-from operations.telemetry import GpuTelemetrySummary, monitor_operation
+from foundation.timing import TimingSummary
+
+
+class TelemetrySummaryView(Protocol):
+    def to_dict(self) -> dict[str, Any]: ...
+
+
+class TelemetryMonitor(Protocol):
+    def __call__[T](
+        self,
+        operation: Callable[[], T],
+        *,
+        device_index: int,
+        interval_seconds: float,
+    ) -> tuple[T, TelemetrySummaryView]: ...
 
 _FRAME_PATTERN = re.compile(
     r"frame=\s*(?P<frames>\d+).*?"
@@ -51,13 +65,12 @@ class DecodeConfig:
             or self.duration_seconds <= 0
         ):
             raise ValueError("duration_seconds must be finite and positive")
-        if self.threads is not None:
-            if (
-                isinstance(self.threads, bool)
-                or not isinstance(self.threads, int)
-                or self.threads <= 0
-            ):
-                raise ValueError("threads must be a positive integer")
+        if self.threads is not None and (
+            isinstance(self.threads, bool)
+            or not isinstance(self.threads, int)
+            or self.threads <= 0
+        ):
+            raise ValueError("threads must be a positive integer")
         telemetry_values = (
             self.gpu_device_index,
             self.gpu_telemetry_interval_seconds,
@@ -135,7 +148,7 @@ class DecodeBenchmarkSummary:
     mean_system_seconds: float
     mean_ffmpeg_real_seconds: float
     maximum_process_rss_bytes: int
-    gpu_telemetry: GpuTelemetrySummary | None
+    gpu_telemetry: TelemetrySummaryView | None
     unrelated_gpu_work_excluded_by_operator: bool | None
 
     def to_dict(self) -> dict[str, Any]:
@@ -258,6 +271,7 @@ def benchmark_decode(
     repeat_runs: int,
     timeout_seconds: float | None = None,
     unrelated_gpu_work_excluded_by_operator: bool | None = None,
+    telemetry_monitor: TelemetryMonitor | None = None,
 ) -> DecodeBenchmarkSummary:
     if not path.is_file():
         raise FileNotFoundError(path)
@@ -293,6 +307,8 @@ def benchmark_decode(
             "GPU telemetry requires an explicit clean or contaminated "
             "operator declaration"
         )
+    if telemetry_enabled and telemetry_monitor is None:
+        raise ValueError("GPU telemetry requires an injected telemetry monitor")
     initial_stat = path.stat()
     for _ in range(warmup_runs):
         run_decode_once(path, config, timeout_seconds=timeout_seconds)
@@ -303,9 +319,10 @@ def benchmark_decode(
             for _ in range(repeat_runs)
         )
 
-    gpu_telemetry: GpuTelemetrySummary | None = None
+    gpu_telemetry: TelemetrySummaryView | None = None
     if telemetry_enabled:
-        runs_and_commands, gpu_telemetry = monitor_operation(
+        assert telemetry_monitor is not None
+        runs_and_commands, gpu_telemetry = telemetry_monitor(
             measured_repeats,
             device_index=config.gpu_device_index,
             interval_seconds=config.gpu_telemetry_interval_seconds,

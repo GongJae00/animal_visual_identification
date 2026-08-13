@@ -17,12 +17,13 @@ import hmac
 import os
 import stat
 from collections import Counter, defaultdict
+from collections.abc import Iterable
 from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
-from evaluation import required_zero_event_trials
+from foundation.binomial import required_zero_event_trials
 from foundation.provenance import content_sha256
 from identity_governance.split_role_exposure import (
     ExposureStage,
@@ -32,7 +33,6 @@ from identity_governance.split_role_exposure import (
     validate_split_candidate_assignment,
     verify_split_role_exposure_inputs,
 )
-
 
 _HEX_SHA256_LENGTH = 64
 _REQUIRED_EVIDENCE_BINDINGS = (
@@ -104,7 +104,7 @@ class PublicSplitSample:
         }
 
     @classmethod
-    def from_dict(cls, payload: dict[str, Any]) -> "PublicSplitSample":
+    def from_dict(cls, payload: dict[str, Any]) -> PublicSplitSample:
         _exact_keys(payload, set(cls.__dataclass_fields__), "public split sample")
         return cls(**payload)
 
@@ -185,7 +185,7 @@ class PublicSplitSourceBundle:
         }
 
     @classmethod
-    def from_dict(cls, payload: dict[str, Any]) -> "PublicSplitSourceBundle":
+    def from_dict(cls, payload: dict[str, Any]) -> PublicSplitSourceBundle:
         expected = {"schema_version", "evidence_bindings", "samples", "interpretation"}
         _exact_keys(payload, expected, "public split source bundle")
         if not isinstance(payload["evidence_bindings"], list) or not isinstance(
@@ -228,7 +228,7 @@ class PublicSplitEvidenceEdge:
         }
 
     @classmethod
-    def from_dict(cls, payload: dict[str, Any]) -> "PublicSplitEvidenceEdge":
+    def from_dict(cls, payload: dict[str, Any]) -> PublicSplitEvidenceEdge:
         _exact_keys(payload, set(cls.__dataclass_fields__), "split evidence edge")
         values = dict(payload)
         values["relation"] = EvidenceRelation(values["relation"])
@@ -286,7 +286,7 @@ class FrozenPublicSplitEvidenceGraph:
         }
 
     @classmethod
-    def from_dict(cls, payload: dict[str, Any]) -> "FrozenPublicSplitEvidenceGraph":
+    def from_dict(cls, payload: dict[str, Any]) -> FrozenPublicSplitEvidenceGraph:
         expected = {"schema_version", "evidence_bindings", "edges", "adjudication_state"}
         _exact_keys(payload, expected, "frozen split evidence graph")
         if not isinstance(payload["evidence_bindings"], list) or not isinstance(
@@ -448,7 +448,7 @@ class ProtectedPublicSplitPolicy:
         return value
 
     @classmethod
-    def from_dict(cls, payload: dict[str, Any]) -> "ProtectedPublicSplitPolicy":
+    def from_dict(cls, payload: dict[str, Any]) -> ProtectedPublicSplitPolicy:
         _exact_keys(payload, set(cls.__dataclass_fields__), "protected split policy")
         values = dict(payload)
         if not isinstance(values["shot_counts"], list):
@@ -1640,9 +1640,13 @@ def _build_protocol_uses(
     uses: defaultdict[str, list[dict[str, Any]]] = defaultdict(list)
     originals: dict[str, list[PublicSplitSample]] = defaultdict(list)
     for sample in samples:
-        if sample.source_variant == "original" and sample.identity_token in roles:
-            if component_by_sample[sample.sample_token].token not in quarantined_components:
-                originals[sample.identity_token].append(sample)
+        if (
+            sample.source_variant == "original"
+            and sample.identity_token in roles
+            and component_by_sample[sample.sample_token].token
+            not in quarantined_components
+        ):
+            originals[sample.identity_token].append(sample)
 
     development = sorted(
         identity

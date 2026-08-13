@@ -7,6 +7,7 @@ import json
 from pathlib import Path
 
 from data_pipeline.decode import DecodeBackend, DecodeConfig, benchmark_decode
+from operations.telemetry import monitor_operation
 
 
 def main() -> None:
@@ -65,6 +66,7 @@ def main() -> None:
         unrelated_gpu_work_excluded_by_operator=(
             args.unrelated_gpu_work_excluded
         ),
+        telemetry_monitor=monitor_operation,
     )
     print(
         json.dumps(

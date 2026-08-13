@@ -4,12 +4,21 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import StrEnum
-from math import ceil, expm1, isfinite, log1p, sqrt
+from math import ceil, isfinite, sqrt
 from random import Random
 from statistics import NormalDist
 from typing import Any
 
+from foundation.binomial import (
+    required_zero_event_trials as _required_zero_event_trials,
+)
+from foundation.binomial import (
+    zero_event_exact_upper_bound as _zero_event_exact_upper_bound,
+)
 from foundation.provenance import content_sha256
+
+required_zero_event_trials = _required_zero_event_trials
+zero_event_exact_upper_bound = _zero_event_exact_upper_bound
 
 
 class VerificationDirection(StrEnum):
@@ -444,33 +453,6 @@ def cluster_bootstrap_rate(
         resamples=config.resamples,
         seed=config.seed,
         interval_method="whole_cluster_percentile_bootstrap",
-    )
-
-
-def zero_event_exact_upper_bound(
-    trials: int,
-    *,
-    confidence_level: float,
-) -> float:
-    """One-sided exact binomial upper bound after observing zero events."""
-
-    if isinstance(trials, bool) or not isinstance(trials, int) or trials <= 0:
-        raise ValueError("trials must be a positive integer")
-    _validate_open_fraction(confidence_level, "confidence_level")
-    return -expm1(log1p(-confidence_level) / trials)
-
-
-def required_zero_event_trials(
-    target_upper_rate: float,
-    *,
-    confidence_level: float,
-) -> int:
-    """Trials needed for a zero-event one-sided upper bound at target."""
-
-    _validate_open_fraction(target_upper_rate, "target_upper_rate")
-    _validate_open_fraction(confidence_level, "confidence_level")
-    return ceil(
-        log1p(-confidence_level) / log1p(-target_upper_rate)
     )
 
 
