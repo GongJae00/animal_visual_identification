@@ -4,7 +4,7 @@ import unittest
 
 import numpy as np
 
-from identity_methods.nose.alignment import (
+from embedding.methods.nose.signal.alignment import (
     AlignmentError,
     CANONICAL_KEYPOINTS,
     estimate_similarity_transform,

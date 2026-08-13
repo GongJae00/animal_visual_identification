@@ -8,7 +8,7 @@ from typing import Any
 
 import pytest
 
-from evaluation.full128_successors import (
+from evaluation.full_segment.full128_successors import (
     Full128SuccessorEvaluationError,
     build_dev_selection_receipt,
     build_multiseed_terminal_successor_decision,

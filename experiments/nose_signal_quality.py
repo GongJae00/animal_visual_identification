@@ -12,7 +12,7 @@ import cv2
 import numpy as np
 from PIL import Image
 
-from localization.nose_region.manifest import frontality_components_from_keypoints
+from parsing.nose_region.manifest import frontality_components_from_keypoints
 
 
 NOSE_SIGNAL_QUALITY_SCHEMA = "cvi.nose_signal_quality_report.v1"

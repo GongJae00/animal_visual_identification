@@ -9,8 +9,8 @@ from pathlib import Path
 import pytest
 from PIL import Image
 
-from identity_governance.identity_registry import compute_registered_dog_id
-from localization.nose_region.manifest import (
+from identity.registry.identity_registry import compute_registered_dog_id
+from parsing.nose_region.manifest import (
     BUNDLE_SCHEMA,
     LICENSING_LANES,
     admitted_split_for_role,

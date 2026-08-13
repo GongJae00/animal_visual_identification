@@ -18,8 +18,12 @@ from contracts.model_contract import (
     OnnxPreprocessingContract,
     PetReIDModelManifest,
 )
+from embedding.evidence.base import AbstractEvidencer
 from foundation.provenance import content_sha256
-from identity_methods.backbones.extractors import EvidenceExtractorRegistry
+from embedding.methods.backbones.extractors import (
+    EvidenceExtractor,
+    EvidenceExtractorRegistry,
+)
 
 
 def _require_onnx() -> bool:
@@ -73,6 +77,9 @@ class _RecordingProviderSession:
 
 
 class EvidenceExtractorRegistryTests(unittest.TestCase):
+    def test_extractors_share_the_quality_evidencer_contract(self) -> None:
+        self.assertTrue(issubclass(EvidenceExtractor, AbstractEvidencer))
+
     def test_register_and_get(self) -> None:
         registry = EvidenceExtractorRegistry()
         self.assertEqual(registry.names, [])
@@ -132,7 +139,7 @@ class EvidenceExtractorRegistryTests(unittest.TestCase):
 @unittest.skipUnless(_require_ort(), "onnxruntime not available")
 class ExtractorConstructionTests(unittest.TestCase):
     def setUp(self) -> None:
-        from identity_methods.backbones.extractors import (
+        from embedding.methods.backbones.extractors import (
             ConvNeXtExtractor,
             DogFaceNetExtractor,
             OnnxExtractor,

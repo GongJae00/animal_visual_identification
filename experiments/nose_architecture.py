@@ -28,10 +28,10 @@ from evaluation.retrieval import (
 )
 from foundation.protected_io import read_strict_json_document, write_private_json_bundle
 from foundation.provenance import content_sha256
-from identity_methods.nose.restoration import RestorationConfig, restore_nose_frames
-from identity_methods.nose.temporal import aggregate_nose_embeddings
-from localization.nose_region.embedding_views import student_masked_rgb
-from localization.nose_region.native_yt import validate_manifest_bundle
+from embedding.methods.nose.signal.restoration import RestorationConfig, restore_nose_frames
+from embedding.methods.nose.signal.temporal import aggregate_nose_embeddings
+from embedding.methods.nose.data.embedding_views import student_masked_rgb
+from parsing.nose_region.native_yt import validate_manifest_bundle
 
 REPORT_SCHEMA = "cvi.yt_nose_architecture_evaluation.v2"
 REPORT_BUNDLE_SCHEMA = "cvi.yt_nose_architecture_evaluation_bundle.v2"
@@ -70,12 +70,12 @@ _MINIMUM_FUSION_PARTITION_IDENTITIES = 10
 _ZSCORE_STD_EPSILON = 1e-8
 _CODE_PATHS = (
     "experiments/nose_architecture.py",
-    "identity_methods/nose/restoration.py",
-    "identity_methods/nose/temporal.py",
+    "embedding/methods/nose/signal/restoration.py",
+    "embedding/methods/nose/signal/temporal.py",
     "contracts/artifact_manifest.py",
     "evaluation/retrieval.py",
-    "localization/nose_region/embedding_views.py",
-    "localization/nose_region/native_yt.py",
+    "embedding/methods/nose/data/embedding_views.py",
+    "parsing/nose_region/native_yt.py",
     "foundation/protected_io.py",
     "foundation/provenance.py",
     "workflows/evaluate_yt_nose_architecture.py",
@@ -192,7 +192,7 @@ def _load_consistency_lineage(
     if lineage_document.canonical_payload_sha256 != expected_content_sha256:
         raise ValueError("embedding lineage content SHA-256 differs from the external pin")
     lineage_root = lineage_path.parent.resolve(strict=True)
-    from localization.nose_region.embedding_consistency_training import (
+    from embedding.methods.nose.training.embedding_consistency_training import (
         validate_lineage_manifest,
     )
 

@@ -19,15 +19,15 @@ from experiments.sibetan_evidence import (
 )
 from foundation.protected_io import write_private_json_bundle
 from foundation.provenance import content_sha256
-from localization.nose_region.manifest import encode_png_crop
-from localization.nose_region.native_yt import (
+from parsing.nose_region.manifest import encode_png_crop
+from parsing.nose_region.native_yt import (
     compute_quality,
     load_localizer_checkpoint,
     nose_geometry,
     predict_localizer,
 )
-from localization.prediction_cache import read_prediction_cache
-from localization.roi_manifest import read_roi_manifest
+from parsing.prediction_cache import read_prediction_cache
+from parsing.roi_manifest import read_roi_manifest
 
 POLICY = {
     "target_association": "EXACTLY_ONE_POSE_DOG_INSTANCE",
@@ -263,7 +263,7 @@ def main() -> int:
                     relative: _sha(Path(__file__).resolve().parents[1] / relative)
                     for relative in (
                         "experiments/sibetan_evidence.py",
-                        "localization/nose_region/native_yt.py",
+                        "parsing/nose_region/native_yt.py",
                         "workflows/materialize_sibetan_multievidence.py",
                     )
                 },

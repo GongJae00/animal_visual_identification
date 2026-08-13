@@ -17,13 +17,13 @@ from tempfile import TemporaryDirectory
 from contracts.source_provenance import build_offline_tool_provenance
 from foundation.protected_io import read_strict_json_object, write_private_json_bundle
 from foundation.provenance import content_sha256
-from identity_governance.identity_registry import (
+from identity.registry.identity_registry import (
     IdentityRegistryRecord,
     create_registry_database,
     load_registry_manifest,
     register_records,
 )
-from identity_governance.protected_public_split import PublicSplitSourceBundle
+from identity.splits.protected_public_split import PublicSplitSourceBundle
 
 
 def main() -> None:

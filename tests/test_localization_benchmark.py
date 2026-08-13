@@ -3,19 +3,19 @@ from __future__ import annotations
 import unittest
 from pathlib import Path
 
-from localization.benchmark import ap10k_body17_pose_summary
-from localization.quality import (
-    compute_iou,
+from evaluation.localization import ap10k_body17_pose_summary
+from evaluation.localization_metrics import (
     detection_average_precision,
     detection_summary,
     greedy_bipartite_match,
     pixel_correct_keypoint,
 )
-from localization.roi import (
+from parsing.roi import (
+    compute_iou,
     expand_bbox,
     is_truncated,
 )
-from localization.types import (
+from parsing.types import (
     AP10K_BODY_17_SCHEMA,
     DetectionBox,
     Keypoint,

@@ -8,7 +8,7 @@ import unittest
 from dataclasses import fields, replace
 from pathlib import Path
 
-from identity_methods.classical.pdq_contracts import (
+from embedding.methods.classical.pdq.contracts import (
     PDQ_D4_ORIENTATIONS,
     PDQ_ELIGIBLE_SEARCHED,
     PDQ_INELIGIBLE_LOW_QUALITY,
@@ -18,7 +18,7 @@ from identity_methods.classical.pdq_contracts import (
     PDQNearDuplicateCandidate,
     PDQSearchPolicy,
 )
-from identity_methods.classical.pdq_mih import (
+from embedding.methods.classical.pdq.mih import (
     MIH_KEYS_PER_ORIENTATION,
     PDQCapacityExceeded,
     estimate_compact_mih_storage,

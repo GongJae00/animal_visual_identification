@@ -10,7 +10,7 @@ import numpy as np
 from PIL import Image
 
 from data.types import UnifiedCanidSample
-from localization.dinov2_region_segmentation import (
+from parsing.regions.dinov2_region_segmentation import (
     EMBEDDING_DIMENSION,
     PATCH_GRID,
     derive_patch_region_candidates,

@@ -6,7 +6,7 @@ import numpy as np
 import torch
 
 from data.types import CaptureGroupKind, UnifiedCanidSample
-from identity_methods.face.dataset import FaceReIDDataset, align_face_rgb
+from embedding.methods.face.dataset import FaceReIDDataset, align_face_rgb
 
 
 class FaceDatasetTests(unittest.TestCase):
@@ -39,7 +39,7 @@ class FaceDatasetTests(unittest.TestCase):
 
 class FaceConfigTests(unittest.TestCase):
     def test_train_config_rejects_invalid_pk(self) -> None:
-        from identity_methods.face.config import FaceIDTrainConfig
+        from embedding.methods.face.config import FaceIDTrainConfig
 
         with self.assertRaises(ValueError):
             FaceIDTrainConfig(identities_per_batch=8, samples_per_identity=8)

@@ -11,7 +11,7 @@ from dataclasses import replace
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from contracts.pretrained_weight_intake import (
+from contracts.intake.pretrained_weight_intake import (
     PretrainedWeightChecksumAuthority,
     PretrainedWeightFileFormat,
     PretrainedWeightIntakeReceipt,

@@ -9,7 +9,7 @@ from unittest import mock
 import numpy as np
 from PIL import Image
 
-from localization.detection import (
+from parsing.detection import (
     Detection,
     DogDetector,
     DogDetectorConfig,
@@ -160,7 +160,7 @@ class DogDetectorYOLOTests(unittest.TestCase):
         self.assertAlmostEqual(cfg.conf_threshold, 0.25)
         self.assertEqual(cfg.target_size, 224)
 
-    @mock.patch("localization.detection.YOLO")
+    @mock.patch("parsing.detection.YOLO")
     def test_detector_creation(self, yolo: mock.Mock) -> None:
         with tempfile.NamedTemporaryFile(suffix=".pt") as model:
             model.write(b"pinned detector fixture")
@@ -180,7 +180,7 @@ class DogDetectorYOLOTests(unittest.TestCase):
             det.close()
             self.assertFalse(staged_path.exists())
 
-    @mock.patch("localization.detection.YOLO")
+    @mock.patch("parsing.detection.YOLO")
     def test_detector_rejects_implicit_download(self, yolo: mock.Mock) -> None:
         with self.assertRaisesRegex(RuntimeError, "explicit local"):
             DogDetector(DogDetectorConfig(device="cpu"))

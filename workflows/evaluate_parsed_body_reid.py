@@ -48,23 +48,23 @@ from foundation.protected_publication import (
     rename_directory_noreplace,
 )
 from foundation.provenance import content_sha256
-from identity_governance.generated_identity_registry import (
+from identity.registry.generated_identity_registry import (
     GeneratedIdentityRecord,
     GeneratedIdentityRegistry,
     create_provisional_identity,
 )
-from identity_methods.appearance import ReceiptBoundDinov2Small
-from localization.animal_instance_segmentation import (
+from embedding.methods.appearance import ReceiptBoundDinov2Small
+from parsing.full_segment.animal_instance_segmentation import (
     AnimalInstanceSegmentationRuntime,
 )
-from localization.animal_parsing import (
+from parsing.full_segment.animal_parsing import (
     AnimalIdentityCrop,
     AnimalParsingPolicy,
     AnimalParsingRuntime,
     ParsedAnimalInstance,
     materialize_identity_crop,
 )
-from localization.foreground_segmentation import ForegroundSegmentationRuntime
+from parsing.full_segment.foreground_segmentation import ForegroundSegmentationRuntime
 
 REPORT_SCHEMA = "cvi.parsed_body_reid_diagnostic.v2"
 GENERATOR_ID = "cvi.yt-bb-dog.video-track:v1"
@@ -303,11 +303,11 @@ def _source_file_hashes(repository_root: Path) -> dict[str, str]:
             "foundation/protected_io.py",
             "foundation/protected_publication.py",
             "foundation/provenance.py",
-            "identity_governance/generated_identity_registry.py",
-            "identity_methods/appearance/__init__.py",
-            "localization/animal_instance_segmentation.py",
-            "localization/animal_parsing.py",
-            "localization/foreground_segmentation.py",
+            "identity/registry/generated_identity_registry.py",
+            "embedding/methods/appearance/__init__.py",
+            "parsing/full_segment/animal_instance_segmentation.py",
+            "parsing/full_segment/animal_parsing.py",
+            "parsing/full_segment/foreground_segmentation.py",
             "workflows/evaluate_parsed_body_reid.py",
         )
     }

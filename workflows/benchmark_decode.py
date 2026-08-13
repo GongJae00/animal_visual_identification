@@ -6,8 +6,8 @@ import argparse
 import json
 from pathlib import Path
 
-from data.decode import DecodeBackend, DecodeConfig, benchmark_decode
-from operations.telemetry import monitor_operation
+from systems.measurement.decode import DecodeBackend, DecodeConfig, benchmark_decode
+from systems.measurement.telemetry import monitor_operation
 
 
 def main() -> None:

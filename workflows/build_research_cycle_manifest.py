@@ -10,15 +10,15 @@ from foundation.protected_io import (
     read_strict_json_document,
     write_private_json_bundle,
 )
-from identity_governance.protected_public_split import (
+from identity.splits.protected_public_split import (
     FrozenPublicSplitEvidenceGraph,
     PublicSplitSourceBundle,
 )
-from identity_governance.research_cycle_admission import (
+from identity.research.research_cycle_admission import (
     ResearchSourceAdmissions,
     build_research_cycle_manifest,
 )
-from identity_governance.role_exposure import RoleExposureLedger, RoleExposureReceipt
+from identity.exposure.role_exposure import RoleExposureLedger, RoleExposureReceipt
 
 _SOURCE_MANIFEST_LIMITS = {
     "maximum_bytes": 536_870_912,

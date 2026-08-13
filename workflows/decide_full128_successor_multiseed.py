@@ -8,7 +8,7 @@ import os
 from collections.abc import Sequence
 from pathlib import Path
 
-from evaluation.full128_successors import (
+from evaluation.full_segment.full128_successors import (
     build_multiseed_terminal_successor_decision,
 )
 from foundation.protected_io import (

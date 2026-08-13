@@ -7,7 +7,7 @@ import json
 from collections.abc import Sequence
 from pathlib import Path
 
-from evaluation.full128_analysis import (
+from evaluation.full_segment.full128_analysis import (
     build_public_representation_analysis,
     sanitize_representation_trace_manifest,
 )

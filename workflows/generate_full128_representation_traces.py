@@ -12,8 +12,8 @@ from typing import Any
 import numpy as np
 import torch
 
-from evaluation.full128_analysis import build_executed_representation_trace_manifest
-from evaluation.full128_successors import (
+from evaluation.full_segment.full128_analysis import build_executed_representation_trace_manifest
+from evaluation.full_segment.full128_successors import (
     open_successor_embedding_cache,
     validate_fixed_evaluation_panel,
 )
@@ -22,14 +22,14 @@ from foundation.protected_io import (
     write_private_json_directory_bundle,
 )
 from foundation.provenance import content_sha256
-from identity_methods.full_segment.data import read_full128_crop
-from identity_methods.full_segment.face_visible import (
+from embedding.methods.full_segment.preparation.data import read_full128_crop
+from embedding.methods.full_segment.face_visible import (
     validate_face_visible_successor_inventory_bundle,
 )
-from identity_methods.full_segment.successor_models import (
+from embedding.methods.full_segment.models.successor_models import (
     load_receipt_bound_dinov2_patch_backbone,
 )
-from representation_learning.full128_successor_production import (
+from embedding.learning.full_segment.full128_successor_production import (
     _sample_from_row,
     prepare_production_runtime,
     restore_successor_trace_context,

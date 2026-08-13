@@ -18,10 +18,10 @@ from contracts.three_region_artifact import (
 from data.types import CaptureGroupKind, UnifiedCanidSample
 from foundation.protected_io import write_private_json_bundle
 from foundation.provenance import content_sha256
-from identity_governance.identity_registry import compute_registered_dog_id
-from localization.prediction_cache import build_prediction_cache
-from localization.roi_manifest import build_roi_manifest
-from localization.types import DetectionBox, Keypoint, KeypointSet, LocalizationResult
+from identity.registry.identity_registry import compute_registered_dog_id
+from parsing.prediction_cache import build_prediction_cache
+from parsing.roi_manifest import build_roi_manifest
+from parsing.types import DetectionBox, Keypoint, KeypointSet, LocalizationResult
 from workflows.export_three_region_artifacts import export_three_region_artifacts
 
 

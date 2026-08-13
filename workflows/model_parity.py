@@ -20,12 +20,12 @@ from contracts.model_parity import (
     load_model_parity_receipt,
     validate_parity_binding,
 )
-from contracts.pretrained_supporting_asset_intake import (
+from contracts.intake.pretrained_supporting_asset_intake import (
     parse_bounded_strict_json_object,
 )
 from foundation.provenance import content_sha256
 from foundation.retained_file import read_retained_regular_file
-from operations.onnx_backend import ImagePreprocessingConfig
+from systems.inference.onnx_backend import ImagePreprocessingConfig
 from workflows.export_pretrained_to_onnx import export_dinov2_small
 
 

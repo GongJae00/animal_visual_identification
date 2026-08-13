@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 
 from contracts.source_provenance import build_offline_tool_provenance
-from identity_methods.classical.pdq_native import build_native_pdq_worker
+from embedding.methods.classical.pdq.native import build_native_pdq_worker
 
 
 def main() -> int:

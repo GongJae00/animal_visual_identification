@@ -7,22 +7,22 @@ import json
 from pathlib import Path
 
 from data.crop_export import CropExportReceipt
-from evaluation.control_transform import (
+from evaluation.controls.control_transform import (
     ControlTransformConfigManifest,
     validate_control_policy_configs,
 )
-from evaluation.controls import (
+from evaluation.controls.policy import (
     ControlMaskManifest,
     VisualControlPolicy,
     plan_visual_control_audit,
     verify_control_mask_files,
 )
-from evaluation.mask_semantics import (
+from evaluation.controls.mask_semantics import (
     MaskSemanticPolicy,
     verify_mask_pixel_semantics,
 )
-from evaluation.pairing import pair_construction_from_bundle_payloads
-from evaluation.scoring import verify_pair_artifact_files
+from evaluation.controls.pairing import pair_construction_from_bundle_payloads
+from evaluation.controls.scoring import verify_pair_artifact_files
 from foundation.protected_io import (
     read_strict_json_object,
     write_private_json_bundle,

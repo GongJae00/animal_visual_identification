@@ -12,11 +12,11 @@ from dataclasses import replace
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-import operations.embedding_production_runner as embedding_runner
+import systems.workers.embedding_production_runner as embedding_runner
 from contracts.runtime_library_provenance import RuntimeLibraryManifest
 from data.acquisition import sha256_file
 from evaluation.benchmark import TimingSummary
-from evaluation.control_scoring import (
+from evaluation.controls.control_scoring import (
     ArtifactCacheBinding,
     ArtifactSourceKind,
     ControlScoringInventory,
@@ -27,12 +27,12 @@ from evaluation.control_scoring import (
     embedding_cache_key,
     verify_embedding_cache_files,
 )
-from evaluation.numerical_admission import (
+from evaluation.integrity.numerical_admission import (
     NumericalAdmissionDecision,
     NumericalDriftPolicy,
     compare_embedding_caches,
 )
-from evaluation.score_drift_admission import (
+from evaluation.integrity.score_drift_admission import (
     FrozenScoreMarginBoundary,
     RetrievalScoreRequest,
     RetrievalScoreWorkload,
@@ -49,25 +49,25 @@ from evaluation.score_drift_admission import (
     verify_score_drift_receipt_external_anchors,
 )
 from foundation.provenance import content_sha256
-from operations.embedding_producer import (
+from systems.inference.embedding_producer import (
     EmbeddingBackendIdentity,
     EmbeddingProducerConfig,
     EmbeddingProductionCost,
     EmbeddingProductionReceipt,
     EmbeddingRuntimeResources,
 )
-from operations.embedding_production_runner import (
+from systems.workers.embedding_production_runner import (
     EmbeddingFreshWorkerReceipt,
     EmbeddingProductionPrecommitment,
     EmbeddingWorkerExecutionPolicy,
 )
-from operations.process_supervisor import (
+from systems.workers.process_supervisor import (
     ProcessSupervisorPolicy,
     SupervisedProcessResult,
     SupervisedProcessStatus,
 )
-from operations.worker_environment import build_sanitized_worker_environment
-from representation_learning.optimization import PromotionDecision
+from systems.workers.worker_environment import build_sanitized_worker_environment
+from embedding.learning.optimization import PromotionDecision
 
 HASH_A = "a" * 64
 HASH_B = "b" * 64

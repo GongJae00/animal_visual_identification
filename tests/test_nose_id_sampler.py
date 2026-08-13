@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import unittest
 
-from identity_methods.nose.sampler import CrossSessionPKBatchSampler
+from embedding.methods.nose.training.sampler import CrossSessionPKBatchSampler
 
 
 class NoseIDSamplerTests(unittest.TestCase):

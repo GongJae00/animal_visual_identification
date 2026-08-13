@@ -11,11 +11,11 @@ import numpy as np
 import pytest
 from PIL import Image
 
-from evaluation.full128_successors import sanitize_successor_evaluation_report
+from evaluation.full_segment.full128_successors import sanitize_successor_evaluation_report
 from foundation.provenance import content_sha256
 from visualization.contracts import FigureContractError
 from visualization.privacy import PublicationScope
-from visualization.publication import publish
+from visualization.publishing.publication import publish
 from visualization.successor_family import adapt_successor_family
 
 _ACTUAL_SUCCESSOR_IDS = tuple(
@@ -268,10 +268,10 @@ def _governance() -> tuple[dict, dict, dict]:
 
 
 def _patch_governance_validators(monkeypatch: pytest.MonkeyPatch) -> None:
-    import evaluation.full128_successors as successors
-    import identity_governance.face_gallery_query_panel as gallery_panel
-    import identity_governance.face_identity_protocol_v2 as protocol_v2
-    from identity_methods.full_segment import face_visible
+    import evaluation.full_segment.full128_successors as successors
+    import identity.face.face_gallery_query_panel as gallery_panel
+    import identity.face.face_identity_protocol_v2 as protocol_v2
+    from embedding.methods.full_segment import face_visible
 
     monkeypatch.setattr(
         protocol_v2, "validate_face_identity_protocol_v2_bundle", lambda value: value
@@ -525,7 +525,7 @@ def test_successor_public_bundle_renders_in_chapter_order(
         matrix = rng.normal(size=(12, 128)).astype(np.float32)
         matrix /= np.linalg.norm(matrix, axis=1, keepdims=True)
         matrices[successor_id] = matrix
-    import evaluation.full128_successors as successors
+    import evaluation.full_segment.full128_successors as successors
 
     monkeypatch.setattr(
         successors,
@@ -621,7 +621,7 @@ def test_cache_descriptors_produce_aggregate_pca_without_tokens_or_paths(
         descriptor=descriptor,
         load_embeddings=lambda tokens: matrix.copy(),
     )
-    import evaluation.full128_successors as successors
+    import evaluation.full_segment.full128_successors as successors
 
     monkeypatch.setattr(
         successors,

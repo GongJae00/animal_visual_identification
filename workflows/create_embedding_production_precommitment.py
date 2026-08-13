@@ -8,19 +8,19 @@ import os
 from pathlib import Path
 
 from contracts.runtime_library_provenance import RuntimeLibraryPolicy
-from evaluation.control_scoring import ControlScoringInventory, EmbeddingCachePolicy
+from evaluation.controls.control_scoring import ControlScoringInventory, EmbeddingCachePolicy
 from foundation.protected_io import read_strict_json_object, write_private_json_bundle
-from operations.embedding_producer import (
+from systems.inference.embedding_producer import (
     EmbeddingProducerConfig,
     EmbeddingProductionPolicy,
 )
-from operations.embedding_production_runner import (
+from systems.workers.embedding_production_runner import (
     EmbeddingWorkerExecutionPolicy,
     build_embedding_production_precommitment,
     embedding_artifact_paths_from_dict,
 )
-from operations.onnx_backend import OnnxRuntimeBackendConfig
-from operations.worker_environment import build_sanitized_worker_environment
+from systems.inference.onnx_backend import OnnxRuntimeBackendConfig
+from systems.workers.worker_environment import build_sanitized_worker_environment
 
 
 def main() -> None:

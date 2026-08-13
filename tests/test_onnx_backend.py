@@ -27,30 +27,30 @@ from contracts.runtime_library_provenance import (
     RuntimeLibraryPhase,
 )
 from data.acquisition import sha256_file
-from evaluation.batch_invariance import (
+from evaluation.integrity.batch_invariance import (
     BatchInvarianceDecision,
     BatchInvariancePolicy,
     build_batch_invariance_precommitment,
     evaluate_batch_composition_invariance,
 )
-from evaluation.control_scoring import (
+from evaluation.controls.control_scoring import (
     ArtifactSourceKind,
     ControlScoringInventory,
     EmbeddingCachePolicy,
     ScoringArtifactEntry,
 )
-from evaluation.numerical_admission import (
+from evaluation.integrity.numerical_admission import (
     NumericalAdmissionDecision,
     NumericalDriftPolicy,
     compare_embedding_caches,
 )
 from foundation.provenance import content_sha256
-from operations.embedding_producer import (
+from systems.inference.embedding_producer import (
     EmbeddingProducerConfig,
     EmbeddingProductionPolicy,
     produce_embedding_cache,
 )
-from operations.onnx_backend import (
+from systems.inference.onnx_backend import (
     ImageChannelOrder,
     ImageInterpolation,
     ImagePreprocessingConfig,

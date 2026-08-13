@@ -20,8 +20,8 @@ from experiments.sibetan_evidence import (
 )
 from foundation.protected_io import json_document_bytes
 from foundation.provenance import content_sha256
-from identity_governance.identity_registry import compute_registered_dog_id
-from localization.nose_region.native_yt import (
+from identity.registry.identity_registry import compute_registered_dog_id
+from parsing.nose_region.native_yt import (
     NativeYtSample,
     build_manifest_bundle,
     process_native_sample,
@@ -363,7 +363,7 @@ def test_cli_binds_file_and_code_writes_canonical_json_and_refuses_overwrite(
     assert {
         "experiments/nose_observability.py",
         "experiments/sibetan_evidence.py",
-        "localization/nose_region/native_yt.py",
+        "parsing/nose_region/native_yt.py",
         "workflows/audit_nose_observability.py",
     }.issubset(result["report"]["tool_provenance"]["code_sha256s"])
     with pytest.raises(FileExistsError, match="refusing to overwrite"):

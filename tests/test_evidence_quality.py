@@ -8,8 +8,8 @@ from unittest.mock import patch
 import numpy as np
 from PIL import Image
 
-from evidence_fusion.base import AbstractEvidencer
-from evidence_fusion.quality import (
+from embedding.evidence.base import AbstractEvidencer
+from embedding.evidence.quality import (
     QualityDiagnostics,
     QualityLimits,
     QualityMapping,

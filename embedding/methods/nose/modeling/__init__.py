@@ -1,0 +1,1 @@
+"""Nose model architecture components."""

@@ -17,10 +17,10 @@ from experiments.sibetan_evidence import (
     validate_evidence_bundle,
     validate_evidence_bundle_v2,
 )
-from localization.nose_region.native_yt import (
+from parsing.nose_region.native_yt import (
     BUNDLE_SCHEMA as YT_BUNDLE_SCHEMA,
 )
-from localization.nose_region.native_yt import (
+from parsing.nose_region.native_yt import (
     validate_manifest_bundle,
 )
 

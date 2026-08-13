@@ -9,16 +9,16 @@ from pathlib import Path
 from typing import Any
 
 from contracts.runtime_library_provenance import RuntimeLibraryPolicy
-from evaluation.batch_invariance import (
+from evaluation.integrity.batch_invariance import (
     BatchInvariancePolicy,
     batch_artifact_paths_from_dict,
     build_batch_invariance_precommitment,
 )
-from evaluation.control_scoring import ControlScoringInventory
+from evaluation.controls.control_scoring import ControlScoringInventory
 from foundation.protected_io import read_strict_json_object, write_private_json_bundle
-from operations.batch_invariance_runner import BatchWorkerExecutionPolicy
-from operations.embedding_producer import EmbeddingProducerConfig
-from operations.worker_environment import build_sanitized_worker_environment
+from systems.workers.batch_invariance_runner import BatchWorkerExecutionPolicy
+from systems.inference.embedding_producer import EmbeddingProducerConfig
+from systems.workers.worker_environment import build_sanitized_worker_environment
 
 
 def _payload(path: Path, name: str) -> dict[str, Any]:

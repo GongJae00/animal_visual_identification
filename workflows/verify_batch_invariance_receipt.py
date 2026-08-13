@@ -6,7 +6,7 @@ import argparse
 import json
 from pathlib import Path
 
-from operations.batch_invariance_runner import BatchFreshWorkerReceipt
+from systems.workers.batch_invariance_runner import BatchFreshWorkerReceipt
 from foundation.protected_io import read_strict_json_object
 
 

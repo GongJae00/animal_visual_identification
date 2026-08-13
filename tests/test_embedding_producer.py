@@ -7,13 +7,13 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from data.acquisition import sha256_file
-from evaluation.control_scoring import (
+from evaluation.controls.control_scoring import (
     ArtifactSourceKind,
     ControlScoringInventory,
     EmbeddingCachePolicy,
     ScoringArtifactEntry,
 )
-from operations.embedding_producer import (
+from systems.inference.embedding_producer import (
     EmbeddingBackendIdentity,
     EmbeddingProducerConfig,
     EmbeddingProductionPolicy,

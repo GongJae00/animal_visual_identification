@@ -9,7 +9,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any
 
-from evaluation.control_scoring import (
+from evaluation.controls.control_scoring import (
     ArtifactCacheBinding,
     ArtifactSourceKind,
     ControlScoringInventory,
@@ -17,7 +17,7 @@ from evaluation.control_scoring import (
     ScoringArtifactEntry,
     embedding_cache_key,
 )
-from evaluation.packed_cache import (
+from evaluation.integrity.packed_cache import (
     PACKED_VECTOR_FILE_NAME,
     PackedEmbeddingCacheEntry,
     PackedEmbeddingCacheManifest,

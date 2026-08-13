@@ -9,19 +9,19 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
-from data.dataset import EvaluationStage
+from identity.splits.tracklet_split import EvaluationStage
 from evaluation import (
     ClusterBootstrapConfig,
     ClusterUnit,
     FrozenVerificationThreshold,
     VerificationDirection,
 )
-from evaluation.control_evaluation import (
+from evaluation.controls.control_evaluation import (
     ControlEvaluationPolicy,
     control_evaluation_bindings_from_payload,
     evaluate_sealed_control_scores,
 )
-from evaluation.control_scoring import (
+from evaluation.controls.control_scoring import (
     ArtifactCacheBinding,
     ControlBlindScore,
     ControlBlindScoreReceipt,
@@ -30,13 +30,13 @@ from evaluation.control_scoring import (
     EmbeddingCacheManifest,
     embedding_cache_key,
 )
-from evaluation.controls import (
+from evaluation.controls.policy import (
     ControlEvaluationBinding,
     ControlPanelSummary,
     ControlStratumCount,
     VisualControlKind,
 )
-from evaluation.pairing import (
+from evaluation.controls.pairing import (
     NegativeQuota,
     PairArtifactBinding,
     PairConstructionResult,

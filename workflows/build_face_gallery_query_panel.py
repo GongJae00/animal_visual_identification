@@ -11,7 +11,7 @@ from foundation.protected_io import (
     read_strict_json_document,
     write_private_json_bundle,
 )
-from identity_governance.face_gallery_query_panel import (
+from identity.face.face_gallery_query_panel import (
     build_face_gallery_query_panel,
 )
 

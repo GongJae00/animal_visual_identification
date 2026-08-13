@@ -12,7 +12,7 @@ from unittest.mock import patch
 
 from data.acquisition import sha256_file
 from data.crop_export import CropExportReceipt
-from evaluation.control_scoring import (
+from evaluation.controls.control_scoring import (
     ArtifactCacheBinding,
     ArtifactSourceKind,
     ControlBlindScoreReceipt,
@@ -27,14 +27,14 @@ from evaluation.control_scoring import (
     score_control_requests_from_cache,
     verify_embedding_cache_files,
 )
-from evaluation.control_transform import (
+from evaluation.controls.control_transform import (
     ControlArtifactManifest,
     ControlTransformCost,
     ControlTransformReceipt,
     verify_control_artifact_files,
 )
-from evaluation.controls import ControlScoringRequest
-from evaluation.scoring import (
+from evaluation.controls.policy import ControlScoringRequest
+from evaluation.controls.scoring import (
     PairArtifactEntry,
     PairArtifactManifest,
     verify_pair_artifact_files,

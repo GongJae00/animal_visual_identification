@@ -13,8 +13,9 @@ from tempfile import TemporaryDirectory
 from unittest import mock
 
 from contracts.source_provenance import build_offline_tool_provenance
-from identity_methods.classical.pdq_contracts import PDQ_D4_ORIENTATIONS, PDQFingerprint
-from identity_methods.classical.pdq_native import (
+from embedding.methods.classical.pdq.contracts import PDQ_D4_ORIENTATIONS, PDQFingerprint
+from embedding.methods.classical.pdq.native import (
+    BuilderToolProvenance,
     CANONICAL_INTAKE_BUNDLE_SHA256,
     CANONICAL_RETAINED_AGGREGATE_SHA256,
     CANONICAL_SOURCE_RECEIPT_SHA256,
@@ -34,7 +35,7 @@ from identity_methods.classical.pdq_native import (
 )
 
 SOURCE_BUNDLE = Path(os.environ.get("CANINE_IDENTITY_PDQ_SOURCE_BUNDLE") or os.devnull)
-WORKER_SOURCE = Path(__file__).parents[1] / "identity_methods/classical/native/pdq_worker/main.cpp"
+WORKER_SOURCE = Path(__file__).parents[1] / "embedding/methods/classical/pdq/native_worker/main.cpp"
 COMPILER = Path("/usr/bin/c++")
 NATIVE_AVAILABLE = SOURCE_BUNDLE.is_dir() and COMPILER.exists()
 
@@ -198,7 +199,7 @@ class NativePdqIntegrationTests(unittest.TestCase):
         changed["runtime"]["platform_release"] += "-changed"
         changed["runtime_sha256"] = hashlib.sha256(b"not-the-runtime").hexdigest()
         with TemporaryDirectory() as temporary, mock.patch(
-            "identity_methods.classical.pdq_native._current_builder_tool_provenance",
+            "embedding.methods.classical.pdq.native._current_builder_tool_provenance",
             side_effect=[provenance, changed],
         ):
             output = Path(temporary) / "build"
@@ -395,6 +396,56 @@ class NativePdqIntegrationTests(unittest.TestCase):
 
 
 class NativePdqContractTests(unittest.TestCase):
+    def test_builder_provenance_accepts_only_complete_path_generations(self) -> None:
+        current = _builder_provenance()
+        assert BuilderToolProvenance.from_dict(current).to_dict() == current
+
+        current_prefix = "embedding/methods/classical/pdq/"
+        generations = (
+            ("embedding/methods/classical/", "embedding.methods.classical."),
+            ("identity_methods/classical/", "identity_methods.classical."),
+        )
+        for path_prefix, logical_prefix in generations:
+            payload = copy.deepcopy(current)
+            for row in payload["code_source_files"]:
+                if row["relative_path"].startswith(current_prefix):
+                    filename = Path(row["relative_path"]).name
+                    row["relative_path"] = f"{path_prefix}pdq_{filename}"
+                    row["logical_name"] = f"{logical_prefix}pdq_{Path(filename).stem}"
+            payload["code_source_files"].sort(key=lambda row: row["relative_path"])
+            payload["code_source_manifest_sha256"] = hashlib.sha256(
+                json.dumps(
+                    payload["code_source_files"],
+                    sort_keys=True,
+                    separators=(",", ":"),
+                    ensure_ascii=True,
+                    allow_nan=False,
+                ).encode("utf-8")
+            ).hexdigest()
+            with self.subTest(path_prefix=path_prefix):
+                assert BuilderToolProvenance.from_dict(payload).to_dict() == payload
+
+        mixed = copy.deepcopy(current)
+        native = next(
+            row
+            for row in mixed["code_source_files"]
+            if row["relative_path"] == "embedding/methods/classical/pdq/native.py"
+        )
+        native["relative_path"] = "embedding/methods/classical/pdq_native.py"
+        native["logical_name"] = "embedding.methods.classical.pdq_native"
+        mixed["code_source_files"].sort(key=lambda row: row["relative_path"])
+        mixed["code_source_manifest_sha256"] = hashlib.sha256(
+            json.dumps(
+                mixed["code_source_files"],
+                sort_keys=True,
+                separators=(",", ":"),
+                ensure_ascii=True,
+                allow_nan=False,
+            ).encode("utf-8")
+        ).hexdigest()
+        with self.assertRaisesRegex(ValueError, "required implementation source"):
+            BuilderToolProvenance.from_dict(mixed)
+
     def test_rgb_geometry_and_receipt_shape_fail_closed(self) -> None:
         with self.assertRaisesRegex(ValueError, "payload length"):
             CanonicalRGBRequest(2, 2, b"x", 1, _token(1))

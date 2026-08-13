@@ -28,10 +28,10 @@ from data.acquisition import sha256_file
 from foundation.protected_io import json_document_bytes
 from foundation.protected_publication import fsync_directory, rename_directory_noreplace
 from foundation.provenance import content_sha256
-from identity_methods.full_segment.materialization import _parser_decisions
-from localization.animal_instance_segmentation import AnimalInstanceSegmentationRuntime
-from localization.animal_parsing import AnimalParsingPolicy, AnimalParsingRuntime
-from localization.foreground_segmentation import ForegroundSegmentationRuntime
+from embedding.methods.full_segment.preparation.materialization import _parser_decisions
+from parsing.full_segment.animal_instance_segmentation import AnimalInstanceSegmentationRuntime
+from parsing.full_segment.animal_parsing import AnimalParsingPolicy, AnimalParsingRuntime
+from parsing.full_segment.foreground_segmentation import ForegroundSegmentationRuntime
 from workflows.evaluate_oxford_pet_foreground import (
     OxfordPetSample,
     _load_split_samples,

@@ -22,10 +22,10 @@ from evaluation.retrieval import (
 )
 from foundation.protected_io import write_private_json_bundle
 from foundation.provenance import content_sha256
-from identity_governance.training_admission import TrainingAdmissionReceipt
-from identity_methods.appearance import ReceiptBoundDinov2Small
-from localization.roi_manifest import read_roi_manifest
-from representation_learning.trainer import ArcFaceModel, Dinov2Embedding, TrainConfig
+from identity.admission.training_admission import TrainingAdmissionReceipt
+from embedding.methods.appearance import ReceiptBoundDinov2Small
+from parsing.roi_manifest import read_roi_manifest
+from embedding.learning.train.trainer import ArcFaceModel, Dinov2Embedding, TrainConfig
 
 _CHANNEL_PATH = {
     "source": "dog_crop_path",

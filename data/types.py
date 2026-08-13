@@ -8,7 +8,7 @@ from typing import Any
 
 import numpy as np
 
-from identity_governance.generated_identity_registry import compute_generated_identity_id
+from contracts.identity_ids import compute_generated_identity_id
 
 
 class CaptureGroupKind(str, Enum):

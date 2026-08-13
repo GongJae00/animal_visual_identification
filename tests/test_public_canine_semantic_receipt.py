@@ -6,8 +6,8 @@ import unittest
 from dataclasses import replace
 from pathlib import Path
 
-from data.public_canine_manifest import PublicCanineManifest
-from data.public_canine_semantic_receipt import (
+from data.public.public_canine_manifest import PublicCanineManifest
+from data.public.public_canine_semantic_receipt import (
     PublicCanineSemanticReceipt,
     summarize_public_canine_manifest,
 )

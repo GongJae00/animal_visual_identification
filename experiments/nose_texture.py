@@ -30,9 +30,9 @@ from experiments.nose_fusion_scaling import (
 )
 from foundation.protected_io import read_strict_json_document, write_private_json_bundle
 from foundation.provenance import content_sha256
-from identity_methods.nose.frequency import classical_texture_descriptors
-from identity_methods.nose.temporal import aggregate_nose_embeddings
-from localization.nose_region.native_yt import validate_manifest_bundle
+from embedding.methods.nose.signal.frequency import classical_texture_descriptors
+from embedding.methods.nose.signal.temporal import aggregate_nose_embeddings
+from parsing.nose_region.native_yt import validate_manifest_bundle
 
 REPORT_SCHEMA = "cvi.yt_nose_texture_evaluation.v2"
 REPORT_BUNDLE_SCHEMA = "cvi.yt_nose_texture_evaluation_bundle.v2"
@@ -44,8 +44,8 @@ FUSION_WEIGHTS = tuple(index / 20.0 for index in range(7))
 _METRICS = ("Rank-1", "Rank-5", "MRR", "mAP")
 _CODE_PATHS = (
     "experiments/nose_texture.py",
-    "identity_methods/nose/frequency.py",
-    "identity_methods/nose/temporal.py",
+    "embedding/methods/nose/signal/frequency.py",
+    "embedding/methods/nose/signal/temporal.py",
     "experiments/nose_fusion_scaling.py",
     "evaluation/embedding_diagnostics.py",
     "evaluation/retrieval.py",

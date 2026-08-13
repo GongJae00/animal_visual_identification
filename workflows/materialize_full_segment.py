@@ -8,7 +8,7 @@ from pathlib import Path
 
 # Compatibility imports keep the established workflow CLI and test seam while
 # the materialization implementation remains owned by the algorithm package.
-from identity_methods.full_segment.sample_materialization import (
+from embedding.methods.full_segment.preparation.sample_materialization import (
     REQUEST_SCHEMA,
     _read_json_object,
     run,

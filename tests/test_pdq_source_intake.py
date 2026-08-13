@@ -13,8 +13,8 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest import mock
 
-import identity_methods.classical.pdq_source_intake as pdq_intake_module
-from contracts.pretrained_supporting_asset_intake import (
+import embedding.methods.classical.pdq.source_intake as pdq_intake_module
+from contracts.intake.pretrained_supporting_asset_intake import (
     MAXIMUM_ASSET_BYTES,
     MAXIMUM_JSON_ARRAY_LENGTH,
     MAXIMUM_JSON_DEPTH,
@@ -23,7 +23,7 @@ from contracts.pretrained_supporting_asset_intake import (
     MAXIMUM_JSON_NUMBER_CHARACTERS,
     MAXIMUM_JSON_STRING_CHARACTERS,
 )
-from identity_methods.classical.pdq_source_intake import (
+from embedding.methods.classical.pdq.source_intake import (
     PdqSelectedSourceMember,
     PdqSourceContract,
     PdqSourceIntakePolicy,

@@ -6,8 +6,8 @@ import unittest
 from importlib.metadata import PackageNotFoundError
 from unittest.mock import patch
 
-from operations.onnx_backend import onnxruntime_distribution_identity
-from operations.worker_environment import (
+from systems.inference.onnx_backend import onnxruntime_distribution_identity
+from systems.workers.worker_environment import (
     SANITIZED_WORKER_ENVIRONMENT_NAMES,
     WorkerEnvironmentIdentity,
     build_sanitized_worker_environment,

@@ -7,12 +7,12 @@ import json
 from pathlib import Path
 
 from foundation.protected_io import read_strict_json_document, write_private_json_bundle
-from identity_governance.dataset_stratified_kfold import (
+from identity.research.dataset_stratified_kfold import (
     DatasetStratifiedKFoldPolicy,
     build_dataset_stratified_identity_kfold,
     dataset_stratified_kfold_bundle,
 )
-from identity_governance.research_cycle_admission import ResearchCycleManifest
+from identity.research.research_cycle_admission import ResearchCycleManifest
 
 
 def main() -> int:

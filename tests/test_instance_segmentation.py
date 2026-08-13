@@ -13,7 +13,7 @@ from contracts.instance_segmentation_model import (
     instance_segmentation_model_bundle,
 )
 from contracts.model_file_binding import ModelFileBinding
-from localization.animal_instance_segmentation import (
+from parsing.full_segment.animal_instance_segmentation import (
     AnimalInstanceCandidate,
     _all_target_candidates,
     _suppress_duplicate_candidates,

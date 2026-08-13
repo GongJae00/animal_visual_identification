@@ -13,9 +13,9 @@ from torch import nn
 from torch.nn import functional as F
 
 from foundation.provenance import content_sha256
-from identity_methods.full_segment.classical import Classical128
-from identity_methods.full_segment.model import MaskedGAP128
-from identity_methods.full_segment.successor_models import (
+from embedding.methods.full_segment.models.classical import Classical128
+from embedding.methods.full_segment.models.model import MaskedGAP128
+from embedding.methods.full_segment.models.successor_models import (
     ClassicalFV128,
     Dinov2OccupancyProbe128,
     IdentityBlindResidualTokenAdapter128,
@@ -25,7 +25,7 @@ from identity_methods.full_segment.successor_models import (
     occupancy_pool,
     parameter_partition,
 )
-from representation_learning.full128_successors import (
+from embedding.learning.full_segment.full128_successors import (
     SUCCESSOR_CANDIDATES,
     build_successor_family_manifest,
     default_successor_training_config,

@@ -8,7 +8,7 @@ from evaluation.benchmark import (
     TimingSummary,
     measure_operation,
 )
-from representation_learning.optimization import PromotionDecision
+from embedding.learning.optimization import PromotionDecision
 
 
 class BenchmarkTests(unittest.TestCase):

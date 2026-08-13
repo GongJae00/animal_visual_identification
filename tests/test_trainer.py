@@ -11,13 +11,13 @@ from unittest.mock import patch
 
 import torch
 
-from data.public_crop_manifest import (
+from data.public.public_crop_manifest import (
     PublicCropArtifact,
     PublicCropManifest,
     canonical_rgb_pixel_sha256,
     verify_public_crop_manifest,
 )
-from identity_governance.role_exposure import (
+from identity.exposure.role_exposure import (
     ExposureDeclarationKind,
     ExposureStage,
     RoleExposureDeclaration,
@@ -25,13 +25,13 @@ from identity_governance.role_exposure import (
     create_role_exposure_receipt,
     merge_role_exposure_declarations,
 )
-from identity_governance.training_admission import (
+from identity.admission.training_admission import (
     TrainingAdmissionManifest,
     TrainingCropRow,
     admit_training,
 )
-from representation_learning.train.augment import RandAugment
-from representation_learning.trainer import (
+from embedding.learning.train.augment import RandAugment
+from embedding.learning.train.trainer import (
     AdmittedCropDataset,
     AppearanceBoundedResidual,
     ArcFaceHead,
@@ -329,7 +329,7 @@ class AdmittedCropDatasetTests(unittest.TestCase):
                 use_cache=False,
             )
             with patch(
-                "representation_learning.trainer.read_verified_crop_artifact",
+                "embedding.learning.train.trainer.read_verified_crop_artifact",
                 side_effect=AssertionError("label enumeration decoded a crop"),
             ):
                 self.assertEqual(dataset.labels, (7,))
@@ -537,8 +537,8 @@ class AugmentationContractTests(unittest.TestCase):
         augment = RandAugment(n=2, m=9)
         operations = [augment._adjust_brightness, augment._solarize]
         with patch(
-            "representation_learning.train.augment.random.choice", side_effect=operations
-        ), patch("representation_learning.train.augment.random.uniform", return_value=0.5):
+            "embedding.learning.train.augment.random.choice", side_effect=operations
+        ), patch("embedding.learning.train.augment.random.uniform", return_value=0.5):
             result = augment(torch.ones((3, 4, 4)))
         self.assertGreaterEqual(float(result.min()), 0.0)
         self.assertLessEqual(float(result.max()), 1.0)
@@ -1072,7 +1072,7 @@ class ArcFaceModelTests(unittest.TestCase):
                 self.assertTrue(np.isfinite(embedding).all())
 
     def test_dinov2_compat_subclass(self) -> None:
-        from representation_learning.trainer import Dinov2ArcFaceModel
+        from embedding.learning.train.trainer import Dinov2ArcFaceModel
         cfg = TrainConfig(embedding_dim=64, num_classes=5)
         model = Dinov2ArcFaceModel(cfg)
         self.assertIsInstance(model, ArcFaceModel)
@@ -1149,7 +1149,7 @@ class ConvNeXtOnnxExportTests(unittest.TestCase):
                 OnnxEvidenceModelManifest,
                 OnnxPreprocessingContract,
             )
-            from identity_methods.backbones.extractors import OnnxExtractor
+            from embedding.methods.backbones.extractors import OnnxExtractor
             manifest = OnnxEvidenceModelManifest(
                 model_id="convnext-export-test",
                 model_sha256=hashlib.sha256(path.read_bytes()).hexdigest(),

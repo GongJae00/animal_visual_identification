@@ -14,7 +14,7 @@ from contracts.animal_parsing_runtime import (
 )
 from contracts.model_file_binding import ModelFileBinding
 from foundation.provenance import content_sha256
-from localization.animal_parsing import (
+from parsing.full_segment.animal_parsing import (
     PARSING_ONTOLOGY,
     PARSING_ONTOLOGY_DESCRIPTION,
     AnimalParsingPolicy,
@@ -63,7 +63,7 @@ def _manifest() -> AnimalParsingRuntimeManifest:
             "torchvision": "0.26.0+cu128",
             "transformers": "5.14.1",
         },
-        source_files=(ModelFileBinding("localization/a.py", 6, source_sha),),
+        source_files=(ModelFileBinding("parsing/a.py", 6, source_sha),),
         evaluation_reports=(
             ParsingEvaluationBinding(
                 "evaluation",
@@ -83,6 +83,15 @@ def test_animal_parsing_runtime_manifest_round_trips_exactly() -> None:
     assert restored == manifest
     bundle = animal_parsing_runtime_bundle(restored)
     assert bundle["manifest_sha256"] == content_sha256(bundle["manifest"])
+
+
+def test_animal_parsing_runtime_manifest_reads_historical_source_paths() -> None:
+    payload = _manifest().to_dict()
+    payload["source_files"][0]["relative_path"] = "localization/a.py"
+
+    restored = AnimalParsingRuntimeManifest.from_dict(payload)
+
+    assert restored.source_files[0].relative_path == "localization/a.py"
 
 
 def test_animal_parsing_runtime_manifest_rejects_policy_tampering() -> None:

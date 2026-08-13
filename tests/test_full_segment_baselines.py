@@ -10,12 +10,12 @@ import pytest
 import torch
 from torchvision.models import resnet18
 
-from contracts.pretrained_weight_intake import (
+from contracts.intake.pretrained_weight_intake import (
     PretrainedWeightIntakeReceipt,
     PretrainedWeightSourceContract,
 )
 from foundation.provenance import content_sha256
-from identity_methods.full_segment import (
+from embedding.methods.full_segment import (
     Classical128,
     ClassicalFitInput,
     DatasetViewBalancedPKSampler,

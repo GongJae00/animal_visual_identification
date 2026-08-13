@@ -12,7 +12,7 @@ from contracts.prompt_segmentation_model import (
     PromptSegmentationModelManifest,
     prompt_segmentation_model_bundle,
 )
-from localization.sam2_prompt_runtime import _validate_box, _validate_point
+from parsing.regions.sam2_prompt_runtime import _validate_box, _validate_point
 
 
 def _binding(root: Path, name: str, payload: bytes) -> FoundationFileBinding:

@@ -12,7 +12,7 @@ from evaluation import (
     RobustnessProtocolError,
     build_dataset_balanced_oof_protocol,
 )
-from identity_governance.role_exposure import ExposureStage
+from identity.exposure.role_exposure import ExposureStage
 
 
 def _fixture() -> tuple[np.ndarray, np.ndarray]:

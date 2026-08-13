@@ -8,7 +8,7 @@ from dataclasses import replace
 import pytest
 
 from foundation.provenance import content_sha256
-from identity_governance.full_split_census import (
+from identity.full.full_split_census import (
     FullSplitAllocationPolicy,
     FullStatus,
     IdentityEvidenceKind,
@@ -23,12 +23,12 @@ from identity_governance.full_split_census import (
     unified_full_split_bundle,
     validate_unified_full_split_bundle,
 )
-from identity_governance.generated_identity_registry import (
+from identity.registry.generated_identity_registry import (
     GENERATED_DOG_NAMESPACE,
     compute_generated_identity_id,
     compute_source_cluster_token,
 )
-from identity_governance.identity_registry import (
+from identity.registry.identity_registry import (
     REGISTERED_DOG_NAMESPACE,
     compute_registered_dog_id,
 )

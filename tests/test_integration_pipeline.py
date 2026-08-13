@@ -13,7 +13,7 @@ from pathlib import Path
 
 import numpy as np
 
-from identity_governance.identity_registry import (
+from identity.registry.identity_registry import (
     REGISTERED_DOG_NAMESPACE,
     compute_identity_token,
     compute_registered_dog_id,
@@ -23,7 +23,7 @@ from identity_governance.identity_registry import (
     load_registry_manifest,
 )
 from foundation.provenance import content_sha256
-from identity_governance.split_registry_binding import (
+from identity.splits.split_registry_binding import (
     IdentityBinding,
     IdentityRoleSummary,
     SplitRegistryBinding,
@@ -435,7 +435,7 @@ class RegistryAugmentationTest(unittest.TestCase):
     """Test the augment_labels_with_registry tool logic."""
 
     def test_augment_labels(self) -> None:
-        from identity_governance.identity_registry import compute_registered_dog_id as _crid
+        from identity.registry.identity_registry import compute_registered_dog_id as _crid
 
         labels = {
             "schema_version": "cvi.protected_public_split_labels.v1",

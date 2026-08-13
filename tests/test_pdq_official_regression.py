@@ -10,7 +10,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from contracts.source_provenance import build_offline_tool_provenance
-from identity_methods.classical.pdq_official_regression import (
+from embedding.methods.classical.pdq.official_regression import (
     CANONICAL_NATIVE_BINARY_SHA256,
     PDQOfficialRegressionReceipt,
     _verify_expected_output,

@@ -8,14 +8,14 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from contracts.pretrained_supporting_asset_intake import (
+from contracts.intake.pretrained_supporting_asset_intake import (
     PretrainedSupportingAssetIntakeReceipt,
     PretrainedSupportingAssetKind,
     PretrainedSupportingAssetSourceContract,
     parse_bounded_strict_json_object,
     validate_pretrained_supporting_asset_receipt_binding,
 )
-from contracts.pretrained_weight_intake import (
+from contracts.intake.pretrained_weight_intake import (
     PretrainedWeightFileFormat,
     PretrainedWeightIntakeReceipt,
     PretrainedWeightSourceContract,

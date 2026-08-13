@@ -304,6 +304,14 @@ def canonical_channel_weights(
 ) -> np.ndarray:
     if isinstance(channel_count, bool) or not isinstance(channel_count, int) or channel_count <= 0:
         raise ValueError("channel count must be positive")
+    if values is not None and (
+        not isinstance(values, list)
+        or any(
+            isinstance(value, bool) or not isinstance(value, (int, float))
+            for value in values
+        )
+    ):
+        raise ValueError("channel weights must be a JSON array of numeric values")
     raw = values if values is not None else [1.0 / channel_count] * channel_count
     if len(raw) != channel_count:
         raise ValueError("channel weight count must match channel count")

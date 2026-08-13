@@ -7,9 +7,9 @@ import json
 from pathlib import Path
 from typing import Any
 
-from evaluation.control_scoring import EmbeddingCacheManifest
-from operations.embedding_producer import EmbeddingProducerConfig
-from evaluation.numerical_admission import NumericalDriftPolicy, compare_embedding_caches
+from evaluation.controls.control_scoring import EmbeddingCacheManifest
+from systems.inference.embedding_producer import EmbeddingProducerConfig
+from evaluation.integrity.numerical_admission import NumericalDriftPolicy, compare_embedding_caches
 from foundation.protected_io import read_strict_json_object, write_private_json_bundle
 
 

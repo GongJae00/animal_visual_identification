@@ -10,7 +10,7 @@ from typing import Any
 
 from foundation.provenance import content_sha256
 from foundation.timing import TimingSummary
-from representation_learning.optimization import PromotionDecision
+from embedding.learning.optimization import PromotionDecision
 
 
 def measure_operation[T](

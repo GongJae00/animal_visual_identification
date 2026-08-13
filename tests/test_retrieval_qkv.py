@@ -9,8 +9,8 @@ import numpy as np
 import pytest
 
 import retrieval.gallery as gallery_module
-from identity_governance.generated_identity_registry import create_provisional_identity
-from identity_governance.identity_registry import compute_registered_dog_id
+from identity.registry.generated_identity_registry import create_provisional_identity
+from identity.registry.identity_registry import compute_registered_dog_id
 from retrieval.gallery import (
     GalleryEnrollment,
     IdentityGallery,
@@ -55,6 +55,9 @@ def _key(vectors: dict[str, np.ndarray], availability: dict[str, bool]) -> Galle
         (2, [1.0, float("nan")]),
         (2, [1.0, float("inf")]),
         (2, [0.0, 0.0]),
+        (2, [True, 1.0]),
+        (2, [False, 1.0]),
+        (2, (1.0, 1.0)),
     ],
 )
 def test_canonical_channel_weights_reject_invalid_inputs(
@@ -293,8 +296,13 @@ def test_full128_exact_identity_search_matches_brute_force_with_imbalance_and_ti
         expected = sorted(brute, key=lambda value: (-brute[value][0], value))
 
         results = gallery.search(query, top_k=len(expected))
+        ordinal_array = gallery._row_identity_ordinal_array()
+        repeated = gallery.search(query, top_k=len(expected))
 
         assert [result[2]["registered_dog_id"] for result in results] == expected
+        assert repeated == results
+        assert np.shares_memory(gallery._row_identity_ordinal_array(), ordinal_array)
+        assert gallery._eligible_rows(QueryExclusions(), None) is None
         assert [
             gallery.rank_of_identity(query, identity_id)
             for identity_id in expected
@@ -308,6 +316,33 @@ def test_full128_exact_identity_search_matches_brute_force_with_imbalance_and_ti
             tied_ids
         )
         assert all(result[0] == result[2]["_winning_template_row"] for result in results)
+    finally:
+        gallery.close()
+
+
+def test_identity_topology_cache_invalidates_after_enrollment(tmp_path: Path) -> None:
+    gallery = IdentityGallery(tmp_path, dim=128, embedding_contract=_full128_contract())
+    try:
+        gallery.enroll(
+            np.eye(1, 128, 0, dtype=np.float32)[0],
+            _registered("cache-first"),
+            content_sha256="1" * 64,
+        )
+        first = gallery._row_identity_ordinal_array().copy()
+        gallery.enroll(
+            np.eye(1, 128, 1, dtype=np.float32)[0],
+            _registered("cache-second"),
+            content_sha256="2" * 64,
+        )
+
+        second = gallery._row_identity_ordinal_array()
+
+        np.testing.assert_array_equal(first, np.asarray([0], dtype=np.int64))
+        np.testing.assert_array_equal(second, np.asarray([0, 1], dtype=np.int64))
+        assert gallery._identities_by_ordinal == [
+            _registered("cache-first"),
+            _registered("cache-second"),
+        ]
     finally:
         gallery.close()
 
@@ -488,6 +523,33 @@ def test_bulk_k_view_generation_and_block_size_are_batch_invariant(
     finally:
         first.close()
         second.close()
+
+
+def test_bulk_enrollment_canonicalizes_each_vector_once(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    gallery = IdentityGallery(tmp_path, dim=128, embedding_contract=_full128_contract())
+    records = [
+        GalleryEnrollment(
+            embedding=np.eye(1, 128, index, dtype=np.float32)[0],
+            registered_identity_id=_registered(f"single-pass-{index}"),
+        )
+        for index in range(3)
+    ]
+    calls = 0
+    original = gallery._canonical_vectors
+
+    def counted(*args, **kwargs):
+        nonlocal calls
+        calls += 1
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(gallery, "_canonical_vectors", counted)
+    try:
+        gallery.enroll_many(records)
+        assert calls == len(records)
+    finally:
+        gallery.close()
 
 
 def test_bulk_build_failure_publishes_no_partial_gallery(tmp_path: Path) -> None:

@@ -8,7 +8,7 @@ import os
 from collections.abc import Sequence
 from pathlib import Path, PurePosixPath
 
-from data.public_canine_manifest import (
+from data.public.public_canine_manifest import (
     DOGFACE_TEST_MD5,
     DOGFACE_TEST_SHA256,
     DOGFACE_TRAIN_MD5,
@@ -20,7 +20,7 @@ from foundation.protected_io import (
     read_strict_json_document,
     write_private_json_bundle,
 )
-from identity_governance.face_eligibility import (
+from identity.face.face_eligibility import (
     DogFaceSplitEvidence,
     build_face_eligibility_overlay,
 )

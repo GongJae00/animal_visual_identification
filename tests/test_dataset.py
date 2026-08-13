@@ -4,7 +4,7 @@ import json
 import unittest
 
 from contracts.contracts import Modality
-from data.dataset import (
+from identity.splits.tracklet_split import (
     PresenceState,
     RoleModalityRule,
     SplitManifest,

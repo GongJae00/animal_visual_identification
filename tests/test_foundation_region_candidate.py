@@ -3,8 +3,8 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from localization.foundation_dense_runtime import FoundationImageTransform
-from localization.foundation_region_candidate import derive_binary_foundation_candidate
+from parsing.regions.foundation_dense_runtime import FoundationImageTransform
+from parsing.regions.foundation_region_candidate import derive_binary_foundation_candidate
 
 
 def test_foundation_candidate_maps_back_to_source_and_respects_geometry() -> None:

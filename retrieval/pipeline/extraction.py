@@ -3,12 +3,12 @@ from __future__ import annotations
 import numpy as np
 from PIL import Image
 
-from evidence_fusion.base import (
+from embedding.evidence.base import (
     AbstractEvidencer,
     EvidenceObservation,
     RequiredEvidenceUnavailableError,
 )
-from evidence_fusion.quality import QualityObservation
+from embedding.evidence.quality import QualityObservation
 
 
 class EvidenceExtractionPipeline:

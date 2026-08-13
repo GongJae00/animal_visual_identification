@@ -7,8 +7,8 @@ import uuid
 
 import numpy as np
 
-from identity_methods.nose.dataset import NoseIDSample
-from identity_methods.nose.protocol import (
+from embedding.methods.nose.data.dataset import NoseIDSample
+from embedding.methods.nose.data.protocol import (
     build_dev_n3_folds,
     capture_id,
     select_temporally_farthest,

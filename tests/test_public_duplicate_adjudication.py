@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import unittest
-from unittest.mock import patch
+from unittest.mock import PropertyMock, patch
 
-from data.public_duplicate_adjudication import (
+from identity.splits.public_duplicate_adjudication import (
     AdjudicationLedger,
     AdjudicationMode,
     CandidateAdjudication,
@@ -14,20 +14,28 @@ from data.public_duplicate_adjudication import (
     build_review_queue,
     merge_adjudication_chunks,
 )
+from identity.splits import public_duplicate_adjudication as adjudication_module
 from foundation.provenance import content_sha256
-from identity_governance.protected_public_split import (
+from identity.splits.protected_public_split import (
     PublicSplitSample,
     PublicSplitSourceBundle,
 )
-from identity_methods.classical.pdq_contracts import (
+from contracts.pdq import (
     PDQNearDuplicateCandidate,
     PDQSearchPolicy,
     PDQSearchResult,
+)
+from embedding.methods.classical.pdq.contracts import (
+    PDQSearchPolicy as LegacyPDQSearchPolicy,
 )
 
 
 def _token(value: int) -> str:
     return f"{value:064x}"
+
+
+def test_legacy_pdq_contract_import_preserves_type_identity() -> None:
+    assert LegacyPDQSearchPolicy is PDQSearchPolicy
 
 
 def _source() -> PublicSplitSourceBundle:
@@ -194,6 +202,59 @@ def _pdq() -> dict[str, object]:
 
 
 class PublicDuplicateAdjudicationTests(unittest.TestCase):
+    def test_candidate_set_streaming_hash_matches_canonical_list_hash(self) -> None:
+        pair_channels = {
+            (_token(1), _token(2)): {"PDQ": _token(10), "PHASH": _token(11)},
+            (_token(2), _token(3)): {"EXACT": _token(12)},
+        }
+        ordered_pairs = tuple(sorted(pair_channels))
+        expected = content_sha256([
+            {
+                "left_sample_token": pair[0],
+                "right_sample_token": pair[1],
+                "candidate_channels": sorted(pair_channels[pair]),
+                "candidate_evidence_tokens": sorted(pair_channels[pair].values()),
+            }
+            for pair in ordered_pairs
+        ])
+
+        self.assertEqual(
+            adjudication_module._candidate_set_sha256(ordered_pairs, pair_channels),
+            expected,
+        )
+
+    def test_standard_graph_hashes_the_ledger_once(self) -> None:
+        source = _source()
+        evidence = _token(900)
+        record = CandidateAdjudication(
+            left_sample_token=source.samples[0].sample_token,
+            right_sample_token=source.samples[1].sample_token,
+            candidate_channels=("EXACT",),
+            candidate_evidence_tokens=(evidence,),
+            outcome=CandidateOutcome.EXACT_CONFIRMED,
+            reason="AUTHENTICATED_CANONICAL_RGB_DIGEST_EQUAL",
+            decision_evidence_tokens=(evidence,),
+        )
+        ledger = AdjudicationLedger(
+            source_bundle_sha256=source.bundle_sha256,
+            candidate_set_sha256=_token(901),
+            evidence_bindings=source.evidence_bindings,
+            records=(record,),
+            outcome_counts=(("EXACT_CONFIRMED", 1),),
+            global_blockers=(),
+            promotion_status="READY_FOR_GRAPH_PROMOTION",
+        )
+        with patch.object(
+            AdjudicationLedger,
+            "ledger_sha256",
+            new_callable=PropertyMock,
+            return_value=_token(902),
+        ) as ledger_sha256:
+            graph = assemble_frozen_evidence_graph(source=source, ledger=ledger)
+
+        self.assertEqual(len(graph.edges), 1)
+        self.assertEqual(ledger_sha256.call_count, 1)
+
     def test_admitted_dinov2_filters_only_below_threshold_phash_only_pair(self) -> None:
         base = _source()
         binding = _binding(base)
@@ -224,7 +285,7 @@ class PublicDuplicateAdjudicationTests(unittest.TestCase):
             ),
         }
         with patch(
-            "data.public_duplicate_adjudication.validate_dinov2_filter_for_corpus",
+            "identity.splits.public_duplicate_adjudication.validate_dinov2_filter_for_corpus",
             return_value=(_token(990), dino_rows),
         ):
             chunk = build_adjudication_chunk(
@@ -282,7 +343,7 @@ class PublicDuplicateAdjudicationTests(unittest.TestCase):
             ),
         }
         with patch(
-            "data.public_duplicate_adjudication.validate_dinov2_filter_for_corpus",
+            "identity.splits.public_duplicate_adjudication.validate_dinov2_filter_for_corpus",
             return_value=(_token(990), rows),
         ):
             chunk = build_adjudication_chunk(
@@ -330,7 +391,7 @@ class PublicDuplicateAdjudicationTests(unittest.TestCase):
         })
         source = PublicSplitSourceBundle(tuple(sorted(bindings.items())), base.samples)
         with patch(
-            "data.public_duplicate_adjudication.validate_admission_for_corpus",
+            "identity.splits.public_duplicate_adjudication.validate_admission_for_corpus",
             return_value=_token(990),
         ):
             chunk = build_adjudication_chunk(

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import unittest
 
-from localization.consensus import (
+from parsing.consensus import (
     compute_error_correlation,
     consensus_admission,
     consensus_dog_bbox,
@@ -10,7 +10,7 @@ from localization.consensus import (
     robust_weighted_keypoint,
     weighted_box_fusion,
 )
-from localization.types import (
+from parsing.types import (
     DetectionBox,
     Keypoint,
     KeypointSet,
@@ -236,7 +236,7 @@ class ConsensusTests(unittest.TestCase):
 
 class QualityScoringTests(unittest.TestCase):
     def test_dog_quality_is_normalized(self) -> None:
-        from localization.quality import score_dog_quality
+        from parsing.quality import score_dog_quality
 
         bbox = DetectionBox(50, 50, 200, 200, 0.9)
         quality = score_dog_quality(bbox, image_width=300, image_height=300)
@@ -244,7 +244,7 @@ class QualityScoringTests(unittest.TestCase):
         self.assertLessEqual(quality.overall, 1.0)
 
     def test_face_quality_yaw_proxy(self) -> None:
-        from localization.quality import score_face_quality
+        from parsing.quality import score_face_quality
 
         landmarks = KeypointSet(
             keypoints={
@@ -259,7 +259,7 @@ class QualityScoringTests(unittest.TestCase):
         self.assertLessEqual(quality.yaw_roll_proxy, 1.0)
 
     def test_face_quality_without_named_anchors_is_finite(self) -> None:
-        from localization.quality import score_face_quality
+        from parsing.quality import score_face_quality
 
         landmarks = KeypointSet(
             keypoints={"face46.0": Keypoint(10, 10, 0.8)}, schema="face46"
@@ -269,7 +269,7 @@ class QualityScoringTests(unittest.TestCase):
         self.assertGreaterEqual(quality.overall, 0.0)
 
     def test_nose_quality_all_inputs_mapped(self) -> None:
-        from localization.quality import score_nose_quality
+        from parsing.quality import score_nose_quality
 
         bbox = DetectionBox(100, 100, 200, 200, 0.8, class_name="nose")
         quality = score_nose_quality(

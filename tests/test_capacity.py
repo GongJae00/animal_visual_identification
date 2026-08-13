@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import unittest
 
-from evaluation.capacity import (
+from systems.measurement.capacity import (
     CapacityPlan,
     ComputeResource,
     MemoryComponent,

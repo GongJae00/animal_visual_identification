@@ -6,7 +6,7 @@ import argparse
 import json
 from pathlib import Path
 
-from operations.embedding_production_runner import (
+from systems.workers.embedding_production_runner import (
     EmbeddingFreshWorkerDiscovery,
     EmbeddingFreshWorkerReceipt,
     EmbeddingProductionPrecommitment,

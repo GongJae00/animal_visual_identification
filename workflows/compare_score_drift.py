@@ -7,21 +7,21 @@ import json
 from pathlib import Path
 from typing import Any
 
-from evaluation.control_scoring import (
+from evaluation.controls.control_scoring import (
     ControlScoringInventory,
     EmbeddingCacheManifest,
     EmbeddingCachePolicy,
     EmbeddingCacheVerification,
 )
-from operations.embedding_producer import EmbeddingProducerConfig
-from operations.embedding_production_runner import read_embedding_production_outer_bundle
-from evaluation.numerical_admission import NumericalAdmissionReceipt, NumericalDriftPolicy
+from systems.inference.embedding_producer import EmbeddingProducerConfig
+from systems.workers.embedding_production_runner import read_embedding_production_outer_bundle
+from evaluation.integrity.numerical_admission import NumericalAdmissionReceipt, NumericalDriftPolicy
 from foundation.protected_io import (
     read_content_hashed_json_bundle,
     read_strict_json_object,
     write_private_json_bundle,
 )
-from evaluation.score_drift_admission import (
+from evaluation.integrity.score_drift_admission import (
     FrozenScoreMarginBoundary,
     RetrievalScoreWorkload,
     ScoreDriftPolicy,

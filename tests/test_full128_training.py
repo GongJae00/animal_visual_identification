@@ -15,10 +15,10 @@ import torch
 from PIL import Image
 from torchvision.models import resnet18
 
-import identity_methods.full_segment.artifacts as full128_artifacts
+import embedding.methods.full_segment.training.artifacts as full128_artifacts
 from foundation.protected_io import json_document_bytes
 from foundation.provenance import content_sha256
-from identity_methods.full_segment.artifacts import (
+from embedding.methods.full_segment.training.artifacts import (
     default_full128_run_config,
     file_binding,
     validate_embedding_cache,
@@ -26,18 +26,18 @@ from identity_methods.full_segment.artifacts import (
     validate_variant_run,
     write_embedding_cache,
 )
-from identity_methods.full_segment.classical import Classical128
-from identity_methods.full_segment.data import (
+from embedding.methods.full_segment.models.classical import Classical128
+from embedding.methods.full_segment.preparation.data import (
     Full128Inventory,
     Full128Sample,
     Full128TorchDataset,
     read_full128_crop,
     read_full128_mask,
 )
-from identity_methods.full_segment.losses import batch_hard_triplet_loss
-from identity_methods.full_segment.model import MaskedGAP128
-from identity_methods.full_segment.sampler import DatasetViewBalancedPKSampler
-from representation_learning.full128 import (
+from embedding.methods.full_segment.training.losses import batch_hard_triplet_loss
+from embedding.methods.full_segment.models.model import MaskedGAP128
+from embedding.methods.full_segment.training.sampler import DatasetViewBalancedPKSampler
+from embedding.learning.full_segment.full128 import (
     _extract_raw_descriptors,
     _fit_population_for_variant,
     _initialize_or_validate_run,

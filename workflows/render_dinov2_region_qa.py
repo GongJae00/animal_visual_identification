@@ -17,7 +17,7 @@ from foundation.protected_io import write_private_json_bundle
 from foundation.protected_publication import fsync_directory, rename_directory_noreplace
 from foundation.provenance import content_sha256
 from foundation.retained_file import read_retained_regular_file
-from localization.dinov2_region_segmentation import read_region_candidates
+from parsing.regions.dinov2_region_segmentation import read_region_candidates
 
 _FONT = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
 _FONT_BOLD = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"

@@ -6,15 +6,15 @@ from pathlib import Path
 
 from PIL import Image
 
-from identity_methods.face.dataset import RoiFaceReIDDataset
-from localization.roi import (
+from embedding.methods.face.dataset import RoiFaceReIDDataset
+from parsing.roi import (
     expand_bbox,
     face_roi_from_dog,
     normalize_source_point_to_square_crop,
     square_padded_crop,
     square_padded_crop_with_mask,
 )
-from localization.types import DetectionBox
+from parsing.types import DetectionBox
 
 
 class RoiGeometryTests(unittest.TestCase):

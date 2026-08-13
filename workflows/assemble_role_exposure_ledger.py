@@ -7,8 +7,8 @@ import json
 from pathlib import Path
 
 from foundation.protected_io import read_strict_json_object, write_private_json_bundle
-from identity_governance.protected_public_split import PublicSplitSourceBundle
-from identity_governance.split_role_exposure import (
+from identity.splits.protected_public_split import PublicSplitSourceBundle
+from identity.exposure.split_role_exposure import (
     RoleExposureDeclaration,
     create_role_exposure_receipt,
     merge_role_exposure_declarations,

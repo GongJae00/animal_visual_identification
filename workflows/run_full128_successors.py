@@ -7,18 +7,18 @@ import json
 from collections.abc import Sequence
 from pathlib import Path
 
-from evaluation.full128_successors import (
+from evaluation.full_segment.full128_successors import (
     build_successor_embedding_cache_descriptor,
     validate_fixed_evaluation_panel,
 )
 from foundation.protected_io import read_strict_json_document
 from foundation.provenance import content_sha256
-from identity_methods.full_segment.successor_models import (
+from embedding.methods.full_segment.models.successor_models import (
     build_b2_fv,
     dinov2_contract_bindings,
     load_receipt_bound_dinov2_patch_backbone,
 )
-from representation_learning.full128_successor_production import (
+from embedding.learning.full_segment.full128_successor_production import (
     B5_PARENTS,
     PRODUCTION_CANDIDATES,
     default_production_config,
@@ -26,7 +26,7 @@ from representation_learning.full128_successor_production import (
     run_successor_production,
     validate_production_config,
 )
-from representation_learning.full128_successors import (
+from embedding.learning.full_segment.full128_successors import (
     build_successor_family_manifest,
     default_successor_training_config,
     smoke_successor_execution,

@@ -19,6 +19,8 @@ from experiments.fixed_multievidence import (
     MINIMUM_EVAL_IDENTITIES,
     PANEL_BUNDLE_SCHEMA_VERSION,
     PANEL_SCHEMA_VERSION,
+    _LEGACY_PANEL_CODE_PATHS,
+    _PRE_TRAINING_OWNERSHIP_PANEL_CODE_PATHS,
     SPLIT_COMMITMENT,
     partition_identities,
     validate_fixed_topology_bindings,
@@ -54,9 +56,9 @@ _PANEL_LIMITATIONS = [
 ]
 _PANEL_CODE_PATHS = (
     "experiments/fixed_multievidence.py",
-    "identity_methods/face/checkpoint.py",
-    "localization/roi_manifest.py",
-    "localization/nose_region/embedding_consistency_training.py",
+    "embedding/methods/face/checkpoint.py",
+    "parsing/roi_manifest.py",
+    "embedding/methods/nose/training/embedding_consistency_training.py",
     "workflows/train_roi_face_reid.py",
     "workflows/build_fixed_multievidence_panel.py",
 )
@@ -270,6 +272,49 @@ def test_panel_and_topology_bindings_fail_closed(fixed_inputs: tuple[dict, dict]
             mismatched_topology,
             n3_onnx_sha256="6" * 64,
         )
+
+
+def test_panel_reader_accepts_only_complete_legacy_code_paths(
+    fixed_inputs: tuple[dict, dict],
+) -> None:
+    current, _ = fixed_inputs
+    assert validate_panel_bundle(current) == current["panel"]
+
+    pre_training_ownership = copy.deepcopy(current)
+    pre_training_ownership["panel"]["code_sha256s"] = {
+        historical: current["panel"]["code_sha256s"][present]
+        for historical, present in zip(
+            _PRE_TRAINING_OWNERSHIP_PANEL_CODE_PATHS,
+            current["panel"]["code_sha256s"],
+            strict=True,
+        )
+    }
+    pre_training_ownership["panel_sha256"] = content_sha256(
+        pre_training_ownership["panel"]
+    )
+    assert validate_panel_bundle(pre_training_ownership) == pre_training_ownership[
+        "panel"
+    ]
+
+    legacy = copy.deepcopy(current)
+    legacy_hashes = {
+        historical: current["panel"]["code_sha256s"][present]
+        for historical, present in zip(
+            _LEGACY_PANEL_CODE_PATHS,
+            current["panel"]["code_sha256s"],
+            strict=True,
+        )
+    }
+    legacy["panel"]["code_sha256s"] = legacy_hashes
+    legacy["panel_sha256"] = content_sha256(legacy["panel"])
+    assert validate_panel_bundle(legacy) == legacy["panel"]
+
+    mixed = copy.deepcopy(legacy)
+    mixed["panel"]["code_sha256s"].pop("localization/roi_manifest.py")
+    mixed["panel"]["code_sha256s"]["parsing/roi_manifest.py"] = "0" * 64
+    mixed["panel_sha256"] = content_sha256(mixed["panel"])
+    with pytest.raises(ValueError, match="code hashes"):
+        validate_panel_bundle(mixed)
 
 
 def _rows(identities: list[str], ranks: list[int]) -> list[dict]:

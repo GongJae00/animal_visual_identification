@@ -27,7 +27,7 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
 def main(argv: Sequence[str] | None = None) -> None:
     args = parse_args(argv)
     # Keep ONNX Runtime and training-lineage dependencies out of the help path.
-    from localization.nose_region.embedding_views import prepare_embedding_views
+    from embedding.methods.nose.data.embedding_views import prepare_embedding_views
     from foundation.provenance import content_sha256
 
     manifest = prepare_embedding_views(

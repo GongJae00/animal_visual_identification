@@ -9,8 +9,8 @@ import pytest
 from PIL import Image
 
 from data.types import CaptureGroupKind, UnifiedCanidSample
-from identity_governance.generated_identity_registry import create_provisional_identity
-from localization.animal_parsing import (
+from identity.registry.generated_identity_registry import create_provisional_identity
+from parsing.full_segment.animal_parsing import (
     AnimalIdentityCrop,
     ParsedAnimalInstance,
     ParsedAnimalQuality,

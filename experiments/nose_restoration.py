@@ -21,9 +21,9 @@ from contracts.artifact_manifest import (
 from evaluation.retrieval import compute_cosine_score_matrix
 from foundation.protected_io import read_strict_json_document, write_private_json_bundle
 from foundation.provenance import content_sha256
-from identity_methods.nose.restoration import RestorationConfig, restore_nose_frames
-from identity_methods.nose.temporal import aggregate_nose_embeddings
-from localization.nose_region.native_yt import validate_manifest_bundle
+from embedding.methods.nose.signal.restoration import RestorationConfig, restore_nose_frames
+from embedding.methods.nose.signal.temporal import aggregate_nose_embeddings
+from parsing.nose_region.native_yt import validate_manifest_bundle
 
 REPORT_SCHEMA = "cvi.yt_nose_raw_restored_evaluation.v1"
 REPORT_BUNDLE_SCHEMA = "cvi.yt_nose_raw_restored_evaluation_bundle.v1"
@@ -45,10 +45,10 @@ METHODS = {
 }
 _CODE_PATHS = (
     "experiments/nose_restoration.py",
-    "identity_methods/nose/restoration.py",
-    "identity_methods/nose/temporal.py",
+    "embedding/methods/nose/signal/restoration.py",
+    "embedding/methods/nose/signal/temporal.py",
     "contracts/artifact_manifest.py",
-    "localization/nose_region/native_yt.py",
+    "parsing/nose_region/native_yt.py",
     "workflows/evaluate_yt_nose_restoration.py",
 )
 

@@ -20,15 +20,17 @@ from contracts.artifact_manifest import (
     UsageLane,
 )
 from foundation.provenance import content_sha256
-from identity_governance.identity_registry import compute_registered_dog_id
-from localization.nose_region.embedding_views import (
+from identity.registry.identity_registry import compute_registered_dog_id
+from embedding.methods.nose.data.embedding_views import (
     MANIFEST_FILENAME,
+    _PRE_EMBEDDING_SHA256_PATHS,
     load_embedding_views_manifest,
     prepare_embedding_views,
     reconstruct_student_masked_rgb,
     student_masked_rgb,
+    validate_embedding_views_manifest,
 )
-from localization.nose_region.native_yt import (
+from parsing.nose_region.native_yt import (
     NativeYtSample,
     build_manifest_bundle,
     process_native_sample,
@@ -185,7 +187,7 @@ def _fixture(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> dict[str, objec
     lineage_path = student_root / "artifact_lineage.json"
     lineage_path.write_text(json.dumps(lineage, sort_keys=True), encoding="utf-8")
 
-    import localization.nose_region.segmentation_training as segmentation_training
+    from parsing.nose_region import segmentation_training
 
     validated: list[tuple[object, Path]] = []
 
@@ -344,6 +346,56 @@ def test_cache_and_source_tamper_fail_closed(
     with pytest.raises(ArtifactContractError, match="ONNX hash"):
         _prepare(third, tmp_path / "onnx-must-not-publish")
     assert not (tmp_path / "onnx-must-not-publish").exists()
+
+
+def test_historical_code_paths_are_readable_but_not_currently_executable(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    fixture = _fixture(tmp_path, monkeypatch)
+    output = tmp_path / "embedding-views"
+    current = _prepare(fixture, output)
+    pre_embedding = dict(current)
+    pre_embedding["code_sha256s"] = {
+        historical: current["code_sha256s"][present]
+        for historical, present in zip(
+            _PRE_EMBEDDING_SHA256_PATHS,
+            current["code_sha256s"],
+            strict=True,
+        )
+    }
+    body = {
+        key: value
+        for key, value in pre_embedding.items()
+        if key != "manifest_sha256"
+    }
+    pre_embedding["manifest_sha256"] = content_sha256(body)
+    assert validate_embedding_views_manifest(
+        pre_embedding, verify_code_sources=False
+    ) == pre_embedding
+    with pytest.raises(ValueError, match="this checkout"):
+        validate_embedding_views_manifest(pre_embedding)
+
+    legacy = dict(pre_embedding)
+    legacy["code_sha256s"] = {
+        path.replace("parsing/", "localization/", 1): digest
+        for path, digest in pre_embedding["code_sha256s"].items()
+    }
+    body = {key: value for key, value in legacy.items() if key != "manifest_sha256"}
+    legacy["manifest_sha256"] = content_sha256(body)
+
+    assert (
+        validate_embedding_views_manifest(legacy, verify_code_sources=False)
+        == legacy
+    )
+    with pytest.raises(ValueError, match="this checkout"):
+        validate_embedding_views_manifest(legacy)
+
+    legacy["code_sha256s"].pop("localization/nose_region/native_yt.py")
+    legacy["code_sha256s"]["parsing/nose_region/native_yt.py"] = "0" * 64
+    body = {key: value for key, value in legacy.items() if key != "manifest_sha256"}
+    legacy["manifest_sha256"] = content_sha256(body)
+    with pytest.raises(ValueError, match="code hash set"):
+        validate_embedding_views_manifest(legacy, verify_code_sources=False)
 
 
 def test_prepare_cli_help() -> None:

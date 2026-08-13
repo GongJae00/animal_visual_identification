@@ -11,7 +11,7 @@ from unittest.mock import patch
 
 from data.acquisition import sha256_file
 from data.crop_export import CropExportReceipt
-from evaluation.control_transform import (
+from evaluation.controls.control_transform import (
     SUPPORTED_SEMANTICS_VERSION,
     ControlTransformConfig,
     ControlTransformConfigManifest,
@@ -19,7 +19,7 @@ from evaluation.control_transform import (
     build_control_transform_command,
     execute_control_transforms,
 )
-from evaluation.controls import (
+from evaluation.controls.policy import (
     ControlMaskEntry,
     ControlMaskManifest,
     ControlTransformTask,
@@ -30,11 +30,11 @@ from evaluation.controls import (
     control_artifact_token,
     verify_control_mask_files,
 )
-from evaluation.mask_semantics import (
+from evaluation.controls.mask_semantics import (
     MaskSemanticPolicy,
     verify_mask_pixel_semantics,
 )
-from evaluation.scoring import (
+from evaluation.controls.scoring import (
     PairArtifactEntry,
     PairArtifactManifest,
     verify_pair_artifact_files,

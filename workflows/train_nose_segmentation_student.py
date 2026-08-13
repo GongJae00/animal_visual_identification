@@ -37,7 +37,7 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
 def main(argv: Sequence[str] | None = None) -> None:
     args = parse_args(argv)
     # Keep torch, timm, ONNX, and manifest imports out of the CLI help path.
-    from localization.nose_region.segmentation_training import train_and_export
+    from parsing.nose_region.segmentation_training import train_and_export
 
     lineage = train_and_export(
         teacher_manifest_path=args.teacher_manifest,

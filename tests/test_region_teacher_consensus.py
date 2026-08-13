@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from localization.region_teacher_consensus import (
+from parsing.regions.region_teacher_consensus import (
     ConsensusState,
     RegionTeacherBinding,
     region_teacher_consensus,

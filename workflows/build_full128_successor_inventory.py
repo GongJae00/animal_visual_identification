@@ -8,7 +8,7 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from foundation.protected_io import read_strict_json_document, write_private_json_bundle
-from identity_methods.full_segment.face_visible import (
+from embedding.methods.full_segment.face_visible import (
     build_face_visible_successor_inventory,
     build_face_visible_successor_inventory_v2,
     build_score_blind_face_visible_panel,

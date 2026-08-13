@@ -7,7 +7,7 @@ import json
 from pathlib import Path
 
 from contracts.model_parity import ParityThresholds
-from localization.nose_region.embedding_training import train_and_export
+from embedding.methods.nose.training.embedding_training import train_and_export
 
 
 def _parser() -> argparse.ArgumentParser:

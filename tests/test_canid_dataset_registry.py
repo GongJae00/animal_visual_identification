@@ -6,7 +6,7 @@ from pathlib import Path
 
 from data.source_lock import SOURCE_REGISTRY, admitted_records, get_record
 from data.types import DatasetAdmission, UnifiedCanidSample
-from identity_governance.generated_identity_registry import create_provisional_identity
+from identity.registry.generated_identity_registry import create_provisional_identity
 
 
 class CanidRegistryTests(unittest.TestCase):

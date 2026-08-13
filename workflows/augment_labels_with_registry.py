@@ -12,7 +12,7 @@ import argparse
 import json
 from pathlib import Path
 
-from identity_governance.identity_registry import compute_registered_dog_id
+from identity.registry.identity_registry import compute_registered_dog_id
 from foundation.provenance import content_sha256
 
 

@@ -12,7 +12,7 @@ import faiss
 import numpy as np
 
 import workflows.migrate_gallery_v3_to_v4 as migration
-from identity_governance.identity_registry import compute_registered_dog_id
+from identity.registry.identity_registry import compute_registered_dog_id
 
 
 def _write_v3(source: Path) -> dict:

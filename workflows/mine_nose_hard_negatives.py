@@ -9,11 +9,11 @@ from pathlib import Path
 import numpy as np
 import torch
 
-from identity_methods.nose.checkpoint import load_training_checkpoint
-from identity_methods.nose.dataset import NoseIDDataset, load_identity_split, load_noseid_manifest
+from embedding.methods.nose.training.checkpoint import load_training_checkpoint
+from embedding.methods.nose.data.dataset import NoseIDDataset, load_identity_split, load_noseid_manifest
 from experiments.nose_evaluation import extract_oracle_representations
-from identity_methods.nose.hard_negative import mine_hard_neighbors, select_session_balanced_indices
-from identity_methods.nose.trainer import build_noseid_model, load_receipt_bound_frozen_dino
+from embedding.methods.nose.training.hard_negative import mine_hard_neighbors, select_session_balanced_indices
+from embedding.methods.nose.training.trainer import build_noseid_model, load_receipt_bound_frozen_dino
 from foundation.protected_io import write_private_json_bundle
 
 

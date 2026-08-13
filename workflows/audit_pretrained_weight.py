@@ -6,7 +6,7 @@ import argparse
 import json
 from pathlib import Path
 
-from contracts.pretrained_weight_intake import (
+from contracts.intake.pretrained_weight_intake import (
     PretrainedWeightSourceContract,
     audit_pretrained_weight_file,
 )

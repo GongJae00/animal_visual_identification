@@ -19,24 +19,24 @@ except ModuleNotFoundError:
 else:
     PILLOW_AVAILABLE = True
 
-from data.public_canine_manifest import (
+from data.public.public_canine_manifest import (
     CanineRegion,
     IdentitySemantics,
     PublicCanineManifest,
     PublicCanineRecord,
 )
-from data.public_image_content_audit import (
+from data.public.public_image_content_audit import (
     ImageContentAuditPolicy,
     audit_public_canine_image_content,
 )
 from foundation.protected_io import read_strict_json_object
 from foundation.provenance import content_sha256
-from identity_methods.classical.phash_mih import (
+from embedding.methods.classical.phash_mih import (
     CandidateLimitExceeded,
     PHashFingerprint,
     opaque_sample_id,
 )
-from identity_methods.classical.public_canine_phash_audit import (
+from embedding.methods.classical.public_canine_phash_audit import (
     PublicCaninePHashPolicy,
     PublicCaninePHashSource,
     _AuthenticatedSource,
@@ -361,10 +361,10 @@ class PublicCaninePHashPublicationTests(unittest.TestCase):
                 minimum_temporary_free_bytes_after_stage=1,
             )
             with patch(
-                "identity_methods.classical.public_canine_phash_audit._authenticate_source",
+                "embedding.methods.classical.public_canine_phash_audit._authenticate_source",
                 side_effect=authenticated,
             ), patch(
-                "identity_methods.classical.public_canine_phash_audit._fingerprint_source",
+                "embedding.methods.classical.public_canine_phash_audit._fingerprint_source",
                 side_effect=side_effect,
             ):
                 evidence_sha, binding_sha = run_public_canine_phash_audit(
@@ -389,10 +389,10 @@ class PublicCaninePHashPublicationTests(unittest.TestCase):
             )
             with self.assertRaises(FileExistsError):
                 with patch(
-                    "identity_methods.classical.public_canine_phash_audit._authenticate_source",
+                    "embedding.methods.classical.public_canine_phash_audit._authenticate_source",
                     side_effect=authenticated,
                 ), patch(
-                    "identity_methods.classical.public_canine_phash_audit._fingerprint_source",
+                    "embedding.methods.classical.public_canine_phash_audit._fingerprint_source",
                     side_effect=side_effect,
                 ):
                     run_public_canine_phash_audit(
@@ -429,10 +429,10 @@ class PublicCaninePHashPublicationTests(unittest.TestCase):
             ]
             evidence_path, binding_path = root / "evidence.json", root / "binding.json"
             with patch(
-                "identity_methods.classical.public_canine_phash_audit._authenticate_source",
+                "embedding.methods.classical.public_canine_phash_audit._authenticate_source",
                 side_effect=authenticated,
             ), patch(
-                "identity_methods.classical.public_canine_phash_audit._fingerprint_source",
+                "embedding.methods.classical.public_canine_phash_audit._fingerprint_source",
                 side_effect=side_effect,
             ):
                 with self.assertRaises(CandidateLimitExceeded):

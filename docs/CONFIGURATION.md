@@ -75,7 +75,7 @@ committed.
 ## Other Config Files
 
 Tracked configs live with their owning packages: public examples under
-`canine_identity/configs/`, operational policies under `operations/configs/`,
+`canine_identity/configs/`, operational policies under `systems/configs/`,
 data policies under `data/configs/`, schemas under
 `contracts/configs/`, and research definitions under
 `experiments/configs/`. Their independent schemas are not interchangeable with

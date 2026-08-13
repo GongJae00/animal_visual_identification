@@ -6,7 +6,7 @@ import unittest
 import torch
 from torch import nn
 
-from identity_methods.nose.model import NoseIDModel
+from embedding.methods.nose.modeling.model import NoseIDModel
 
 
 class _DummyDino(nn.Module):

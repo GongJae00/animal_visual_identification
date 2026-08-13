@@ -48,20 +48,18 @@ same representation path has run for query or enrollment input.
 | Path | Responsibility |
 |---|---|
 | `foundation/` | Deterministic hashing, protected I/O, publication, and retained-file primitives |
-| `contracts/` | Model, source, runtime-library, intake, parity, and fail-closed region-evidence schemas |
-| `data/` | Dataset adapters, acquisition, manifests, crop export, and duplicate evidence intake |
-| `identity_governance/` | UUID registries, duplicate closure, split roles, exposure, research admission, and retrospective identity K-folds |
-| `localization/` | Detection, ROI geometry, prediction caches, identity-free localization folds, and region materialization/training |
-| `identity_methods/` | Backbones plus Appearance, Face, Nose, and classical identity methods |
-| `representation_learning/` | Trainable representations, heads, objectives, and training orchestration |
-| `evidence_fusion/` | Evidence observations, quality, calibration state, and research-only aggregation utilities |
+| `contracts/` | Model, source, runtime-library, parity, PDQ, and cross-domain evidence contracts; external model-asset intake lives under `contracts/intake/` |
+| `data/` | Dataset adapters, acquisition, crop export, source route planning, and shared data primitives; public-corpus intake lives under `data/public/` |
+| `identity/` | UUID registries, exposure, tracklet and protected splits, duplicate adjudication, admission, face governance, and retrospective research protocols |
+| `parsing/` | Detection, unsupervised ROI quality, geometry, and core localization; full-animal parsing and region candidates use dedicated subpackages |
+| `embedding/` | Embedding methods, representation learning, and evidence contracts under `methods/`, `learning/`, and `evidence/`; nose training and derived embedding views remain embedding-owned |
 | `retrieval/` | QKV retrieval contracts, K/V gallery persistence, exact QK scoring, identity aggregation, and crop enrollment/search pipelines |
-| `evaluation/` | Verification, retrieval, calibration, robustness, controls, cache evaluation, and protected evaluation |
+| `evaluation/` | Verification, retrieval, calibration, robustness, protected evaluation, localization protocols and metrics, controls, integrity, and Full128 evaluation |
 | `canine_identity/` | Public crop-level runtime only |
-| `operations/` | Isolated workers, runtime discovery, ONNX execution, supervision, and telemetry |
+| `systems/` | Offline inference, isolated workers, runtime discovery, supervision, decode/capacity measurement, and telemetry |
 | `workflows/` | Source-checkout commands that orchestrate owned packages |
 | `experiments/` | Research-only branch comparisons and major experiment configs |
-| `visualization/` | Contract-bound research figures and report rendering; generated reports remain outside Git |
+| `visualization/` | Contract-bound research figures with separated rendering and publication; generated reports remain outside Git |
 | `setup/` | Environment, bootstrap, and release guidance |
 | `tests/` | Behavioral, contract, security, numerical, packaging, and dependency-boundary tests |
 
@@ -75,14 +73,18 @@ The dataset-stratified identity and localization K-fold manifests are exposed re
 
 1. `foundation` imports no other internal package.
 2. `contracts` depends only on itself and `foundation`.
-3. Algorithm packages do not import `evaluation` or `operations`.
-4. `canine_identity` does not import learning, evaluation, operations, experiments, workflows, or apps.
-5. `evaluation` may consume all algorithm packages.
-6. `operations` may wrap algorithms and evaluation, but algorithms do not import it.
+3. `data` does not import identity, parsing, embedding, retrieval, evaluation, systems, or workflows.
+4. `identity` does not import embedding, evaluation, systems, or workflows.
+5. Algorithm packages do not import `evaluation` or `systems`.
+   Parsing additionally does not import embedding or retrieval.
+6. `canine_identity` does not import learning, evaluation, systems, experiments, workflows, or apps.
+7. `evaluation` may consume all algorithm packages.
+8. `systems` may wrap algorithms and evaluation, but algorithms do not import it.
+9. The complete top-level internal package graph must remain acyclic.
 
 ## Versioned Compatibility
 
-Source provenance v2 binds a logical component and entry points to the recursive closure of repository-local Python imports. Physical path moves therefore produce explicit new provenance instead of pretending old file hashes still describe current code.
+Source provenance v3 binds a logical component, entry points, parent package initializers, and the recursive closure of repository-local Python imports. Physical path moves therefore produce explicit new provenance instead of pretending old file hashes still describe current code. Complete v1/v2 inventories remain readable where their persisted readers require them.
 
 Compatibility is narrow:
 

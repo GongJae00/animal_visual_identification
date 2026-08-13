@@ -11,7 +11,7 @@ from foundation.protected_io import (
     read_strict_json_document,
     write_private_json_bundle,
 )
-from identity_governance.face_identity_protocol_v2 import (
+from identity.face.face_identity_protocol_v2 import (
     build_face_identity_protocol_v2,
 )
 

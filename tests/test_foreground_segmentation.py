@@ -12,7 +12,7 @@ from contracts.foreground_segmentation_model import (
     foreground_segmentation_model_bundle,
 )
 from contracts.model_file_binding import ModelFileBinding
-from localization.foreground_segmentation import (
+from parsing.full_segment.foreground_segmentation import (
     _compute_inference_size,
     _validate_target_box,
 )

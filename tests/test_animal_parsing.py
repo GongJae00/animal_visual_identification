@@ -6,8 +6,8 @@ import numpy as np
 import pytest
 from PIL import Image
 
-from localization.animal_instance_segmentation import AnimalInstanceCandidate
-from localization.animal_parsing import (
+from parsing.full_segment.animal_instance_segmentation import AnimalInstanceCandidate
+from parsing.full_segment.animal_parsing import (
     AnimalParsingPolicy,
     AnimalParsingRuntime,
     ParsedAnimalInstance,
@@ -17,7 +17,7 @@ from localization.animal_parsing import (
     _seeded_refinement,
     materialize_identity_crop,
 )
-from localization.foreground_segmentation import ForegroundSegmentationPrediction
+from parsing.full_segment.foreground_segmentation import ForegroundSegmentationPrediction
 
 
 def test_animal_parsing_policy_v6_is_dog_only_and_prior_policies_round_trip() -> None:

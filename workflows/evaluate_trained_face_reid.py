@@ -61,7 +61,7 @@ def main() -> None:
     import torch
     from torch.utils.data import DataLoader
 
-    from identity_methods.face.checkpoint import (
+    from embedding.methods.face.checkpoint import (
         expected_faceid_contract_for_checkpoint,
         file_sha256,
         normalize_dino_local_artifact_contract,
@@ -69,17 +69,17 @@ def main() -> None:
         validate_checkpoint_structure,
         validate_evaluation_partition,
     )
-    from identity_methods.face.dataset import RoiFaceReIDDataset
+    from embedding.methods.face.dataset import RoiFaceReIDDataset
     from experiments.face_evaluation import (
         evaluate_face_retrieval,
         extract_face_embeddings,
         paired_face_retrieval_comparison,
     )
-    from identity_methods.face.trainer import (
+    from embedding.methods.face.trainer import (
         build_faceid_model,
         load_receipt_bound_frozen_dino,
     )
-    from localization.roi_manifest import read_roi_manifest
+    from parsing.roi_manifest import read_roi_manifest
     from foundation.protected_io import write_private_json_bundle
 
     if args.device == "cuda" and not torch.cuda.is_available():

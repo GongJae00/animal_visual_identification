@@ -9,7 +9,7 @@ from collections.abc import Sequence
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from evaluation.full128_successors import (
+from evaluation.full_segment.full128_successors import (
     build_authoritative_fixed_evaluation_panel,
     build_score_blind_fixed_evaluation_panel,
     evaluate_authoritative_successor_family,

@@ -57,11 +57,11 @@ from evaluation.verification import (
     evaluate_at_threshold,
     select_threshold_at_far,
 )
-from evidence_fusion.base import AbstractEvidencer
+from embedding.evidence.base import AbstractEvidencer
 from foundation.protected_io import write_private_json_bundle
 from foundation.provenance import content_sha256
-from identity_methods.appearance import ReceiptBoundDinov2Small
-from localization.landmark_graph import LandmarkEvidencer
+from embedding.methods.appearance import ReceiptBoundDinov2Small
+from embedding.methods.landmark import LandmarkEvidencer
 
 SCHEMA_VERSION = "cvi.evaluation.report.v2"
 SCHEMA_PATH = (

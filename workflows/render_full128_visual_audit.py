@@ -8,23 +8,23 @@ from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
-from evaluation.full128_analysis import validate_executed_representation_trace_manifest
-from evaluation.full128_successors import (
+from evaluation.full_segment.full128_analysis import validate_executed_representation_trace_manifest
+from evaluation.full_segment.full128_successors import (
     build_authoritative_fixed_evaluation_panel,
     open_successor_embedding_cache,
     sanitize_successor_evaluation_report,
     validate_fixed_evaluation_panel,
 )
 from foundation.protected_io import read_strict_json_document
-from identity_methods.full_segment.data import (
+from embedding.methods.full_segment.preparation.data import (
     Full128Sample,
     read_full128_crop,
     read_full128_mask,
 )
-from identity_methods.full_segment.face_visible import (
+from embedding.methods.full_segment.face_visible import (
     validate_face_visible_successor_inventory_bundle,
 )
-from localization.full_segment_cache import validate_full_segment_cache_bundle
+from parsing.full_segment.full_segment_cache import validate_full_segment_cache_bundle
 from visualization.full128_visual_audit import (
     AuditSample,
     QueryOutcome,

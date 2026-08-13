@@ -31,16 +31,16 @@ from foundation.protected_publication import (
     rename_directory_noreplace,
 )
 from foundation.provenance import content_sha256
-from localization.animal_instance_segmentation import (
+from parsing.full_segment.animal_instance_segmentation import (
     AnimalInstanceSegmentationRuntime,
 )
-from localization.animal_parsing import (
+from parsing.full_segment.animal_parsing import (
     AnimalParsingPolicy,
     AnimalParsingRuntime,
     ParsedAnimalInstance,
     materialize_identity_crop,
 )
-from localization.foreground_segmentation import ForegroundSegmentationRuntime
+from parsing.full_segment.foreground_segmentation import ForegroundSegmentationRuntime
 
 REPORT_SCHEMA = "cvi.animal_parsing_panel.v1"
 INTERPRETATION = (

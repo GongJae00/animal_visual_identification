@@ -11,7 +11,7 @@ from foundation.protected_io import (
     read_strict_json_document,
     write_private_json_bundle,
 )
-from identity_governance.face_public_source_binding import (
+from identity.face.face_public_source_binding import (
     build_face_public_source_binding,
 )
 

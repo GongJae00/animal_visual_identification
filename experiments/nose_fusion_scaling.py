@@ -24,8 +24,8 @@ from evaluation.retrieval import (
 )
 from foundation.protected_io import read_strict_json_document, write_private_json_bundle
 from foundation.provenance import content_sha256
-from identity_methods.nose.temporal import aggregate_nose_embeddings
-from localization.nose_region.native_yt import validate_manifest_bundle
+from embedding.methods.nose.signal.temporal import aggregate_nose_embeddings
+from parsing.nose_region.native_yt import validate_manifest_bundle
 
 REPORT_SCHEMA = "cvi.yt_nose_fusion_scaling_evaluation.v1"
 REPORT_BUNDLE_SCHEMA = "cvi.yt_nose_fusion_scaling_evaluation_bundle.v1"
@@ -47,10 +47,10 @@ _CONTRASTS = {
 _BOOTSTRAP_METRICS = ("Rank-1", "Rank-5", "MRR", "mAP")
 _CODE_PATHS = (
     "experiments/nose_fusion_scaling.py",
-    "identity_methods/nose/temporal.py",
+    "embedding/methods/nose/signal/temporal.py",
     "contracts/artifact_manifest.py",
     "evaluation/retrieval.py",
-    "localization/nose_region/native_yt.py",
+    "parsing/nose_region/native_yt.py",
     "foundation/protected_io.py",
     "foundation/provenance.py",
     "workflows/evaluate_yt_nose_fusion_scaling.py",
@@ -480,7 +480,7 @@ def evaluate_fusion_scaling(
                 "L2_normalize_each_embedding_then_unweighted_arithmetic_mean_then_"
                 "L2_normalize;_K1_is_the_singleton_identity_operation"
             ),
-            "temporal_implementation": "identity_methods.nose.temporal.aggregate_nose_embeddings",
+            "temporal_implementation": "embedding.methods.nose.signal.temporal.aggregate_nose_embeddings",
             "retrieval": "exhaustive_cosine_one_gallery_vector_per_identity",
             "tie_policy": "stable_registered_dog_id_lexical_order",
             "pairing_sha256": content_sha256(pairing_contract),

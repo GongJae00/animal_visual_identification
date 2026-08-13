@@ -6,7 +6,7 @@ import argparse
 import json
 from pathlib import Path
 
-from operations.embedding_production_runner import EmbeddingFreshWorkerReceipt
+from systems.workers.embedding_production_runner import EmbeddingFreshWorkerReceipt
 from foundation.protected_io import read_strict_json_object
 
 

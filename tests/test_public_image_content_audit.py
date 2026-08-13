@@ -17,13 +17,13 @@ except ModuleNotFoundError:
 else:
     PILLOW_AVAILABLE = True
 
-from data.public_canine_manifest import (
+from data.public.public_canine_manifest import (
     CanineRegion,
     IdentitySemantics,
     PublicCanineManifest,
     PublicCanineRecord,
 )
-from data.public_image_content_audit import (
+from data.public.public_image_content_audit import (
     ImageContentAuditPolicy,
     audit_public_canine_image_content,
 )

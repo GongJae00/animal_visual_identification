@@ -6,10 +6,10 @@ import cv2
 import numpy as np
 import torch
 
-from identity_methods.nose.alignment import register_residual_translation
-from identity_methods.nose.frequency import classical_texture_descriptors
-from identity_methods.nose.photometric import glare_saturation_invalid_mask
-from identity_methods.nose.restoration import (
+from embedding.methods.nose.signal.alignment import register_residual_translation
+from embedding.methods.nose.signal.frequency import classical_texture_descriptors
+from embedding.methods.nose.signal.photometric import glare_saturation_invalid_mask
+from embedding.methods.nose.signal.restoration import (
     RestorationConfig,
     leave_one_out_stability,
     redegradation_consistency,

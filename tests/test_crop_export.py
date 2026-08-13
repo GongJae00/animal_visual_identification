@@ -17,7 +17,7 @@ from data.crop_export import (
     export_oracle_crops,
     probe_still_image,
 )
-from evaluation.pairing import (
+from evaluation.controls.pairing import (
     PairArtifactBinding,
     PairConstructionResult,
     PairGroundTruth,

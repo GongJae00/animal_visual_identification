@@ -7,7 +7,7 @@ import json
 from collections.abc import Sequence
 from pathlib import Path
 
-from evaluation.full128_successors import build_authoritative_fixed_evaluation_panel
+from evaluation.full_segment.full128_successors import build_authoritative_fixed_evaluation_panel
 from foundation.protected_io import read_strict_json_document, write_private_json_bundle
 
 _LIMITS = {

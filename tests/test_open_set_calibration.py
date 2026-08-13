@@ -21,7 +21,7 @@ from evaluation.open_set_calibration import (
     top_identity_evidence,
     zero_event_one_sided_upper_bound,
 )
-from identity_governance.protected_public_split import ProtectedPublicSplitPolicy
+from identity.splits.protected_public_split import ProtectedPublicSplitPolicy
 
 
 def _token(kind: str, value: object) -> str:

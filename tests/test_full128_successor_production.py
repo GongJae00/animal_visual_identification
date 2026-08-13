@@ -15,11 +15,11 @@ from PIL import Image
 from torch import nn
 from torch.nn import functional as F
 
-import representation_learning.full128_successor_production as production
-from evaluation.full128_successors import build_successor_embedding_cache_descriptor
-from identity_methods.full_segment.data import Full128Sample
-from identity_methods.full_segment.successor_models import Dinov2OccupancyProbe128
-from representation_learning.full128_successor_production import (
+import embedding.learning.full_segment.full128_successor_production as production
+from evaluation.full_segment.full128_successors import build_successor_embedding_cache_descriptor
+from embedding.methods.full_segment.preparation.data import Full128Sample
+from embedding.methods.full_segment.models.successor_models import Dinov2OccupancyProbe128
+from embedding.learning.full_segment.full128_successor_production import (
     PRODUCTION_CANDIDATES,
     build_balanced_pk_schedule,
     default_production_config,

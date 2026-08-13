@@ -12,20 +12,20 @@ class OptionalImportSurfaceTests(unittest.TestCase):
     def test_evidence_import_does_not_load_optional_runtime_modules(self) -> None:
         script = """
 import sys
-import evidence_fusion as evidence
+import embedding.evidence as evidence
 
 forbidden = {
-    'evidence_fusion.calibrator',
-    'evidence_fusion.oof_simplex',
-    'identity_methods.appearance',
-    'localization.landmark_graph',
-    'identity_methods.backbones.miewid',
-    'identity_methods.nose.extractor',
-    'identity_methods.nose.dataset',
-    'identity_methods.nose.frequency',
-    'identity_methods.nose.losses',
-    'identity_methods.nose.model',
-    'identity_methods.nose.trainer',
+    'embedding.evidence.calibrator',
+    'embedding.evidence.oof_simplex',
+    'embedding.methods.appearance',
+    'embedding.methods.landmark',
+    'embedding.methods.backbones.miewid',
+    'embedding.methods.nose.extractor',
+    'embedding.methods.nose.data.dataset',
+    'embedding.methods.nose.signal.frequency',
+    'embedding.methods.nose.training.losses',
+    'embedding.methods.nose.modeling.model',
+    'embedding.methods.nose.training.trainer',
     'torch',
     'transformers',
 }
@@ -40,7 +40,7 @@ if evidence.__all__ != [
     'EvidenceUnavailableReason',
     'RequiredEvidenceUnavailableError',
 ]:
-    raise SystemExit(f'unexpected evidence_fusion exports: {evidence.__all__}')
+    raise SystemExit(f'unexpected embedding.evidence exports: {evidence.__all__}')
 """
         environment = os.environ.copy()
         source = str(Path(__file__).resolve().parents[1])
@@ -62,15 +62,15 @@ import sys
 
 original_import = builtins.__import__
 blocked_roots = {
-    'identity_methods',
-    'representation_learning',
+    'embedding.methods',
+    'embedding.learning',
     'torch',
     'torchvision',
     'transformers',
 }
 
 def guarded_import(name, *args, **kwargs):
-    if name.split('.', 1)[0] in blocked_roots:
+    if any(name == root or name.startswith(root + '.') for root in blocked_roots):
         raise ModuleNotFoundError(f'blocked optional import: {name}')
     return original_import(name, *args, **kwargs)
 
@@ -154,10 +154,12 @@ report = {
 }
 if validator(report) != report:
     raise SystemExit('public successor report validation changed the report')
-if 'evaluation.full128_successors' in sys.modules:
+if 'evaluation.full_segment.full128_successors' in sys.modules:
     raise SystemExit('visualization loaded the heavyweight successor evaluator')
 loaded = sorted(
-    name for name in sys.modules if name.split('.', 1)[0] in blocked_roots
+    name
+    for name in sys.modules
+    if any(name == root or name.startswith(root + '.') for root in blocked_roots)
 )
 if loaded:
     raise SystemExit(f'blocked optional modules loaded: {loaded}')

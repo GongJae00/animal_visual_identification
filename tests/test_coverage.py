@@ -4,7 +4,7 @@ import json
 import unittest
 
 from contracts.contracts import Modality
-from evidence_fusion.coverage import (
+from embedding.evidence.coverage import (
     CoverageAccumulator,
     CoverageObservation,
     CoveragePolicy,

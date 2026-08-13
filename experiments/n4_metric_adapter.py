@@ -393,10 +393,10 @@ def materialize_embedding_cache(
         UsageLane,
         preprocess_image,
     )
-    from localization.nose_region.embedding_consistency_training import (
+    from embedding.methods.nose.training.embedding_consistency_training import (
         validate_lineage_manifest,
     )
-    from localization.nose_region.native_yt import validate_manifest_bundle
+    from parsing.nose_region.native_yt import validate_manifest_bundle
 
     manifest = validate_manifest_bundle(native_document.payload, root=native_root)
     lineage_root = n3_lineage_path.parent.resolve(strict=True)

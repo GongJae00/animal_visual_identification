@@ -14,8 +14,8 @@ from evaluation.retrieval import (
     compute_cosine_score_matrix,
     evaluate_multi_template_closed_set,
 )
-from identity_methods.nose.dataset import NoseIDDataset
-from identity_methods.nose.protocol import NoseIDProtocolFold
+from embedding.methods.nose.data.dataset import NoseIDDataset
+from embedding.methods.nose.data.protocol import NoseIDProtocolFold
 
 
 def evaluate_noseid_ablation(

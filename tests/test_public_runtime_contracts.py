@@ -30,8 +30,8 @@ from contracts.model_contract import (
     OnnxPreprocessingContract,
     PetReIDModelManifest,
 )
-from evidence_fusion.base import AbstractEvidencer
-from identity_governance.identity_registry import compute_registered_dog_id
+from embedding.evidence.base import AbstractEvidencer
+from identity.registry.identity_registry import compute_registered_dog_id
 from retrieval.gallery import IdentityGallery
 from retrieval.pipeline.extraction import EvidenceExtractionPipeline
 from retrieval.pipeline.retrieval import IdentityRetrievalPipeline
@@ -735,7 +735,7 @@ class PublicConfigurationTests(unittest.TestCase):
             }
             _ConfiguredLocalDinov2Evidencer.calls.clear()
             with patch(
-                "identity_methods.appearance.ReceiptBoundDinov2Small",
+                "embedding.methods.appearance.ReceiptBoundDinov2Small",
                 _ConfiguredLocalDinov2Evidencer,
             ):
                 runtime = IdentityEngine({
@@ -768,7 +768,7 @@ class PublicConfigurationTests(unittest.TestCase):
             }
             with (
                 patch(
-                    "identity_methods.appearance.ReceiptBoundDinov2Small",
+                    "embedding.methods.appearance.ReceiptBoundDinov2Small",
                     _ConfiguredLocalDinov2Evidencer,
                 ),
                 patch.object(
@@ -922,15 +922,15 @@ class PublicConfigurationTests(unittest.TestCase):
             _ConfiguredOnnxEvidencer.calls.clear()
             with (
                 patch(
-                    "identity_methods.backbones.extractors.DogFaceNetExtractor",
+                    "embedding.methods.backbones.extractors.DogFaceNetExtractor",
                     _ConfiguredOnnxEvidencer,
                 ),
                 patch(
-                    "identity_methods.backbones.extractors.ConvNeXtExtractor",
+                    "embedding.methods.backbones.extractors.ConvNeXtExtractor",
                     _ConfiguredOnnxEvidencer,
                 ),
                 patch(
-                    "identity_methods.backbones.extractors.PetReIDExtractor",
+                    "embedding.methods.backbones.extractors.PetReIDExtractor",
                     _ConfiguredOnnxEvidencer,
                 ),
             ):
@@ -975,7 +975,7 @@ class PublicConfigurationTests(unittest.TestCase):
             }
             _ConfiguredLandmarkEvidencer.calls.clear()
             with patch(
-                "localization.landmark_graph.LandmarkEvidencer",
+                "embedding.methods.landmark.LandmarkEvidencer",
                 _ConfiguredLandmarkEvidencer,
             ):
                 runtime = IdentityEngine({
@@ -1043,6 +1043,14 @@ class PublicConfigurationTests(unittest.TestCase):
             runtime.enroll(image, dog_id, breed=" beagle")
         with self.assertRaisesRegex(ValueError, "idempotency_key.*byte limit"):
             runtime.enroll(image, dog_id, idempotency_key="\u00e9" * 32_769)
+        for reserved in (
+            "template_id", "content_sha256", "idempotency_key", "template_schema"
+        ):
+            with self.subTest(reserved=reserved), self.assertRaisesRegex(
+                ValueError, "reserved"
+            ):
+                runtime.enroll(image, dog_id, metadata={reserved: "value"})
+            self.assertIsNone(runtime._retrieval.enroll_arguments)
         metadata = {"capture": {"camera": "front"}}
         self.assertEqual(runtime.enroll(image, dog_id, metadata=metadata), 7)
         metadata["capture"]["camera"] = "mutated"

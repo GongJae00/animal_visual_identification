@@ -6,7 +6,7 @@ import argparse
 import json
 from pathlib import Path
 
-from evaluation.capacity import CapacityPlan
+from systems.measurement.capacity import CapacityPlan
 
 
 def main() -> None:

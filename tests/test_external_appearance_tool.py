@@ -9,7 +9,7 @@ import zipfile
 from pathlib import Path
 from types import SimpleNamespace
 
-from identity_governance.protected_public_split import PublicSplitSample, PublicSplitSourceBundle
+from identity.splits.protected_public_split import PublicSplitSample, PublicSplitSourceBundle
 from workflows import evaluate_external_appearance as tool
 
 

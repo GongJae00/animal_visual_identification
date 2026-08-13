@@ -22,7 +22,7 @@ from foundation.protected_io import (
 )
 from foundation.protected_publication import fsync_directory, rename_directory_noreplace
 from foundation.provenance import content_sha256
-from identity_methods.nose.annotation import (
+from embedding.methods.nose.data.annotation import (
     ANNOTATION_TEMPLATE_SCHEMA,
     AcquisitionRecord,
     build_admission_receipt,
@@ -33,7 +33,7 @@ from identity_methods.nose.annotation import (
     validate_acquisition_records,
     validate_annotation_records,
 )
-from identity_methods.nose.extractor import YoloNoseDetector
+from embedding.methods.nose.extractor import YoloNoseDetector
 
 _BATCH_SCHEMA = "cvi.noseid.annotation_review_batch.v1"
 _BATCH_STATE = "NOT_ADMITTED_REQUIRES_HUMAN_ANNOTATION_AND_REVIEW"

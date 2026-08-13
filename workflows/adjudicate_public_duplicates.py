@@ -8,7 +8,10 @@ from collections import Counter
 from pathlib import Path
 
 from contracts.source_provenance import build_offline_tool_provenance
-from data.public_duplicate_adjudication import (
+from embedding.methods.classical.geometric_verifier import (
+    read_geometric_evidence_bundle,
+)
+from identity.splits.public_duplicate_adjudication import (
     AdjudicationMode,
     build_adjudication_chunk,
     build_duplicate_evidence_source_generation,
@@ -23,7 +26,6 @@ from data.public_duplicate_adjudication import (
     read_adjudication_chunk,
     read_adjudication_ledger,
     read_exact_graph,
-    read_geometric_chunks,
     read_source_bundle,
 )
 from foundation.protected_io import read_strict_json_object
@@ -149,7 +151,10 @@ def main() -> int:
                 if args.dinov2_filter_evidence is None
                 else read_strict_json_object(args.dinov2_filter_evidence)
             ),
-            geometric_evidence=read_geometric_chunks(args.geometric_evidence),
+            geometric_evidence=tuple(
+                read_geometric_evidence_bundle(path)
+                for path in args.geometric_evidence
+            ),
             geometric_admission_receipt=(
                 None
                 if args.geometric_admission_receipt is None

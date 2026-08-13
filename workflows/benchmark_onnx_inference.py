@@ -5,7 +5,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from operations.onnx_inference_benchmark import (
+from systems.measurement.onnx_inference_benchmark import (
     OnnxBenchmarkBackend,
     OnnxInferenceBenchmarkPolicy,
     benchmark_onnx_inference,

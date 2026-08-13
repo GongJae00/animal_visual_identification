@@ -16,7 +16,7 @@ import pytest
 import torch
 from torch import nn
 
-from evaluation.full128_analysis import (
+from evaluation.full_segment.full128_analysis import (
     RepresentationTraceError,
     build_executed_representation_trace_manifest,
     build_public_representation_analysis,
@@ -27,7 +27,7 @@ from evaluation.full128_analysis import (
     validate_public_representation_trace_manifest,
     validate_representation_trace_manifest,
 )
-from evaluation.full128_successors import (
+from evaluation.full_segment.full128_successors import (
     Full128SuccessorEvaluationError,
     build_authoritative_fixed_evaluation_panel,
     build_score_blind_fixed_evaluation_panel,
@@ -38,8 +38,8 @@ from evaluation.full128_successors import (
     sanitize_successor_evaluation_report,
 )
 from foundation.provenance import content_sha256
-from identity_methods.full_segment import face_visible
-from identity_methods.full_segment.face_visible import (
+from embedding.methods.full_segment import face_visible
+from embedding.methods.full_segment.face_visible import (
     FaceVisibleInventoryError,
     build_authoritative_face_visible_panel,
     build_face_visible_successor_inventory,
@@ -47,8 +47,8 @@ from identity_methods.full_segment.face_visible import (
     build_score_blind_face_visible_panel,
     validate_face_visible_successor_inventory_bundle,
 )
-from identity_methods.full_segment.materialization import ASSEMBLY_SCHEMA
-from identity_methods.full_segment.successor_models import (
+from embedding.methods.full_segment.preparation.materialization import ASSEMBLY_SCHEMA
+from embedding.methods.full_segment.models.successor_models import (
     Dinov2OccupancyProbe128,
     SpatialScorer128,
 )
@@ -754,7 +754,7 @@ def test_cache_validation_uses_owned_read_only_mapping_and_closes(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    import evaluation.full128_successors as successors
+    import evaluation.full_segment.full128_successors as successors
 
     *_, panel, inventory = successor_sources
 

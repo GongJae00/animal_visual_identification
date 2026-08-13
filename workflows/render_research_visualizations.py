@@ -15,7 +15,7 @@ from visualization.adapters import (
 )
 from visualization.contracts import FigureData
 from visualization.privacy import PublicationScope
-from visualization.publication import publish
+from visualization.publishing.publication import publish
 
 _LARGE_JSON = {
     "maximum_bytes": 2_147_483_648,

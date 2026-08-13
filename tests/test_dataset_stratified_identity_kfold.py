@@ -11,7 +11,7 @@ from tempfile import TemporaryDirectory
 import pytest
 
 from foundation.provenance import content_sha256
-from identity_governance.dataset_stratified_kfold import (
+from identity.research.dataset_stratified_kfold import (
     DatasetStratifiedIdentityKFoldManifest,
     DatasetStratifiedKFoldPolicy,
     HeldOutSampleRole,
@@ -20,14 +20,14 @@ from identity_governance.dataset_stratified_kfold import (
     materialize_identity_fold,
     read_dataset_stratified_identity_kfold,
 )
-from identity_governance.identity_registry import (
+from identity.registry.identity_registry import (
     REGISTERED_DOG_NAMESPACE,
     compute_identity_token,
     compute_registered_dog_id,
     compute_sample_token,
     compute_sequence_token,
 )
-from identity_governance.research_cycle_admission import (
+from identity.research.research_cycle_admission import (
     CVI_RESEARCH_CYCLE_NAMESPACE,
     IdentityTargetMode,
     ResearchCycleManifest,
@@ -40,7 +40,7 @@ from identity_governance.research_cycle_admission import (
     ResearchSourceRole,
     compute_research_cycle_id,
 )
-from identity_governance.role_exposure import ExposureStage
+from identity.exposure.role_exposure import ExposureStage
 
 _IDENTITY_DATASETS = ("dogfacenet224", "mpdd", "sibetan", "yt-bb-dog")
 _ALL_DATASETS = (*_IDENTITY_DATASETS, "ap10k-dog", "dogflw")

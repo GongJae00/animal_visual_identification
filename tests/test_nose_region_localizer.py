@@ -13,7 +13,7 @@ import torch
 from PIL import Image
 from torch import nn
 
-import localization.nose_region.localizer as localizer_module
+import parsing.nose_region.localizer as localizer_module
 from contracts.artifact_manifest import (
     ArtifactLicense,
     ExactOnnxRuntime,
@@ -21,7 +21,7 @@ from contracts.artifact_manifest import (
     NoseDetectorManifest,
     UsageLane,
 )
-from localization.nose_region.localizer import (
+from parsing.nose_region.localizer import (
     AP10K_SUPPORTED_INDICES,
     KEYPOINT_ORDER,
     LetterboxTransform,

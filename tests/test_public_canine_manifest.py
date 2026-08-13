@@ -6,7 +6,7 @@ import unittest
 from dataclasses import replace
 from pathlib import Path
 
-from data.public_canine_manifest import (
+from data.public.public_canine_manifest import (
     DOGFACE_DATASET,
     DOGFACE_POLICY,
     MPDD_DATASET,

@@ -8,7 +8,7 @@ from pathlib import Path
 
 from contracts.source_provenance import build_offline_tool_provenance
 from foundation.protected_io import read_strict_json_object
-from identity_methods.classical.pdq_source_intake import (
+from embedding.methods.classical.pdq.source_intake import (
     PdqSourceContract,
     audit_pdq_source_archive,
     publish_pdq_source_bundle,

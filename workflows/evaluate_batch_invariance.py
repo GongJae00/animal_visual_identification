@@ -7,8 +7,8 @@ import json
 from pathlib import Path
 from typing import Any
 
-from evaluation.batch_invariance import BatchInvariancePrecommitment
-from operations.batch_invariance_runner import (
+from evaluation.integrity.batch_invariance import BatchInvariancePrecommitment
+from systems.workers.batch_invariance_runner import (
     BatchFreshWorkerDiscovery,
     BatchFreshWorkerReceipt,
     BatchWorkerExecutionPolicy,

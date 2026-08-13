@@ -9,13 +9,13 @@ from tempfile import TemporaryDirectory
 
 import pytest
 
-from identity_governance.identity_registry import (
+from identity.registry.identity_registry import (
     compute_identity_token,
     compute_public_subject_token,
     compute_sample_token,
     compute_sequence_token,
 )
-from identity_governance.protected_public_split import (
+from identity.splits.protected_public_split import (
     EvidenceRelation,
     FrozenPublicSplitEvidenceGraph,
     PublicSplitEvidenceEdge,
@@ -23,7 +23,7 @@ from identity_governance.protected_public_split import (
     PublicSplitSourceBundle,
 )
 from foundation.provenance import content_sha256
-from identity_governance.research_cycle_admission import (
+from identity.research.research_cycle_admission import (
     IdentityTargetMode,
     ResearchCycleManifest,
     ResearchLicenseLane,
@@ -33,7 +33,7 @@ from identity_governance.research_cycle_admission import (
     ResearchSourceRole,
     build_research_cycle_manifest,
 )
-from identity_governance.role_exposure import (
+from identity.exposure.role_exposure import (
     ExposureDeclarationKind,
     ExposureStage,
     RoleExposureDeclaration,

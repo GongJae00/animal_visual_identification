@@ -6,13 +6,13 @@ import unittest
 import torch
 from torch import nn
 
-from identity_methods.face.losses import (
+from embedding.methods.face.losses import (
     FaceIDObjective,
     FaceResidualObjective,
     objective_anchor_coverage,
 )
-from identity_methods.face.model import FaceIDModel
-from identity_methods.face.residual_model import FaceIDResidualModel
+from embedding.methods.face.model import FaceIDModel
+from embedding.methods.face.residual_model import FaceIDResidualModel
 from experiments.face_evaluation import paired_face_retrieval_comparison
 
 
@@ -178,7 +178,7 @@ class FacePairedComparisonTests(unittest.TestCase):
 
 class FaceIDSamplerTests(unittest.TestCase):
     def test_p16_k4_batch(self) -> None:
-        from identity_methods.face.sampler import FaceReIDSampler
+        from embedding.methods.face.sampler import FaceReIDSampler
 
         ids = [f"dog-{i}" for i in range(20) for _ in range(8)]
         sessions = [f"s{j % 2}" for j in range(160)]

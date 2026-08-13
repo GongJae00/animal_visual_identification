@@ -33,13 +33,13 @@ from experiments.unified_multievidence import (
 )
 from foundation.protected_io import read_strict_json_document, write_private_json_bundle
 from foundation.provenance import content_sha256
-from identity_methods.appearance import ReceiptBoundDinov2Small
-from localization.nose_region.embedding_consistency_training import (
+from embedding.methods.appearance import ReceiptBoundDinov2Small
+from embedding.methods.nose.training.embedding_consistency_training import (
     load_consistency_checkpoint,
 )
-from localization.nose_region.embedding_training import load_receipt_bound_dinov2
-from localization.nose_region.native_yt import validate_manifest_bundle
-from localization.roi_manifest import read_roi_manifest
+from embedding.methods.nose.training.embedding_training import load_receipt_bound_dinov2
+from parsing.nose_region.native_yt import validate_manifest_bundle
+from parsing.roi_manifest import read_roi_manifest
 
 SCHEMA = "cvi.yt_masked_multievidence_policy.v2"
 BUNDLE_SCHEMA = "cvi.yt_masked_multievidence_policy_bundle.v2"

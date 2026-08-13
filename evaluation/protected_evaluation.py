@@ -19,7 +19,7 @@ from foundation.protected_io import (
     write_private_json_directory_bundle,
 )
 from foundation.provenance import content_sha256
-from identity_governance.role_exposure import (
+from identity.exposure.role_exposure import (
     CandidateRoleAssignment,
     CandidateRoleRecord,
     ExposureDeclarationKind,

@@ -7,7 +7,7 @@ import json
 from pathlib import Path
 
 from contracts.source_provenance import build_offline_tool_provenance
-from data.public_dataset import (
+from data.public.public_dataset import (
     PublicDatasetArchivePolicy,
     PublicDatasetSourceContract,
     audit_public_dataset_zip,

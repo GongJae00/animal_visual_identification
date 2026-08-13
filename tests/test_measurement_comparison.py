@@ -11,31 +11,31 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from data.acquisition import sha256_file
-from evaluation.control_scoring import (
+from evaluation.controls.control_scoring import (
     ArtifactCacheBinding,
     EmbeddingCacheEntry,
     EmbeddingCacheManifest,
     embedding_cache_key,
 )
-from evaluation.measurement_comparison import (
+from evaluation.integrity.measurement_comparison import (
     MeasurementAdmissionDecision,
     PairedInferenceMeasurementReceipt,
     compare_paired_inference_measurements,
 )
-from evaluation.numerical_admission import (
+from evaluation.integrity.numerical_admission import (
     NumericalAdmissionDecision,
     NumericalDriftPolicy,
     compare_embedding_caches,
 )
-from operations.embedding_producer import (
+from systems.inference.embedding_producer import (
     EmbeddingBackendIdentity,
     EmbeddingProducerConfig,
 )
-from operations.onnx_inference_benchmark import (
+from systems.measurement.onnx_inference_benchmark import (
     OnnxBenchmarkBackend,
     OnnxInferenceBenchmarkSummary,
 )
-from representation_learning.optimization import PromotionDecision
+from embedding.learning.optimization import PromotionDecision
 from tests.test_onnx_inference_benchmark import (
     OPTIONAL_CUDA_ONNX_AVAILABLE,
     benchmark_policy,

@@ -11,41 +11,41 @@ from typing import Any
 import pytest
 
 from foundation.provenance import content_sha256
-from identity_governance import (
+from identity.face import (
     face_exposure_history,
     face_identity_protocol_v2,
     face_public_source_binding,
 )
-from identity_governance.face_exposure_history import (
+from identity.face.face_exposure_history import (
     build_face_exposure_history,
     validate_face_exposure_history_bundle,
 )
-from identity_governance.face_gallery_query_panel import (
+from identity.face.face_gallery_query_panel import (
     build_face_gallery_query_panel,
     validate_face_gallery_query_panel_bundle,
 )
-from identity_governance.face_identity_protocol_v2 import (
+from identity.face.face_identity_protocol_v2 import (
     build_face_identity_protocol_v2,
     validate_face_identity_protocol_v2_bundle,
 )
-from identity_governance.face_public_source_binding import (
+from identity.face.face_public_source_binding import (
     build_face_public_source_binding,
     validate_face_public_source_binding_bundle,
 )
-from identity_governance.identity_registry import (
+from identity.registry.identity_registry import (
     compute_identity_token,
     compute_registered_dog_id,
     compute_sample_token,
     compute_sequence_token,
 )
-from identity_governance.protected_public_split import (
+from identity.splits.protected_public_split import (
     EvidenceRelation,
     FrozenPublicSplitEvidenceGraph,
     PublicSplitEvidenceEdge,
     PublicSplitSample,
     PublicSplitSourceBundle,
 )
-from identity_governance.role_exposure import ExposureStage
+from identity.exposure.role_exposure import ExposureStage
 
 ROOT = Path(__file__).parents[1]
 

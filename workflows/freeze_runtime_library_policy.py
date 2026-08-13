@@ -13,7 +13,7 @@ from foundation.protected_io import (
     read_content_hashed_json_bundle,
     write_private_json_bundle,
 )
-from operations.onnx_inference_benchmark import OnnxInferenceBenchmarkSummary
+from systems.measurement.onnx_inference_benchmark import OnnxInferenceBenchmarkSummary
 
 
 def main() -> None:

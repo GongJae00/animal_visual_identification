@@ -6,8 +6,8 @@ import argparse
 import json
 from pathlib import Path
 
-from data.dataset import SplitManifest
-from evaluation.pairing import (
+from identity.splits.tracklet_split import SplitManifest
+from evaluation.controls.pairing import (
     PairingPolicy,
     construct_verification_pairs,
     dog_attributes_from_payload,

@@ -5,14 +5,14 @@ import unittest
 from dataclasses import replace
 from pathlib import Path
 
-from identity_methods.classical.pdq_regression_source_intake import (
+from embedding.methods.classical.pdq.regression_source_intake import (
     PDQ_REGRESSION_ASSET_PATHS,
     PDQ_REGRESSION_COMMIT_SHA,
     PDQ_REGRESSION_SELECTED_PATHS,
     PDQ_REGRESSION_TREE_SHA,
     validate_pdq_regression_source_contract,
 )
-from identity_methods.classical.pdq_source_intake import PdqSelectedSourceMember, PdqSourceContract
+from embedding.methods.classical.pdq.source_intake import PdqSelectedSourceMember, PdqSourceContract
 
 
 class PdqRegressionSourceIntakeTests(unittest.TestCase):

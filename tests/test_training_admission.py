@@ -8,14 +8,14 @@ from tempfile import TemporaryDirectory
 
 from PIL import Image
 
-from data.public_crop_manifest import (
+from data.public.public_crop_manifest import (
     PublicCropArtifact,
     PublicCropManifest,
     canonical_rgb_pixel_sha256,
     read_verified_crop_artifact,
     verify_public_crop_manifest,
 )
-from identity_governance.role_exposure import (
+from identity.exposure.role_exposure import (
     ExposureDeclarationKind,
     ExposureStage,
     RoleExposureDeclaration,
@@ -23,7 +23,7 @@ from identity_governance.role_exposure import (
     create_role_exposure_receipt,
     merge_role_exposure_declarations,
 )
-from identity_governance.training_admission import (
+from identity.admission.training_admission import (
     TrainingAdmissionManifest,
     TrainingAdmissionReceipt,
     TrainingCropRow,

@@ -16,7 +16,7 @@ from contracts.foundation_vision_model import (
     foundation_model_bundle,
 )
 from foundation.provenance import content_sha256
-from localization.foundation_dense_runtime import _prepare_images
+from parsing.regions.foundation_dense_runtime import _prepare_images
 
 
 def _binding(root: Path, name: str, payload: bytes) -> FoundationFileBinding:

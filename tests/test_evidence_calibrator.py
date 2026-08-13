@@ -6,7 +6,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from evidence_fusion.calibrator import PerChannelCalibrator
+from embedding.evidence.calibrator import PerChannelCalibrator
 
 
 def _fitted() -> PerChannelCalibrator:

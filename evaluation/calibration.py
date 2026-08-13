@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 from sklearn.metrics import brier_score_loss
-from evidence_fusion.calibrator import CalibrationError, fit_isotonic_calibration
+from embedding.evidence.calibrator import CalibrationError, fit_isotonic_calibration
 
 
 class InvalidProbabilityError(CalibrationError):

@@ -19,15 +19,15 @@ from foundation.protected_io import read_strict_json_document, write_private_jso
 from foundation.protected_publication import fsync_directory, rename_directory_noreplace
 from foundation.provenance import content_sha256
 from foundation.retained_file import read_retained_regular_file
-from localization.foundation_dense_runtime import FoundationDenseRuntime
-from localization.foundation_region_candidate import derive_binary_foundation_candidate
-from localization.region_teacher_consensus import (
+from parsing.regions.foundation_dense_runtime import FoundationDenseRuntime
+from parsing.regions.foundation_region_candidate import derive_binary_foundation_candidate
+from parsing.regions.region_teacher_consensus import (
     INTERPRETATION,
     RegionConsensusPolicy,
     RegionTeacherBinding,
     region_teacher_consensus,
 )
-from localization.sam2_prompt_runtime import Sam2PromptRuntime
+from parsing.regions.sam2_prompt_runtime import Sam2PromptRuntime
 
 SCHEMA = "cvi.foundation_appearance_agreement_panel.v1"
 

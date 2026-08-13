@@ -5,7 +5,7 @@ from copy import deepcopy
 
 import pytest
 
-from identity_governance.generated_identity_registry import (
+from identity.registry.generated_identity_registry import (
     GENERATED_DOG_NAMESPACE,
     GeneratedIdentityRegistry,
     GeneratedIdentityStatus,
@@ -14,7 +14,7 @@ from identity_governance.generated_identity_registry import (
     create_provisional_identity,
     transition_generated_identity,
 )
-from identity_governance.identity_registry import compute_registered_dog_id
+from identity.registry.identity_registry import compute_registered_dog_id
 
 
 def test_generated_namespace_is_stable_and_separate() -> None:

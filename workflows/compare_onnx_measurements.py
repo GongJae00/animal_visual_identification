@@ -6,11 +6,11 @@ import argparse
 from pathlib import Path
 from typing import Any
 
-from evaluation.control_scoring import EmbeddingCacheManifest
-from operations.embedding_producer import EmbeddingProducerConfig
-from evaluation.measurement_comparison import compare_paired_inference_measurements
-from evaluation.numerical_admission import NumericalAdmissionReceipt
-from operations.onnx_inference_benchmark import OnnxInferenceBenchmarkSummary
+from evaluation.controls.control_scoring import EmbeddingCacheManifest
+from systems.inference.embedding_producer import EmbeddingProducerConfig
+from evaluation.integrity.measurement_comparison import compare_paired_inference_measurements
+from evaluation.integrity.numerical_admission import NumericalAdmissionReceipt
+from systems.measurement.onnx_inference_benchmark import OnnxInferenceBenchmarkSummary
 from foundation.protected_io import (
     read_content_hashed_json_bundle,
     read_strict_json_object,

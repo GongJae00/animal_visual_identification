@@ -6,8 +6,8 @@ import argparse
 import json
 from pathlib import Path
 
-from data.dataset import SplitManifest
-from identity_governance.leakage import association_audit
+from identity.splits.tracklet_split import SplitManifest
+from identity.audit.leakage import association_audit
 
 
 def main() -> None:

@@ -19,7 +19,7 @@ from pathlib import Path, PurePosixPath
 
 from PIL import Image
 
-from data.public_canine_manifest import (
+from data.public.public_canine_manifest import (
     DOGFACE_TEST_MD5,
     DOGFACE_TEST_SHA256,
     DOGFACE_TRAIN_MD5,
@@ -30,7 +30,7 @@ from data.types import (
     CaptureGroupKind,
     UnifiedCanidSample,
 )
-from identity_governance.identity_registry import (
+from contracts.identity_ids import (
     compute_registered_dog_id,
     compute_sample_token,
 )

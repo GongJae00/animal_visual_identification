@@ -21,15 +21,15 @@ import torch
 import torch.nn.functional as F
 from PIL import Image
 
-from data.public_canine_manifest import (
+from data.public.public_canine_manifest import (
     DOGFACE_DATASET,
     MPDD_DATASET,
     SIBETAN_DATASET,
     ArchiveReceiptBinding,
     PublicCanineRecord,
 )
-from data.public_canine_semantic_intake import derive_public_canine_semantics
-from data.public_dataset_receipt_io import read_public_archive_receipt_bundle
+from data.public.public_canine_semantic_intake import derive_public_canine_semantics
+from data.public.public_dataset_receipt_io import read_public_archive_receipt_bundle
 from evaluation.retrieval import (
     compute_cosine_score_matrix,
     evaluate_multi_template_closed_set,
@@ -37,12 +37,12 @@ from evaluation.retrieval import (
 )
 from foundation.protected_io import read_strict_json_object, write_private_json_bundle
 from foundation.provenance import content_sha256
-from identity_governance.protected_public_split import PublicSplitSourceBundle
-from identity_governance.split_registry_binding import (
+from identity.splits.protected_public_split import PublicSplitSourceBundle
+from identity.splits.split_registry_binding import (
     validate_assignment_and_evaluator_binding,
 )
-from identity_governance.training_admission import TrainingAdmissionReceipt
-from identity_methods.appearance import ReceiptBoundDinov2Small
+from identity.admission.training_admission import TrainingAdmissionReceipt
+from embedding.methods.appearance import ReceiptBoundDinov2Small
 
 if __package__:
     from workflows.evaluate_roi_reid import _reconstruct_dinov2_model

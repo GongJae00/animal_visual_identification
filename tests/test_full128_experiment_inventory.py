@@ -13,7 +13,7 @@ from PIL import Image
 
 from data.source_lock import get_record
 from foundation.provenance import content_sha256
-from identity_governance.full_split_census import (
+from identity.full.full_split_census import (
     FullStatus,
     IdentityEvidenceKind,
     RegionStatus,
@@ -23,23 +23,23 @@ from identity_governance.full_split_census import (
     allocate_unified_full_split,
     unified_full_split_bundle,
 )
-from identity_governance.generated_identity_registry import (
+from identity.registry.generated_identity_registry import (
     GENERATED_DOG_NAMESPACE,
     compute_generated_identity_id,
     compute_source_cluster_token,
 )
-from identity_governance.identity_registry import (
+from identity.registry.identity_registry import (
     REGISTERED_DOG_NAMESPACE,
     compute_registered_dog_id,
 )
-from identity_methods.full_segment import inventory
-from identity_methods.full_segment.data import load_full128_assembly
-from identity_methods.full_segment.inventory import (
+from embedding.methods.full_segment.preparation import inventory
+from embedding.methods.full_segment.preparation.data import load_full128_assembly
+from embedding.methods.full_segment.preparation.inventory import (
     build_full128_experiment_inventory,
     validate_full128_experiment_inventory_bundle,
 )
-from identity_methods.full_segment.materialization import ASSEMBLY_SCHEMA
-from localization.full_segment_contracts import FullSegmentObservation
+from embedding.methods.full_segment.preparation.materialization import ASSEMBLY_SCHEMA
+from parsing.full_segment.full_segment_contracts import FullSegmentObservation
 from workflows.build_full128_experiment_inventory import (
     REQUEST_SCHEMA,
 )

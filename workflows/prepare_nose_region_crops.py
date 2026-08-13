@@ -16,30 +16,30 @@ from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from typing import Any, Mapping, Sequence
 
-from data.public_canine_manifest import (
+from data.public.public_canine_manifest import (
     DOGFACE_DATASET,
     MPDD_DATASET,
     ArchiveReceiptBinding,
     PublicCanineRecord,
 )
-from data.public_canine_semantic_intake import derive_public_canine_semantics
-from data.public_dataset_receipt_io import read_public_archive_receipt_bundle
+from data.public.public_canine_semantic_intake import derive_public_canine_semantics
+from data.public.public_dataset_receipt_io import read_public_archive_receipt_bundle
 from foundation.protected_io import (
     StrictJsonDocument,
     json_document_bytes,
     read_strict_json_document,
 )
 from foundation.provenance import content_sha256
-from identity_governance.identity_registry import (
+from identity.registry.identity_registry import (
     compute_identity_token,
     compute_registered_dog_id,
     compute_sample_token,
 )
-from identity_governance.protected_public_split import PublicSplitSourceBundle
-from identity_governance.split_registry_binding import (
+from identity.splits.protected_public_split import PublicSplitSourceBundle
+from identity.splits.split_registry_binding import (
     validate_assignment_and_evaluator_binding,
 )
-from localization.nose_region.manifest import (
+from parsing.nose_region.manifest import (
     LICENSING_LANES,
     REQUIRED_DATASET_SPLITS,
     admitted_split_for_role,
@@ -710,7 +710,7 @@ def _load_localizer(checkpoint_bytes: bytes, device_name: str):
     import timm
     import torch
 
-    from localization.nose_region.localizer import (
+    from parsing.nose_region.localizer import (
         INPUT_SIZE,
         KEYPOINT_ORDER,
         MOBILENETV4_MODEL_NAME,
@@ -821,7 +821,7 @@ def _detect(model: Any, device: Any, image: Any) -> tuple[list[float], float, fl
     import torch
     from PIL import Image
 
-    from localization.nose_region.localizer import (
+    from parsing.nose_region.localizer import (
         INPUT_SIZE,
         NOSE_POINT_INDICES,
         image_to_tensor,

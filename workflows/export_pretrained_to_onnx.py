@@ -29,14 +29,14 @@ from contracts.model_parity import (
     ParityFixtureResult,
     ParityThresholds,
 )
-from contracts.pretrained_supporting_asset_intake import (
+from contracts.intake.pretrained_supporting_asset_intake import (
     parse_bounded_strict_json_object,
 )
 from data.crop_export import CropExportReceipt
 from foundation.protected_io import read_strict_json_object
 from foundation.provenance import content_sha256
 from foundation.retained_file import read_retained_regular_file
-from operations.onnx_backend import (
+from systems.inference.onnx_backend import (
     dinov2_image_preprocessing_config,
     preprocess_image_batch,
 )

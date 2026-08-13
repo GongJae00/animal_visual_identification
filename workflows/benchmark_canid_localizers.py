@@ -12,21 +12,21 @@ from PIL import Image
 
 from data.adapters import ADAPTERS
 from data.source_lock import get_record
-from localization.adapters import (
+from parsing.adapters import (
     TorchvisionFasterRCNNDogAdapter,
     UltralyticsDogAdapter,
     UltralyticsDogPoseAdapter,
 )
-from localization.benchmark import (
+from evaluation.localization import (
     ap10k_body17_pose_summary,
     build_contact_sheet,
 )
-from localization.prediction_cache import (
+from parsing.prediction_cache import (
     build_prediction_cache,
     write_prediction_cache,
 )
-from localization.quality import detection_average_precision
-from localization.types import (
+from evaluation.localization_metrics import detection_average_precision
+from parsing.types import (
     AP10K_BODY_17_SCHEMA,
     DetectionBox,
     Keypoint,

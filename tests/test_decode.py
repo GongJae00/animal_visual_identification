@@ -6,7 +6,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from data.decode import (
+from systems.measurement.decode import (
     DecodeBackend,
     DecodeConfig,
     DecodeRun,
@@ -114,15 +114,15 @@ class DecodeTests(unittest.TestCase):
         run = DecodeRun(30, 1.0, 1.0, 0.1, 0.1, 1.0, 1024, 1_000_000)
         with (
             patch(
-                "data.decode.run_decode_once",
+                "systems.measurement.decode.run_decode_once",
                 return_value=(run, ("ffmpeg",)),
             ),
             patch(
-                "data.decode.probe_video_file",
+                "systems.measurement.decode.probe_video_file",
                 return_value=SimpleNamespace(average_fps=30.0),
             ),
             patch(
-                "data.decode.subprocess.run",
+                "systems.measurement.decode.subprocess.run",
                 return_value=SimpleNamespace(stdout="ffmpeg version fixture\n"),
             ),
         ):

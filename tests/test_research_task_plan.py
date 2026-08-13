@@ -9,14 +9,14 @@ import sys
 import pytest
 
 from foundation.provenance import content_sha256
-from identity_governance.research_cycle_admission import (
+from identity.research.research_cycle_admission import (
     IdentityTargetMode,
     ResearchLicenseLane,
     ResearchSourceAdmission,
     ResearchSourceAdmissions,
     ResearchSourceRole,
 )
-from identity_governance.research_task_plan import (
+from identity.research.research_task_plan import (
     ResearchTask,
     ResearchTaskAssignment,
     ResearchTaskPlan,

@@ -8,12 +8,12 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from foundation.protected_io import read_strict_json_document
-from identity_methods.full_segment.artifacts import (
+from embedding.methods.full_segment.training.artifacts import (
     default_full128_run_config,
     validate_full128_run_config,
 )
-from identity_methods.full_segment.data import load_full128_assembly
-from representation_learning.full128 import run_full128_training
+from embedding.methods.full_segment.preparation.data import load_full128_assembly
+from embedding.learning.full_segment.full128 import run_full128_training
 
 
 def _parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:

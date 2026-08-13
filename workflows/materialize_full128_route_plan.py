@@ -9,13 +9,13 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from foundation.protected_io import write_private_json_bundle
-from identity_methods.full_segment.materialization import (
+from embedding.methods.full_segment.preparation.materialization import (
     assemble_full128_materialization,
     build_bound_parser_runtime,
     materialize_full128_route_plan,
     read_route_plan_bundle,
 )
-from identity_methods.full_segment.route_plan import (
+from data.full_segment.route_plan import (
     validate_full128_route_plan_bundle,
 )
 

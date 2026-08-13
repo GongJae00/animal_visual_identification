@@ -13,12 +13,12 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader
 
-from identity_methods.nose.checkpoint import (
+from embedding.methods.nose.training.checkpoint import (
     replace_training_checkpoint,
     save_training_checkpoint,
 )
-from identity_methods.nose.config import NoseIDConfig, NoseIDTrainConfig
-from identity_methods.nose.dataset import (
+from embedding.methods.nose.training.config import NoseIDConfig, NoseIDTrainConfig
+from embedding.methods.nose.data.dataset import (
     NoseIDDataset,
     load_identity_split,
     load_noseid_manifest,
@@ -27,14 +27,14 @@ from experiments.nose_evaluation import (
     evaluate_dev_folds,
     extract_oracle_representations,
 )
-from identity_methods.nose.hard_negative import (
+from embedding.methods.nose.training.hard_negative import (
     mine_hard_neighbors,
     select_session_balanced_indices,
 )
-from identity_methods.nose.losses import NoseIDObjective
-from identity_methods.nose.protocol import build_dev_n3_folds
-from identity_methods.nose.sampler import CrossSessionPKBatchSampler
-from identity_methods.nose.trainer import (
+from embedding.methods.nose.training.losses import NoseIDObjective
+from embedding.methods.nose.data.protocol import build_dev_n3_folds
+from embedding.methods.nose.training.sampler import CrossSessionPKBatchSampler
+from embedding.methods.nose.training.trainer import (
     build_frozen_stage_optimizer,
     build_noseid_model,
     build_stage_c_scheduler,

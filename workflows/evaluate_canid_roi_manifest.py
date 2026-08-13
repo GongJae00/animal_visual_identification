@@ -8,9 +8,9 @@ from pathlib import Path
 
 from data.adapters import adapt_ap10k_dog
 from foundation.protected_io import write_private_json_bundle
-from localization.quality import greedy_bipartite_match
-from localization.roi_manifest import read_roi_manifest
-from localization.types import DetectionBox
+from evaluation.localization_metrics import greedy_bipartite_match
+from parsing.roi_manifest import read_roi_manifest
+from parsing.types import DetectionBox
 
 
 def parse_args() -> argparse.Namespace:

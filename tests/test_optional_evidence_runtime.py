@@ -15,13 +15,13 @@ import numpy as np
 from PIL import Image
 
 from canine_identity.engine import IdentityEngine, Match
-from evidence_fusion.base import (
+from embedding.evidence.base import (
     AbstractEvidencer,
     EvidenceObservation,
     EvidenceUnavailableReason,
     RequiredEvidenceUnavailableError,
 )
-from identity_governance.identity_registry import compute_registered_dog_id
+from identity.registry.identity_registry import compute_registered_dog_id
 from retrieval.gallery import IdentityGallery
 from retrieval.pipeline.extraction import EvidenceExtractionPipeline
 from retrieval.pipeline.retrieval import IdentityRetrievalPipeline
@@ -513,7 +513,7 @@ class ConfigAndMigrationTests(unittest.TestCase):
                     return_value=embedding_manifest,
                 ),
                 patch(
-                    "identity_methods.nose.extractor.NosePrintExtractor",
+                    "embedding.methods.nose.extractor.NosePrintExtractor",
                     _ConfiguredNoseEvidence,
                 ),
             ):

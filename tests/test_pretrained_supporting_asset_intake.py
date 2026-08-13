@@ -10,7 +10,7 @@ from dataclasses import replace
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from contracts.pretrained_supporting_asset_intake import (
+from contracts.intake.pretrained_supporting_asset_intake import (
     MAXIMUM_JSON_ARRAY_LENGTH,
     MAXIMUM_JSON_DEPTH,
     MAXIMUM_JSON_KEYS,
@@ -22,7 +22,7 @@ from contracts.pretrained_supporting_asset_intake import (
     parse_bounded_strict_json_object,
     validate_pretrained_supporting_asset_receipt_binding,
 )
-from contracts.pretrained_weight_intake import (
+from contracts.intake.pretrained_weight_intake import (
     PretrainedWeightChecksumAuthority,
     PretrainedWeightFileFormat,
     PretrainedWeightIntakeReceipt,

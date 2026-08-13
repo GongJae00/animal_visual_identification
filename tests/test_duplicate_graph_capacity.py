@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import unittest
 
-from identity_governance.duplicate_graph_capacity import analyze_duplicate_graph_capacity
-from identity_governance.protected_public_split import (
+from identity.splits.duplicate_graph_capacity import analyze_duplicate_graph_capacity
+from identity.splits.protected_public_split import (
     EvidenceRelation,
     FrozenPublicSplitEvidenceGraph,
     ProtectedPublicSplitPolicy,

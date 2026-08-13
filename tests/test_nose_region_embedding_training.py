@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import hashlib
 import subprocess
 import sys
@@ -19,8 +20,8 @@ from contracts.artifact_manifest import (
     preprocess_image,
 )
 from contracts.model_parity import ParityFixtureKind, ParityThresholds
-from localization.nose_region import embedding_consistency_training as consistency
-from localization.nose_region.embedding_consistency_training import (
+from embedding.methods.nose.training import embedding_consistency_training as consistency
+from embedding.methods.nose.training.embedding_consistency_training import (
     build_consistency_checkpoint,
     build_identity_partitions,
     deterministic_mild_degradation,
@@ -29,7 +30,7 @@ from localization.nose_region.embedding_consistency_training import (
     native_consistency_loss,
     select_epoch,
 )
-from localization.nose_region.embedding_training import (
+from embedding.methods.nose.training.embedding_training import (
     DEV_INTERPRETATION,
     EMBEDDING_DIM,
     LICENSE_ID,
@@ -45,7 +46,7 @@ from localization.nose_region.embedding_training import (
     produce_parity_receipt,
     replace_embedding_checkpoint,
 )
-from localization.nose_region.embedding_views import student_masked_rgb
+from embedding.methods.nose.data.embedding_views import student_masked_rgb
 
 
 def _dog(name: str) -> str:
@@ -592,7 +593,10 @@ def _consistency_bindings() -> dict:
         },
         "splits": splits,
         "old_dev_protocol": {"fixture": True},
-        "code_sha256s": {f"file-{index}": str(index) * 64 for index in range(5)},
+        "code_sha256s": {
+            path: str(index) * 64
+            for index, path in enumerate(consistency._CODE_PATHS)
+        },
         "config_sha256": "6" * 64,
         "license": {"license_id": consistency.LICENSE_ID, "usage_lane": "RESEARCH_ONLY"},
     }
@@ -612,6 +616,27 @@ def _consistency_config() -> dict:
         device_name="cpu",
         parity_thresholds=ParityThresholds(1e-4, 2e-2, 1e-4, 0.99999),
     )
+
+
+def test_consistency_bindings_accept_only_complete_code_path_generations() -> None:
+    current = _consistency_bindings()
+    consistency._validate_bindings(current)
+
+    for paths in (
+        consistency._PRE_EMBEDDING_CODE_PATHS,
+        consistency._LEGACY_CODE_PATHS,
+    ):
+        historical = copy.deepcopy(current)
+        historical["code_sha256s"] = {
+            path: str(index) * 64 for index, path in enumerate(paths)
+        }
+        consistency._validate_bindings(historical)
+
+    mixed = copy.deepcopy(current)
+    digest = mixed["code_sha256s"].pop(consistency._CODE_PATHS[0])
+    mixed["code_sha256s"][consistency._PRE_EMBEDDING_CODE_PATHS[0]] = digest
+    with pytest.raises(ValueError, match="code binding"):
+        consistency._validate_bindings(mixed)
 
 
 def test_consistency_checkpoint_rejects_metadata_and_tensor_tamper(tmp_path: Path) -> None:

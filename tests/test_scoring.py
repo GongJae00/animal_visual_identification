@@ -6,14 +6,14 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from data.acquisition import sha256_file
-from data.dataset import EvaluationStage
+from identity.splits.tracklet_split import EvaluationStage
 from evaluation import (
     ClusterBootstrapConfig,
     ClusterUnit,
     FrozenVerificationThreshold,
     VerificationDirection,
 )
-from evaluation.pairing import (
+from evaluation.controls.pairing import (
     NegativeQuota,
     PairArtifactBinding,
     PairConstructionResult,
@@ -22,7 +22,7 @@ from evaluation.pairing import (
     PairScoringRequest,
     PairStratum,
 )
-from evaluation.scoring import (
+from evaluation.controls.scoring import (
     BlindPairScore,
     BlindScoreReceipt,
     PairArtifactEntry,

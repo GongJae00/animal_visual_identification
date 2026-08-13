@@ -13,21 +13,21 @@ from typing import Any
 import torch
 from torch import nn
 
-from contracts.pretrained_weight_intake import (
+from contracts.intake.pretrained_weight_intake import (
     PretrainedWeightIntakeReceipt,
     PretrainedWeightSourceContract,
     validate_pretrained_weight_receipt_binding,
 )
-from data.public_crop_manifest import PublicCropManifest
+from data.public.public_crop_manifest import PublicCropManifest
 from foundation.protected_io import read_strict_json_object
 from foundation.provenance import content_sha256
 from foundation.retained_file import read_retained_regular_file
-from identity_governance.role_exposure import RoleExposureLedger, RoleExposureReceipt
-from identity_governance.training_admission import (
+from identity.exposure.role_exposure import RoleExposureLedger, RoleExposureReceipt
+from identity.admission.training_admission import (
     TrainingAdmissionManifest,
     TrainingAdmissionReceipt,
 )
-from representation_learning.trainer import (
+from embedding.learning.train.trainer import (
     ConvNeXtEmbedding,
     Dinov2Embedding,
     TrainConfig,

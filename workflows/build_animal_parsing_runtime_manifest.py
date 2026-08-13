@@ -26,18 +26,18 @@ from contracts.source_provenance import build_source_provenance
 from foundation.protected_io import json_document_bytes, read_strict_json_document
 from foundation.protected_publication import fsync_directory
 from foundation.provenance import content_sha256
-from localization.animal_parsing import (
+from parsing.full_segment.animal_parsing import (
     PARSING_ONTOLOGY,
     PARSING_ONTOLOGY_DESCRIPTION,
     AnimalParsingPolicy,
 )
 
 _SOURCE_PATHS = (
-    "identity_methods/full_segment/materialization.py",
-    "localization/animal_instance_segmentation.py",
-    "localization/animal_parsing.py",
-    "localization/foreground_segmentation.py",
-    "localization/full_segment_cache.py",
+    "embedding/methods/full_segment/preparation/materialization.py",
+    "parsing/full_segment/animal_instance_segmentation.py",
+    "parsing/full_segment/animal_parsing.py",
+    "parsing/full_segment/foreground_segmentation.py",
+    "parsing/full_segment/full_segment_cache.py",
 )
 
 

@@ -7,8 +7,8 @@ from typing import Any
 import pytest
 
 from foundation.provenance import content_sha256
-from identity_governance import face_eligibility
-from identity_governance.face_eligibility import (
+from identity.face import face_eligibility
+from identity.face.face_eligibility import (
     DogFaceSplitEvidence,
     build_face_eligibility_overlay,
     validate_face_eligibility_overlay_bundle,

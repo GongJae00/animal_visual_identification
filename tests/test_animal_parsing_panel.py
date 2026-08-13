@@ -5,7 +5,7 @@ from dataclasses import replace
 import numpy as np
 
 from data.types import UnifiedCanidSample
-from localization.animal_parsing import ParsedAnimalInstance, ParsedAnimalQuality
+from parsing.full_segment.animal_parsing import ParsedAnimalInstance, ParsedAnimalQuality
 from workflows.run_animal_parsing_panel import (
     _match_predictions_to_annotations,
     _select_ap10k_source_groups,

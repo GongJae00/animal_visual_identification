@@ -11,16 +11,16 @@ from tempfile import TemporaryDirectory
 from types import SimpleNamespace
 from unittest.mock import patch
 
-import operations.embedding_production_runner as runner
+import systems.workers.embedding_production_runner as runner
 from contracts.runtime_library_provenance import RuntimeLibraryPolicy
-from operations.embedding_production_runner import (
+from systems.workers.embedding_production_runner import (
     EmbeddingProductionPrecommitment,
     EmbeddingWorkerExecutionPolicy,
     read_embedding_production_outer_bundle,
     run_embedding_production_fresh_worker,
 )
-from operations.process_supervisor import ProcessSupervisorPolicy
-from operations.worker_environment import build_sanitized_worker_environment
+from systems.workers.process_supervisor import ProcessSupervisorPolicy
+from systems.workers.worker_environment import build_sanitized_worker_environment
 
 HASH_A = "a" * 64
 HASH_B = "b" * 64
@@ -106,6 +106,36 @@ def _input_files(root: Path, runtime_policy: RuntimeLibraryPolicy) -> dict[str, 
 
 
 class EmbeddingProductionRunnerAdversarialTests(unittest.TestCase):
+    def test_historical_bootstrap_parses_but_cannot_execute(self) -> None:
+        policy = _execution_policy()
+        historical = replace(
+            _precommitment(
+                execution_policy_sha256=policy.policy_sha256,
+                environment_sha256=HASH_A,
+            ),
+            worker_bootstrap_sha256=(
+                runner.LEGACY_EMBEDDING_WORKER_BOOTSTRAP_SHA256
+            ),
+        )
+
+        parsed = EmbeddingProductionPrecommitment.from_dict(historical.to_dict())
+        self.assertEqual(parsed, historical)
+        with (
+            patch.object(runner, "run_supervised_process") as launch,
+            self.assertRaisesRegex(RuntimeError, "historical embedding bootstrap"),
+        ):
+            run_embedding_production_fresh_worker(
+                backend="cpu",
+                files={},
+                precommitment=parsed,
+                expected_precommitment_sha256=parsed.precommitment_sha256,
+                python_executable=Path(sys.executable),
+                execution_policy=policy,
+                output_directory=Path("unreachable"),
+                discovery=True,
+            )
+        launch.assert_not_called()
+
     def test_historical_source_inventory_parses_but_cannot_execute(self) -> None:
         policy = _execution_policy()
         historical = replace(
@@ -166,6 +196,10 @@ class EmbeddingProductionRunnerAdversarialTests(unittest.TestCase):
     def test_code_snapshot_is_complete_and_independent_of_workspace_changes(
         self,
     ) -> None:
+        self.assertIn("parsing", runner._CODE_SOURCE_PACKAGE_NAMES)
+        self.assertTrue(
+            any(name.startswith("parsing/") for name in runner._CODE_SOURCE_NAMES)
+        )
         with TemporaryDirectory() as temporary:
             root = Path(temporary)
             source = root / "source"

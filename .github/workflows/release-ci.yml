@@ -51,9 +51,8 @@ jobs:
           git diff --check
           uv run --no-sync python -m compileall -q \
             canine_identity contracts data evaluation \
-            evidence_fusion experiments foundation identity_governance \
-            identity_methods localization operations retrieval \
-            representation_learning visualization workflows
+            embedding experiments foundation identity \
+            parsing retrieval systems visualization workflows
 
       - name: Build distributions
         run: uv build --out-dir dist
@@ -71,14 +70,49 @@ jobs:
               names = set(wheel.namelist())
           assert any(name.endswith(".dist-info/licenses/LICENSE") for name in names)
           assert "contracts/schemas/cvi.evaluation.report.v3.schema.json" in names
+          assert "contracts/intake/pretrained_weight_intake.py" in names
+          assert "contracts/pdq.py" in names
+          assert "contracts/pretrained_weight_intake.py" not in names
           assert not any(name.startswith("artifact_contracts/") for name in names)
           assert "data/__init__.py" in names
           assert "data/configs/crop_export_policy.example.json" in names
+          assert "data/public/public_dataset.py" in names
+          assert "data/full_segment/route_plan.py" in names
+          assert "data/dataset.py" not in names
+          assert "data/decode.py" not in names
           assert not any(name.startswith("data_pipeline/") for name in names)
           assert "retrieval/__init__.py" in names
           assert not any(name.startswith("identity_retrieval/") for name in names)
+          assert "parsing/__init__.py" in names
+          assert "parsing/landmark_graph.py" not in names
+          assert "parsing/benchmark.py" not in names
+          assert "parsing/fold_protocol.py" not in names
+          assert not any(name.startswith("localization/") for name in names)
+          assert "embedding/methods/__init__.py" in names
+          assert "embedding/methods/landmark.py" in names
+          assert "embedding/methods/full_segment/preparation/route_plan.py" not in names
+          assert "embedding/methods/nose/data/embedding_views.py" in names
+          assert "embedding/methods/nose/training/embedding_consistency_training.py" in names
+          assert "embedding/learning/__init__.py" in names
+          assert "embedding/evidence/__init__.py" in names
+          assert not any(name.startswith("identity_methods/") for name in names)
+          assert not any(name.startswith("representation_learning/") for name in names)
+          assert not any(name.startswith("evidence_fusion/") for name in names)
+          assert "identity/registry/identity_registry.py" in names
+          assert "identity/splits/protected_public_split.py" in names
+          assert "identity/splits/tracklet_split.py" in names
+          assert "identity/splits/public_duplicate_adjudication.py" in names
+          assert not any(name.startswith("identity_governance/") for name in names)
+          assert "systems/inference/onnx_backend.py" in names
+          assert "systems/workers/embedding_production_runner.py" in names
+          assert "systems/measurement/capacity.py" in names
+          assert "systems/measurement/decode.py" in names
+          assert "systems/configs/onnx_cpu_backend.example.json" in names
+          assert not any(name.startswith("operations/") for name in names)
           assert "visualization/__init__.py" in names
           assert not any(name.startswith("vis/") for name in names)
+          assert "evaluation/localization.py" in names
+          assert "evaluation/localization_kfold.py" in names
           PY
           UV_PROJECT_ENVIRONMENT=.wheel-venv \
             uv sync --locked --extra cpu --no-dev
@@ -90,7 +124,15 @@ jobs:
           from importlib import resources, util
 
           import canine_identity
+          import contracts.intake
           import data
+          import embedding
+          import identity
+          import parsing
+          import systems
+          from embedding.methods.nose.data import embedding_views
+          from identity.splits import tracklet_split
+          from systems.measurement import capacity
           import torch
 
           schema = resources.files("contracts").joinpath(
@@ -100,7 +142,24 @@ jobs:
           assert resources.files("data").joinpath(
               "configs/crop_export_policy.example.json"
           ).is_file()
+          assert embedding_views.MANIFEST_SCHEMA == "cvi.nose_embedding_views.v1"
+          assert tracklet_split.SplitManifest.__module__ == (
+              "identity.splits.tracklet_split"
+          )
+          assert capacity.CapacityPlan.__module__ == "systems.measurement.capacity"
           assert util.find_spec("data_pipeline") is None
+          assert util.find_spec("data.dataset") is None
+          assert util.find_spec("data.decode") is None
+          assert util.find_spec("parsing.landmark_graph") is None
+          for old_package in (
+              "evidence_fusion",
+              "identity_governance",
+              "identity_methods",
+              "localization",
+              "operations",
+              "representation_learning",
+          ):
+              assert util.find_spec(old_package) is None
           assert canine_identity.__all__ == ["IdentityEngine", "Match"]
           assert canine_identity.IdentityEngine.__module__ == "canine_identity.engine"
           assert torch.version.cuda is None

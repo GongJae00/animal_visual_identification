@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import unittest
 
-from representation_learning.optimization import (
+from embedding.learning.optimization import (
     ImprovementMetric,
     PromotionDecision,
     ProtectedMetric,

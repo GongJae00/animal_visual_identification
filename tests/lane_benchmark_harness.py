@@ -11,7 +11,7 @@ from contracts.runtime_library_provenance import (
     freeze_runtime_library_policy,
 )
 from foundation.protected_io import read_strict_json_object, write_private_json_bundle
-from operations.onnx_inference_benchmark import (
+from systems.measurement.onnx_inference_benchmark import (
     OnnxBenchmarkBackend,
     OnnxInferenceBenchmarkPolicy,
     benchmark_onnx_inference,

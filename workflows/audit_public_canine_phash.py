@@ -7,7 +7,7 @@ import json
 from pathlib import Path
 
 from contracts.source_provenance import build_offline_tool_provenance
-from identity_methods.classical.public_canine_phash_audit import (
+from embedding.methods.classical.public_canine_phash_audit import (
     read_public_canine_phash_policy,
     read_public_canine_phash_sources,
     run_public_canine_phash_audit,

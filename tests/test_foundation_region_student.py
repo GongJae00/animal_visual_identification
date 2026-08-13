@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import pytest
 
-from localization.foundation_region_student import (
+from parsing.regions.foundation_region_student import (
     RegionDecoderConfig,
     build_region_decoder,
     region_distillation_loss,
 )
-from localization.region_teacher_consensus import ConsensusState
+from parsing.regions.region_teacher_consensus import ConsensusState
 
 
 def test_region_decoders_have_task_specific_class_counts() -> None:

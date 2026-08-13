@@ -27,10 +27,10 @@ from evaluation.retrieval import (
 )
 from foundation.protected_io import read_strict_json_document, write_private_json_bundle
 from foundation.provenance import content_sha256
-from identity_methods.appearance import ReceiptBoundDinov2Small
-from identity_methods.nose.temporal import aggregate_nose_embeddings
-from localization.nose_region.native_yt import validate_manifest_bundle
-from localization.roi_manifest import read_roi_manifest
+from embedding.methods.appearance import ReceiptBoundDinov2Small
+from embedding.methods.nose.signal.temporal import aggregate_nose_embeddings
+from parsing.nose_region.native_yt import validate_manifest_bundle
+from parsing.roi_manifest import read_roi_manifest
 
 REPORT_SCHEMA = "cvi.yt_unified_multievidence_evaluation.v2"
 REPORT_BUNDLE_SCHEMA = "cvi.yt_unified_multievidence_evaluation_bundle.v2"
@@ -58,13 +58,37 @@ _METRICS = ("Rank-1", "Rank-5", "MRR", "mAP")
 _CODE_PATHS = (
     "experiments/unified_multievidence.py",
     "evaluation/retrieval.py",
-    "identity_methods/appearance/__init__.py",
+    "embedding/methods/appearance/__init__.py",
     "contracts/artifact_manifest.py",
-    "localization/roi_manifest.py",
-    "localization/nose_region/native_yt.py",
-    "localization/nose_region/embedding_consistency_training.py",
-    "identity_methods/nose/temporal.py",
+    "parsing/roi_manifest.py",
+    "parsing/nose_region/native_yt.py",
+    "embedding/methods/nose/training/embedding_consistency_training.py",
+    "embedding/methods/nose/signal/temporal.py",
     "workflows/evaluate_yt_unified_multievidence.py",
+)
+_PRE_TRAINING_OWNERSHIP_CODE_PATHS = tuple(
+    "parsing/nose_region/embedding_consistency_training.py"
+    if path == "embedding/methods/nose/training/embedding_consistency_training.py"
+    else path
+    for path in _CODE_PATHS
+)
+_PRE_NESTED_EMBEDDING_CODE_PATHS = tuple(
+    path.replace("embedding/methods/nose/signal/", "embedding/methods/nose/", 1)
+    if path.startswith("embedding/methods/nose/signal/")
+    else path
+    for path in _PRE_TRAINING_OWNERSHIP_CODE_PATHS
+)
+_PRE_EMBEDDING_CODE_PATHS = tuple(
+    path.replace("embedding/methods/", "identity_methods/", 1)
+    if path.startswith("embedding/methods/")
+    else path
+    for path in _PRE_NESTED_EMBEDDING_CODE_PATHS
+)
+_LEGACY_CODE_PATHS = tuple(
+    path.replace("parsing/", "localization/", 1)
+    if path.startswith("parsing/")
+    else path
+    for path in _PRE_EMBEDDING_CODE_PATHS
 )
 _ZSCORE_EPSILON = 1e-8
 
@@ -519,7 +543,7 @@ def _load_bound_lineage(
     document = read_strict_json_document(path)
     if document.canonical_payload_sha256 != expected_sha256:
         raise ValueError("Nose lineage content SHA-256 differs from the external pin")
-    from localization.nose_region.embedding_consistency_training import (
+    from embedding.methods.nose.training.embedding_consistency_training import (
         validate_lineage_manifest,
     )
 
@@ -781,7 +805,18 @@ def validate_report_bundle(bundle: object) -> dict[str, Any]:
         raise ValueError("unified evaluation input binding digest differs")
     for digest in input_hashes.values():
         _require_sha256(digest, "input SHA-256")
-    if not isinstance(report["code_sha256s"], dict) or set(report["code_sha256s"]) != set(_CODE_PATHS):
+    code_paths = (
+        frozenset(report["code_sha256s"])
+        if isinstance(report["code_sha256s"], dict)
+        else frozenset()
+    )
+    if code_paths not in {
+        frozenset(_CODE_PATHS),
+        frozenset(_PRE_TRAINING_OWNERSHIP_CODE_PATHS),
+        frozenset(_PRE_NESTED_EMBEDDING_CODE_PATHS),
+        frozenset(_PRE_EMBEDDING_CODE_PATHS),
+        frozenset(_LEGACY_CODE_PATHS),
+    }:
         raise ValueError("unified evaluation code hash schema differs")
     for digest in report["code_sha256s"].values():
         _require_sha256(digest, "code SHA-256")

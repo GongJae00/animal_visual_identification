@@ -8,15 +8,15 @@ from pathlib import Path
 
 import torch
 
-from identity_methods.nose.checkpoint import load_training_checkpoint
-from identity_methods.nose.config import NoseIDConfig
-from identity_methods.nose.dataset import NoseIDDataset, load_identity_split, load_noseid_manifest
+from embedding.methods.nose.training.checkpoint import load_training_checkpoint
+from embedding.methods.nose.training.config import NoseIDConfig
+from embedding.methods.nose.data.dataset import NoseIDDataset, load_identity_split, load_noseid_manifest
 from experiments.nose_evaluation import (
     evaluate_dev_folds,
     extract_oracle_representations,
 )
-from identity_methods.nose.protocol import build_dev_n3_folds
-from identity_methods.nose.trainer import build_noseid_model, load_receipt_bound_frozen_dino
+from embedding.methods.nose.data.protocol import build_dev_n3_folds
+from embedding.methods.nose.training.trainer import build_noseid_model, load_receipt_bound_frozen_dino
 from foundation.protected_io import write_private_json_bundle
 
 

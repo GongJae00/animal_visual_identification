@@ -62,27 +62,27 @@ def main() -> None:
     import torch
     from torch.utils.data import DataLoader
 
-    from identity_methods.face.checkpoint import (
+    from embedding.methods.face.checkpoint import (
         build_checkpoint_bindings,
         build_faceid_source_contract,
         content_sha256,
         file_sha256,
         normalize_dino_local_artifact_contract,
     )
-    from identity_methods.face.dataset import RoiFaceReIDDataset
+    from embedding.methods.face.dataset import RoiFaceReIDDataset
     from experiments.face_evaluation import (
         evaluate_face_retrieval,
         extract_face_embeddings,
     )
-    from identity_methods.face.losses import FaceIDObjective, FaceResidualObjective
-    from identity_methods.face.sampler import FaceReIDSampler
-    from identity_methods.face.trainer import (
+    from embedding.methods.face.losses import FaceIDObjective, FaceResidualObjective
+    from embedding.methods.face.sampler import FaceReIDSampler
+    from embedding.methods.face.trainer import (
         build_faceid_model,
         build_faceid_optimizer,
         load_receipt_bound_frozen_dino,
         train_faceid_epoch,
     )
-    from localization.roi_manifest import read_roi_manifest
+    from parsing.roi_manifest import read_roi_manifest
 
     if args.device == "cuda" and not torch.cuda.is_available():
         raise RuntimeError(

@@ -21,7 +21,7 @@ from evaluation.protected_evaluation import (
 )
 from foundation.protected_io import read_strict_json_document
 from foundation.provenance import content_sha256
-from identity_governance.role_exposure import (
+from identity.exposure.role_exposure import (
     ExposureDeclarationKind,
     ExposureStage,
     RoleExposureDeclaration,

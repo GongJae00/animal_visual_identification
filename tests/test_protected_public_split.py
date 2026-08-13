@@ -13,7 +13,7 @@ from dataclasses import replace
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from identity_governance.protected_public_split import (
+from identity.splits.protected_public_split import (
     EvidenceRelation,
     FrozenPublicSplitEvidenceGraph,
     ProtectedPublicSplitPolicy,
@@ -29,9 +29,9 @@ from identity_governance.protected_public_split import (
     seed_commitment,
     validate_protected_split_output_paths,
 )
-from identity_governance.identity_registry import compute_public_subject_token
+from identity.registry.identity_registry import compute_public_subject_token
 from evaluation import required_zero_event_trials
-from identity_governance.split_role_exposure import (
+from identity.exposure.split_role_exposure import (
     ExposureDeclarationKind,
     ExposureStage,
     RoleExposureDeclaration,
@@ -1102,7 +1102,7 @@ class ProtectedPublicSplitTests(unittest.TestCase):
         self.assertEqual(actual["DOGFACE_TEST"], 138)
 
     def test_hmac_implementation_has_no_prng_or_python_hash_dependency(self) -> None:
-        source = Path("identity_governance/protected_public_split.py").read_text()
+        source = Path("identity/splits/protected_public_split.py").read_text()
         tree = ast.parse(source)
         imported = {
             alias.name

@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import fcntl
 import hashlib
+import heapq
 import json
 import os
 import shutil
 import stat
 import zipfile
+from array import array
 from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
@@ -559,7 +561,8 @@ class IdentityGallery:
         self._duplicate_group_index: dict[str, set[int]] = {}
         self._identity_rows: dict[str, list[int]] = {}
         self._identity_ordinals: dict[str, int] = {}
-        self._row_identity_ordinals: list[int] = []
+        self._identities_by_ordinal: list[str] = []
+        self._row_identity_ordinals: array[int] = array("q")
         self._loaded_manifest_schema: str | None = None
         self._read_only = read_only
         self._lock_stream = None
@@ -707,11 +710,10 @@ class IdentityGallery:
             for sidecar in (metadata, breeds, availability)
         ):
             raise RuntimeError("gallery manifest template count is inconsistent")
-        expected_keys = {str(index) for index in range(template_count)}
-        if (
-            set(metadata) != expected_keys
-            or set(breeds) != expected_keys
-            or set(availability) != expected_keys
+        if any(
+            str(index) not in sidecar
+            for sidecar in (metadata, breeds, availability)
+            for index in range(template_count)
         ):
             raise RuntimeError("gallery index and sidecar cardinality are inconsistent")
         binary_limits = _binary_file_limits(
@@ -844,23 +846,25 @@ class IdentityGallery:
             raise RuntimeError("gallery required-vector dimension is inconsistent")
         if expected_template_count is not None and expected_template_count != count:
             raise RuntimeError("gallery manifest template count is inconsistent")
-        expected_keys = set(range(count))
-        if (
-            set(self._metadata) != expected_keys
-            or set(self._breed_index) != expected_keys
-            or set(self._availability) != expected_keys
-            or set(self._identity_kinds) != expected_keys
-            or set(self._enrollment_ranks) != expected_keys
-            or set(self._enrollment_views) != expected_keys
-            or set(self._duplicate_group_ids) != expected_keys
+        sidecars = (
+            self._metadata,
+            self._breed_index,
+            self._availability,
+            self._identity_kinds,
+            self._enrollment_ranks,
+            self._enrollment_views,
+            self._duplicate_group_ids,
+        )
+        if any(len(sidecar) != count for sidecar in sidecars) or any(
+            index not in sidecar for sidecar in sidecars for index in range(count)
         ):
             raise RuntimeError("gallery index and sidecar cardinality are inconsistent")
         channel_names = {channel.name for channel in self._channels}
         required_names = {channel.name for channel in self._required_channels}
-        ids: list[str] = []
-        template_ids: list[str] = []
-        content_hashes: list[str] = []
-        idempotency_keys: list[str] = []
+        ids: set[str] = set()
+        template_ids: set[str] = set()
+        content_hashes: set[str] = set()
+        idempotency_keys: set[str] = set()
         for idx in range(count):
             meta = self._metadata[idx]
             if not isinstance(meta, dict) or set(meta) != {
@@ -962,28 +966,31 @@ class IdentityGallery:
                     channel.name,
                 )
                 offset += channel.dimension
-            ids.append(registered_id)
-            template_ids.append(template_id)
-            content_hashes.append(content_sha256)
-            idempotency_keys.append(idempotency_key)
+            if template_id in template_ids:
+                raise RuntimeError("gallery contains duplicate template IDs")
+            if content_sha256 in content_hashes:
+                raise RuntimeError("gallery contains duplicate template content")
+            if idempotency_key in idempotency_keys:
+                raise RuntimeError("gallery contains duplicate idempotency keys")
+            ids.add(registered_id)
+            template_ids.add(template_id)
+            content_hashes.add(content_sha256)
+            idempotency_keys.add(idempotency_key)
         for channel in self._optional_channels:
-            expected_rows = {
-                idx for idx in expected_keys if self._availability[idx][channel.name]
-            }
             vectors = self._optional_vectors[channel.name]
-            if set(vectors) != expected_rows:
+            available_count = sum(
+                self._availability[idx][channel.name] for idx in range(count)
+            )
+            if len(vectors) != available_count or any(
+                (idx in vectors) is not self._availability[idx][channel.name]
+                for idx in range(count)
+            ):
                 raise RuntimeError(
                     f"gallery optional channel {channel.name!r} disagrees with availability"
                 )
             for vector in vectors.values():
                 _validate_unit_vector(vector, channel.dimension, channel.name)
-        if len(template_ids) != len(set(template_ids)):
-            raise RuntimeError("gallery contains duplicate template IDs")
-        if len(content_hashes) != len(set(content_hashes)):
-            raise RuntimeError("gallery contains duplicate template content")
-        if len(idempotency_keys) != len(set(idempotency_keys)):
-            raise RuntimeError("gallery contains duplicate idempotency keys")
-        identity_count = len(set(ids))
+        identity_count = len(ids)
         if expected_identity_count is not None and expected_identity_count != identity_count:
             raise RuntimeError("gallery manifest identity count is inconsistent")
 
@@ -994,6 +1001,7 @@ class IdentityGallery:
         self._duplicate_group_index = {}
         self._identity_rows = {}
         self._identity_ordinals = {}
+        self._identities_by_ordinal = []
         row_ordinals: list[int] = []
         for row in range(int(self._index.ntotal)):
             metadata = self._metadata[row]
@@ -1004,12 +1012,13 @@ class IdentityGallery:
             if identity_id not in self._identity_ordinals:
                 self._identity_ordinals[identity_id] = len(self._identity_ordinals)
                 self._identity_rows[identity_id] = []
+                self._identities_by_ordinal.append(identity_id)
             ordinal = self._identity_ordinals[identity_id]
             self._identity_rows[identity_id].append(row)
             row_ordinals.append(ordinal)
             for duplicate_group_id in self._duplicate_group_ids[row]:
                 self._duplicate_group_index.setdefault(duplicate_group_id, set()).add(row)
-        self._row_identity_ordinals = row_ordinals
+        self._row_identity_ordinals = array("q", row_ordinals)
 
     def enroll(
         self,
@@ -1049,6 +1058,36 @@ class IdentityGallery:
         enrollment_view: str | None = None,
         duplicate_group_ids: tuple[str, ...] = (),
     ) -> int:
+        return self._enroll_with_breed(
+            embedding,
+            dog_id,
+            breed,
+            metadata,
+            idempotency_key,
+            content_sha256,
+            availability=availability,
+            identity_evidence_kind=identity_evidence_kind,
+            enrollment_rank=enrollment_rank,
+            enrollment_view=enrollment_view,
+            duplicate_group_ids=duplicate_group_ids,
+        )
+
+    def _enroll_with_breed(
+        self,
+        embedding: np.ndarray | dict[str, np.ndarray],
+        dog_id: str,
+        breed: str,
+        metadata: dict | None = None,
+        idempotency_key: str | None = None,
+        content_sha256: str | None = None,
+        *,
+        availability: dict[str, bool] | None = None,
+        identity_evidence_kind: IdentityEvidenceKind = IdentityEvidenceKind.REGISTERED,
+        enrollment_rank: EnrollmentRank | None = None,
+        enrollment_view: str | None = None,
+        duplicate_group_ids: tuple[str, ...] = (),
+        prepared_vectors: dict[str, np.ndarray] | None = None,
+    ) -> int:
         if not _is_canonical_uuid5(dog_id):
             raise ValueError(
                 "registered_dog_id must be a canonical lowercase UUIDv5 string"
@@ -1084,15 +1123,13 @@ class IdentityGallery:
         if not isinstance(breed, str):
             raise TypeError("breed must be a string")
         canonical_metadata = _canonical_metadata(metadata)
-        vectors = self._canonical_vectors(embedding)
+        vectors = (
+            self._canonical_vectors(embedding)
+            if prepared_vectors is None
+            else prepared_vectors
+        )
         if content_sha256 is None:
-            digest = hashlib.sha256()
-            for channel in self._channels:
-                digest.update(channel.name.encode("utf-8"))
-                digest.update(b"\0")
-                if channel.name in vectors:
-                    digest.update(vectors[channel.name].astype("<f4", copy=False).tobytes())
-            content_sha256 = digest.hexdigest()
+            content_sha256 = self._vector_content_sha256(vectors)
         elif not _is_sha256(content_sha256):
             raise ValueError("content_sha256 must be a lowercase SHA-256 digest")
         template_id = _template_id(content_sha256)
@@ -1195,6 +1232,7 @@ class IdentityGallery:
         if identity_id not in self._identity_ordinals:
             self._identity_ordinals[identity_id] = len(self._identity_ordinals)
             self._identity_rows[identity_id] = []
+            self._identities_by_ordinal.append(identity_id)
         self._identity_rows[identity_id].append(idx)
         self._row_identity_ordinals.append(self._identity_ordinals[identity_id])
         for duplicate_group_id in value.duplicate_group_ids:
@@ -1209,20 +1247,19 @@ class IdentityGallery:
             not isinstance(value, GalleryEnrollment) for value in enrollments
         ):
             raise TypeError("enrollments must be a list of GalleryEnrollment values")
-        ordered: list[tuple[tuple[str, str, str, str], GalleryEnrollment]] = []
+        ordered: list[
+            tuple[
+                tuple[str, str, str, str],
+                GalleryEnrollment,
+                dict[str, np.ndarray],
+                str,
+            ]
+        ] = []
         for enrollment in enrollments:
             vectors = self._canonical_vectors(enrollment.embedding)
             content_sha256 = enrollment.content_sha256
             if content_sha256 is None:
-                digest = hashlib.sha256()
-                for channel in self._channels:
-                    digest.update(channel.name.encode("utf-8"))
-                    digest.update(b"\0")
-                    if channel.name in vectors:
-                        digest.update(
-                            vectors[channel.name].astype("<f4", copy=False).tobytes()
-                        )
-                content_sha256 = digest.hexdigest()
+                content_sha256 = self._vector_content_sha256(vectors)
             ordered.append((
                 (
                     enrollment.registered_identity_id,
@@ -1233,23 +1270,39 @@ class IdentityGallery:
                     content_sha256,
                 ),
                 enrollment,
+                vectors,
+                content_sha256,
             ))
         rows: list[int] = []
-        for _, enrollment in sorted(ordered, key=lambda item: item[0]):
-            rows.append(self.enroll_with_breed(
+        for _, enrollment, vectors, content_sha256 in sorted(
+            ordered, key=lambda item: item[0]
+        ):
+            rows.append(self._enroll_with_breed(
                 enrollment.embedding,
                 enrollment.registered_identity_id,
                 enrollment.breed,
                 enrollment.metadata,
                 enrollment.idempotency_key,
-                enrollment.content_sha256,
+                content_sha256,
                 availability=enrollment.availability,
                 identity_evidence_kind=enrollment.identity_evidence_kind,
                 enrollment_rank=enrollment.enrollment_rank,
                 enrollment_view=enrollment.enrollment_view,
                 duplicate_group_ids=enrollment.duplicate_group_ids,
+                prepared_vectors=vectors,
             ))
         return rows
+
+    def _vector_content_sha256(self, vectors: dict[str, np.ndarray]) -> str:
+        digest = hashlib.sha256()
+        for channel in self._channels:
+            digest.update(channel.name.encode("utf-8"))
+            digest.update(b"\0")
+            if channel.name in vectors:
+                digest.update(
+                    vectors[channel.name].astype("<f4", copy=False).tobytes()
+                )
+        return digest.hexdigest()
 
     @classmethod
     def build(
@@ -1470,21 +1523,20 @@ class IdentityGallery:
         )
         np.maximum.at(
             identity_scores,
-            np.asarray(self._row_identity_ordinals, dtype=np.int64),
+            self._row_identity_ordinal_array(),
             scores,
         )
         target_score = identity_scores[target_ordinal]
         if not np.isfinite(target_score):
             return None
-        identity_ids = np.empty(len(self._identity_ordinals), dtype=object)
-        for identity_id, ordinal in self._identity_ordinals.items():
-            identity_ids[ordinal] = identity_id
-        precedes_tied_target = (identity_scores == target_score) & (
-            identity_ids < registered_dog_id
+        precedes_tied_target = sum(
+            identity_scores[ordinal] == target_score
+            and identity_id < registered_dog_id
+            for ordinal, identity_id in enumerate(self._identities_by_ordinal)
         )
         return 1 + int(
             np.count_nonzero(identity_scores > target_score)
-            + np.count_nonzero(precedes_tied_target)
+            + precedes_tied_target
         )
 
     def explain_identity(
@@ -1530,9 +1582,11 @@ class IdentityGallery:
         self,
         exclusions: QueryExclusions,
         allowed_breeds: list[str] | None,
-    ) -> np.ndarray:
-        eligible = np.ones(int(self._index.ntotal), dtype=np.bool_)
+    ) -> np.ndarray | None:
         breed_set = set(allowed_breeds or ())
+        if not breed_set and exclusions == QueryExclusions():
+            return None
+        eligible = np.ones(int(self._index.ntotal), dtype=np.bool_)
         if breed_set:
             for row, breed in self._breed_index.items():
                 if breed not in breed_set:
@@ -1552,7 +1606,7 @@ class IdentityGallery:
         return eligible
 
     def _all_template_scores(
-        self, query: RetrievalQuery, eligible: np.ndarray
+        self, query: RetrievalQuery, eligible: np.ndarray | None
     ) -> np.ndarray:
         count = int(self._index.ntotal)
         if self._full128_fast_path:
@@ -1562,13 +1616,22 @@ class IdentityGallery:
                 length = min(_SEARCH_BLOCK_ROWS, count - start)
                 matrix = self._index.reconstruct_n(start, length)
                 scores[start:start + length] = matrix @ query_vector
-            scores[~eligible] = -np.inf
+            if eligible is not None:
+                scores[~eligible] = -np.inf
             return scores
 
         numerator = np.zeros(count, dtype=np.float64)
-        denominator = np.zeros(count, dtype=np.float64)
         required_weight = sum(channel.weight for channel in self._required_channels)
-        denominator.fill(required_weight)
+        active_optional_channels = tuple(
+            channel
+            for channel in self._optional_channels
+            if query.availability[channel.name] and channel.weight != 0.0
+        )
+        denominator = (
+            np.full(count, required_weight, dtype=np.float64)
+            if active_optional_channels
+            else None
+        )
         for start in range(0, count, _SEARCH_BLOCK_ROWS):
             length = min(_SEARCH_BLOCK_ROWS, count - start)
             matrix = self._index.reconstruct_n(start, length)
@@ -1579,15 +1642,20 @@ class IdentityGallery:
                     channel.weight * (section @ query.vectors[channel.name])
                 )
                 offset += channel.dimension
-        for channel in self._optional_channels:
-            if not query.availability[channel.name] or channel.weight == 0.0:
-                continue
+        for channel in active_optional_channels:
             query_vector = query.vectors[channel.name]
             for row, vector in self._optional_vectors[channel.name].items():
                 numerator[row] += channel.weight * float(np.dot(query_vector, vector))
+                assert denominator is not None
                 denominator[row] += channel.weight
-        scores = numerator / denominator
-        scores[~eligible] = -np.inf
+        np.divide(
+            numerator,
+            required_weight if denominator is None else denominator,
+            out=numerator,
+        )
+        scores = numerator
+        if eligible is not None:
+            scores[~eligible] = -np.inf
         return scores
 
     def _ranked_candidates(
@@ -1595,24 +1663,22 @@ class IdentityGallery:
     ) -> list[ScoredGalleryValue]:
         identity_count = len(self._identity_ordinals)
         identity_scores = np.full(identity_count, -np.inf, dtype=scores.dtype)
-        ordinals = np.asarray(self._row_identity_ordinals, dtype=np.int64)
-        np.maximum.at(identity_scores, ordinals, scores)
-        identities_by_ordinal = [""] * identity_count
-        for identity_id, ordinal in self._identity_ordinals.items():
-            identities_by_ordinal[ordinal] = identity_id
-        ranked_ordinals = sorted(
+        np.maximum.at(identity_scores, self._row_identity_ordinal_array(), scores)
+        ranked_ordinals = heapq.nsmallest(
+            top_k,
             (
                 ordinal
                 for ordinal, score in enumerate(identity_scores)
                 if np.isfinite(score)
             ),
             key=lambda ordinal: (
-                -float(identity_scores[ordinal]), identities_by_ordinal[ordinal]
+                -float(identity_scores[ordinal]),
+                self._identities_by_ordinal[ordinal],
             ),
-        )[:top_k]
+        )
         candidates: list[ScoredGalleryValue] = []
         for ordinal in ranked_ordinals:
-            identity_id = identities_by_ordinal[ordinal]
+            identity_id = self._identities_by_ordinal[ordinal]
             best_score = float(identity_scores[ordinal])
             winning_row = min(
                 (
@@ -1624,6 +1690,9 @@ class IdentityGallery:
             )
             candidates.append(self._scored_candidate(query, winning_row))
         return candidates
+
+    def _row_identity_ordinal_array(self) -> np.ndarray:
+        return np.frombuffer(self._row_identity_ordinals, dtype=np.int64)
 
     def _scored_candidate(
         self, query: RetrievalQuery, row: int

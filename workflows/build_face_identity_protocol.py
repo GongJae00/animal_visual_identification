@@ -13,7 +13,7 @@ from foundation.protected_io import (
     read_strict_json_document,
     write_private_json_bundle,
 )
-from identity_governance.face_identity_protocol import build_face_identity_protocol
+from identity.face.face_identity_protocol import build_face_identity_protocol
 
 _LARGE_JSON_LIMITS = {
     "maximum_bytes": 2_147_483_648,

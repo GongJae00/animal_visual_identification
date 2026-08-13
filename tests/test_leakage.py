@@ -3,8 +3,8 @@ from __future__ import annotations
 import unittest
 
 from contracts.contracts import Modality
-from data.dataset import SplitRole, TrackletRecord
-from identity_governance.leakage import association_audit
+from identity.splits.tracklet_split import SplitRole, TrackletRecord
+from identity.audit.leakage import association_audit
 
 
 def record(

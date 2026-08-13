@@ -6,12 +6,12 @@ import argparse
 import json
 from pathlib import Path
 
-from evaluation.control_evaluation import (
+from evaluation.controls.control_evaluation import (
     ControlEvaluationPolicy,
     control_evaluation_bindings_from_payload,
     evaluate_sealed_control_scores,
 )
-from evaluation.control_scoring import (
+from evaluation.controls.control_scoring import (
     ControlBlindScoreReceipt,
     EmbeddingCacheManifest,
 )
@@ -19,7 +19,7 @@ from evaluation import (
     ClusterBootstrapConfig,
     FrozenVerificationThreshold,
 )
-from evaluation.pairing import PairingPolicy, pair_construction_from_bundle_payloads
+from evaluation.controls.pairing import PairingPolicy, pair_construction_from_bundle_payloads
 from foundation.protected_io import (
     read_strict_json_object,
     write_private_json_bundle,

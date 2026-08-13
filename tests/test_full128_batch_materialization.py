@@ -13,30 +13,28 @@ from PIL import Image
 
 from data.source_lock import get_record
 from data.types import CaptureGroupKind, UnifiedCanidSample
+from data.full_segment import route_plan
+from data.full_segment.route_plan import CANONICAL_DATASETS, build_full128_route_plan
 from foundation.protected_io import json_document_bytes
 from foundation.provenance import content_sha256
-from identity_governance.generated_identity_registry import GENERATED_DOG_NAMESPACE
-from identity_governance.identity_registry import compute_registered_dog_id
-from identity_methods.full_segment import inventory, materialization, route_plan
-from identity_methods.full_segment.inventory import (
+from identity.registry.generated_identity_registry import GENERATED_DOG_NAMESPACE
+from identity.registry.identity_registry import compute_registered_dog_id
+from embedding.methods.full_segment.preparation import inventory, materialization
+from embedding.methods.full_segment.preparation.inventory import (
     validate_full128_experiment_inventory_bundle,
 )
-from identity_methods.full_segment.materialization import (
+from embedding.methods.full_segment.preparation.materialization import (
     BoundParserRuntime,
     assemble_full128_materialization,
     materialize_full128_route_plan,
     migrate_full128_compact_sample_caches,
 )
-from identity_methods.full_segment.route_plan import (
-    CANONICAL_DATASETS,
-    build_full128_route_plan,
-)
-from localization.animal_parsing import (
+from parsing.full_segment.animal_parsing import (
     AnimalParsingPrediction,
     ParsedAnimalInstance,
     ParsedAnimalQuality,
 )
-from localization.full_segment_cache import (
+from parsing.full_segment.full_segment_cache import (
     CACHE_SCHEMA,
     FROZEN_PARSING_BINDING_SCHEMA,
     LEGACY_CACHE_BUNDLE_SCHEMA,
@@ -685,7 +683,7 @@ def test_batched_materialization_is_fixed_ordered_and_resumable(
 
 
 def test_batched_job_units_share_one_prediction_for_duplicate_source_bytes() -> None:
-    from identity_methods.full_segment.materialization import _batched_job_units
+    from embedding.methods.full_segment.preparation.materialization import _batched_job_units
 
     cache_key = _sha("shared-cache")
     jobs = (

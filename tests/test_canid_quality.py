@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import unittest
 
-from localization.quality import (
+from parsing.quality import (
     DogQuality,
     FaceQuality,
     NoseQuality,
@@ -10,7 +10,7 @@ from localization.quality import (
     score_face_quality,
     score_nose_quality,
 )
-from localization.types import DetectionBox, Keypoint, KeypointSet
+from parsing.types import DetectionBox, Keypoint, KeypointSet
 
 
 class CanidQualityTests(unittest.TestCase):

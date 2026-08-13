@@ -6,11 +6,11 @@ import argparse
 import json
 from pathlib import Path
 
-from contracts.pretrained_supporting_asset_intake import (
+from contracts.intake.pretrained_supporting_asset_intake import (
     PretrainedSupportingAssetSourceContract,
     audit_pretrained_supporting_asset,
 )
-from contracts.pretrained_weight_intake import (
+from contracts.intake.pretrained_weight_intake import (
     PretrainedWeightIntakeReceipt,
     PretrainedWeightSourceContract,
 )

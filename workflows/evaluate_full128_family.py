@@ -8,7 +8,7 @@ import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from evaluation.full128 import (
+from evaluation.full_segment.full128 import (
     build_full128_family_index,
     discover_packed_full128_embedding_cache_adapters,
     evaluate_full128_family,
@@ -16,8 +16,8 @@ from evaluation.full128 import (
 )
 from foundation.protected_io import json_document_bytes, read_strict_json_document
 from foundation.protected_publication import fsync_directory, rename_directory_noreplace
-from identity_methods.full_segment.data import load_full128_assembly
-from identity_methods.full_segment.inventory import (
+from embedding.methods.full_segment.preparation.data import load_full128_assembly
+from embedding.methods.full_segment.preparation.inventory import (
     validate_full128_experiment_inventory_bundle,
 )
 

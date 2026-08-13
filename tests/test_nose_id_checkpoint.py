@@ -9,7 +9,7 @@ import uuid
 import numpy as np
 import torch
 
-from identity_methods.nose.checkpoint import (
+from embedding.methods.nose.training.checkpoint import (
     SCHEMA_VERSION,
     load_training_checkpoint,
     restore_training_checkpoint,

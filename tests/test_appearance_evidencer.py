@@ -13,12 +13,12 @@ import numpy as np
 import torch
 from PIL import Image
 
-from contracts.pretrained_supporting_asset_intake import (
+from contracts.intake.pretrained_supporting_asset_intake import (
     PretrainedSupportingAssetKind,
     PretrainedSupportingAssetSourceContract,
     audit_pretrained_supporting_asset,
 )
-from contracts.pretrained_weight_intake import (
+from contracts.intake.pretrained_weight_intake import (
     PretrainedWeightChecksumAuthority,
     PretrainedWeightFileFormat,
     PretrainedWeightSourceContract,
@@ -26,7 +26,7 @@ from contracts.pretrained_weight_intake import (
     audit_pretrained_weight_file,
 )
 from foundation.provenance import content_sha256
-from identity_methods.appearance import ReceiptBoundDinov2Small
+from embedding.methods.appearance import ReceiptBoundDinov2Small
 
 
 def _sha256(path: Path) -> str:

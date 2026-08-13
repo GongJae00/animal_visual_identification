@@ -19,7 +19,13 @@ from contracts.runtime_library_provenance import (
     RuntimeLibraryPhase,
     RuntimeLibraryPolicy,
 )
-from evaluation.batch_invariance import (
+from embedding.learning.optimization import PromotionDecision
+from evaluation.controls.control_scoring import (
+    ArtifactSourceKind,
+    ControlScoringInventory,
+    ScoringArtifactEntry,
+)
+from evaluation.integrity.batch_invariance import (
     BatchInvarianceDecision,
     BatchInvariancePolicy,
     BatchInvariancePrecommitment,
@@ -29,33 +35,27 @@ from evaluation.batch_invariance import (
     evaluate_batch_composition_invariance,
     verify_batch_invariance_receipt_external_anchors,
 )
-from evaluation.control_scoring import (
-    ArtifactSourceKind,
-    ControlScoringInventory,
-    ScoringArtifactEntry,
-)
 from foundation.provenance import content_sha256
-from operations.batch_invariance_runner import (
+from systems.inference.embedding_producer import (
+    EmbeddingBackendIdentity,
+    EmbeddingProducerConfig,
+    EmbeddingRuntimeResources,
+)
+from systems.workers.batch_invariance_runner import (
     BatchFreshWorkerDiscovery,
     BatchFreshWorkerReceipt,
     BatchWorkerExecutionPolicy,
     run_batch_invariance_fresh_worker,
 )
-from operations.embedding_producer import (
-    EmbeddingBackendIdentity,
-    EmbeddingProducerConfig,
-    EmbeddingRuntimeResources,
-)
-from operations.process_supervisor import (
+from systems.workers.process_supervisor import (
     ProcessSupervisorPolicy,
     SupervisedProcessResult,
     SupervisedProcessStatus,
 )
-from operations.worker_environment import (
+from systems.workers.worker_environment import (
     ISOLATED_WORKER_BOOTSTRAP,
     build_sanitized_worker_environment,
 )
-from representation_learning.optimization import PromotionDecision
 
 
 def digest(payload: bytes) -> str:
@@ -419,7 +419,7 @@ class BatchInvarianceTests(unittest.TestCase):
                 worker_environment_identity_sha256="5" * 64,
             )
             with patch(
-                "operations.batch_invariance_runner.run_supervised_process"
+                "systems.workers.batch_invariance_runner.run_supervised_process"
             ) as launch:
                 with self.assertRaisesRegex(ValueError, "execution policy"):
                     run_batch_invariance_fresh_worker(
@@ -598,7 +598,7 @@ class BatchInvarianceTests(unittest.TestCase):
                 command=(
                     sys.executable, "-I", "-B", "-c",
                     ISOLATED_WORKER_BOOTSTRAP,
-                    "operations.batch_invariance_worker", "/tmp/request",
+                    "systems.workers.batch_invariance_worker", "/tmp/request",
                     "--request", "/tmp/request", "--result", "/tmp/result",
                 ),
                 policy_sha256=worker_policy.supervisor.policy_sha256,
@@ -631,6 +631,23 @@ class BatchInvarianceTests(unittest.TestCase):
                 execution_policy=worker_policy,
                 supervised_process_result_sha256=supervised.result_sha256,
                 supervised_process_result=supervised,
+            )
+            legacy_supervised = replace(
+                supervised,
+                command=(
+                    *supervised.command[:5],
+                    "operations.batch_invariance_worker",
+                    *supervised.command[6:],
+                ),
+            )
+            legacy_receipt = replace(
+                receipt,
+                supervised_process_result=legacy_supervised,
+                supervised_process_result_sha256=legacy_supervised.result_sha256,
+            )
+            self.assertEqual(
+                BatchFreshWorkerReceipt.from_dict(legacy_receipt.to_dict()),
+                legacy_receipt,
             )
             receipt_path.write_text(json.dumps({
                 "schema_version": "cvi.batch_invariance_bundle.v4",
@@ -802,7 +819,7 @@ class BatchInvarianceTests(unittest.TestCase):
                 command=(
                     sys.executable, "-I", "-B", "-c",
                     ISOLATED_WORKER_BOOTSTRAP,
-                    "operations.batch_invariance_worker", "/tmp/request",
+                    "systems.workers.batch_invariance_worker", "/tmp/request",
                     "--request", "/tmp/request", "--result", "/tmp/result",
                 ),
                 policy_sha256=execution_policy.supervisor.policy_sha256,

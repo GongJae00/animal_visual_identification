@@ -23,14 +23,14 @@ from contracts.artifact_manifest import (
     NoseMaskManifest,
     UsageLane,
 )
-from evidence_fusion.base import EvidenceInsufficiency, EvidenceUnavailableReason
-from identity_methods.nose.extractor import (
+from embedding.evidence.base import EvidenceInsufficiency, EvidenceUnavailableReason
+from embedding.methods.nose.extractor import (
     DNPMask,
     NosePrintExtractor,
     NoseRoiPolicy,
     YoloNoseDetector,
 )
-from localization.landmark_graph import (
+from embedding.methods.landmark import (
     LandmarkEvidencer,
     LandmarkGraphEmbedder,
     decode_landmark_heatmaps,

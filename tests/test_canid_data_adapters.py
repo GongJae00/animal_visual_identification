@@ -26,7 +26,7 @@ from data.adapters import (
 )
 from data.report import compute_dataset_statistics
 from data.types import CaptureGroupKind
-from representation_learning.train.dataset import PetFaceDataset
+from embedding.learning.train.dataset import PetFaceDataset
 
 _PETFACE_README = """# PetFace Dataset
 This dataset is provided for research purposes only.

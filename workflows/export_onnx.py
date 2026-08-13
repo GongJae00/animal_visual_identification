@@ -11,7 +11,7 @@ from pathlib import Path
 
 import torch
 
-from representation_learning.trainer import (
+from embedding.learning.train.trainer import (
     ArcFaceModel,
     ConvNeXtEmbedding,
     Dinov2Embedding,

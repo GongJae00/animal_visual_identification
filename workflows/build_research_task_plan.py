@@ -7,8 +7,8 @@ import json
 from pathlib import Path
 
 from foundation.protected_io import read_strict_json_object, write_private_json_bundle
-from identity_governance.research_cycle_admission import ResearchSourceAdmissions
-from identity_governance.research_task_plan import build_primary_research_task_plan
+from identity.research.research_cycle_admission import ResearchSourceAdmissions
+from identity.research.research_task_plan import build_primary_research_task_plan
 
 
 def main() -> int:

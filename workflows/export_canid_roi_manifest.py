@@ -12,8 +12,8 @@ from pathlib import Path
 from data.adapters import ADAPTERS
 from data.source_lock import get_record
 from foundation.protected_io import write_private_json_bundle
-from localization.prediction_cache import read_prediction_cache
-from localization.roi_manifest import build_roi_manifest
+from parsing.prediction_cache import read_prediction_cache
+from parsing.roi_manifest import build_roi_manifest
 
 
 def parse_args() -> argparse.Namespace:

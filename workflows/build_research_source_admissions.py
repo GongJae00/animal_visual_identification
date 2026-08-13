@@ -8,7 +8,7 @@ from pathlib import Path
 
 from data.source_lock import get_record
 from foundation.protected_io import read_strict_json_document, write_private_json_bundle
-from identity_governance.research_cycle_admission import (
+from identity.research.research_cycle_admission import (
     IdentityTargetMode,
     ResearchLicenseLane,
     ResearchSourceAdmission,

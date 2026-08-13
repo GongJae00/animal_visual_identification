@@ -7,12 +7,12 @@ import json
 from pathlib import Path
 
 from contracts.source_provenance import build_offline_tool_provenance
-from data.nested_public_dataset import audit_parent_bound_nested_public_zip
-from data.public_dataset import (
+from data.public.nested_public_dataset import audit_parent_bound_nested_public_zip
+from data.public.public_dataset import (
     PublicDatasetArchivePolicy,
     PublicDatasetSourceContract,
 )
-from data.public_dataset_extraction import (
+from data.public.public_dataset_extraction import (
     ExtractedPublicDatasetFile,
     PublicDatasetExtractionReceipt,
 )

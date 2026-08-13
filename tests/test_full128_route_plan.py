@@ -12,8 +12,8 @@ from PIL import Image
 
 from data.source_lock import get_record
 from data.types import CaptureGroupKind, UnifiedCanidSample
-from identity_methods.full_segment import route_plan
-from identity_methods.full_segment.route_plan import (
+from data.full_segment import route_plan
+from data.full_segment.route_plan import (
     CANONICAL_DATASETS,
     ROUTE_PLAN_BUNDLE_SCHEMA,
     ROUTE_PLAN_RECORD_SCHEMA,

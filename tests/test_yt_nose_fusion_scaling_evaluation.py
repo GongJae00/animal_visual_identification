@@ -24,8 +24,8 @@ from experiments.nose_fusion_scaling import (
     validate_report_bundle,
 )
 from foundation.provenance import content_sha256
-from identity_governance.identity_registry import compute_registered_dog_id
-from localization.nose_region.native_yt import (
+from identity.registry.identity_registry import compute_registered_dog_id
+from parsing.nose_region.native_yt import (
     NativeYtSample,
     build_manifest_bundle,
     process_native_sample,
@@ -314,7 +314,7 @@ def test_real_onnx_fixed_population_exact_fusion_pairing_metrics_and_bootstrap(
     ).hexdigest()
     assert set(report["code_sha256s"]) >= {
         "experiments/nose_fusion_scaling.py",
-        "identity_methods/nose/temporal.py",
+        "embedding/methods/nose/signal/temporal.py",
         "workflows/evaluate_yt_nose_fusion_scaling.py",
     }
 

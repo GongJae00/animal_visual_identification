@@ -10,8 +10,8 @@ from contracts.model_catalog import verify_model_artifact
 from contracts.model_paths import CHECKPOINTS_DIR
 from data.adapters import ADAPTERS
 from data.source_lock import get_record
-from localization.adapters import UltralyticsDogPoseAdapter
-from localization.dinov2_region_segmentation import (
+from parsing.adapters import UltralyticsDogPoseAdapter
+from parsing.regions.dinov2_region_segmentation import (
     Dinov2RegionRuntime,
     produce_dataset_region_candidates,
 )

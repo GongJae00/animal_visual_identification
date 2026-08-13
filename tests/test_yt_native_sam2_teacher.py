@@ -13,14 +13,14 @@ import numpy as np
 import pytest
 from PIL import Image
 
-from identity_governance.identity_registry import compute_registered_dog_id
-from localization.nose_region.localizer import KEYPOINT_ORDER
-from localization.nose_region.native_yt import (
+from identity.registry.identity_registry import compute_registered_dog_id
+from parsing.nose_region.localizer import KEYPOINT_ORDER
+from parsing.nose_region.native_yt import (
     NativeYtSample,
     build_manifest_bundle,
     process_native_sample,
 )
-from localization.nose_region.sam2_teacher import (
+from parsing.nose_region.sam2_teacher import (
     MaskSelectionPolicy,
     SOURCE_IMAGE_MANIFEST_SCHEMA,
     TeacherSource,
@@ -30,7 +30,7 @@ from localization.nose_region.sam2_teacher import (
     validate_source_image_manifest,
     validate_teacher_manifest,
 )
-from localization.nose_region.sam2_teacher import _sam2_runtime_config_name
+from parsing.nose_region.sam2_teacher import _sam2_runtime_config_name
 from foundation.protected_io import json_document_bytes
 from foundation.provenance import content_sha256
 from workflows.extract_yt_native_nose_regions import (

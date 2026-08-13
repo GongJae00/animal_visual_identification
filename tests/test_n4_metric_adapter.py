@@ -57,9 +57,9 @@ _PANEL_LIMITATIONS = [
 ]
 _PANEL_CODE_PATHS = (
     "experiments/fixed_multievidence.py",
-    "identity_methods/face/checkpoint.py",
-    "localization/roi_manifest.py",
-    "localization/nose_region/embedding_consistency_training.py",
+    "embedding/methods/face/checkpoint.py",
+    "parsing/roi_manifest.py",
+    "embedding/methods/nose/training/embedding_consistency_training.py",
     "workflows/train_roi_face_reid.py",
     "workflows/build_fixed_multievidence_panel.py",
 )

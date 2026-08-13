@@ -2,19 +2,23 @@ from __future__ import annotations
 
 import copy
 import json
-from pathlib import Path
 import subprocess
 import sys
+from pathlib import Path
 
 import numpy as np
 import pytest
 
 from experiments.unified_multievidence import (
+    _CODE_PATHS,
+    _LEGACY_CODE_PATHS,
+    _PRE_EMBEDDING_CODE_PATHS,
+    _PRE_NESTED_EMBEDDING_CODE_PATHS,
+    _PRE_TRAINING_OWNERSHIP_CODE_PATHS,
     INTERPRETATION,
     METHODS,
     REPORT_BUNDLE_SCHEMA,
     REPORT_SCHEMA,
-    _CODE_PATHS,
     _group_k5_population,
     _identity_bound_face_records,
     _identity_list_sha256,
@@ -24,7 +28,6 @@ from experiments.unified_multievidence import (
     validate_report_bundle,
 )
 from foundation.provenance import content_sha256
-
 
 BRANCHES = tuple(list(METHODS)[:3])
 
@@ -297,6 +300,53 @@ def test_report_bundle_detects_digest_and_rehashed_metric_tamper() -> None:
     metric_tamper["report_sha256"] = content_sha256(metric_tamper["report"])
     with pytest.raises(ValueError, match="metrics differ"):
         validate_report_bundle(metric_tamper)
+
+
+def test_report_bundle_reads_only_complete_legacy_code_path_set() -> None:
+    pre_training_ownership = _valid_report_bundle()
+    pre_training_ownership["report"]["code_sha256s"] = {
+        path: "a" * 64 for path in _PRE_TRAINING_OWNERSHIP_CODE_PATHS
+    }
+    pre_training_ownership["report_sha256"] = content_sha256(
+        pre_training_ownership["report"]
+    )
+    assert validate_report_bundle(pre_training_ownership)["code_sha256s"] == (
+        pre_training_ownership["report"]["code_sha256s"]
+    )
+
+    pre_nested = _valid_report_bundle()
+    pre_nested["report"]["code_sha256s"] = {
+        path: "a" * 64 for path in _PRE_NESTED_EMBEDDING_CODE_PATHS
+    }
+    pre_nested["report_sha256"] = content_sha256(pre_nested["report"])
+    assert validate_report_bundle(pre_nested)["code_sha256s"] == pre_nested[
+        "report"
+    ]["code_sha256s"]
+
+    pre_embedding = _valid_report_bundle()
+    pre_embedding["report"]["code_sha256s"] = {
+        path: "a" * 64 for path in _PRE_EMBEDDING_CODE_PATHS
+    }
+    pre_embedding["report_sha256"] = content_sha256(pre_embedding["report"])
+    assert validate_report_bundle(pre_embedding)["code_sha256s"] == (
+        pre_embedding["report"]["code_sha256s"]
+    )
+
+    legacy = _valid_report_bundle()
+    legacy["report"]["code_sha256s"] = {
+        path: "a" * 64 for path in _LEGACY_CODE_PATHS
+    }
+    legacy["report_sha256"] = content_sha256(legacy["report"])
+    assert validate_report_bundle(legacy)["code_sha256s"] == legacy["report"][
+        "code_sha256s"
+    ]
+
+    mixed = copy.deepcopy(legacy)
+    mixed["report"]["code_sha256s"].pop("localization/roi_manifest.py")
+    mixed["report"]["code_sha256s"]["parsing/roi_manifest.py"] = "a" * 64
+    mixed["report_sha256"] = content_sha256(mixed["report"])
+    with pytest.raises(ValueError, match="code hash schema"):
+        validate_report_bundle(mixed)
 
 
 def test_cli_help() -> None:

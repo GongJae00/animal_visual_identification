@@ -36,8 +36,8 @@ from foundation.protected_io import (
     write_private_json_bundle,
 )
 from foundation.provenance import content_sha256
-from identity_governance.identity_registry import compute_registered_dog_id
-from identity_methods.appearance import ReceiptBoundDinov2Small
+from identity.registry.identity_registry import compute_registered_dog_id
+from embedding.methods.appearance import ReceiptBoundDinov2Small
 
 if __package__:
     from workflows.evaluate_external_appearance import (

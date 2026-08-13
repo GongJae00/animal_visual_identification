@@ -61,13 +61,13 @@ export CANINE_IDENTITY_BENCHMARK_RECEIPTS=/path/to/benchmark-receipts
 "$CANINE_IDENTITY_CPU_PYTHON" workflows/benchmark_onnx_inference.py \
   --backend CPU \
   --model "$CANINE_IDENTITY_MODEL" \
-  --backend-config operations/configs/onnx_cpu_backend.example.json \
+  --backend-config systems/configs/onnx_cpu_backend.example.json \
   --preprocessing canine_identity/configs/evidence/image_preprocessing.example.json \
   --artifact "$CANINE_IDENTITY_ARTIFACT_A" --artifact "$CANINE_IDENTITY_ARTIFACT_B" \
   --dependency-lock uv.lock \
   --runtime-library-policy "$CANINE_IDENTITY_CPU_RUNTIME_POLICY" \
   --code-revision REVISION \
-  --policy operations/configs/onnx_inference_benchmark_cpu.example.json \
+  --policy systems/configs/onnx_inference_benchmark_cpu.example.json \
   --receipt "$CANINE_IDENTITY_BENCHMARK_RECEIPTS/cpu.json"
 ```
 
@@ -80,13 +80,13 @@ export CANINE_IDENTITY_CUDA_RUNTIME_POLICY=/path/to/cuda-runtime-policy.json
 "$CANINE_IDENTITY_CUDA_PYTHON" workflows/benchmark_onnx_inference.py \
   --backend CUDA \
   --model "$CANINE_IDENTITY_MODEL" \
-  --backend-config operations/configs/onnx_cuda_backend.example.json \
+  --backend-config systems/configs/onnx_cuda_backend.example.json \
   --preprocessing canine_identity/configs/evidence/image_preprocessing.example.json \
   --artifact "$CANINE_IDENTITY_ARTIFACT_A" --artifact "$CANINE_IDENTITY_ARTIFACT_B" \
   --dependency-lock uv.lock \
   --runtime-library-policy "$CANINE_IDENTITY_CUDA_RUNTIME_POLICY" \
   --code-revision REVISION \
-  --policy operations/configs/onnx_inference_benchmark_cuda.example.json \
+  --policy systems/configs/onnx_inference_benchmark_cuda.example.json \
   --receipt "$CANINE_IDENTITY_BENCHMARK_RECEIPTS/cuda.json"
 ```
 

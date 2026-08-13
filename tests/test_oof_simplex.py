@@ -6,7 +6,7 @@ from dataclasses import FrozenInstanceError
 import numpy as np
 import pytest
 
-from evidence_fusion.oof_simplex import (
+from embedding.evidence.oof_simplex import (
     OOF_SIMPLEX_SCHEMA_VERSION,
     OOFSimplexConfig,
     OOFSimplexError,

@@ -80,20 +80,38 @@ _PUBLISHER_FRAME_RE = re.compile(
 _ZSCORE_EPSILON = 1e-8
 _PANEL_CODE_PATHS = (
     "experiments/fixed_multievidence.py",
-    "identity_methods/face/checkpoint.py",
-    "localization/roi_manifest.py",
-    "localization/nose_region/embedding_consistency_training.py",
+    "embedding/methods/face/checkpoint.py",
+    "parsing/roi_manifest.py",
+    "embedding/methods/nose/training/embedding_consistency_training.py",
     "workflows/train_roi_face_reid.py",
     "workflows/build_fixed_multievidence_panel.py",
+)
+_PRE_TRAINING_OWNERSHIP_PANEL_CODE_PATHS = tuple(
+    "parsing/nose_region/embedding_consistency_training.py"
+    if path == "embedding/methods/nose/training/embedding_consistency_training.py"
+    else path
+    for path in _PANEL_CODE_PATHS
+)
+_PRE_EMBEDDING_PANEL_CODE_PATHS = tuple(
+    path.replace("embedding/methods/", "identity_methods/", 1)
+    if path.startswith("embedding/methods/")
+    else path
+    for path in _PRE_TRAINING_OWNERSHIP_PANEL_CODE_PATHS
+)
+_LEGACY_PANEL_CODE_PATHS = tuple(
+    path.replace("parsing/", "localization/", 1)
+    if path.startswith("parsing/")
+    else path
+    for path in _PRE_EMBEDDING_PANEL_CODE_PATHS
 )
 _EVALUATION_CODE_PATHS = (
     "contracts/artifact_manifest.py",
     "evaluation/retrieval.py",
     "experiments/fixed_multievidence.py",
-    "identity_methods/appearance/__init__.py",
-    "identity_methods/face/checkpoint.py",
-    "identity_methods/face/dataset.py",
-    "identity_methods/face/residual_model.py",
+    "embedding/methods/appearance/__init__.py",
+    "embedding/methods/face/checkpoint.py",
+    "embedding/methods/face/dataset.py",
+    "embedding/methods/face/residual_model.py",
     "workflows/evaluate_fixed_multievidence.py",
 )
 
@@ -549,7 +567,7 @@ def _load_f5_checkpoint(
 ) -> tuple[dict[str, Any], dict[str, Any], str]:
     import torch
 
-    from identity_methods.face.checkpoint import (
+    from embedding.methods.face.checkpoint import (
         expected_faceid_contract_for_checkpoint,
         validate_checkpoint_structure,
     )
@@ -577,7 +595,7 @@ def _load_f5_checkpoint(
 
 
 def _load_n3_lineage(path: Path, expected_content_sha256: str | None = None):
-    from localization.nose_region.embedding_consistency_training import (
+    from embedding.methods.nose.training.embedding_consistency_training import (
         validate_lineage_manifest,
     )
 
@@ -606,7 +624,7 @@ def _read_roi_bundle(path: Path, expected_content_sha256: str | None = None):
         != _require_sha256(expected_content_sha256, "ROI bundle content SHA-256")
     ):
         raise ValueError("ROI bundle content SHA-256 differs from the external pin")
-    from localization.roi_manifest import validate_roi_manifest_bundle
+    from parsing.roi_manifest import validate_roi_manifest_bundle
 
     manifest = validate_roi_manifest_bundle(document.payload, root=path.parent)
     return document, manifest
@@ -831,12 +849,24 @@ def validate_panel_bundle(bundle: object) -> dict[str, Any]:
         exposed.update(values)
     if exposed & set(eligible):
         raise ValueError("fixed panel contains an exposed checkpoint or lineage identity")
-    if (
-        not isinstance(panel["code_sha256s"], dict)
-        or not set(_PANEL_CODE_PATHS).issubset(panel["code_sha256s"])
+    code_hashes = panel["code_sha256s"]
+    code_paths = set(code_hashes) if isinstance(code_hashes, dict) else set()
+    path_families = tuple(
+        set(paths)
+        for paths in (
+            _PANEL_CODE_PATHS,
+            _PRE_TRAINING_OWNERSHIP_PANEL_CODE_PATHS,
+            _PRE_EMBEDDING_PANEL_CODE_PATHS,
+            _LEGACY_PANEL_CODE_PATHS,
+        )
+    )
+    if not any(
+        expected.issubset(code_paths)
+        and code_paths.isdisjoint(set.union(*(other - expected for other in path_families)))
+        for expected in path_families
     ):
         raise ValueError("fixed panel code hashes differ")
-    for digest in panel["code_sha256s"].values():
+    for digest in code_hashes.values():
         _require_sha256(digest, "panel code SHA-256")
     return panel
 
@@ -1515,16 +1545,16 @@ def evaluate_fixed_panel(
         UsageLane,
         preprocess_image,
     )
-    from identity_methods.appearance import ReceiptBoundDinov2Small
-    from identity_methods.face.checkpoint import (
+    from embedding.methods.appearance import ReceiptBoundDinov2Small
+    from embedding.methods.face.checkpoint import (
         file_sha256 as face_file_sha256,
     )
-    from identity_methods.face.checkpoint import (
+    from embedding.methods.face.checkpoint import (
         normalize_dino_local_artifact_contract,
         validate_checkpoint_runtime_bindings,
     )
-    from identity_methods.face.dataset import prepare_roi_face_input
-    from identity_methods.face.trainer import (
+    from embedding.methods.face.dataset import prepare_roi_face_input
+    from embedding.methods.face.trainer import (
         build_faceid_model,
         load_receipt_bound_frozen_dino,
     )

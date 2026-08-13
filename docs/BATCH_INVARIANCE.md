@@ -74,7 +74,7 @@ uv run python workflows/create_batch_invariance_precommitment.py \
   --dependency-lock uv.lock \
   --policy experiments/configs/benchmarks/batch_invariance_policy.example.json \
   --runtime-library-policy STRICT_RUNTIME_LIBRARY_POLICY.json \
-  --worker-execution-policy operations/configs/batch_worker_execution_policy.example.json \
+  --worker-execution-policy systems/configs/batch_worker_execution_policy.example.json \
   --python-executable .venv-cpu/bin/python \
   --prior-attempt-ledger-sha256 PRIOR_LEDGER_SHA256 \
   --candidate-attempt-token CANDIDATE_ATTEMPT_SHA256 \
@@ -97,7 +97,7 @@ uv run python workflows/evaluate_batch_invariance.py \
   --precommitment BATCH_PRECOMMITMENT.json \
   --expected-precommitment-sha256 ARCHIVED_PRECOMMITMENT_SHA256 \
   --runtime-library-policy STRICT_RUNTIME_LIBRARY_POLICY.json \
-  --worker-execution-policy operations/configs/batch_worker_execution_policy.example.json \
+  --worker-execution-policy systems/configs/batch_worker_execution_policy.example.json \
   --python-executable .venv-cpu/bin/python \
   --receipt BATCH_INVARIANCE_RECEIPT.json
 ```

@@ -6,7 +6,7 @@ import argparse
 import json
 from pathlib import Path
 
-from evidence_fusion.coverage import (
+from embedding.evidence.coverage import (
     CoverageAccumulator,
     CoverageObservation,
     CoveragePolicy,

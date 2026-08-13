@@ -11,13 +11,13 @@ from PIL import Image
 
 from data.types import CaptureGroupKind, UnifiedCanidSample
 from foundation.provenance import content_sha256
-from identity_governance.identity_registry import compute_registered_dog_id
-from localization.prediction_cache import (
+from identity.registry.identity_registry import compute_registered_dog_id
+from parsing.prediction_cache import (
     build_prediction_cache,
     validate_prediction_cache,
 )
-from localization.roi_manifest import build_roi_manifest, read_roi_manifest
-from localization.types import (
+from parsing.roi_manifest import build_roi_manifest, read_roi_manifest
+from parsing.types import (
     DetectionBox,
     Keypoint,
     KeypointSet,

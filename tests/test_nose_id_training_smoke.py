@@ -6,7 +6,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-from identity_methods.nose.losses import NoseIDObjective
+from embedding.methods.nose.training.losses import NoseIDObjective
 
 
 class _ToyNoseBranches(nn.Module):

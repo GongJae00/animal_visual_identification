@@ -7,7 +7,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
-from identity_methods.classical.geometric_verifier import (
+from embedding.methods.classical.geometric_verifier import (
     GeometricAuditCapacityExceeded,
     GeometricCandidatePair,
     GeometricDecision,
@@ -137,7 +137,7 @@ class GeometricVerifierContractTests(unittest.TestCase):
                 ("phash_candidates_sha256", _token(6)),
             ),
         )
-        with patch("identity_methods.classical.geometric_verifier._load_backend", return_value=None):
+        with patch("embedding.methods.classical.geometric_verifier._load_backend", return_value=None):
             evidence = verify_geometric_request(
                 request, image_loader=lambda _: self.fail("loader must not run")
             )
@@ -163,7 +163,7 @@ class GeometricVerifierContractTests(unittest.TestCase):
         fake_numpy = type("FakeNumpy", (), {"__version__": "999"})()
         fake_cv2 = type("FakeCv2", (), {"__version__": "999"})()
         with patch(
-            "identity_methods.classical.geometric_verifier._load_backend",
+            "embedding.methods.classical.geometric_verifier._load_backend",
             return_value=(fake_numpy, fake_cv2),
         ):
             evidence = verify_geometric_request(
@@ -221,7 +221,7 @@ class GeometricVerifierContractTests(unittest.TestCase):
                 ("pdq_candidates_sha256", _token(6)),
             ),
         )
-        with patch("identity_methods.classical.geometric_verifier._load_backend", return_value=None):
+        with patch("embedding.methods.classical.geometric_verifier._load_backend", return_value=None):
             evidence = verify_geometric_request(request, image_loader=lambda _: None)
         with TemporaryDirectory() as temporary:
             output = Path(temporary) / "evidence.json"
@@ -253,7 +253,7 @@ class GeometricVerifierContractTests(unittest.TestCase):
                 ("pdq_candidates_sha256", _token(6)),
             ),
         )
-        with patch("identity_methods.classical.geometric_verifier._load_backend", return_value=None):
+        with patch("embedding.methods.classical.geometric_verifier._load_backend", return_value=None):
             evidence = verify_geometric_request(request, image_loader=lambda _: None)
         result = evidence.results[0]
         with self.assertRaisesRegex(ValueError, "decision/reason"):

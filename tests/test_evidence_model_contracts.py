@@ -36,22 +36,22 @@ from contracts.model_paths import (
     MIEWID_MSV3_WEIGHTS_SHA256,
 )
 from foundation.provenance import content_sha256
-from identity_methods.backbones.extractors import (
+from embedding.methods.backbones.extractors import (
     EvidenceExtractorRegistry,
     OnnxExtractor,
     SuperAnimalExtractor,
 )
-from identity_methods.backbones.miewid import (
+from embedding.methods.backbones.miewid import (
     MIEWID_OUTPUT_DIM,
     MiewIDArtifactManifest,
     MiewIDModelContractError,
     MiewIDReIDExtractor,
 )
-from identity_methods.nose.extractor import (
+from embedding.methods.nose.extractor import (
     DNPMask,
     YoloNoseDetector,
 )
-from localization.landmark_graph import LandmarkEvidencer
+from embedding.methods.landmark import LandmarkEvidencer
 from workflows.download_models import _convert_superanimal_to_onnx, download_model
 
 
@@ -593,7 +593,7 @@ class EvidenceModelContractTests(unittest.TestCase):
             }
             sentinel = object()
             with patch(
-                "identity_methods.backbones.miewid.MiewIDReIDExtractor",
+                "embedding.methods.backbones.miewid.MiewIDReIDExtractor",
                 return_value=sentinel,
             ) as extractor:
                 evidence = runtime._build_evidence()

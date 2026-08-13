@@ -4,7 +4,7 @@ import unittest
 
 import torch
 
-from identity_methods.nose.pooling import signed_gem
+from embedding.methods.nose.modeling.pooling import signed_gem
 
 
 class NoseIDSignedGeMTests(unittest.TestCase):

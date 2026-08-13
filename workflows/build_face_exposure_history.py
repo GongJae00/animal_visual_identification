@@ -11,7 +11,7 @@ from foundation.protected_io import (
     read_strict_json_document,
     write_private_json_bundle,
 )
-from identity_governance.face_exposure_history import build_face_exposure_history
+from identity.face.face_exposure_history import build_face_exposure_history
 
 _LIMITS = {
     "maximum_bytes": 2_147_483_648,

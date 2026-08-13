@@ -6,9 +6,9 @@ import argparse
 import json
 from pathlib import Path
 
-from identity_governance.duplicate_graph_capacity import analyze_duplicate_graph_capacity
+from identity.splits.duplicate_graph_capacity import analyze_duplicate_graph_capacity
 from foundation.protected_io import read_strict_json_object, write_private_json_bundle
-from identity_governance.protected_public_split import (
+from identity.splits.protected_public_split import (
     FrozenPublicSplitEvidenceGraph,
     ProtectedPublicSplitPolicy,
     PublicSplitSourceBundle,

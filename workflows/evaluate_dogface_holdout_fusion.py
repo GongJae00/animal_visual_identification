@@ -18,8 +18,8 @@ from typing import Any, Callable, Mapping, Sequence
 import numpy as np
 import torch
 
-from data.public_canine_manifest import DOGFACE_DATASET
-from data.public_dataset_receipt_io import read_public_archive_receipt_bundle
+from data.public.public_canine_manifest import DOGFACE_DATASET
+from data.public.public_dataset_receipt_io import read_public_archive_receipt_bundle
 from evaluation.calibration import (
     compute_probability_calibration_metrics,
     fit_isotonic_calibration,
@@ -34,19 +34,19 @@ from evaluation.robustness_protocol import (
     RobustnessProtocolConfig,
     build_dataset_balanced_oof_protocol,
 )
-from evidence_fusion.oof_simplex import OOFSimplexConfig, fit_oof_simplex
+from embedding.evidence.oof_simplex import OOFSimplexConfig, fit_oof_simplex
 from foundation.protected_io import (
     read_strict_json_document,
     write_private_json_bundle,
     write_private_json_directory_bundle,
 )
 from foundation.provenance import content_sha256
-from identity_governance.identity_registry import (
+from identity.registry.identity_registry import (
     compute_identity_token,
     compute_public_subject_token,
     compute_registered_dog_id,
 )
-from identity_governance.role_exposure import (
+from identity.exposure.role_exposure import (
     ExposureDeclarationKind,
     ExposureStage,
     RoleExposureDeclaration,
@@ -57,15 +57,15 @@ from identity_governance.role_exposure import (
     merge_role_exposure_declarations,
     verify_role_exposure_receipt,
 )
-from identity_governance.split_role_exposure import verify_split_role_exposure_inputs
-from identity_methods.face.checkpoint import (
+from identity.exposure.split_role_exposure import verify_split_role_exposure_inputs
+from embedding.methods.face.checkpoint import (
     expected_faceid_contract_for_checkpoint,
     file_sha256,
     normalize_dino_local_artifact_contract,
     validate_checkpoint_runtime_bindings,
     validate_checkpoint_structure,
 )
-from identity_methods.face.trainer import (
+from embedding.methods.face.trainer import (
     build_faceid_model,
     load_receipt_bound_frozen_dino,
 )
@@ -98,31 +98,31 @@ _CODE_PATHS = (
     "workflows/evaluate_dogface_holdout_fusion.py",
     "workflows/evaluate_external_appearance.py",
     "workflows/evaluate_roi_reid.py",
-    "representation_learning/trainer.py",
-    "representation_learning/train/config.py",
-    "identity_methods/appearance/__init__.py",
+    "embedding/learning/train/trainer.py",
+    "embedding/learning/train/config.py",
+    "embedding/methods/appearance/__init__.py",
     "contracts/dinov2_contract.py",
-    "identity_methods/face/checkpoint.py",
-    "identity_methods/face/dataset.py",
-    "identity_methods/face/model.py",
-    "identity_methods/face/trainer.py",
+    "embedding/methods/face/checkpoint.py",
+    "embedding/methods/face/dataset.py",
+    "embedding/methods/face/model.py",
+    "embedding/methods/face/trainer.py",
     "experiments/face_evaluation.py",
-    "identity_methods/nose/trainer.py",
+    "embedding/methods/nose/training/trainer.py",
     "evaluation/embedding_diagnostics.py",
     "evaluation/robustness_protocol.py",
     "evaluation/retrieval.py",
     "evaluation/calibration.py",
-    "evidence_fusion/oof_simplex.py",
-    "identity_governance/role_exposure.py",
+    "embedding/evidence/oof_simplex.py",
+    "identity/exposure/role_exposure.py",
     "foundation/protected_io.py",
-    "identity_governance/protected_public_split.py",
-    "data/public_canine_manifest.py",
-    "data/public_canine_semantic_intake.py",
-    "data/public_dataset_receipt_io.py",
-    "identity_governance/training_admission.py",
-    "identity_governance/identity_registry.py",
-    "identity_governance/split_role_exposure.py",
-    "identity_governance/split_registry_binding.py",
+    "identity/splits/protected_public_split.py",
+    "data/public/public_canine_manifest.py",
+    "data/public/public_canine_semantic_intake.py",
+    "data/public/public_dataset_receipt_io.py",
+    "identity/admission/training_admission.py",
+    "identity/registry/identity_registry.py",
+    "identity/exposure/split_role_exposure.py",
+    "identity/splits/split_registry_binding.py",
 )
 _FORBIDDEN_REPORT_KEYS = {
     "sample_token",

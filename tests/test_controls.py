@@ -5,7 +5,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from data.acquisition import sha256_file
-from evaluation.controls import (
+from evaluation.controls.policy import (
     ControlMaskEntry,
     ControlMaskManifest,
     ControlMaskVerification,
@@ -19,19 +19,19 @@ from evaluation.controls import (
     plan_visual_control_audit,
     verify_control_mask_files,
 )
-from evaluation.mask_semantics import (
+from evaluation.controls.mask_semantics import (
     MaskEntrySemanticReceipt,
     MaskPixelStats,
     MaskSemanticVerification,
 )
-from evaluation.pairing import (
+from evaluation.controls.pairing import (
     PairArtifactBinding,
     PairConstructionResult,
     PairGroundTruth,
     PairScoringRequest,
     PairStratum,
 )
-from evaluation.scoring import (
+from evaluation.controls.scoring import (
     PairArtifactEntry,
     PairArtifactManifest,
     PairArtifactVerification,

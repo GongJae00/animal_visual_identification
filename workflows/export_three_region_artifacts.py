@@ -7,8 +7,8 @@ import json
 from pathlib import Path
 
 from foundation.protected_io import read_strict_json_document, write_private_json_bundle
-from localization.roi_manifest import validate_roi_manifest_bundle
-from localization.three_region_manifest import build_three_region_artifact_bundle
+from parsing.roi_manifest import validate_roi_manifest_bundle
+from parsing.regions.three_region_manifest import build_three_region_artifact_bundle
 
 
 def parse_args() -> argparse.Namespace:

@@ -10,7 +10,7 @@ from unittest.mock import patch
 
 from PIL import Image
 
-from data.public_crop_manifest import (
+from data.public.public_crop_manifest import (
     DEFAULT_PUBLIC_CROP_VERIFICATION_POLICY,
     PublicCropArtifact,
     PublicCropManifest,
@@ -263,10 +263,10 @@ class PublicCropManifestTests(unittest.TestCase):
                 with self.subTest(cap=label):
                     with (
                         patch(
-                            "data.public_crop_manifest._read_exact_regular_file"
+                            "data.public.public_crop_manifest._read_exact_regular_file"
                         ) as read_file,
                         patch(
-                            "data.public_crop_manifest._verify_decoded_image"
+                            "data.public.public_crop_manifest._verify_decoded_image"
                         ) as decode_image,
                     ):
                         with self.assertRaisesRegex(ValueError, message):
@@ -293,7 +293,7 @@ class PublicCropManifestTests(unittest.TestCase):
                 DEFAULT_PUBLIC_CROP_VERIFICATION_POLICY,
                 maximum_encoded_bytes_per_file=original_byte_size,
             )
-            with patch("data.public_crop_manifest.os.read") as read_file:
+            with patch("data.public.public_crop_manifest.os.read") as read_file:
                 with self.assertRaisesRegex(
                     ValueError, "maximum_encoded_bytes_per_file"
                 ):
@@ -341,7 +341,7 @@ class PublicCropManifestTests(unittest.TestCase):
             path.unlink()
             os.mkfifo(path)
             with patch(
-                "data.public_crop_manifest._read_exact_regular_file"
+                "data.public.public_crop_manifest._read_exact_regular_file"
             ) as read_file:
                 with self.assertRaisesRegex(ValueError, "regular files only"):
                     verify_public_crop_manifest(

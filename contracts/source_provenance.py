@@ -28,7 +28,7 @@ def build_offline_tool_provenance(
     )
     runtime = _runtime_provenance()
     return {
-        "schema_version": "canine_identity.source_provenance.v2",
+        "schema_version": "canine_identity.source_provenance.v3",
         **{name: value for name, value in source.items() if name != "schema_version"},
         "runtime": runtime,
         "runtime_sha256": content_sha256(runtime),
@@ -55,7 +55,7 @@ def build_source_provenance(
     if not component or component != component.strip():
         raise ValueError("logical_component must be canonical non-empty text")
     return {
-        "schema_version": "canine_identity.source_closure.v2",
+        "schema_version": "canine_identity.source_closure.v3",
         "logical_component": component,
         "entrypoints": entrypoints,
         "code_source_manifest_sha256": content_sha256(rows),
@@ -129,8 +129,29 @@ def _source_closure(entries: tuple[Path, ...], repository_root: Path) -> tuple[P
         if resolved.is_symlink() or not resolved.is_file() or resolved.suffix != ".py":
             raise ValueError("offline tool source must be a real Python file")
         observed.add(resolved)
+        pending.extend(_parent_package_initializers(resolved, repository_root))
         pending.extend(_local_import_paths(resolved, repository_root))
     return tuple(sorted(observed, key=lambda path: _logical_source_name(path, repository_root)))
+
+
+def _parent_package_initializers(
+    path: Path,
+    repository_root: Path,
+) -> tuple[Path, ...]:
+    """Return package initializers Python executes before importing ``path``."""
+
+    relative_parent = path.relative_to(repository_root).parent
+    initializers: list[Path] = []
+    current = repository_root
+    for part in relative_parent.parts:
+        if part == "src" and current == repository_root:
+            current /= part
+            continue
+        current /= part
+        initializer = current / "__init__.py"
+        if initializer.is_file() and initializer != path:
+            initializers.append(initializer)
+    return tuple(initializers)
 
 
 def _local_import_paths(path: Path, repository_root: Path) -> tuple[Path, ...]:

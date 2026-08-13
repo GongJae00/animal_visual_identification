@@ -19,18 +19,18 @@ from foundation.protected_io import (
     read_strict_json_document,
 )
 from foundation.provenance import content_sha256
-from identity_governance.identity_registry import compute_registered_dog_id
-from localization.nose_region.native_yt import (
+from identity.registry.identity_registry import compute_registered_dog_id
+from parsing.nose_region.native_yt import (
     NativeYtSample,
     build_manifest_bundle,
     process_native_sample,
 )
-from localization.nose_region.sam2_teacher import (
+from parsing.nose_region.sam2_teacher import (
     SOURCE_IMAGE_MANIFEST_SCHEMA,
     produce_teacher_manifest,
     validate_source_image_manifest,
 )
-from localization.nose_region.segmentation_training import (
+from parsing.nose_region.segmentation_training import (
     INTERPRETATION,
     LICENSE_ID,
     NoseSegmentationDataset,

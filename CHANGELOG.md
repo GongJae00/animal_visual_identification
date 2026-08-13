@@ -20,6 +20,44 @@ contracts remain readable.
 - Renamed the internal data-processing package from `data_pipeline` to `data`.
   Historical content-bound source paths remain unchanged in archived receipts;
   their v2 readers reject execution against a different current source inventory.
+- Renamed the internal detection and region-processing package from `localization`
+  to `parsing`. Archived `localization/...` source inventories remain readable;
+  executable runtimes and caches still require exact current-checkout bindings.
+- Consolidated internal identity methods, representation learning, and evidence
+  handling under `embedding/{methods,learning,evidence}`. Persisted `cvi.*`
+  identifiers remain unchanged; new source provenance records the new paths.
+- Reorganized identity governance under responsibility-specific `identity/`
+  subpackages. UUID namespaces and persisted identity contracts remain unchanged.
+- Reorganized guarded execution under `systems/{inference,workers,measurement}`.
+  Exact historical worker commands and bootstrap hashes remain readable, while
+  current execution uses only the `systems.*` modules.
+- Nested pretrained intake under `contracts/intake`, moved tracklet split and
+  duplicate-adjudication policy under `identity/splits`, and moved decode and
+  capacity measurement under `systems/measurement`.
+- Moved landmark and Nose representation-learning code out of `parsing` into
+  `embedding/methods`, and moved supervised localization metrics and K-fold
+  protocols into `evaluation`. Complete historical source-path inventories remain
+  readable where persisted readers require them; mixed generations fail closed.
+- Moved Full128 source route planning to `data/full_segment` and persisted PDQ
+  contracts to `contracts`. Duplicate adjudication now consumes neutral evidence
+  contracts instead of embedding implementations, and the dependency tests reject
+  all top-level internal package cycles. Persisted `cvi.*` identifiers are unchanged.
+
+### Runtime And Resource Use
+
+- Reduced exact gallery-search allocation without changing scorer arithmetic,
+  identity aggregation, or tie ordering. Identity ordinals now use compact shared
+  storage, unrestricted searches avoid an eligibility mask, required-only searches
+  avoid a denominator array, and bounded top-k selection replaces a full identity
+  sort.
+- Reduced duplicate-adjudication peak memory by hashing candidate sets in bounded
+  blocks and by computing immutable ledger hashes once per graph assembly.
+- Removed duplicate bulk-enrollment normalization, released validated ONNX graph
+  objects before session construction, lazily imported unconfigured evidence
+  implementations, and included `parsing` in protected embedding-worker snapshots.
+- Tightened public configuration and metadata validation so boolean fusion weights
+  and reserved metadata fail before model inference. Gallery bytes, persisted
+  schema identifiers, exact scores, and deterministic result ordering are unchanged.
 
 ### Part 1 - Parser Policy And Full128 Materialization
 

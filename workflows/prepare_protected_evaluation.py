@@ -30,7 +30,7 @@ def main() -> None:
         additional_paths=(
             root / "evaluation" / "protected_evaluation.py",
             root / "foundation" / "protected_io.py",
-            root / "identity_governance" / "role_exposure.py",
+            root / "identity" / "exposure" / "role_exposure.py",
         ),
     )
     plan = prepare_protected_evaluation(

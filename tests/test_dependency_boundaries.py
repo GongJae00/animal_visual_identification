@@ -9,25 +9,21 @@ INTERNAL_PACKAGES = {
     "contracts",
     "canine_identity",
     "data",
+    "embedding",
     "evaluation",
-    "evidence_fusion",
     "experiments",
     "foundation",
-    "identity_governance",
-    "identity_methods",
+    "identity",
     "retrieval",
-    "localization",
-    "operations",
-    "representation_learning",
+    "parsing",
+    "systems",
     "visualization",
     "workflows",
 }
 ALGORITHM_PACKAGES = {
-    "evidence_fusion",
-    "identity_methods",
+    "embedding",
     "retrieval",
-    "localization",
-    "representation_learning",
+    "parsing",
 }
 
 
@@ -41,11 +37,7 @@ def _internal_imports(path: Path) -> set[str]:
             names = (node.module,)
         else:
             continue
-        imports.update(
-            name.split(".", 1)[0]
-            for name in names
-            if name.split(".", 1)[0] in INTERNAL_PACKAGES
-        )
+        imports.update(name for name in names if name.split(".", 1)[0] in INTERNAL_PACKAGES)
     return imports
 
 
@@ -60,23 +52,49 @@ def test_dependency_direction() -> None:
     for package in sorted(INTERNAL_PACKAGES):
         for path in sorted((ROOT / package).rglob("*.py")):
             imported = _internal_imports(path)
+            roots = {name.split(".", 1)[0] for name in imported}
             if package == "foundation":
-                forbidden = imported - {"foundation"}
+                forbidden = roots - {"foundation"}
             elif package == "contracts":
-                forbidden = imported - {"contracts", "foundation"}
+                forbidden = roots - {"contracts", "foundation"}
             elif package == "canine_identity":
-                forbidden = imported & {
+                forbidden = roots & {
                     "apps",
                     "evaluation",
                     "experiments",
-                    "operations",
-                    "representation_learning",
+                    "systems",
                     "workflows",
                 }
+                if any(name.startswith("embedding.learning") for name in imported):
+                    forbidden.add("embedding.learning")
+            elif package == "data":
+                forbidden = roots & {
+                    "embedding",
+                    "evaluation",
+                    "identity",
+                    "parsing",
+                    "retrieval",
+                    "systems",
+                    "workflows",
+                }
+            elif package == "identity":
+                forbidden = roots & {"embedding", "evaluation", "systems", "workflows"}
             elif package == "evaluation":
-                forbidden = imported & {"operations"}
+                forbidden = roots & {"systems"}
             elif package in ALGORITHM_PACKAGES:
-                forbidden = imported & {"evaluation", "operations", "workflows"}
+                forbidden = roots & {"evaluation", "systems", "workflows"}
+                relative = path.relative_to(ROOT).parts
+                if package == "parsing" and roots & {"embedding", "retrieval"}:
+                    forbidden.update(roots & {"embedding", "retrieval"})
+                if relative[:2] == ("embedding", "evidence") and any(
+                    name.startswith(("embedding.methods", "embedding.learning"))
+                    for name in imported
+                ):
+                    forbidden.add("embedding methods/learning")
+                elif relative[:2] == ("embedding", "methods") and any(
+                    name.startswith("embedding.learning") for name in imported
+                ):
+                    forbidden.add("embedding.learning")
             else:
                 forbidden = set()
             if forbidden:
@@ -84,3 +102,33 @@ def test_dependency_direction() -> None:
                     f"{path.relative_to(ROOT)} imports {sorted(forbidden)}"
                 )
     assert not violations, "\n".join(violations)
+
+
+def test_internal_package_graph_is_acyclic() -> None:
+    dependencies: dict[str, set[str]] = {package: set() for package in INTERNAL_PACKAGES}
+    for package in sorted(INTERNAL_PACKAGES):
+        for path in sorted((ROOT / package).rglob("*.py")):
+            dependencies[package].update(
+                name.split(".", 1)[0]
+                for name in _internal_imports(path)
+                if name.split(".", 1)[0] != package
+            )
+
+    visiting: list[str] = []
+    visited: set[str] = set()
+
+    def visit(package: str) -> None:
+        if package in visiting:
+            start = visiting.index(package)
+            cycle = visiting[start:] + [package]
+            raise AssertionError(f"internal package cycle: {' -> '.join(cycle)}")
+        if package in visited:
+            return
+        visiting.append(package)
+        for dependency in sorted(dependencies[package]):
+            visit(dependency)
+        visiting.pop()
+        visited.add(package)
+
+    for package in sorted(INTERNAL_PACKAGES):
+        visit(package)

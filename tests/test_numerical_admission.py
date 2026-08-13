@@ -12,19 +12,19 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from data.acquisition import sha256_file
-from evaluation.control_scoring import (
+from evaluation.controls.control_scoring import (
     ArtifactCacheBinding,
     EmbeddingCacheEntry,
     EmbeddingCacheManifest,
     embedding_cache_key,
 )
-from evaluation.numerical_admission import (
+from evaluation.integrity.numerical_admission import (
     NumericalAdmissionDecision,
     NumericalAdmissionReceipt,
     NumericalDriftPolicy,
     compare_embedding_caches,
 )
-from operations.embedding_producer import (
+from systems.inference.embedding_producer import (
     EmbeddingBackendIdentity,
     EmbeddingProducerConfig,
 )

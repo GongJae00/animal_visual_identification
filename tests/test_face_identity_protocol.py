@@ -5,8 +5,8 @@ from typing import Any
 
 import pytest
 
-from identity_governance import face_identity_protocol
-from identity_governance.face_identity_protocol import (
+from identity.face import face_identity_protocol
+from identity.face.face_identity_protocol import (
     build_face_identity_protocol,
     validate_face_identity_protocol_bundle,
 )

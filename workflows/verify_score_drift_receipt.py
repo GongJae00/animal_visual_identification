@@ -7,7 +7,7 @@ import json
 from pathlib import Path
 
 from foundation.protected_io import read_content_hashed_json_bundle
-from evaluation.score_drift_admission import (
+from evaluation.integrity.score_drift_admission import (
     ScoreDriftAdmissionReceipt,
     verify_score_drift_receipt_external_anchors,
 )

@@ -15,7 +15,7 @@ from foundation.protected_io import json_document_bytes, read_strict_json_docume
 from foundation.protected_publication import fsync_directory, rename_directory_noreplace
 from foundation.provenance import content_sha256
 from foundation.retained_file import read_retained_regular_file
-from localization.nose_region.sam2_teacher import (
+from parsing.nose_region.sam2_teacher import (
     MaskSelectionPolicy,
     load_local_sam2,
     produce_teacher_manifest,
@@ -110,7 +110,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     )
     tool_provenance = build_offline_tool_provenance(
         Path(__file__),
-        additional_paths=(repository_root / "localization/nose_region/sam2_teacher.py",),
+        additional_paths=(repository_root / "parsing/nose_region/sam2_teacher.py",),
     )
     producer = {
         **model_provenance,

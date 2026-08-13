@@ -6,10 +6,10 @@ import argparse
 import json
 from pathlib import Path
 
-from identity_governance.dataset_stratified_kfold import (
+from identity.research.dataset_stratified_kfold import (
     read_dataset_stratified_identity_kfold,
 )
-from representation_learning.masked_afn import train_and_evaluate_masked_afn
+from embedding.learning.masked_afn import train_and_evaluate_masked_afn
 
 
 def main() -> int:

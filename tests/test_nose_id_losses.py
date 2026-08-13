@@ -4,7 +4,7 @@ import unittest
 
 import torch
 
-from identity_methods.nose.losses import (
+from embedding.methods.nose.training.losses import (
     batch_hard_triplet_loss,
     supervised_contrastive_loss,
 )

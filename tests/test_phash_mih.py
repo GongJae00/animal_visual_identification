@@ -5,7 +5,7 @@ import random
 import unittest
 from dataclasses import fields
 
-from identity_methods.classical.phash_mih import (
+from embedding.methods.classical.phash_mih import (
     MAXIMUM_EXACT_RADIUS,
     PHASH_COEFFICIENTS,
     CandidateLimitExceeded,

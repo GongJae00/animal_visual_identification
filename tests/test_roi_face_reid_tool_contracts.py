@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from identity_methods.face import checkpoint as faceid_checkpoint
+from embedding.methods.face import checkpoint as faceid_checkpoint
 
 ROOT = Path(__file__).resolve().parents[1]
 

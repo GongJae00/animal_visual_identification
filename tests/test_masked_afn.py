@@ -5,7 +5,7 @@ import math
 import numpy as np
 import torch
 
-from representation_learning.masked_afn import (
+from embedding.learning.masked_afn import (
     _evaluate_partition,
     _fit_fusion_weights,
     _resolve_candidate_source,

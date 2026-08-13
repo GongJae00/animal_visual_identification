@@ -7,7 +7,7 @@ import json
 from pathlib import Path
 
 from foundation.protected_io import read_strict_json_document, write_private_json_bundle
-from identity_governance.full_split_census import (
+from identity.full.full_split_census import (
     FullSplitAllocationPolicy,
     UnifiedFullObservation,
     allocate_unified_full_split,

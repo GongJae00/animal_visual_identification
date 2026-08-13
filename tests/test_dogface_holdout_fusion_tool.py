@@ -9,9 +9,9 @@ from unittest.mock import patch
 import numpy as np
 import pytest
 
-from identity_governance.identity_registry import compute_identity_token
+from identity.registry.identity_registry import compute_identity_token
 from foundation.provenance import content_sha256
-from identity_governance.role_exposure import (
+from identity.exposure.role_exposure import (
     ExposureDeclarationKind,
     ExposureStage,
     RoleExposureDeclaration,

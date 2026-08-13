@@ -7,17 +7,17 @@ import json
 from pathlib import Path
 
 from data.crop_export import CropExportReceipt
-from evaluation.control_transform import (
+from evaluation.controls.control_transform import (
     ControlTransformConfigManifest,
     ControlTransformExecutionPolicy,
     control_transform_tasks_from_payload,
     execute_control_transforms,
 )
-from evaluation.controls import (
+from evaluation.controls.policy import (
     ControlMaskManifest,
     ControlMaskVerification,
 )
-from evaluation.mask_semantics import MaskSemanticVerification
+from evaluation.controls.mask_semantics import MaskSemanticVerification
 from foundation.protected_io import (
     read_strict_json_object,
     write_private_json_bundle,

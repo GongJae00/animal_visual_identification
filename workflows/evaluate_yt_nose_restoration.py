@@ -6,7 +6,7 @@ import argparse
 import json
 from pathlib import Path
 
-from identity_methods.nose.restoration import RestorationConfig
+from embedding.methods.nose.signal.restoration import RestorationConfig
 from experiments.nose_restoration import evaluate_raw_vs_restored
 
 

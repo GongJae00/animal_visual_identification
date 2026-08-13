@@ -10,7 +10,7 @@ import uuid
 from copy import deepcopy
 from pathlib import Path
 
-from identity_governance.identity_registry import (
+from identity.registry.identity_registry import (
     REGISTERED_DOG_NAMESPACE,
     IdentityRegistry,
     IdentityRegistryRecord,

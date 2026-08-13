@@ -9,7 +9,7 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from foundation.protected_io import write_private_json_bundle
-from identity_methods.full_segment.route_plan import build_full128_route_plan
+from data.full_segment.route_plan import build_full128_route_plan
 
 
 def _parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:

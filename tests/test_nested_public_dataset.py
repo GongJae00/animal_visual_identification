@@ -7,18 +7,18 @@ from dataclasses import replace
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from data.nested_public_dataset import (
+from data.public.nested_public_dataset import (
     ParentBoundNestedArchiveReceipt,
     audit_parent_bound_nested_public_zip,
 )
-from data.public_dataset import (
+from data.public.public_dataset import (
     DatasetUsageLane,
     PublicDatasetArchivePolicy,
     PublicDatasetSourceContract,
     SourceChecksumAuthority,
     audit_public_dataset_zip,
 )
-from data.public_dataset_extraction import extract_audited_public_dataset_zip
+from data.public.public_dataset_extraction import extract_audited_public_dataset_zip
 
 
 def _sha256(path: Path) -> str:

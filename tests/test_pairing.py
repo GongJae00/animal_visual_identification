@@ -5,7 +5,7 @@ from copy import deepcopy
 from dataclasses import replace
 
 from contracts.contracts import Modality
-from data.dataset import (
+from identity.splits.tracklet_split import (
     EvaluationStage,
     SplitManifest,
     SplitPolicy,
@@ -13,7 +13,7 @@ from data.dataset import (
     TrackletRecord,
 )
 from evaluation import VerificationDirection
-from evaluation.pairing import (
+from evaluation.controls.pairing import (
     DogAttributes,
     NegativeQuota,
     PairingPolicy,

@@ -31,47 +31,47 @@ from contracts.runtime_library_provenance import (
     freeze_runtime_library_policy,
 )
 from data.acquisition import sha256_file
-from evaluation.batch_invariance import (
-    BatchInvariancePolicy,
-    build_batch_invariance_precommitment,
-)
-from evaluation.control_scoring import (
+from evaluation.controls.control_scoring import (
     ArtifactSourceKind,
     ControlScoringInventory,
     EmbeddingCachePolicy,
     ScoringArtifactEntry,
 )
-from operations.batch_invariance_runner import (
+from evaluation.integrity.batch_invariance import (
+    BatchInvariancePolicy,
+    build_batch_invariance_precommitment,
+)
+from systems.inference.embedding_producer import (
+    EmbeddingProducerConfig,
+    EmbeddingProductionPolicy,
+)
+from systems.inference.onnx_backend import (
+    ImagePreprocessingConfig,
+    OnnxRuntimeBackendConfig,
+    OnnxRuntimeCpuBackend,
+    OnnxRuntimeCudaBackend,
+)
+from systems.measurement.onnx_inference_benchmark import (
+    OnnxBenchmarkBackend,
+    OnnxInferenceBenchmarkPolicy,
+    OnnxInferenceBenchmarkSummary,
+    benchmark_onnx_inference,
+)
+from systems.workers.batch_invariance_runner import (
     BatchFreshWorkerDiscovery,
     BatchFreshWorkerReceipt,
     BatchWorkerExecutionPolicy,
     run_batch_invariance_fresh_worker,
 )
-from operations.embedding_producer import (
-    EmbeddingProducerConfig,
-    EmbeddingProductionPolicy,
-)
-from operations.embedding_production_runner import (
+from systems.workers.embedding_production_runner import (
     EmbeddingFreshWorkerDiscovery,
     EmbeddingFreshWorkerReceipt,
     EmbeddingWorkerExecutionPolicy,
     build_embedding_production_precommitment,
     run_embedding_production_fresh_worker,
 )
-from operations.onnx_backend import (
-    ImagePreprocessingConfig,
-    OnnxRuntimeBackendConfig,
-    OnnxRuntimeCpuBackend,
-    OnnxRuntimeCudaBackend,
-)
-from operations.onnx_inference_benchmark import (
-    OnnxBenchmarkBackend,
-    OnnxInferenceBenchmarkPolicy,
-    OnnxInferenceBenchmarkSummary,
-    benchmark_onnx_inference,
-)
-from operations.process_supervisor import ProcessSupervisorPolicy
-from operations.worker_environment import build_sanitized_worker_environment
+from systems.workers.process_supervisor import ProcessSupervisorPolicy
+from systems.workers.worker_environment import build_sanitized_worker_environment
 
 try:
     version("onnxruntime-gpu")
@@ -124,7 +124,7 @@ def benchmark_policy(
 
 
 def preprocessing_payload() -> dict[str, object]:
-    from operations.onnx_backend import (
+    from systems.inference.onnx_backend import (
         ImageChannelOrder,
         ImageInterpolation,
         ImagePreprocessingConfig,
@@ -157,7 +157,7 @@ def backend_payload(
     *,
     cuda: bool,
 ) -> dict[str, object]:
-    from operations.onnx_backend import (
+    from systems.inference.onnx_backend import (
         ImagePreprocessingConfig,
         ImageTensorLayout,
         OnnxGraphOptimization,
@@ -906,6 +906,15 @@ class OnnxInferenceBenchmarkIntegrationTests(unittest.TestCase):
         self.assertEqual(
             OnnxInferenceBenchmarkSummary.from_dict(summary.to_dict()),
             summary,
+        )
+        legacy = deepcopy(summary.to_dict())
+        for item in legacy["worker_results"]:
+            item["supervisor"]["command"][5] = (
+                "operations.onnx_inference_benchmark"
+            )
+        self.assertEqual(
+            OnnxInferenceBenchmarkSummary.from_dict(legacy).worker_results,
+            tuple(legacy["worker_results"]),
         )
         forged = deepcopy(summary.to_dict())
         forged["worker_results"][0]["measurement"][

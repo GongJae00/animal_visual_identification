@@ -10,7 +10,7 @@ from contracts.runtime_library_provenance import (
     freeze_runtime_library_policy,
 )
 from foundation.protected_io import read_strict_json_object, write_private_json_bundle
-from operations.embedding_production_runner import EmbeddingFreshWorkerDiscovery
+from systems.workers.embedding_production_runner import EmbeddingFreshWorkerDiscovery
 
 
 def main() -> None:

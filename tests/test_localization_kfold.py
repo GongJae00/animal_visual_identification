@@ -9,8 +9,8 @@ import pytest
 
 from data.types import UnifiedCanidSample
 from foundation.provenance import content_sha256
-from identity_governance.identity_registry import compute_sample_token
-from localization.fold_protocol import (
+from identity.registry.identity_registry import compute_sample_token
+from evaluation.localization_kfold import (
     LocalizationKFoldManifest,
     LocalizationKFoldPolicy,
     build_localization_kfold_manifest,

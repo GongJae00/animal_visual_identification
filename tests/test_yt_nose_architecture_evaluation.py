@@ -30,8 +30,8 @@ from experiments.nose_architecture import (
     validate_report_bundle,
 )
 from foundation.provenance import content_sha256
-from identity_governance.identity_registry import compute_registered_dog_id
-from localization.nose_region.native_yt import (
+from identity.registry.identity_registry import compute_registered_dog_id
+from parsing.nose_region.native_yt import (
     NativeYtSample,
     build_manifest_bundle,
     process_native_sample,

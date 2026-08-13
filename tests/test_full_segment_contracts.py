@@ -10,14 +10,14 @@ import numpy as np
 import pytest
 from PIL import Image
 
-import identity_methods.full_segment.sample_materialization as materialize_workflow
+import embedding.methods.full_segment.preparation.sample_materialization as materialize_workflow
 from foundation.provenance import content_sha256
-from localization.animal_parsing import (
+from parsing.full_segment.animal_parsing import (
     AnimalParsingPrediction,
     ParsedAnimalInstance,
     ParsedAnimalQuality,
 )
-from localization.full_segment_cache import (
+from parsing.full_segment.full_segment_cache import (
     build_body_mask_observation,
     build_body_observation,
     build_full_segment_cache,
@@ -26,7 +26,7 @@ from localization.full_segment_cache import (
     validate_frozen_animal_parsing,
     validate_full_segment_cache_bundle,
 )
-from localization.full_segment_contracts import (
+from parsing.full_segment.full_segment_contracts import (
     AnimalAssociation,
     AssociationKind,
     BodyMaskPolicy,
@@ -39,7 +39,7 @@ from localization.full_segment_contracts import (
     build_native_observation,
     build_terminal_observation,
 )
-from localization.full_segment_crop import (
+from parsing.full_segment.full_segment_crop import (
     materialize_body_mask_full_crop,
     materialize_full_crop,
     materialize_native_full_crop,

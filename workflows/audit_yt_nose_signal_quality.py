@@ -9,7 +9,7 @@ import os
 from pathlib import Path
 
 from experiments.nose_signal_quality import analyze_native_nose_signal
-from localization.nose_region.native_yt import validate_manifest_bundle
+from parsing.nose_region.native_yt import validate_manifest_bundle
 from foundation.protected_io import read_strict_json_document, write_private_json_bundle
 from foundation.provenance import content_sha256
 
@@ -48,8 +48,8 @@ def main() -> None:
         relative: _sha(Path(__file__).resolve().parents[1] / relative)
         for relative in (
             "experiments/nose_signal_quality.py",
-            "localization/nose_region/manifest.py",
-            "localization/nose_region/native_yt.py",
+            "parsing/nose_region/manifest.py",
+            "parsing/nose_region/native_yt.py",
             "workflows/audit_yt_nose_signal_quality.py",
         )
     }

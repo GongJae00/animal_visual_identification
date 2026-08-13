@@ -9,7 +9,7 @@ from experiments.nose_signal_quality import (
     analyze_native_nose_signal,
     mask_topology,
 )
-from localization.nose_region.manifest import (
+from parsing.nose_region.manifest import (
     frontality_components_from_keypoints,
     frontality_from_keypoints,
 )

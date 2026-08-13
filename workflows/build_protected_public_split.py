@@ -9,7 +9,7 @@ from pathlib import Path
 from contracts.source_provenance import build_offline_tool_provenance
 from foundation.protected_io import read_strict_json_object, write_private_json_bundle
 from foundation.provenance import content_sha256
-from identity_governance.protected_public_split import (
+from identity.splits.protected_public_split import (
     FrozenPublicSplitEvidenceGraph,
     ProtectedPublicSplitPolicy,
     PublicSplitSourceBundle,
@@ -18,7 +18,7 @@ from identity_governance.protected_public_split import (
     read_split_secret,
     validate_protected_split_output_paths,
 )
-from identity_governance.split_role_exposure import (
+from identity.exposure.split_role_exposure import (
     RoleExposureLedger,
     RoleExposureReceipt,
 )

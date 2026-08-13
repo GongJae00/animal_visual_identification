@@ -1,6 +1,6 @@
 [project]
 name = "canine-video-identity"
-version = "0.4.0"
+version = "0.5.0"
 description = "Research infrastructure for contract-bound canine visual identity retrieval"
 readme = "README.md"
 authors = [
@@ -109,19 +109,28 @@ module-name = [
     "canine_identity",
     "data",
     "evaluation",
-    "evidence_fusion",
-    "experiments",
+    "embedding",
     "foundation",
-    "identity_governance",
-    "identity_methods",
+    "identity",
     "retrieval",
-    "localization",
-    "operations",
-    "representation_learning",
+    "parsing",
+    "systems",
     "visualization",
-    "workflows",
 ]
 module-root = ""
+source-include = [
+    "CHANGELOG.md",
+    "CONTRIBUTING.md",
+    "SECURITY.md",
+    "THIRD_PARTY_LICENSES.md",
+    "docs/**",
+    "experiments/**",
+    "paper/**",
+    "scripts/**",
+    "setup/**",
+    "tests/**",
+    "workflows/**",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -49,6 +49,9 @@ _MAXIMUM_IDEMPOTENCY_KEY_BYTES = _MAXIMUM_METADATA_BYTES
 _MAXIMUM_TOP_K = 1_000
 _MAXIMUM_BREED_FILTERS = 256
 _MAXIMUM_BREED_BYTES = 256
+_RESERVED_METADATA_KEYS = {
+    "template_id", "content_sha256", "idempotency_key", "template_schema"
+}
 
 
 @dataclass
@@ -234,31 +237,6 @@ class IdentityEngine:
         )
 
     def _build_evidence(self) -> dict[str, Any]:
-        from contracts.artifact_manifest import (
-            LandmarkGraphManifest,
-            LandmarkKeypointManifest,
-            NoseDetectorManifest,
-            NoseEmbeddingManifest,
-            NoseMaskManifest,
-        )
-        from contracts.model_contract import (
-            ConvNeXtModelManifest,
-            DogFaceNetModelManifest,
-            PetReIDModelManifest,
-        )
-        from identity_methods.appearance import ReceiptBoundDinov2Small
-        from identity_methods.backbones.extractors import (
-            ConvNeXtExtractor,
-            DogFaceNetExtractor,
-            PetReIDExtractor,
-        )
-        from identity_methods.backbones.miewid import (
-            MiewIDArtifactManifest,
-            MiewIDReIDExtractor,
-        )
-        from identity_methods.nose.extractor import NosePrintExtractor, NoseRoiPolicy
-        from localization.landmark_graph import LandmarkEvidencer
-
         channels = self._config.get("channels")
         if not isinstance(channels, dict) or not channels:
             raise ValueError("channels must be a non-empty object")
@@ -272,6 +250,11 @@ class IdentityEngine:
                 )
             kind = spec.get("type", "")
             if kind in ("miewid", "miewid_reid", "wildlife_reid"):
+                from embedding.methods.backbones.miewid import (
+                    MiewIDArtifactManifest,
+                    MiewIDReIDExtractor,
+                )
+
                 required_fields = {
                     "type", "model_path", "manifest_path", "parity_receipt_path",
                 }
@@ -312,6 +295,12 @@ class IdentityEngine:
                     "landmark_onnx artifact bundle"
                 )
             elif kind == "landmark_onnx":
+                from contracts.artifact_manifest import (
+                    LandmarkGraphManifest,
+                    LandmarkKeypointManifest,
+                )
+                from embedding.methods.landmark import LandmarkEvidencer
+
                 required_fields = {
                     "type",
                     "keypoint_model_path",
@@ -357,6 +346,16 @@ class IdentityEngine:
                     use_cuda=device == "cuda",
                 )
             elif kind == "nose_print_onnx":
+                from contracts.artifact_manifest import (
+                    NoseDetectorManifest,
+                    NoseEmbeddingManifest,
+                    NoseMaskManifest,
+                )
+                from embedding.methods.nose.extractor import (
+                    NosePrintExtractor,
+                    NoseRoiPolicy,
+                )
+
                 required_fields = {
                     "type",
                     "detector_model_path",
@@ -429,6 +428,8 @@ class IdentityEngine:
                     use_cuda=device == "cuda",
                 )
             elif kind == "dinov2_local":
+                from embedding.methods.appearance import ReceiptBoundDinov2Small
+
                 required_fields = {
                     "type",
                     "model_dir",
@@ -469,6 +470,17 @@ class IdentityEngine:
             elif kind in {
                 "dogfacenet_onnx", "convnext_onnx", "petreid_nose_onnx",
             }:
+                from contracts.model_contract import (
+                    ConvNeXtModelManifest,
+                    DogFaceNetModelManifest,
+                    PetReIDModelManifest,
+                )
+                from embedding.methods.backbones.extractors import (
+                    ConvNeXtExtractor,
+                    DogFaceNetExtractor,
+                    PetReIDExtractor,
+                )
+
                 required_fields = {"type", "model_path", "manifest_path"}
                 if set(spec) not in (required_fields, required_fields | {"device"}):
                     raise ValueError(
@@ -751,6 +763,11 @@ def _validate_metadata(metadata: dict | None) -> dict[str, Any] | None:
     if not isinstance(metadata, dict):
         raise ValueError(  # noqa: TRY004 - public input-validation contract
             "metadata must be a JSON object"
+        )
+    if set(metadata) & _RESERVED_METADATA_KEYS:
+        raise ValueError(
+            "metadata keys template_id, content_sha256, idempotency_key, and "
+            "template_schema are reserved"
         )
     return _canonical_json_object(
         metadata,

@@ -8,8 +8,8 @@ from typing import Any
 import numpy as np
 import pytest
 
-import evaluation.full128 as full128_module
-from evaluation.full128 import (
+import evaluation.full_segment.full128 as full128_module
+from evaluation.full_segment.full128 import (
     _METRIC_NAMES,
     CACHE_DESCRIPTOR_SCHEMA,
     Full128EvaluationError,
@@ -26,7 +26,7 @@ from evaluation.full128 import (
 from evaluation.retrieval import identity_clustered_bootstrap_ci
 from foundation.protected_io import json_document_bytes
 from foundation.provenance import content_sha256
-from identity_governance.full_split_census import (
+from identity.full.full_split_census import (
     FullStatus,
     IdentityEvidenceKind,
     RegionStatus,
@@ -36,19 +36,19 @@ from identity_governance.full_split_census import (
     allocate_unified_full_split,
     unified_full_split_bundle,
 )
-from identity_governance.generated_identity_registry import (
+from identity.registry.generated_identity_registry import (
     GENERATED_DOG_NAMESPACE,
     compute_generated_identity_id,
     compute_source_cluster_token,
 )
-from identity_governance.identity_registry import (
+from identity.registry.identity_registry import (
     REGISTERED_DOG_NAMESPACE,
     compute_registered_dog_id,
 )
-from identity_methods.full_segment.artifacts import file_binding, write_embedding_cache
-from identity_methods.full_segment.data import Full128Sample
-from identity_methods.full_segment.inventory import BUNDLE_SCHEMA, INVENTORY_SCHEMA
-from identity_methods.full_segment.manifests import (
+from embedding.methods.full_segment.training.artifacts import file_binding, write_embedding_cache
+from embedding.methods.full_segment.preparation.data import Full128Sample
+from embedding.methods.full_segment.preparation.inventory import BUNDLE_SCHEMA, INVENTORY_SCHEMA
+from embedding.methods.full_segment.training.manifests import (
     build_baseline_family_manifest,
     build_checkpoint_manifest,
     build_embedding_manifest,

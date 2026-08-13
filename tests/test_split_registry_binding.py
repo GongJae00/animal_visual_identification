@@ -6,7 +6,7 @@ from copy import deepcopy
 from pathlib import Path
 from unittest.mock import patch
 
-from identity_governance.identity_registry import (
+from identity.registry.identity_registry import (
     REGISTERED_DOG_NAMESPACE,
     create_registry_database,
     load_registry_manifest,
@@ -14,8 +14,8 @@ from identity_governance.identity_registry import (
 )
 from foundation.provenance import content_sha256
 from foundation.protected_io import read_strict_json_object
-import identity_governance.split_registry_binding as split_binding_module
-from identity_governance.split_registry_binding import (
+import identity.splits.split_registry_binding as split_binding_module
+from identity.splits.split_registry_binding import (
     IdentityBinding,
     IdentityRoleSummary,
     SplitRegistryBinding,
@@ -254,7 +254,7 @@ class BuildBindingTests(unittest.TestCase):
         did3 = "dogfacenet224:v1:web-folder:231"
         _make_registry(db, [did1, did2, did3])
 
-        from identity_governance.identity_registry import compute_identity_token
+        from identity.registry.identity_registry import compute_identity_token
         t1 = compute_identity_token(did1)
         t2 = compute_identity_token(did2)
         t3 = compute_identity_token(did3)
@@ -295,7 +295,7 @@ class BuildBindingTests(unittest.TestCase):
     def test_some_unregistered_tokens(self) -> None:
         db = self._db()
         _make_registry(db, ["yt-bb-dog:v1:video-track:1"])
-        from identity_governance.identity_registry import compute_identity_token
+        from identity.registry.identity_registry import compute_identity_token
         t_reg = compute_identity_token("yt-bb-dog:v1:video-track:1")
 
         assignment = _make_assignment([
@@ -331,7 +331,7 @@ class BuildBindingTests(unittest.TestCase):
         db = self._db()
         did = "yt-bb-dog:v1:video-track:1"
         _make_registry(db, [did])
-        from identity_governance.identity_registry import compute_identity_token
+        from identity.registry.identity_registry import compute_identity_token
 
         assignment = _make_assignment([{
             "identity_token": compute_identity_token(did),
@@ -389,7 +389,7 @@ class BuildBindingTests(unittest.TestCase):
         assignment = _make_assignment([{}])
         receipt = _make_receipt(assignment)
         with patch(
-            "identity_governance.split_registry_binding._REVOKED_RECEIPT_SHA256S",
+            "identity.splits.split_registry_binding._REVOKED_RECEIPT_SHA256S",
             {receipt["receipt_sha256"]},
         ):
             with self.assertRaisesRegex(ValueError, "revoked"):
@@ -409,9 +409,9 @@ class BuildBindingTests(unittest.TestCase):
             if key != "receipt_sha256"
         })
         with patch(
-            "identity_governance.split_registry_binding._REVOKED_RECEIPT_SHA256S", set()
+            "identity.splits.split_registry_binding._REVOKED_RECEIPT_SHA256S", set()
         ), patch(
-            "identity_governance.split_registry_binding._REVOKED_ASSIGNMENT_SHA256S",
+            "identity.splits.split_registry_binding._REVOKED_ASSIGNMENT_SHA256S",
             {receipt["assignment_sha256"]},
         ):
             with self.assertRaisesRegex(ValueError, "revoked"):
@@ -436,7 +436,7 @@ class BuildBindingTests(unittest.TestCase):
         db = self._db()
         did = "yt-bb-dog:v1:video-track:1"
         _make_registry(db, [did])
-        from identity_governance.identity_registry import compute_identity_token
+        from identity.registry.identity_registry import compute_identity_token
         assignment = _make_assignment([{
             "identity_token": compute_identity_token(did),
             "dataset_name": "yt-bb-dog",
@@ -479,7 +479,7 @@ class BuildBindingTests(unittest.TestCase):
         db = self._db()
         did = "yt-bb-dog:v1:video-track:1"
         _make_registry(db, [did])
-        from identity_governance.identity_registry import compute_identity_token
+        from identity.registry.identity_registry import compute_identity_token
         assignment = _make_assignment([{
             "identity_token": compute_identity_token(did),
             "dataset_name": "yt-bb-dog",
@@ -517,7 +517,7 @@ class BuildBindingTests(unittest.TestCase):
         db = self._db()
         did = "yt-bb-dog:v1:video-track:1"
         _make_registry(db, [did])
-        from identity_governance.identity_registry import compute_identity_token
+        from identity.registry.identity_registry import compute_identity_token
         token = compute_identity_token(did)
         assignment = _make_assignment([
             {"identity_token": token, "dataset_name": "yt-bb-dog",

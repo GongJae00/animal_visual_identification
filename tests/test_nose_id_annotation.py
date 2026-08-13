@@ -20,7 +20,7 @@ from contracts.artifact_manifest import (
     UsageLane,
 )
 from foundation.provenance import content_sha256
-from identity_methods.nose.annotation import (
+from embedding.methods.nose.data.annotation import (
     ACQUISITION_SCHEMA,
     ANNOTATION_SCHEMA,
     INVALID_MASK_CLASSES,
@@ -34,7 +34,7 @@ from identity_methods.nose.annotation import (
     validate_acquisition_records,
     validate_annotation_records,
 )
-from identity_methods.nose.types import NOSE_KEYPOINTS
+from embedding.methods.nose.types import NOSE_KEYPOINTS
 from workflows.prepare_nose_annotation_batch import (
     create_review_batch,
     validate_completed_batch,

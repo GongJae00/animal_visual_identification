@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from foundation.protected_io import read_strict_json_document, write_private_json_bundle
-from identity_methods.full_segment.inventory import (
+from embedding.methods.full_segment.preparation.inventory import (
     build_full128_experiment_inventory,
 )
 

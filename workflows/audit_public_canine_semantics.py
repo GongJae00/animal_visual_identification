@@ -7,15 +7,15 @@ import json
 from pathlib import Path
 
 from contracts.source_provenance import build_offline_tool_provenance
-from data.public_canine_manifest import (
+from data.public.public_canine_manifest import (
     DOGFACE_DATASET,
     MPDD_DATASET,
     SIBETAN_DATASET,
     YT_DATASET,
     ArchiveReceiptBinding,
 )
-from data.public_canine_semantic_intake import derive_public_canine_semantics
-from data.public_dataset_receipt_io import read_public_archive_receipt_bundle
+from data.public.public_canine_semantic_intake import derive_public_canine_semantics
+from data.public.public_dataset_receipt_io import read_public_archive_receipt_bundle
 from foundation.protected_io import write_private_json_bundle
 from foundation.provenance import content_sha256
 

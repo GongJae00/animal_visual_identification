@@ -80,7 +80,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         NoseDetectorManifest,
         UsageLane,
     )
-    from localization.nose_region.localizer import (
+    from parsing.nose_region.localizer import (
         DOGFLW_DERIVATION,
         IMAGE_MEAN,
         IMAGE_STD,

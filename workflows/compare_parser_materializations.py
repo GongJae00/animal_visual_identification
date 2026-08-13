@@ -13,8 +13,8 @@ from foundation.protected_io import (
     write_private_json_bundle,
 )
 from foundation.provenance import content_sha256
-from identity_methods.full_segment.materialization import read_route_plan_bundle
-from identity_methods.full_segment.route_plan import validate_full128_route_plan_bundle
+from embedding.methods.full_segment.preparation.materialization import read_route_plan_bundle
+from data.full_segment.route_plan import validate_full128_route_plan_bundle
 
 REPORT_SCHEMA = "cvi.parser_materialization_comparison.v1"
 
