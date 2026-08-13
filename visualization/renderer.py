@@ -6,10 +6,10 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from vis.contracts import FigureData
-from vis.recipes import draw_recipe, validate_recipe
-from vis.registry import FIGURE_BY_ID
-from vis.style import FIGURE_SIZE, matplotlib_rc
+from visualization.contracts import FigureData
+from visualization.recipes import draw_recipe, validate_recipe
+from visualization.registry import FIGURE_BY_ID
+from visualization.style import FIGURE_SIZE, matplotlib_rc
 
 _FIXED_TIME = datetime(2000, 1, 1, tzinfo=UTC)
 

@@ -6,7 +6,7 @@ import textwrap
 from collections import defaultdict
 from typing import Any
 
-from vis.style import COLORS, SERIES_COLORS
+from visualization.style import COLORS, SERIES_COLORS
 
 
 def draw_architecture(ax: Any, payload: dict[str, Any]) -> None:

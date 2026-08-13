@@ -13,10 +13,10 @@ from PIL import Image
 
 from evaluation.full128_successors import sanitize_successor_evaluation_report
 from foundation.provenance import content_sha256
-from vis.contracts import FigureContractError
-from vis.privacy import PublicationScope
-from vis.publication import publish
-from vis.successor_family import adapt_successor_family
+from visualization.contracts import FigureContractError
+from visualization.privacy import PublicationScope
+from visualization.publication import publish
+from visualization.successor_family import adapt_successor_family
 
 _ACTUAL_SUCCESSOR_IDS = tuple(
     sorted(

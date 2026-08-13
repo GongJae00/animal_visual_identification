@@ -8,14 +8,14 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from foundation.protected_io import read_strict_json_document, read_strict_json_object
-from vis.adapters import (
+from visualization.adapters import (
     adapt_common_evaluation_report,
     adapt_master_results_table,
     adapt_protected_evaluation_v3,
 )
-from vis.contracts import FigureData
-from vis.privacy import PublicationScope
-from vis.publication import publish
+from visualization.contracts import FigureData
+from visualization.privacy import PublicationScope
+from visualization.publication import publish
 
 _LARGE_JSON = {
     "maximum_bytes": 2_147_483_648,
@@ -23,7 +23,7 @@ _LARGE_JSON = {
     "maximum_keys": 10_000_000,
     "maximum_array_length": 1_000_000,
 }
-from vis.successor_family import adapt_successor_family
+from visualization.successor_family import adapt_successor_family
 
 
 def main(argv: Sequence[str] | None = None) -> int:

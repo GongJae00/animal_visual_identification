@@ -7,6 +7,12 @@ contracts remain readable.
 
 ## Unreleased
 
+### Architecture
+
+- Renamed the internal research-figure package from `vis` to `visualization`.
+  The supported public runtime remains `canine_identity.IdentityEngine`; persisted
+  `cvi.vis.*` renderer and style identifiers remain unchanged.
+
 ### Part 1 - Parser Policy And Full128 Materialization
 
 #### Parser policy v6 and Full128 route policy v3 - 2026-08-13

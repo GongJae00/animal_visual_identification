@@ -11,11 +11,11 @@ from typing import Any
 
 import numpy as np
 
-from vis.contact_sheet import draw_ranked_retrieval
-from vis.contracts import FigureContractError, FigureData
-from vis.diagrams import draw_architecture, draw_ladder
-from vis.privacy import validate_relative_asset_path
-from vis.style import COLORS, SERIES_COLORS
+from visualization.contact_sheet import draw_ranked_retrieval
+from visualization.contracts import FigureContractError, FigureData
+from visualization.diagrams import draw_architecture, draw_ladder
+from visualization.privacy import validate_relative_asset_path
+from visualization.style import COLORS, SERIES_COLORS
 
 _SHA256 = re.compile(r"[0-9a-f]{64}")
 

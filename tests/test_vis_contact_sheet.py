@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 from PIL import Image
 
-from vis import contact_sheet
+from visualization import contact_sheet
 
 
 def _save_image(path: Path, color: tuple[int, int, int]) -> str:

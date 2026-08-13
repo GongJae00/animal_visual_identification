@@ -19,7 +19,7 @@ INTERNAL_PACKAGES = {
     "localization",
     "operations",
     "representation_learning",
-    "vis",
+    "visualization",
     "workflows",
 }
 ALGORITHM_PACKAGES = {
@@ -50,6 +50,12 @@ def _internal_imports(path: Path) -> set[str]:
 
 
 def test_dependency_direction() -> None:
+    missing_packages = [
+        package
+        for package in sorted(INTERNAL_PACKAGES)
+        if not (ROOT / package / "__init__.py").is_file()
+    ]
+    assert not missing_packages, f"internal packages are absent: {missing_packages}"
     violations: list[str] = []
     for package in sorted(INTERNAL_PACKAGES):
         for path in sorted((ROOT / package).rglob("*.py")):

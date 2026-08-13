@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from typing import Any, Self
 
 from foundation.provenance import canonical_json_bytes, content_sha256
-from vis.privacy import PublicationScope, validate_publishable_value
+from visualization.privacy import PublicationScope, validate_publishable_value
 
 FIGURE_DATA_SCHEMA = "cvi.figure_data.v1"
 FIGURE_DATA_BUNDLE_SCHEMA = "cvi.figure_data.bundle.v1"

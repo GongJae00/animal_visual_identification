@@ -6,9 +6,9 @@ from collections.abc import Mapping
 from typing import Any
 
 from foundation.provenance import content_sha256
-from vis.contracts import FigureContractError, FigureData, SourceBinding
-from vis.privacy import PublicationScope
-from vis.registry import FIGURE_BY_ID
+from visualization.contracts import FigureContractError, FigureData, SourceBinding
+from visualization.privacy import PublicationScope
+from visualization.registry import FIGURE_BY_ID
 
 
 def adapt_master_results_table(

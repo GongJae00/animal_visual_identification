@@ -10,13 +10,13 @@ from pathlib import Path
 import pytest
 from PIL import Image
 
-from vis.adapters import adapt_master_results_table
-from vis.contracts import FigureContractError, FigureData, SourceBinding
-from vis.privacy import PublicationScope
-from vis.publication import publish
-from vis.recipes import validate_recipe
-from vis.registry import FIGURE_REGISTRY
-from vis.static_index import build_static_index
+from visualization.adapters import adapt_master_results_table
+from visualization.contracts import FigureContractError, FigureData, SourceBinding
+from visualization.privacy import PublicationScope
+from visualization.publication import publish
+from visualization.recipes import validate_recipe
+from visualization.registry import FIGURE_REGISTRY
+from visualization.static_index import build_static_index
 
 
 def _binding() -> SourceBinding:
@@ -279,7 +279,7 @@ def test_lightweight_import_does_not_load_rendering_stack() -> None:
             sys.executable,
             "-c",
             (
-                "import sys; import vis; "
+                "import sys; import visualization; "
                 "assert 'matplotlib' not in sys.modules; "
                 "assert 'matplotlib.pyplot' not in sys.modules; "
                 "assert 'PIL' not in sys.modules"
@@ -340,7 +340,7 @@ def test_static_index_escapes_text_and_has_no_remote_assets() -> None:
 
 def test_all_recipe_families_validate_and_render(tmp_path: Path) -> None:
     pytest.importorskip("matplotlib")
-    from vis.renderer import render_static_figure
+    from visualization.renderer import render_static_figure
 
     digest = _save_fixture_image(tmp_path / "query.png")
     (tmp_path / "candidate.png").write_bytes((tmp_path / "query.png").read_bytes())
@@ -406,7 +406,7 @@ def test_no_overwrite_precedes_rendering_or_asset_access(tmp_path: Path) -> None
 
 def test_contact_sheet_rejects_tampered_asset(tmp_path: Path) -> None:
     pytest.importorskip("matplotlib")
-    from vis.renderer import render_static_figure
+    from visualization.renderer import render_static_figure
 
     digest = _save_fixture_image(tmp_path / "query.png")
     (tmp_path / "candidate.png").write_bytes((tmp_path / "query.png").read_bytes())

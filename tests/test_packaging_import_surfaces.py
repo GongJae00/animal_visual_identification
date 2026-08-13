@@ -76,7 +76,7 @@ def guarded_import(name, *args, **kwargs):
 
 builtins.__import__ = guarded_import
 
-import vis.successor_family as successor_family
+import visualization.successor_family as successor_family
 from foundation.provenance import content_sha256
 
 validator = successor_family.validate_public_successor_evaluation_report

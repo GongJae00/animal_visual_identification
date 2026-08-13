@@ -53,7 +53,7 @@ jobs:
             artifact_contracts canine_identity data_pipeline evaluation \
             evidence_fusion experiments foundation identity_governance \
             identity_methods identity_retrieval localization operations \
-            representation_learning vis workflows
+            representation_learning visualization workflows
 
       - name: Build distributions
         run: uv build --out-dir dist
@@ -71,6 +71,8 @@ jobs:
               names = set(wheel.namelist())
           assert any(name.endswith(".dist-info/licenses/LICENSE") for name in names)
           assert "artifact_contracts/schemas/cvi.evaluation.report.v3.schema.json" in names
+          assert "visualization/__init__.py" in names
+          assert not any(name.startswith("vis/") for name in names)
           PY
           UV_PROJECT_ENVIRONMENT=.wheel-venv \
             uv sync --locked --extra cpu --no-dev

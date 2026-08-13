@@ -16,8 +16,8 @@ from evaluation.full128_successor_reporting import (
     validate_public_successor_evaluation_report,
 )
 from foundation.provenance import content_sha256
-from vis.contracts import FigureContractError, FigureData, SourceBinding
-from vis.privacy import PublicationScope
+from visualization.contracts import FigureContractError, FigureData, SourceBinding
+from visualization.privacy import PublicationScope
 
 _SCOPES = ("DEV", "CAL", "EXPOSED_DIAGNOSTIC")
 _VARIANT_SPECS = (

@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Sequence
 
-from vis.contracts import FigureContractError, FigureData
-from vis.privacy import PublicationScope, scope_allows
-from vis.registry import FIGURE_BY_ID, FIGURE_REGISTRY
+from visualization.contracts import FigureContractError, FigureData
+from visualization.privacy import PublicationScope, scope_allows
+from visualization.registry import FIGURE_BY_ID, FIGURE_REGISTRY
 
 
 def select_figures(

@@ -118,7 +118,7 @@ module-name = [
     "localization",
     "operations",
     "representation_learning",
-    "vis",
+    "visualization",
     "workflows",
 ]
 module-root = ""

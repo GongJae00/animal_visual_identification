@@ -7,7 +7,7 @@ from typing import Any
 import numpy as np
 import pytest
 
-from vis.full128_visual_audit import (
+from visualization.full128_visual_audit import (
     EXPECTED_FILENAMES,
     AuditSample,
     QueryOutcome,
@@ -55,7 +55,7 @@ def test_neutralization_and_normalization_match_production_order() -> None:
 
 
 def test_native_routes_are_distinguished_from_foreground_masks() -> None:
-    from vis.full128_visual_audit import _mask_title
+    from visualization.full128_visual_audit import _mask_title
 
     assert _mask_title("NATIVE_FACE") == "source-frame validity\n(no segmentation)"
     assert _mask_title("NATIVE_HEAD") == "source-frame validity\n(no segmentation)"
@@ -159,12 +159,22 @@ def test_renderer_writes_only_the_expected_png_names(
         path = next(value for value in args if isinstance(value, Path))
         path.write_bytes(b"png")
 
-    monkeypatch.setattr("vis.full128_visual_audit._pyplot", lambda: object())
-    monkeypatch.setattr("vis.full128_visual_audit._render_input_plate", fake_render)
-    monkeypatch.setattr("vis.full128_visual_audit._render_gallery_plate", fake_render)
-    monkeypatch.setattr("vis.full128_visual_audit._render_retrieval_plate", fake_render)
-    monkeypatch.setattr("vis.full128_visual_audit._render_embedding_plate", fake_render)
-    monkeypatch.setattr("vis.full128_visual_audit._render_trace_plate", fake_render)
+    monkeypatch.setattr("visualization.full128_visual_audit._pyplot", lambda: object())
+    monkeypatch.setattr(
+        "visualization.full128_visual_audit._render_input_plate", fake_render
+    )
+    monkeypatch.setattr(
+        "visualization.full128_visual_audit._render_gallery_plate", fake_render
+    )
+    monkeypatch.setattr(
+        "visualization.full128_visual_audit._render_retrieval_plate", fake_render
+    )
+    monkeypatch.setattr(
+        "visualization.full128_visual_audit._render_embedding_plate", fake_render
+    )
+    monkeypatch.setattr(
+        "visualization.full128_visual_audit._render_trace_plate", fake_render
+    )
     ranked = (RankedTemplate("q", 1.0, True), RankedTemplate("k", 0.0, False))
     outcome = QueryOutcome("q", ("DEV", "dataset", 1), 1, 1.0, ranked, ranked)
     samples = {"q": _sample("q", 1), "k": _sample("k", 1)}
@@ -281,7 +291,7 @@ def test_private_trace_asset_binding_rejects_substituted_artifact() -> None:
 
 def test_rendered_labels_do_not_include_private_token_or_path() -> None:
     pyplot = pytest.importorskip("matplotlib.pyplot")
-    from vis.full128_visual_audit import _sample_triplet
+    from visualization.full128_visual_audit import _sample_triplet
 
     figure, axes = pyplot.subplots(1, 3)
     private_token = "/secure/private/path/" + _sha("token")

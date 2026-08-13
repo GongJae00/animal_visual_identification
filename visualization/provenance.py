@@ -8,8 +8,8 @@ from pathlib import Path
 from typing import Any
 
 from foundation.provenance import content_sha256
-from vis.contracts import FigureData
-from vis.style import STYLE_FINGERPRINT
+from visualization.contracts import FigureData
+from visualization.style import STYLE_FINGERPRINT
 
 PROVENANCE_SCHEMA = "cvi.visualization.publication.v1"
 INVENTORY_SCHEMA = "cvi.visualization.output_inventory.v1"

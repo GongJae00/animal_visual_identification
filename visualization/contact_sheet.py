@@ -10,8 +10,8 @@ from typing import Any
 
 from PIL import Image
 
-from vis.privacy import validate_relative_asset_path
-from vis.style import COLORS
+from visualization.privacy import validate_relative_asset_path
+from visualization.style import COLORS
 
 MAX_IMAGE_PIXELS = 40_000_000
 MAX_ENCODED_IMAGE_BYTES = 64 * 1024 * 1024

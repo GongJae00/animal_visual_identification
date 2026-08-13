@@ -25,7 +25,7 @@ from identity_methods.full_segment.face_visible import (
     validate_face_visible_successor_inventory_bundle,
 )
 from localization.full_segment_cache import validate_full_segment_cache_bundle
-from vis.full128_visual_audit import (
+from visualization.full128_visual_audit import (
     AuditSample,
     QueryOutcome,
     reconstruct_ranking,

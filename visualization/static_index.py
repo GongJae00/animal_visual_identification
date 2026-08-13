@@ -5,7 +5,7 @@ from __future__ import annotations
 import html
 from collections.abc import Iterable
 
-from vis.contracts import FigureData
+from visualization.contracts import FigureData
 
 
 def build_static_index(figures: Iterable[FigureData], *, target_scope: str) -> str:

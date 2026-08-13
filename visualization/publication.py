@@ -9,12 +9,12 @@ from tempfile import TemporaryDirectory
 from typing import Any
 
 from foundation.protected_publication import fsync_directory, rename_directory_noreplace
-from vis.contracts import FigureData
-from vis.privacy import PublicationScope
-from vis.provenance import build_inventory, build_provenance
-from vis.renderer import matplotlib_version, render_static_figure
-from vis.selection import select_figures
-from vis.static_index import build_static_index
+from visualization.contracts import FigureData
+from visualization.privacy import PublicationScope
+from visualization.provenance import build_inventory, build_provenance
+from visualization.renderer import matplotlib_version, render_static_figure
+from visualization.selection import select_figures
+from visualization.static_index import build_static_index
 
 
 def publish(
