@@ -1,0 +1,22 @@
+{
+  "extraction_batch_size": 64,
+  "identities_per_batch": 16,
+  "optimizer": {
+    "learning_rate": 0.0003,
+    "name": "AdamW",
+    "weight_decay": 0.0001
+  },
+  "precision": {
+    "amp": true,
+    "amp_dtype": "float16",
+    "device": "cuda"
+  },
+  "samples_per_identity": 2,
+  "schema_version": "cvi.full128_successor_production_config.v1",
+  "seed": 20260811,
+  "ssl_objective": "TWO_VIEW_COSINE_DISTANCE",
+  "ssl_steps": 2000,
+  "supervised_steps": 2000,
+  "triplet_margin": 0.2,
+  "workers": 8
+}
