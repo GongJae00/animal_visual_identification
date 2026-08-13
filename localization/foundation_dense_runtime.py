@@ -14,7 +14,7 @@ from typing import Any
 import numpy as np
 from PIL import Image
 
-from artifact_contracts.foundation_vision_model import (
+from contracts.foundation_vision_model import (
     FoundationModelFamily,
     FoundationVisionArtifact,
 )

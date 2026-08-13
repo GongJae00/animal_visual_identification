@@ -9,27 +9,26 @@ import numpy as np
 import pytest
 from PIL import Image
 
-from artifact_contracts.artifact_manifest import (
+from contracts.artifact_manifest import (
     ArtifactContractError,
     ArtifactLicense,
     ImagePreprocessing,
     NoseEmbeddingManifest,
     UsageLane,
 )
-from identity_governance.identity_registry import compute_registered_dog_id
 from experiments.nose_restoration import (
     INTERPRETATION,
     METHODS,
     evaluate_raw_vs_restored,
     validate_report_bundle,
 )
+from foundation.provenance import content_sha256
+from identity_governance.identity_registry import compute_registered_dog_id
 from localization.nose_region.native_yt import (
     NativeYtSample,
     build_manifest_bundle,
     process_native_sample,
 )
-from foundation.provenance import content_sha256
-
 
 pytest.importorskip("onnx")
 pytest.importorskip("onnxruntime")

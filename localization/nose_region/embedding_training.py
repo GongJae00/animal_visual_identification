@@ -20,29 +20,28 @@ from PIL import Image, ImageEnhance, ImageOps
 from torch.nn import functional as F
 from torch.utils.data import DataLoader, Dataset, Sampler
 
-from artifact_contracts.artifact_manifest import (
+from contracts.artifact_manifest import (
     ArtifactLicense,
     ImagePreprocessing,
     NoseEmbeddingManifest,
     UsageLane,
     preprocess_image,
 )
-from artifact_contracts.dinov2_contract import Dinov2LocalArtifactContract
-from artifact_contracts.model_parity import (
+from contracts.dinov2_contract import Dinov2LocalArtifactContract
+from contracts.model_parity import (
     ModelParityReceipt,
     ModelUsageLane,
     ParityFixtureKind,
     ParityFixtureResult,
     ParityThresholds,
 )
-from localization.nose_region.manifest import read_nose_region_manifest
 from foundation.protected_io import (
     read_strict_json_document,
     read_strict_json_object,
     write_private_json_bundle,
 )
 from foundation.provenance import content_sha256
-
+from localization.nose_region.manifest import read_nose_region_manifest
 
 CHECKPOINT_SCHEMA = "cvi.nose_region_rgb_embedding_checkpoint.v1"
 LINEAGE_SCHEMA = "cvi.nose_region_rgb_embedding_artifact_bundle.v1"

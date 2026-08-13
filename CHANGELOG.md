@@ -12,6 +12,9 @@ contracts remain readable.
 - Renamed the internal research-figure package from `vis` to `visualization`.
   The supported public runtime remains `canine_identity.IdentityEngine`; persisted
   `cvi.vis.*` renderer and style identifiers remain unchanged.
+- Renamed the internal artifact-schema package from `artifact_contracts` to
+  `contracts`. Persisted `cvi.*` identifiers and artifact-contract field names
+  remain unchanged.
 
 ### Part 1 - Parser Policy And Full128 Materialization
 

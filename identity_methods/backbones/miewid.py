@@ -2,27 +2,27 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from hashlib import sha256
 from pathlib import Path
-import re
 from typing import Any
 
 import numpy as np
 from PIL import Image
 
-from evidence_fusion.base import AbstractEvidencer
-from artifact_contracts.model_parity import (
+from contracts.model_parity import (
     ModelParityError,
     ModelUsageLane,
     load_model_parity_receipt,
     validate_parity_binding,
 )
-from artifact_contracts.model_paths import (
+from contracts.model_paths import (
     MIEWID_MSV3_HF_REPO,
     MIEWID_MSV3_REVISION,
     MIEWID_MSV3_WEIGHTS_SHA256,
 )
+from evidence_fusion.base import AbstractEvidencer
 from foundation.provenance import content_sha256
 
 MIEWID_IMAGE_SIZE = 440

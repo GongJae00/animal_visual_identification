@@ -6,9 +6,10 @@ import argparse
 import json
 from pathlib import Path
 
-from identity_methods.classical.pdq_contracts import PDQSearchPolicy
+from contracts.source_provenance import build_offline_tool_provenance
 from foundation.protected_io import read_strict_json_object
 from foundation.provenance import content_sha256
+from identity_methods.classical.pdq_contracts import PDQSearchPolicy
 from identity_methods.classical.public_canine_pdq_audit import (
     build_pdq_evidence_bundle,
     merge_pdq_fingerprint_chunks,
@@ -23,7 +24,6 @@ from identity_methods.classical.public_canine_phash_audit import (
     read_public_canine_phash_policy,
     read_public_canine_phash_sources,
 )
-from artifact_contracts.source_provenance import build_offline_tool_provenance
 
 
 def _parser() -> argparse.ArgumentParser:

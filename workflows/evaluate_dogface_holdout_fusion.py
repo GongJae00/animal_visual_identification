@@ -98,7 +98,7 @@ _CODE_PATHS = (
     "representation_learning/trainer.py",
     "representation_learning/train/config.py",
     "identity_methods/appearance/__init__.py",
-    "artifact_contracts/dinov2_contract.py",
+    "contracts/dinov2_contract.py",
     "identity_methods/face/checkpoint.py",
     "identity_methods/face/dataset.py",
     "identity_methods/face/model.py",

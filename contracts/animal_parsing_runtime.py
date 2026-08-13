@@ -6,7 +6,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
 
-from artifact_contracts.model_file_binding import ModelFileBinding
+from contracts.model_file_binding import ModelFileBinding
 from foundation.provenance import content_sha256
 
 LEGACY_BUNDLE_SCHEMA = "cvi.animal_parsing_runtime_bundle.v1"

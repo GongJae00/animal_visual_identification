@@ -16,18 +16,17 @@ from typing import Any, Mapping
 import numpy as np
 from PIL import Image
 
-from artifact_contracts.artifact_manifest import (
+from contracts.artifact_manifest import (
     ArtifactContractError,
     ExactOnnxRuntime,
     NoseMaskManifest,
     UsageLane,
     preprocess_image,
 )
-from localization.nose_region.native_yt import validate_manifest_bundle
 from foundation.protected_io import json_document_bytes, read_strict_json_document
 from foundation.protected_publication import fsync_directory, rename_directory_noreplace
 from foundation.provenance import content_sha256
-
+from localization.nose_region.native_yt import validate_manifest_bundle
 
 MANIFEST_SCHEMA = "cvi.nose_embedding_views.v1"
 MANIFEST_FILENAME = "nose-embedding-views.json"
@@ -38,7 +37,7 @@ _SHA256_PATHS = (
     "localization/nose_region/embedding_views.py",
     "localization/nose_region/native_yt.py",
     "localization/nose_region/segmentation_training.py",
-    "artifact_contracts/artifact_manifest.py",
+    "contracts/artifact_manifest.py",
     "foundation/protected_io.py",
     "foundation/protected_publication.py",
     "foundation/provenance.py",

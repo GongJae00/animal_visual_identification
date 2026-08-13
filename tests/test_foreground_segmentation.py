@@ -6,12 +6,12 @@ from pathlib import Path
 
 import pytest
 
-from artifact_contracts.foreground_segmentation_model import (
+from contracts.foreground_segmentation_model import (
     ForegroundSegmentationArtifact,
     ForegroundSegmentationModelManifest,
     foreground_segmentation_model_bundle,
 )
-from artifact_contracts.model_file_binding import ModelFileBinding
+from contracts.model_file_binding import ModelFileBinding
 from localization.foreground_segmentation import (
     _compute_inference_size,
     _validate_target_box,

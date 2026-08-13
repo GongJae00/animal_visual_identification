@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from math import isfinite
 from typing import Any
 
-from artifact_contracts.contracts import Modality
+from contracts.contracts import Modality
 from foundation.provenance import content_sha256
 
 PIXEL_BIN_UPPER_EDGES = (64, 96, 128, 224, 256, 384, 512)

@@ -18,28 +18,28 @@ import PIL
 import torch
 from PIL import Image
 
-from data_pipeline.crop_export import CropExportReceipt
-from artifact_contracts.dinov2_contract import (
+from contracts.dinov2_contract import (
     Dinov2LocalArtifactContract,
     Dinov2OnnxArtifactManifest,
 )
-from artifact_contracts.model_parity import (
+from contracts.model_parity import (
     ModelParityReceipt,
     ModelUsageLane,
     ParityFixtureKind,
     ParityFixtureResult,
     ParityThresholds,
 )
+from contracts.pretrained_supporting_asset_intake import (
+    parse_bounded_strict_json_object,
+)
+from data_pipeline.crop_export import CropExportReceipt
+from foundation.protected_io import read_strict_json_object
+from foundation.provenance import content_sha256
+from foundation.retained_file import read_retained_regular_file
 from operations.onnx_backend import (
     dinov2_image_preprocessing_config,
     preprocess_image_batch,
 )
-from artifact_contracts.pretrained_supporting_asset_intake import (
-    parse_bounded_strict_json_object,
-)
-from foundation.protected_io import read_strict_json_object
-from foundation.provenance import content_sha256
-from foundation.retained_file import read_retained_regular_file
 
 
 class _Dinov2ExportWrapper(torch.nn.Module):

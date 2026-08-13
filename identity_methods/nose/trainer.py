@@ -2,16 +2,16 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterable, Mapping, Sequence
 import math
-from pathlib import Path
 import time
+from collections.abc import Iterable, Mapping, Sequence
+from pathlib import Path
 from typing import Any
 
 import torch
 from torch.nn import functional as F
 
-from artifact_contracts.dinov2_contract import Dinov2LocalArtifactContract
+from contracts.dinov2_contract import Dinov2LocalArtifactContract
 from identity_methods.nose.augment import NoseAugmentedView, NoseIdentityAugment
 from identity_methods.nose.losses import NoseIDObjective
 from identity_methods.nose.model import NoseIDModel

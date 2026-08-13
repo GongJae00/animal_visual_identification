@@ -22,13 +22,12 @@ from tempfile import mkdtemp
 from typing import Any, BinaryIO
 from urllib.parse import urlsplit
 
-from foundation.protected_publication import fsync_directory, rename_directory_noreplace
-from artifact_contracts.pretrained_supporting_asset_intake import (
+from contracts.pretrained_supporting_asset_intake import (
     parse_bounded_strict_json_object,
 )
+from foundation.protected_publication import fsync_directory, rename_directory_noreplace
 from foundation.provenance import content_sha256
 from foundation.retained_file import read_retained_regular_file
-
 
 _ARCHIVE_AUTHORITY = "OBSERVED_SHA256_ONLY_NO_PUBLISHER_ARCHIVE_CHECKSUM"
 _LICENSE_CLASSIFICATION = "MANUALLY_CLASSIFIED_EXACT_ROOT_LICENSE_BSD_3_CLAUSE"

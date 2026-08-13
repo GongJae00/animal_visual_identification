@@ -481,7 +481,7 @@ def test_tracked_json_schema_accepts_normalized_bundle() -> None:
     figure_id, payload = _payloads()["census"]
     schema_path = (
         Path(__file__).resolve().parents[1]
-        / "artifact_contracts"
+        / "contracts"
         / "schemas"
         / "cvi.figure_data.bundle.v1.schema.json"
     )

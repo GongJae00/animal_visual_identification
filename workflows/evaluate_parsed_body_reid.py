@@ -19,16 +19,16 @@ from typing import Any
 import numpy as np
 from PIL import Image
 
-from artifact_contracts.animal_parsing_runtime import (
+from contracts.animal_parsing_runtime import (
     SUPPORTED_BUNDLE_SCHEMAS as SUPPORTED_PARSING_BUNDLE_SCHEMAS,
 )
-from artifact_contracts.animal_parsing_runtime import (
+from contracts.animal_parsing_runtime import (
     AnimalParsingRuntimeManifest,
 )
-from artifact_contracts.foreground_segmentation_model import (
+from contracts.foreground_segmentation_model import (
     ForegroundSegmentationArtifact,
 )
-from artifact_contracts.instance_segmentation_model import (
+from contracts.instance_segmentation_model import (
     InstanceSegmentationArtifact,
 )
 from data_pipeline.adapters import adapt_yt_bb_dog
@@ -292,10 +292,10 @@ def _source_file_hashes(repository_root: Path) -> dict[str, str]:
     return {
         relative: _sha256(repository_root / relative)
         for relative in (
-            "artifact_contracts/animal_parsing_runtime.py",
-            "artifact_contracts/dinov2_contract.py",
-            "artifact_contracts/foreground_segmentation_model.py",
-            "artifact_contracts/instance_segmentation_model.py",
+            "contracts/animal_parsing_runtime.py",
+            "contracts/dinov2_contract.py",
+            "contracts/foreground_segmentation_model.py",
+            "contracts/instance_segmentation_model.py",
             "data_pipeline/adapters.py",
             "data_pipeline/source_lock.py",
             "data_pipeline/types.py",

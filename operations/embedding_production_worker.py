@@ -8,7 +8,14 @@ import os
 from pathlib import Path
 from typing import Any
 
+from contracts.runtime_library_provenance import (
+    RuntimeLibraryPhase,
+    RuntimeLibraryPolicy,
+    RuntimeLibraryTracker,
+)
 from evaluation.control_scoring import ControlScoringInventory, EmbeddingCachePolicy
+from foundation.protected_io import read_strict_json_object, write_private_json_bundle
+from foundation.provenance import content_sha256
 from operations.embedding_producer import (
     EmbeddingProducerConfig,
     EmbeddingProductionPolicy,
@@ -22,18 +29,10 @@ from operations.embedding_production_runner import (
     build_embedding_production_precommitment,
     embedding_artifact_paths_from_dict,
 )
-from foundation.protected_io import read_strict_json_object, write_private_json_bundle
-from foundation.provenance import content_sha256
-from artifact_contracts.runtime_library_provenance import (
-    RuntimeLibraryPhase,
-    RuntimeLibraryPolicy,
-    RuntimeLibraryTracker,
-)
 from operations.worker_environment import (
     WorkerEnvironmentIdentity,
     validate_current_worker_environment,
 )
-
 
 _FILE_NAMES = {
     "inventory", "artifact_paths", "producer_config", "onnx_config",

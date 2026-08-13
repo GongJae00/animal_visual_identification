@@ -7,8 +7,8 @@ import hashlib
 import json
 from pathlib import Path
 
-from artifact_contracts.foundation_vision_model import FoundationFileBinding
-from artifact_contracts.prompt_segmentation_model import (
+from contracts.foundation_vision_model import FoundationFileBinding
+from contracts.prompt_segmentation_model import (
     PromptSegmentationModelManifest,
     prompt_segmentation_model_bundle,
 )

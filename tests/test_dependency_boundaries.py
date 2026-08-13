@@ -6,7 +6,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 INTERNAL_PACKAGES = {
     "apps",
-    "artifact_contracts",
+    "contracts",
     "canine_identity",
     "data_pipeline",
     "evaluation",
@@ -62,8 +62,8 @@ def test_dependency_direction() -> None:
             imported = _internal_imports(path)
             if package == "foundation":
                 forbidden = imported - {"foundation"}
-            elif package == "artifact_contracts":
-                forbidden = imported - {"artifact_contracts", "foundation"}
+            elif package == "contracts":
+                forbidden = imported - {"contracts", "foundation"}
             elif package == "canine_identity":
                 forbidden = imported & {
                     "apps",

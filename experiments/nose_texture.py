@@ -13,13 +13,12 @@ import cv2
 import numpy as np
 from PIL import Image
 
-from artifact_contracts.artifact_manifest import ExactOnnxRuntime, NoseEmbeddingManifest
+from contracts.artifact_manifest import ExactOnnxRuntime, NoseEmbeddingManifest
 from evaluation.embedding_diagnostics import compute_embedding_diagnostics
 from evaluation.retrieval import (
     compute_cosine_score_matrix,
     identity_clustered_bootstrap_ci,
 )
-from identity_methods.nose.frequency import classical_texture_descriptors
 from experiments.nose_fusion_scaling import (
     _embed,
     _file_binding,
@@ -29,11 +28,11 @@ from experiments.nose_fusion_scaling import (
     _rank_rows,
     _require_sha256,
 )
-from identity_methods.nose.temporal import aggregate_nose_embeddings
-from localization.nose_region.native_yt import validate_manifest_bundle
 from foundation.protected_io import read_strict_json_document, write_private_json_bundle
 from foundation.provenance import content_sha256
-
+from identity_methods.nose.frequency import classical_texture_descriptors
+from identity_methods.nose.temporal import aggregate_nose_embeddings
+from localization.nose_region.native_yt import validate_manifest_bundle
 
 REPORT_SCHEMA = "cvi.yt_nose_texture_evaluation.v2"
 REPORT_BUNDLE_SCHEMA = "cvi.yt_nose_texture_evaluation_bundle.v2"

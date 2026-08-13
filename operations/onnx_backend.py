@@ -4,18 +4,18 @@ from __future__ import annotations
 
 import math
 import os
-from hashlib import sha256
 from dataclasses import dataclass
 from enum import StrEnum
+from hashlib import sha256
 from pathlib import Path
 from typing import Any
 
+from contracts.model_contracts import reject_unverified_superanimal_onnx
+from foundation.provenance import content_sha256
 from operations.embedding_producer import (
     EmbeddingBackendIdentity,
     EmbeddingRuntimeResources,
 )
-from artifact_contracts.model_contracts import reject_unverified_superanimal_onnx
-from foundation.provenance import content_sha256
 
 
 class ImageTensorLayout(StrEnum):

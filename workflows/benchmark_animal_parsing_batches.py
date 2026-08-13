@@ -18,10 +18,10 @@ from typing import Any
 import numpy as np
 from PIL import Image
 
-from artifact_contracts.foreground_segmentation_model import (
+from contracts.foreground_segmentation_model import (
     ForegroundSegmentationArtifact,
 )
-from artifact_contracts.instance_segmentation_model import (
+from contracts.instance_segmentation_model import (
     InstanceSegmentationArtifact,
 )
 from data_pipeline.acquisition import sha256_file

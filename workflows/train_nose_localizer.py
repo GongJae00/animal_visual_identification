@@ -74,7 +74,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     import torch
     from torch.utils.data import ConcatDataset, DataLoader
 
-    from artifact_contracts.artifact_manifest import (
+    from contracts.artifact_manifest import (
         ArtifactLicense,
         ImagePreprocessing,
         NoseDetectorManifest,

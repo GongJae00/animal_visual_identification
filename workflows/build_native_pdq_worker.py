@@ -5,8 +5,8 @@ import argparse
 import json
 from pathlib import Path
 
+from contracts.source_provenance import build_offline_tool_provenance
 from identity_methods.classical.pdq_native import build_native_pdq_worker
-from artifact_contracts.source_provenance import build_offline_tool_provenance
 
 
 def main() -> int:

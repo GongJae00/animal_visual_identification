@@ -7,12 +7,12 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from artifact_contracts.instance_segmentation_model import (
+from contracts.instance_segmentation_model import (
     InstanceSegmentationArtifact,
     InstanceSegmentationModelManifest,
     instance_segmentation_model_bundle,
 )
-from artifact_contracts.model_file_binding import ModelFileBinding
+from contracts.model_file_binding import ModelFileBinding
 from localization.animal_instance_segmentation import (
     AnimalInstanceCandidate,
     _all_target_candidates,

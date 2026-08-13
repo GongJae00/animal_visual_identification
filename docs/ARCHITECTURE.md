@@ -48,7 +48,7 @@ same representation path has run for query or enrollment input.
 | Path | Responsibility |
 |---|---|
 | `foundation/` | Deterministic hashing, protected I/O, publication, and retained-file primitives |
-| `artifact_contracts/` | Model, source, runtime-library, intake, parity, and fail-closed region-evidence schemas |
+| `contracts/` | Model, source, runtime-library, intake, parity, and fail-closed region-evidence schemas |
 | `data_pipeline/` | Dataset adapters, acquisition, manifests, crop export, and duplicate evidence intake |
 | `identity_governance/` | UUID registries, duplicate closure, split roles, exposure, research admission, and retrospective identity K-folds |
 | `localization/` | Detection, ROI geometry, prediction caches, identity-free localization folds, and region materialization/training |
@@ -74,7 +74,7 @@ The dataset-stratified identity and localization K-fold manifests are exposed re
 `tests/test_dependency_boundaries.py` enforces these rules with an AST import scan:
 
 1. `foundation` imports no other internal package.
-2. `artifact_contracts` depends only on itself and `foundation`.
+2. `contracts` depends only on itself and `foundation`.
 3. Algorithm packages do not import `evaluation` or `operations`.
 4. `canine_identity` does not import learning, evaluation, operations, experiments, workflows, or apps.
 5. `evaluation` may consume all algorithm packages.

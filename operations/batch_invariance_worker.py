@@ -6,6 +6,11 @@ import argparse
 from pathlib import Path
 from typing import Any
 
+from contracts.runtime_library_provenance import (
+    RuntimeLibraryPhase,
+    RuntimeLibraryPolicy,
+    RuntimeLibraryTracker,
+)
 from evaluation.batch_invariance import (
     BatchInvariancePolicy,
     BatchInvariancePrecommitment,
@@ -13,21 +18,15 @@ from evaluation.batch_invariance import (
     batch_artifact_paths_from_dict,
     evaluate_batch_composition_invariance,
 )
-from operations.batch_invariance_runner import _verify_file_binding
 from evaluation.control_scoring import ControlScoringInventory
-from operations.embedding_producer import EmbeddingProducerConfig
 from foundation.protected_io import read_strict_json_object, write_private_json_bundle
 from foundation.provenance import content_sha256
-from artifact_contracts.runtime_library_provenance import (
-    RuntimeLibraryPhase,
-    RuntimeLibraryPolicy,
-    RuntimeLibraryTracker,
-)
+from operations.batch_invariance_runner import _verify_file_binding
+from operations.embedding_producer import EmbeddingProducerConfig
 from operations.worker_environment import (
     WorkerEnvironmentIdentity,
     validate_current_worker_environment,
 )
-
 
 _FILE_NAMES = {
     "inventory", "artifact_paths", "producer_config", "onnx_config",

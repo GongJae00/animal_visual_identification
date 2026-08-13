@@ -87,7 +87,7 @@ _PANEL_CODE_PATHS = (
     "workflows/build_fixed_multievidence_panel.py",
 )
 _EVALUATION_CODE_PATHS = (
-    "artifact_contracts/artifact_manifest.py",
+    "contracts/artifact_manifest.py",
     "evaluation/retrieval.py",
     "experiments/fixed_multievidence.py",
     "identity_methods/appearance/__init__.py",
@@ -531,7 +531,7 @@ def _document_binding(path: Path, document: Any) -> dict[str, Any]:
 
 
 def _code_sha256s(repository: Path, paths: Sequence[str]) -> dict[str, str]:
-    from artifact_contracts.source_provenance import build_source_provenance
+    from contracts.source_provenance import build_source_provenance
 
     provenance = build_source_provenance(repository / relative for relative in paths)
     return {
@@ -1509,7 +1509,7 @@ def evaluate_fixed_panel(
 
     import torch
 
-    from artifact_contracts.artifact_manifest import (
+    from contracts.artifact_manifest import (
         ExactOnnxRuntime,
         NoseEmbeddingManifest,
         UsageLane,

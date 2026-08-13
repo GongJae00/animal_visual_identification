@@ -9,7 +9,7 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
-from artifact_contracts.source_provenance import build_source_provenance
+from contracts.source_provenance import build_source_provenance
 from experiments.nose_observability import (
     REPORT_BUNDLE_SCHEMA,
     audit_nose_observability,

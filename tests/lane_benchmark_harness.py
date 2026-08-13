@@ -6,15 +6,15 @@ import argparse
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
+from contracts.runtime_library_provenance import (
+    RuntimeLibraryManifest,
+    freeze_runtime_library_policy,
+)
+from foundation.protected_io import read_strict_json_object, write_private_json_bundle
 from operations.onnx_inference_benchmark import (
     OnnxBenchmarkBackend,
     OnnxInferenceBenchmarkPolicy,
     benchmark_onnx_inference,
-)
-from foundation.protected_io import read_strict_json_object, write_private_json_bundle
-from artifact_contracts.runtime_library_provenance import (
-    RuntimeLibraryManifest,
-    freeze_runtime_library_policy,
 )
 
 

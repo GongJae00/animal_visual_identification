@@ -6,7 +6,7 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 
-from artifact_contracts.artifact_manifest import (
+from contracts.artifact_manifest import (
     ArtifactContractError,
     ExactOnnxRuntime,
     LandmarkGraphManifest,
@@ -20,7 +20,6 @@ from evidence_fusion.base import (
     EvidenceUnavailableReason,
 )
 from foundation.provenance import content_sha256
-
 
 DOGFLW_LANDMARKS: tuple[str, ...] = (
     "left_eye",

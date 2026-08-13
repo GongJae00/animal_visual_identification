@@ -387,7 +387,7 @@ def materialize_embedding_cache(
         n3_runtime_manifest_sha256,
         "N3 runtime manifest",
     )
-    from artifact_contracts.artifact_manifest import (
+    from contracts.artifact_manifest import (
         ExactOnnxRuntime,
         NoseEmbeddingManifest,
         UsageLane,
@@ -1853,7 +1853,7 @@ def _worktree_provenance(repository: Path) -> dict[str, Any]:
 
 
 def _code_hashes(repository: Path, paths: Sequence[str]) -> dict[str, str]:
-    from artifact_contracts.source_provenance import build_source_provenance
+    from contracts.source_provenance import build_source_provenance
 
     provenance = build_source_provenance(repository / relative for relative in paths)
     return {

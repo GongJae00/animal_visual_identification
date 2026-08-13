@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-import hashlib
 import ast
+import hashlib
 import os
 import platform
 import sys

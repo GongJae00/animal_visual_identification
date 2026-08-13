@@ -7,11 +7,11 @@ import hashlib
 import json
 from pathlib import Path
 
-from artifact_contracts.instance_segmentation_model import (
+from contracts.instance_segmentation_model import (
     InstanceSegmentationModelManifest,
     instance_segmentation_model_bundle,
 )
-from artifact_contracts.model_file_binding import ModelFileBinding
+from contracts.model_file_binding import ModelFileBinding
 from foundation.protected_io import write_private_json_bundle
 
 _REQUIRED_FILES = ("config.json", "model.safetensors", "preprocessor_config.json")

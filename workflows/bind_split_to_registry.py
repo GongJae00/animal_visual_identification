@@ -11,10 +11,10 @@ import json
 import time
 from pathlib import Path
 
+from contracts.source_provenance import build_offline_tool_provenance
 from foundation.protected_io import read_strict_json_object, write_private_json_bundle
-from identity_governance.split_registry_binding import build_binding
-from artifact_contracts.source_provenance import build_offline_tool_provenance
 from foundation.provenance import content_sha256
+from identity_governance.split_registry_binding import build_binding
 
 
 def main() -> None:

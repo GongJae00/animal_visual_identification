@@ -6,9 +6,7 @@ from dataclasses import replace
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from data_pipeline.acquisition import sha256_file
-from foundation.provenance import content_sha256
-from artifact_contracts.runtime_library_provenance import (
+from contracts.runtime_library_provenance import (
     ExpectedRuntimeBinary,
     RuntimeLibraryManifest,
     RuntimeLibraryPhase,
@@ -17,6 +15,8 @@ from artifact_contracts.runtime_library_provenance import (
     freeze_runtime_library_policy,
     parse_executable_mappings,
 )
+from data_pipeline.acquisition import sha256_file
+from foundation.provenance import content_sha256
 
 
 def maps_line(path: Path, executable: bool = True) -> bytes:

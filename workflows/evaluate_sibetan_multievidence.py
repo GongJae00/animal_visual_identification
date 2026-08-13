@@ -12,7 +12,14 @@ from pathlib import Path
 import numpy as np
 import torch
 
-from artifact_contracts.source_provenance import build_source_provenance
+from contracts.artifact_manifest import (
+    ExactOnnxRuntime,
+    NoseEmbeddingManifest,
+    UsageLane,
+    preprocess_image,
+)
+from contracts.source_provenance import build_source_provenance
+from evaluation.retrieval import identity_clustered_bootstrap_ci
 from experiments.sibetan_evidence import validate_evidence_bundle_v2
 from experiments.sibetan_multievidence import (
     BRANCHES,
@@ -23,24 +30,21 @@ from experiments.sibetan_multievidence import (
     nose_reliability,
 )
 from experiments.unified_multievidence import _extract_dino_embeddings, _read_bound_rgb
-from identity_methods.appearance import ReceiptBoundDinov2Small
-from artifact_contracts.artifact_manifest import (
-    ExactOnnxRuntime,
-    NoseEmbeddingManifest,
-    UsageLane,
-    preprocess_image,
+from foundation.protected_io import (
+    read_strict_json_document,
+    read_strict_json_object,
+    write_private_json_bundle,
 )
-from identity_governance.identity_registry import compute_registered_dog_id
-from evaluation.retrieval import identity_clustered_bootstrap_ci
-from foundation.protected_io import read_strict_json_document, read_strict_json_object, write_private_json_bundle
 from foundation.provenance import content_sha256
+from identity_governance.identity_registry import compute_registered_dog_id
+from identity_methods.appearance import ReceiptBoundDinov2Small
 
 if __package__:
     from workflows.evaluate_external_appearance import (
-        _Dinov2Pooler,
         _bind_image_locations,
         _build_populations,
         _derive_manifest_records,
+        _Dinov2Pooler,
         _normalize_model_output,
         _preprocess_images,
         _source_spec_from_payload,
@@ -48,10 +52,10 @@ if __package__:
     )
 else:
     from evaluate_external_appearance import (
-        _Dinov2Pooler,
         _bind_image_locations,
         _build_populations,
         _derive_manifest_records,
+        _Dinov2Pooler,
         _normalize_model_output,
         _preprocess_images,
         _source_spec_from_payload,

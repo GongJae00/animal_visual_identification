@@ -1,20 +1,20 @@
 from __future__ import annotations
 
-from io import BytesIO
-from hashlib import sha256
 import json
-from pathlib import Path
 import subprocess
 import sys
+from hashlib import sha256
+from io import BytesIO
+from pathlib import Path
 from zipfile import ZipFile
 
 import pytest
-from PIL import Image
 import torch
+from PIL import Image
 from torch import nn
 
 import localization.nose_region.localizer as localizer_module
-from artifact_contracts.artifact_manifest import (
+from contracts.artifact_manifest import (
     ArtifactLicense,
     ExactOnnxRuntime,
     ImagePreprocessing,

@@ -7,16 +7,19 @@ import json
 import os
 from pathlib import Path
 
+from contracts.runtime_library_provenance import RuntimeLibraryPolicy
 from evaluation.control_scoring import ControlScoringInventory, EmbeddingCachePolicy
-from operations.embedding_producer import EmbeddingProducerConfig, EmbeddingProductionPolicy
+from foundation.protected_io import read_strict_json_object, write_private_json_bundle
+from operations.embedding_producer import (
+    EmbeddingProducerConfig,
+    EmbeddingProductionPolicy,
+)
 from operations.embedding_production_runner import (
     EmbeddingWorkerExecutionPolicy,
     build_embedding_production_precommitment,
     embedding_artifact_paths_from_dict,
 )
 from operations.onnx_backend import OnnxRuntimeBackendConfig
-from foundation.protected_io import read_strict_json_object, write_private_json_bundle
-from artifact_contracts.runtime_library_provenance import RuntimeLibraryPolicy
 from operations.worker_environment import build_sanitized_worker_environment
 
 

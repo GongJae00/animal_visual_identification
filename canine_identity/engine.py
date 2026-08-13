@@ -234,14 +234,14 @@ class IdentityEngine:
         )
 
     def _build_evidence(self) -> dict[str, Any]:
-        from artifact_contracts.artifact_manifest import (
+        from contracts.artifact_manifest import (
             LandmarkGraphManifest,
             LandmarkKeypointManifest,
             NoseDetectorManifest,
             NoseEmbeddingManifest,
             NoseMaskManifest,
         )
-        from artifact_contracts.model_contract import (
+        from contracts.model_contract import (
             ConvNeXtModelManifest,
             DogFaceNetModelManifest,
             PetReIDModelManifest,

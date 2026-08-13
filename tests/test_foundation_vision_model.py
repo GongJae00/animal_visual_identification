@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 from PIL import Image
 
-from artifact_contracts.foundation_vision_model import (
+from contracts.foundation_vision_model import (
     FoundationFileBinding,
     FoundationModelFamily,
     FoundationModelUsageLane,

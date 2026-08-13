@@ -3,19 +3,25 @@
 from __future__ import annotations
 
 import argparse
-from hashlib import sha256
-from io import BytesIO
 import json
 import math
 import os
+from hashlib import sha256
+from io import BytesIO
 from pathlib import Path, PurePosixPath
 from tempfile import TemporaryDirectory
 from typing import Any
 
 from PIL import Image
 
-from artifact_contracts.artifact_manifest import NoseDetectorManifest
-from identity_methods.nose.extractor import YoloNoseDetector
+from contracts.artifact_manifest import NoseDetectorManifest
+from foundation.protected_io import (
+    json_document_bytes,
+    read_strict_json_document,
+    write_private_json_directory_bundle,
+)
+from foundation.protected_publication import fsync_directory, rename_directory_noreplace
+from foundation.provenance import content_sha256
 from identity_methods.nose.annotation import (
     ANNOTATION_TEMPLATE_SCHEMA,
     AcquisitionRecord,
@@ -27,14 +33,7 @@ from identity_methods.nose.annotation import (
     validate_acquisition_records,
     validate_annotation_records,
 )
-from foundation.protected_io import (
-    json_document_bytes,
-    read_strict_json_document,
-    write_private_json_directory_bundle,
-)
-from foundation.protected_publication import fsync_directory, rename_directory_noreplace
-from foundation.provenance import content_sha256
-
+from identity_methods.nose.extractor import YoloNoseDetector
 
 _BATCH_SCHEMA = "cvi.noseid.annotation_review_batch.v1"
 _BATCH_STATE = "NOT_ADMITTED_REQUIRES_HUMAN_ANNOTATION_AND_REVIEW"

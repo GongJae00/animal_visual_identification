@@ -4,7 +4,7 @@ import json
 import unittest
 from pathlib import Path
 
-from artifact_contracts.contracts import (
+from contracts.contracts import (
     CandidateScore,
     ConflictStatus,
     DecisionRecord,

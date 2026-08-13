@@ -11,8 +11,8 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
+from contracts.contracts import Modality
 from data_pipeline.acquisition import sha256_file
-from artifact_contracts.contracts import Modality
 from data_pipeline.crop_export import CropBox, CropExportPolicy, OracleCropSource
 from evaluation.pairing import (
     PairArtifactBinding,

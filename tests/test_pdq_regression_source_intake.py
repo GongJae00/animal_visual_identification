@@ -20,7 +20,7 @@ class PdqRegressionSourceIntakeTests(unittest.TestCase):
     def _contract() -> PdqSourceContract:
         path = (
             Path(__file__).parents[1]
-            / "artifact_contracts/configs/pdq/threatexchange-pdq-regression-baefb4ed.json"
+            / "contracts/configs/pdq/threatexchange-pdq-regression-baefb4ed.json"
         )
         return PdqSourceContract.from_dict(
             json.loads(path.read_text(encoding="utf-8"))
@@ -89,7 +89,7 @@ class PdqRegressionSourceIntakeTests(unittest.TestCase):
     def test_source_only_contract_remains_the_exact_twelve_member_profile(self) -> None:
         source_only_path = (
             Path(__file__).parents[1]
-            / "artifact_contracts/configs/pdq/threatexchange-pdq-baefb4ed.json"
+            / "contracts/configs/pdq/threatexchange-pdq-baefb4ed.json"
         )
         source_only = PdqSourceContract.from_dict(
             json.loads(source_only_path.read_text(encoding="utf-8"))

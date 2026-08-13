@@ -7,8 +7,7 @@ import json
 from collections import Counter
 from pathlib import Path
 
-from foundation.protected_io import read_strict_json_object
-from foundation.provenance import content_sha256
+from contracts.source_provenance import build_offline_tool_provenance
 from data_pipeline.public_duplicate_adjudication import (
     AdjudicationMode,
     build_adjudication_chunk,
@@ -27,7 +26,8 @@ from data_pipeline.public_duplicate_adjudication import (
     read_geometric_chunks,
     read_source_bundle,
 )
-from artifact_contracts.source_provenance import build_offline_tool_provenance
+from foundation.protected_io import read_strict_json_object
+from foundation.provenance import content_sha256
 
 
 def _parser() -> argparse.ArgumentParser:

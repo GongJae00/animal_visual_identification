@@ -4,7 +4,7 @@ import unittest
 from copy import deepcopy
 from dataclasses import replace
 
-from artifact_contracts.contracts import Modality
+from contracts.contracts import Modality
 from data_pipeline.dataset import (
     EvaluationStage,
     SplitManifest,
@@ -16,8 +16,8 @@ from evaluation import VerificationDirection
 from evaluation.pairing import (
     DogAttributes,
     NegativeQuota,
-    PairStratum,
     PairingPolicy,
+    PairStratum,
     construct_verification_pairs,
     dog_attributes_from_payload,
     pair_construction_from_bundle_payloads,

@@ -11,6 +11,7 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 import operations.embedding_production_runner as runner
+from contracts.runtime_library_provenance import RuntimeLibraryPolicy
 from operations.embedding_production_runner import (
     EmbeddingProductionPrecommitment,
     EmbeddingWorkerExecutionPolicy,
@@ -18,9 +19,7 @@ from operations.embedding_production_runner import (
     run_embedding_production_fresh_worker,
 )
 from operations.process_supervisor import ProcessSupervisorPolicy
-from artifact_contracts.runtime_library_provenance import RuntimeLibraryPolicy
 from operations.worker_environment import build_sanitized_worker_environment
-
 
 HASH_A = "a" * 64
 HASH_B = "b" * 64

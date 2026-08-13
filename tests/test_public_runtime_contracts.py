@@ -12,7 +12,8 @@ from unittest.mock import patch
 import numpy as np
 from PIL import Image
 
-from artifact_contracts.artifact_manifest import (
+from canine_identity.engine import IdentityEngine, Match
+from contracts.artifact_manifest import (
     ArtifactLicense,
     ImagePreprocessing,
     LandmarkGraphManifest,
@@ -20,7 +21,7 @@ from artifact_contracts.artifact_manifest import (
     LandmarkKeypointManifest,
     UsageLane,
 )
-from artifact_contracts.model_contract import (
+from contracts.model_contract import (
     ConvNeXtModelManifest,
     DogFaceNetModelManifest,
     OnnxEvidenceContractError,
@@ -29,7 +30,6 @@ from artifact_contracts.model_contract import (
     OnnxPreprocessingContract,
     PetReIDModelManifest,
 )
-from canine_identity.engine import IdentityEngine, Match
 from evidence_fusion.base import AbstractEvidencer
 from identity_governance.identity_registry import compute_registered_dog_id
 from identity_retrieval.gallery import IdentityGallery

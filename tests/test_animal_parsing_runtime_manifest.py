@@ -4,7 +4,7 @@ import hashlib
 
 import pytest
 
-from artifact_contracts.animal_parsing_runtime import (
+from contracts.animal_parsing_runtime import (
     LEGACY_BUNDLE_SCHEMA,
     LEGACY_MANIFEST_SCHEMA,
     QUALIFICATION,
@@ -12,7 +12,7 @@ from artifact_contracts.animal_parsing_runtime import (
     ParsingEvaluationBinding,
     animal_parsing_runtime_bundle,
 )
-from artifact_contracts.model_file_binding import ModelFileBinding
+from contracts.model_file_binding import ModelFileBinding
 from foundation.provenance import content_sha256
 from localization.animal_parsing import (
     PARSING_ONTOLOGY,

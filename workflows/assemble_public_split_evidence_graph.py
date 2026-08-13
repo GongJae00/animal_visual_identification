@@ -6,14 +6,14 @@ import argparse
 import json
 from pathlib import Path
 
-from foundation.protected_io import write_private_json_bundle
-from foundation.provenance import content_sha256
+from contracts.source_provenance import build_offline_tool_provenance
 from data_pipeline.public_duplicate_adjudication import (
     assemble_frozen_evidence_graph,
     read_adjudication_ledger,
     read_source_bundle,
 )
-from artifact_contracts.source_provenance import build_offline_tool_provenance
+from foundation.protected_io import write_private_json_bundle
+from foundation.provenance import content_sha256
 
 
 def main() -> int:

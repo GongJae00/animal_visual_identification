@@ -8,7 +8,7 @@ import cv2
 import numpy as np
 from PIL import Image
 
-from artifact_contracts.artifact_manifest import (
+from contracts.artifact_manifest import (
     ArtifactContractError,
     ExactOnnxRuntime,
     NoseDetectorManifest,

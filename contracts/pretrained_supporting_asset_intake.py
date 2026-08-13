@@ -16,7 +16,7 @@ from pathlib import Path, PurePosixPath
 from typing import Any
 from urllib.parse import urlsplit
 
-from artifact_contracts.pretrained_weight_intake import (
+from contracts.pretrained_weight_intake import (
     PretrainedWeightIntakeReceipt,
     PretrainedWeightSourceContract,
     PretrainedWeightUsageLane,
@@ -24,7 +24,6 @@ from artifact_contracts.pretrained_weight_intake import (
 )
 from foundation.provenance import content_sha256
 from foundation.retained_file import read_retained_regular_file
-
 
 MAXIMUM_ASSET_BYTES = 4_194_304
 MAXIMUM_JSON_DEPTH = 32

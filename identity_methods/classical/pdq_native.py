@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import os
 import shutil
 import signal
@@ -11,19 +12,20 @@ import stat
 import struct
 import subprocess
 import threading
-import math
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from tempfile import mkdtemp
 from time import monotonic, sleep
 from typing import Any, BinaryIO, Iterable
 
-from identity_methods.classical.pdq_contracts import PDQ_D4_ORIENTATIONS
-from identity_methods.classical.pdq_source_intake import PdqSourceContract, PdqSourceIntakeReceipt
+from contracts.source_provenance import build_offline_tool_provenance
 from foundation.protected_publication import fsync_directory, rename_directory_noreplace
 from foundation.provenance import content_sha256
-from artifact_contracts.source_provenance import build_offline_tool_provenance
-
+from identity_methods.classical.pdq_contracts import PDQ_D4_ORIENTATIONS
+from identity_methods.classical.pdq_source_intake import (
+    PdqSourceContract,
+    PdqSourceIntakeReceipt,
+)
 
 CANONICAL_INTAKE_BUNDLE_SHA256 = (
     "aaf78c4fa4575ec6cadee519abd4b528063e82b4472f85440e1eb867ae45b9dd"

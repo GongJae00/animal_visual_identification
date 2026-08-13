@@ -12,7 +12,7 @@ from torch import nn
 from torch.nn import functional as F
 from torchvision.models import resnet18
 
-from artifact_contracts.pretrained_weight_intake import (
+from contracts.pretrained_weight_intake import (
     PretrainedWeightIntakeReceipt,
     PretrainedWeightSourceContract,
     validate_pretrained_weight_receipt_binding,
@@ -23,7 +23,7 @@ from foundation.retained_file import read_retained_regular_file
 
 _B2_SOURCE_CONTRACT_PATH = (
     Path(__file__).resolve().parents[2]
-    / "artifact_contracts"
+    / "contracts"
     / "configs"
     / "pretrained-weights"
     / "torchvision-resnet18-imagenet1k-v1-336d36e8.json"

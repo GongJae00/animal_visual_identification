@@ -8,8 +8,13 @@ from hashlib import sha256
 from math import isfinite
 from typing import Any, Iterable
 
-from artifact_contracts.contracts import Modality
-from data_pipeline.dataset import EvaluationStage, SplitManifest, SplitRole, TrackletRecord
+from contracts.contracts import Modality
+from data_pipeline.dataset import (
+    EvaluationStage,
+    SplitManifest,
+    SplitRole,
+    TrackletRecord,
+)
 from evaluation import VerificationDirection
 from foundation.provenance import content_sha256
 

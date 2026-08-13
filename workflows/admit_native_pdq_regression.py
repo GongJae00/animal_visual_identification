@@ -5,11 +5,11 @@ import argparse
 import json
 from pathlib import Path
 
+from contracts.source_provenance import build_offline_tool_provenance
 from identity_methods.classical.pdq_official_regression import (
     publish_official_pdq_regression,
     run_official_pdq_regression,
 )
-from artifact_contracts.source_provenance import build_offline_tool_provenance
 
 
 def main() -> int:

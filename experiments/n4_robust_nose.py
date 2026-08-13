@@ -1041,7 +1041,7 @@ def evaluate_n4_robust_nose(
         "n3_runtime_manifest_content_sha256": runtime_pin,
         "n3_onnx_sha256": onnx_pin,
     }
-    from artifact_contracts.source_provenance import build_source_provenance
+    from contracts.source_provenance import build_source_provenance
 
     source_provenance = build_source_provenance(
         repository / relative for relative in _CODE_PATHS

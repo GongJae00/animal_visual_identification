@@ -7,7 +7,7 @@ import hashlib
 import json
 from pathlib import Path
 
-from artifact_contracts.foundation_vision_model import (
+from contracts.foundation_vision_model import (
     FoundationFileBinding,
     FoundationModelFamily,
     FoundationModelUsageLane,

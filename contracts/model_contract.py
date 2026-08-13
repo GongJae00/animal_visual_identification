@@ -2,12 +2,11 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from enum import StrEnum
 import math
 import re
+from dataclasses import dataclass
+from enum import StrEnum
 from typing import Any
-
 
 _SHA256_RE = re.compile(r"[0-9a-f]{64}")
 

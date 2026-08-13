@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 
-from artifact_contracts.model_paths import CHECKPOINTS_DIR
+from contracts.model_paths import CHECKPOINTS_DIR
 
 _ARTIFACT_ID = re.compile(r"[a-z0-9][a-z0-9.-]*")
 _SHA256 = re.compile(r"[0-9a-f]{64}")

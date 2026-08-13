@@ -10,7 +10,7 @@ from typing import Any
 import numpy as np
 from PIL import Image
 
-from artifact_contracts.three_region_artifact import (
+from contracts.three_region_artifact import (
     BUNDLE_SCHEMA,
     INTERPRETATION,
     MANIFEST_SCHEMA,

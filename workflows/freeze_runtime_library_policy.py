@@ -5,15 +5,15 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from operations.onnx_inference_benchmark import OnnxInferenceBenchmarkSummary
+from contracts.runtime_library_provenance import (
+    RuntimeLibraryManifest,
+    freeze_runtime_library_policy,
+)
 from foundation.protected_io import (
     read_content_hashed_json_bundle,
     write_private_json_bundle,
 )
-from artifact_contracts.runtime_library_provenance import (
-    RuntimeLibraryManifest,
-    freeze_runtime_library_policy,
-)
+from operations.onnx_inference_benchmark import OnnxInferenceBenchmarkSummary
 
 
 def main() -> None:

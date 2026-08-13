@@ -12,19 +12,29 @@ import pytest
 import torch
 from PIL import Image
 
-from artifact_contracts.artifact_manifest import (
+from contracts.artifact_manifest import (
     ExactOnnxRuntime,
     NoseEmbeddingManifest,
     UsageLane,
     preprocess_image,
 )
-from artifact_contracts.model_parity import ParityFixtureKind, ParityThresholds
+from contracts.model_parity import ParityFixtureKind, ParityThresholds
+from localization.nose_region import embedding_consistency_training as consistency
+from localization.nose_region.embedding_consistency_training import (
+    build_consistency_checkpoint,
+    build_identity_partitions,
+    deterministic_mild_degradation,
+    initialize_from_parent,
+    load_consistency_checkpoint,
+    native_consistency_loss,
+    select_epoch,
+)
 from localization.nose_region.embedding_training import (
-    ArcFaceClassificationHead,
     DEV_INTERPRETATION,
     EMBEDDING_DIM,
-    IdentityBalancedBatchSampler,
     LICENSE_ID,
+    ArcFaceClassificationHead,
+    IdentityBalancedBatchSampler,
     NoseEmbeddingModel,
     build_dev_protocol,
     build_embedding_checkpoint,
@@ -36,16 +46,6 @@ from localization.nose_region.embedding_training import (
     replace_embedding_checkpoint,
 )
 from localization.nose_region.embedding_views import student_masked_rgb
-from localization.nose_region import embedding_consistency_training as consistency
-from localization.nose_region.embedding_consistency_training import (
-    build_consistency_checkpoint,
-    build_identity_partitions,
-    deterministic_mild_degradation,
-    initialize_from_parent,
-    load_consistency_checkpoint,
-    native_consistency_loss,
-    select_epoch,
-)
 
 
 def _dog(name: str) -> str:

@@ -6,8 +6,8 @@ import argparse
 import json
 from pathlib import Path
 
-from artifact_contracts.model_catalog import verify_model_artifact
-from artifact_contracts.model_paths import CHECKPOINTS_DIR
+from contracts.model_catalog import verify_model_artifact
+from contracts.model_paths import CHECKPOINTS_DIR
 from data_pipeline.adapters import ADAPTERS
 from data_pipeline.source_lock import get_record
 from localization.adapters import UltralyticsDogPoseAdapter

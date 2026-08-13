@@ -7,14 +7,14 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 
-from artifact_contracts.model_contract import (
+from contracts.model_contract import (
     ConvNeXtModelManifest,
     DogFaceNetModelManifest,
     OnnxEvidenceContractError,
     OnnxEvidenceModelManifest,
     PetReIDModelManifest,
 )
-from artifact_contracts.model_contracts import (
+from contracts.model_contracts import (
     reject_unverified_superanimal_onnx,
     validated_onnx_bytes,
 )

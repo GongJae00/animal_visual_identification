@@ -21,7 +21,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from artifact_contracts.model_paths import DATA_DIR, SUPPORTED_DATASETS
+from contracts.model_paths import DATA_DIR, SUPPORTED_DATASETS
 
 
 class ManualAcquisitionRequired(RuntimeError):

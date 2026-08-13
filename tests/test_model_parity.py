@@ -6,7 +6,7 @@ import unittest
 from hashlib import sha256
 from pathlib import Path
 
-from artifact_contracts.model_parity import (
+from contracts.model_parity import (
     ModelParityError,
     ModelParityReceipt,
     ModelUsageLane,

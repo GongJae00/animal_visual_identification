@@ -22,12 +22,19 @@ from torch import nn
 from torch.nn import functional as F
 from torch.utils.data import DataLoader, Dataset
 
-from artifact_contracts.artifact_manifest import (
+from contracts.artifact_manifest import (
     ArtifactLicense,
     ImagePreprocessing,
     NoseMaskManifest,
     UsageLane,
 )
+from foundation.protected_io import (
+    read_strict_json_document,
+    read_strict_json_object,
+    write_private_json_bundle,
+)
+from foundation.protected_publication import fsync_directory, rename_directory_noreplace
+from foundation.provenance import content_sha256
 from localization.nose_region.localizer import (
     IMAGE_MEAN,
     IMAGE_STD,
@@ -40,14 +47,6 @@ from localization.nose_region.sam2_teacher import (
     validate_source_image_manifest,
     validate_teacher_manifest,
 )
-from foundation.protected_io import (
-    read_strict_json_document,
-    read_strict_json_object,
-    write_private_json_bundle,
-)
-from foundation.protected_publication import fsync_directory, rename_directory_noreplace
-from foundation.provenance import content_sha256
-
 
 IMAGE_SIZE = 224
 MODEL_ID = "cvi.nose_mask.mobilenetv4-conv-small.v1"
@@ -428,8 +427,8 @@ def load_mobilenetv4_student(
             "MobileNetV4 safetensors SHA256 differs: "
             f"expected {MOBILENETV4_WEIGHTS_SHA256}, got {digest}"
         )
-    from safetensors.torch import load_file
     import timm
+    from safetensors.torch import load_file
 
     backbone = timm.create_model(MOBILENETV4_MODEL_NAME, pretrained=False)
     backbone.load_state_dict(load_file(str(path), device="cpu"), strict=True)

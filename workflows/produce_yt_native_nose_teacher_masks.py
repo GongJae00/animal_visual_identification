@@ -10,6 +10,11 @@ import tempfile
 from pathlib import Path
 from typing import Any, Sequence
 
+from contracts.source_provenance import build_offline_tool_provenance
+from foundation.protected_io import json_document_bytes, read_strict_json_document
+from foundation.protected_publication import fsync_directory, rename_directory_noreplace
+from foundation.provenance import content_sha256
+from foundation.retained_file import read_retained_regular_file
 from localization.nose_region.sam2_teacher import (
     MaskSelectionPolicy,
     load_local_sam2,
@@ -17,11 +22,6 @@ from localization.nose_region.sam2_teacher import (
     validate_source_image_manifest,
     validate_teacher_manifest,
 )
-from foundation.protected_io import json_document_bytes, read_strict_json_document
-from foundation.protected_publication import fsync_directory, rename_directory_noreplace
-from foundation.provenance import content_sha256
-from foundation.retained_file import read_retained_regular_file
-from artifact_contracts.source_provenance import build_offline_tool_provenance
 
 
 def _parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:

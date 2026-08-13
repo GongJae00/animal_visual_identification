@@ -6,13 +6,13 @@ import argparse
 import json
 from pathlib import Path
 
-from artifact_contracts.pretrained_weight_intake import (
+from contracts.pretrained_weight_intake import (
     PretrainedWeightSourceContract,
     audit_pretrained_weight_file,
 )
+from contracts.source_provenance import build_offline_tool_provenance
 from foundation.protected_io import read_strict_json_object, write_private_json_bundle
 from foundation.provenance import content_sha256
-from artifact_contracts.source_provenance import build_offline_tool_provenance
 
 
 def main() -> None:

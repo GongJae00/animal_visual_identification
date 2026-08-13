@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from artifact_contracts.model_catalog import (
+from contracts.model_catalog import (
     MODEL_CATALOG,
     MODEL_ROLE_ALIASES,
     ModelAdmission,

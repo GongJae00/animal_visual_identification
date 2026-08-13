@@ -13,7 +13,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from artifact_contracts.model_paths import (
+from contracts.model_paths import (
     DOGFLW_LANDMARK_PATH,
     MIEWID_REID_ONNX_PATH,
     MODELS_DIR,

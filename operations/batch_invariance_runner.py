@@ -9,19 +9,19 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any, Mapping
 
+from contracts.runtime_library_provenance import RuntimeLibraryManifest
 from data_pipeline.acquisition import sha256_file
 from evaluation.batch_invariance import (
     BatchInvariancePrecommitment,
     BatchInvarianceReceipt,
 )
+from foundation.provenance import content_sha256
 from operations.process_supervisor import (
     ProcessSupervisorPolicy,
     SupervisedProcessResult,
     SupervisedProcessStatus,
     run_supervised_process,
 )
-from foundation.provenance import content_sha256
-from artifact_contracts.runtime_library_provenance import RuntimeLibraryManifest
 from operations.worker_environment import (
     ISOLATED_WORKER_BOOTSTRAP,
     WorkerEnvironmentIdentity,

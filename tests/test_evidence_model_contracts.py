@@ -14,7 +14,8 @@ import numpy as np
 import onnx
 from PIL import Image
 
-from artifact_contracts.artifact_manifest import (
+from canine_identity.engine import IdentityEngine
+from contracts.artifact_manifest import (
     ArtifactContractError,
     ArtifactLicense,
     ExactOnnxRuntime,
@@ -22,19 +23,18 @@ from artifact_contracts.artifact_manifest import (
     NoseEmbeddingManifest,
     UsageLane,
 )
-from artifact_contracts.model_parity import (
+from contracts.model_parity import (
     ModelParityReceipt,
     ModelUsageLane,
     ParityFixtureKind,
     ParityFixtureResult,
     ParityThresholds,
 )
-from artifact_contracts.model_paths import (
+from contracts.model_paths import (
     MIEWID_MSV3_HF_REPO,
     MIEWID_MSV3_REVISION,
     MIEWID_MSV3_WEIGHTS_SHA256,
 )
-from canine_identity.engine import IdentityEngine
 from foundation.provenance import content_sha256
 from identity_methods.backbones.extractors import (
     EvidenceExtractorRegistry,

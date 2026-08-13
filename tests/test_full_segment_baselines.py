@@ -10,7 +10,7 @@ import pytest
 import torch
 from torchvision.models import resnet18
 
-from artifact_contracts.pretrained_weight_intake import (
+from contracts.pretrained_weight_intake import (
     PretrainedWeightIntakeReceipt,
     PretrainedWeightSourceContract,
 )
@@ -31,7 +31,7 @@ from identity_methods.full_segment import (
 
 _B2_SOURCE_CONTRACT_PATH = (
     Path(__file__).parents[1]
-    / "artifact_contracts"
+    / "contracts"
     / "configs"
     / "pretrained-weights"
     / "torchvision-resnet18-imagenet1k-v1-336d36e8.json"

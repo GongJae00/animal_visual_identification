@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import hashlib
 import copy
+import hashlib
 import json
 import os
 import shutil
@@ -12,6 +12,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest import mock
 
+from contracts.source_provenance import build_offline_tool_provenance
 from identity_methods.classical.pdq_contracts import PDQ_D4_ORIENTATIONS, PDQFingerprint
 from identity_methods.classical.pdq_native import (
     CANONICAL_INTAKE_BUNDLE_SHA256,
@@ -19,20 +20,18 @@ from identity_methods.classical.pdq_native import (
     CANONICAL_SOURCE_RECEIPT_SHA256,
     MAXIMUM_DIMENSION,
     PDQIO_RESIZE_DIMENSION,
-    CanonicalRGBRequest,
-    PdqNativeBuildReceipt,
     REQUEST_HEADER,
     REQUEST_MAGIC,
+    RESPONSE_BYTES,
     RESPONSE_MAGIC,
     RESPONSE_PREFIX,
-    RESPONSE_BYTES,
+    CanonicalRGBRequest,
+    PdqNativeBuildReceipt,
     build_native_pdq_worker,
     hash_rgb,
     hash_rgb_batch,
     verify_native_pdq_build,
 )
-from artifact_contracts.source_provenance import build_offline_tool_provenance
-
 
 SOURCE_BUNDLE = Path(os.environ.get("CANINE_IDENTITY_PDQ_SOURCE_BUNDLE") or os.devnull)
 WORKER_SOURCE = Path(__file__).parents[1] / "identity_methods/classical/native/pdq_worker/main.cpp"

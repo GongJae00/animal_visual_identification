@@ -15,7 +15,7 @@ from typing import Any
 
 import numpy as np
 
-from artifact_contracts.source_provenance import build_offline_tool_provenance
+from contracts.source_provenance import build_offline_tool_provenance
 from foundation.protected_io import read_strict_json_document, write_private_json_bundle
 from foundation.protected_publication import fsync_directory, rename_directory_noreplace
 from foundation.provenance import content_sha256

@@ -13,12 +13,12 @@ import numpy as np
 import torch
 from PIL import Image
 
-from artifact_contracts.pretrained_supporting_asset_intake import (
+from contracts.pretrained_supporting_asset_intake import (
     PretrainedSupportingAssetKind,
     PretrainedSupportingAssetSourceContract,
     audit_pretrained_supporting_asset,
 )
-from artifact_contracts.pretrained_weight_intake import (
+from contracts.pretrained_weight_intake import (
     PretrainedWeightChecksumAuthority,
     PretrainedWeightFileFormat,
     PretrainedWeightSourceContract,

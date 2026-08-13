@@ -13,7 +13,12 @@ import pytest
 import torch
 from PIL import Image
 
-from artifact_contracts.artifact_manifest import ExactOnnxRuntime, NoseMaskManifest, UsageLane
+from contracts.artifact_manifest import ExactOnnxRuntime, NoseMaskManifest, UsageLane
+from foundation.protected_io import (
+    json_document_bytes,
+    read_strict_json_document,
+)
+from foundation.provenance import content_sha256
 from identity_governance.identity_registry import compute_registered_dog_id
 from localization.nose_region.native_yt import (
     NativeYtSample,
@@ -41,11 +46,6 @@ from localization.nose_region.segmentation_training import (
     save_segmentation_checkpoint,
     segmentation_loss,
 )
-from foundation.protected_io import (
-    json_document_bytes,
-    read_strict_json_document,
-)
-from foundation.provenance import content_sha256
 
 
 def _sha(value: str) -> str:

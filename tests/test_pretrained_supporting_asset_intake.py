@@ -10,7 +10,7 @@ from dataclasses import replace
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from artifact_contracts.pretrained_supporting_asset_intake import (
+from contracts.pretrained_supporting_asset_intake import (
     MAXIMUM_JSON_ARRAY_LENGTH,
     MAXIMUM_JSON_DEPTH,
     MAXIMUM_JSON_KEYS,
@@ -22,7 +22,7 @@ from artifact_contracts.pretrained_supporting_asset_intake import (
     parse_bounded_strict_json_object,
     validate_pretrained_supporting_asset_receipt_binding,
 )
-from artifact_contracts.pretrained_weight_intake import (
+from contracts.pretrained_weight_intake import (
     PretrainedWeightChecksumAuthority,
     PretrainedWeightFileFormat,
     PretrainedWeightIntakeReceipt,
@@ -281,7 +281,7 @@ class PretrainedSupportingAssetIntakeTests(unittest.TestCase):
     def test_repository_dinov2_preprocessor_contract_fixes_exact_source(self) -> None:
         contract_path = (
             Path(__file__).parents[1]
-            / "artifact_contracts"
+            / "contracts"
             / "configs"
             / "pretrained-weights"
             / "dinov2-small-preprocessor-hf-ed25f3a3.json"

@@ -15,7 +15,7 @@ import cv2
 import numpy as np
 from PIL import Image
 
-from artifact_contracts.dinov2_contract import Dinov2LocalArtifactContract
+from contracts.dinov2_contract import Dinov2LocalArtifactContract
 from data_pipeline.types import UnifiedCanidSample
 from foundation.protected_io import read_strict_json_document, write_private_json_bundle
 from foundation.protected_publication import fsync_directory, rename_directory_noreplace

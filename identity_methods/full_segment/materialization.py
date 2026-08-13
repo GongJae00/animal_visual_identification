@@ -20,16 +20,16 @@ from typing import Any
 
 from PIL import Image, UnidentifiedImageError
 
-from artifact_contracts.animal_parsing_runtime import (
+from contracts.animal_parsing_runtime import (
     SUPPORTED_BUNDLE_SCHEMAS as SUPPORTED_PARSING_BUNDLE_SCHEMAS,
 )
-from artifact_contracts.animal_parsing_runtime import (
+from contracts.animal_parsing_runtime import (
     AnimalParsingRuntimeManifest,
 )
-from artifact_contracts.foreground_segmentation_model import (
+from contracts.foreground_segmentation_model import (
     ForegroundSegmentationArtifact,
 )
-from artifact_contracts.instance_segmentation_model import (
+from contracts.instance_segmentation_model import (
     InstanceSegmentationArtifact,
 )
 from data_pipeline.source_lock import get_record

@@ -12,7 +12,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-from artifact_contracts.dinov2_contract import Dinov2LocalArtifactContract
+from contracts.dinov2_contract import Dinov2LocalArtifactContract
 from identity_methods.full_segment.classical import Classical128
 from identity_methods.full_segment.model import MaskedGAP128
 

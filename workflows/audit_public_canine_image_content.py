@@ -6,14 +6,13 @@ import argparse
 import json
 from pathlib import Path
 
-from foundation.protected_io import read_strict_json_object, write_private_json_bundle
-from foundation.provenance import content_sha256
+from contracts.source_provenance import build_offline_tool_provenance
 from data_pipeline.public_canine_manifest import (
-    ArchiveReceiptBinding,
     DOGFACE_DATASET,
     MPDD_DATASET,
     SIBETAN_DATASET,
     YT_DATASET,
+    ArchiveReceiptBinding,
     PublicCanineManifest,
 )
 from data_pipeline.public_canine_semantic_intake import derive_public_canine_semantics
@@ -22,7 +21,8 @@ from data_pipeline.public_image_content_audit import (
     ImageContentAuditPolicy,
     audit_public_canine_image_content,
 )
-from artifact_contracts.source_provenance import build_offline_tool_provenance
+from foundation.protected_io import read_strict_json_object, write_private_json_bundle
+from foundation.provenance import content_sha256
 
 
 def main() -> None:

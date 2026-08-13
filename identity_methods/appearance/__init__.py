@@ -7,7 +7,7 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 
-from artifact_contracts.dinov2_contract import Dinov2LocalArtifactContract
+from contracts.dinov2_contract import Dinov2LocalArtifactContract
 from evidence_fusion.base import AbstractEvidencer
 
 

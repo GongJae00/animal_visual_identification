@@ -24,13 +24,25 @@ import numpy as np
 from jsonschema import Draft202012Validator
 from PIL import Image
 
+from contracts.source_provenance import build_offline_tool_provenance
+from evaluation.calibration import (
+    CalibrationError,
+    compute_probability_calibration_metrics,
+    fit_isotonic_calibration,
+)
+from evaluation.open_set import OpenSetError, OpenSetResult, evaluate_open_set
+from evaluation.protected_evaluation import (
+    REPORT_INTERPRETATION,
+    REPORT_PROTOCOL_STATUS,
+    REPORT_SCHEMA_VERSION,
+    load_protected_evaluation,
+    publish_protected_evaluation_output,
+)
 from evaluation.protected_verification import (
     required_zero_event_trials,
     wilson_rate,
     zero_event_exact_upper_bound,
 )
-from evaluation.calibration import CalibrationError, compute_probability_calibration_metrics, fit_isotonic_calibration
-from evaluation.open_set import OpenSetError, OpenSetResult, evaluate_open_set
 from evaluation.retrieval import (
     RetrievalError,
     compute_cosine_score_matrix,
@@ -45,24 +57,16 @@ from evaluation.verification import (
     evaluate_at_threshold,
     select_threshold_at_far,
 )
-from identity_methods.appearance import ReceiptBoundDinov2Small
 from evidence_fusion.base import AbstractEvidencer
-from localization.landmark_graph import LandmarkEvidencer
 from foundation.protected_io import write_private_json_bundle
-from evaluation.protected_evaluation import (
-    REPORT_INTERPRETATION,
-    REPORT_PROTOCOL_STATUS,
-    REPORT_SCHEMA_VERSION,
-    load_protected_evaluation,
-    publish_protected_evaluation_output,
-)
 from foundation.provenance import content_sha256
-from artifact_contracts.source_provenance import build_offline_tool_provenance
+from identity_methods.appearance import ReceiptBoundDinov2Small
+from localization.landmark_graph import LandmarkEvidencer
 
 SCHEMA_VERSION = "cvi.evaluation.report.v2"
 SCHEMA_PATH = (
     Path(__file__).resolve().parents[1]
-    / "artifact_contracts"
+    / "contracts"
     / "schemas"
     / "cvi.evaluation.report.v2.schema.json"
 )

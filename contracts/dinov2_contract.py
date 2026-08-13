@@ -3,19 +3,19 @@
 from __future__ import annotations
 
 import os
+import re
 from dataclasses import dataclass
 from pathlib import Path
-import re
 from typing import Any
 
-from artifact_contracts.pretrained_supporting_asset_intake import (
+from contracts.pretrained_supporting_asset_intake import (
     PretrainedSupportingAssetIntakeReceipt,
     PretrainedSupportingAssetKind,
     PretrainedSupportingAssetSourceContract,
     parse_bounded_strict_json_object,
     validate_pretrained_supporting_asset_receipt_binding,
 )
-from artifact_contracts.pretrained_weight_intake import (
+from contracts.pretrained_weight_intake import (
     PretrainedWeightFileFormat,
     PretrainedWeightIntakeReceipt,
     PretrainedWeightSourceContract,
@@ -25,7 +25,6 @@ from artifact_contracts.pretrained_weight_intake import (
 from foundation.protected_io import read_strict_json_object
 from foundation.provenance import content_sha256
 from foundation.retained_file import read_retained_regular_file
-
 
 _WEIGHT_BUNDLE_KEYS = {
     "schema_version",

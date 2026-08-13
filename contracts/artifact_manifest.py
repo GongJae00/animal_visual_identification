@@ -14,7 +14,7 @@ import cv2
 import numpy as np
 from PIL import Image
 
-from artifact_contracts.model_contracts import validated_onnx_bytes
+from contracts.model_contracts import validated_onnx_bytes
 
 _SHA256_RE = re.compile(r"[0-9a-f]{64}")
 

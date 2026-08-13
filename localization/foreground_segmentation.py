@@ -9,7 +9,7 @@ from dataclasses import dataclass
 import numpy as np
 from PIL import Image
 
-from artifact_contracts.foreground_segmentation_model import (
+from contracts.foreground_segmentation_model import (
     ForegroundSegmentationArtifact,
 )
 

@@ -7,8 +7,8 @@ from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
+from contracts.source_provenance import build_source_provenance
 from foundation.provenance import content_sha256
-from artifact_contracts.source_provenance import build_source_provenance
 
 CHECKPOINT_SCHEMA = "cvi.faceid_checkpoint.v2"
 _LEGACY_SOURCE_SHA256 = {

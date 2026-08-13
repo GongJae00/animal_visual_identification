@@ -505,11 +505,11 @@ class ConfigAndMigrationTests(unittest.TestCase):
             _ConfiguredNoseEvidence.calls.clear()
             with (
                 patch(
-                    "artifact_contracts.artifact_manifest.NoseDetectorManifest.from_dict",
+                    "contracts.artifact_manifest.NoseDetectorManifest.from_dict",
                     return_value=detector_manifest,
                 ),
                 patch(
-                    "artifact_contracts.artifact_manifest.NoseEmbeddingManifest.from_dict",
+                    "contracts.artifact_manifest.NoseEmbeddingManifest.from_dict",
                     return_value=embedding_manifest,
                 ),
                 patch(

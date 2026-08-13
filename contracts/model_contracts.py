@@ -4,7 +4,6 @@ from collections.abc import Sequence
 from hashlib import sha256
 from pathlib import Path
 
-
 _REJECTED_SUPERANIMAL_ONNX_SHA256 = {
     "243ef8a034a20ceec32fcf2963ebd2174b4737ca978bd8b6bb4b8087033f2381",
 }

@@ -1,31 +1,32 @@
 from __future__ import annotations
 
-from copy import deepcopy
-from hashlib import sha256
 import json
-from pathlib import Path
 import tempfile
 import uuid
+from copy import deepcopy
+from hashlib import sha256
+from pathlib import Path
 
 import numpy as np
 import onnx
+import pytest
 from onnx import TensorProto, helper, numpy_helper
 from PIL import Image
-import pytest
 
-from artifact_contracts.artifact_manifest import (
+from contracts.artifact_manifest import (
     ArtifactLicense,
     ImagePreprocessing,
     NoseDetectorManifest,
     UsageLane,
 )
+from foundation.provenance import content_sha256
 from identity_methods.nose.annotation import (
     ACQUISITION_SCHEMA,
     ANNOTATION_SCHEMA,
-    AcquisitionRecord,
-    AnnotationRecord,
     INVALID_MASK_CLASSES,
     SEMANTIC_MASK_CLASSES,
+    AcquisitionRecord,
+    AnnotationRecord,
     build_admission_receipt,
     canonical_jsonl_bytes,
     load_acquisition_jsonl,
@@ -34,7 +35,6 @@ from identity_methods.nose.annotation import (
     validate_annotation_records,
 )
 from identity_methods.nose.types import NOSE_KEYPOINTS
-from foundation.provenance import content_sha256
 from workflows.prepare_nose_annotation_batch import (
     create_review_batch,
     validate_completed_batch,

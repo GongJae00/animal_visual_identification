@@ -8,7 +8,7 @@ import os
 from collections.abc import Sequence
 from pathlib import Path
 
-from artifact_contracts.source_provenance import build_source_provenance
+from contracts.source_provenance import build_source_provenance
 from experiments.sibetan_diagnostics import (
     build_sibetan_diagnostic,
     bundle_sibetan_diagnostic,

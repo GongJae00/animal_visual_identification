@@ -9,12 +9,11 @@ from enum import StrEnum
 from pathlib import Path
 from typing import Any
 
-from artifact_contracts.pretrained_supporting_asset_intake import (
+from contracts.pretrained_supporting_asset_intake import (
     parse_bounded_strict_json_object,
 )
 from foundation.provenance import content_sha256
 from foundation.retained_file import read_retained_regular_file
-
 
 _MAXIMUM_RECEIPT_BYTES = 1_048_576
 _SHA256_RE = re.compile(r"[0-9a-f]{64}")

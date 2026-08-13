@@ -12,12 +12,18 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any, Mapping
 
+from contracts.runtime_library_provenance import (
+    RuntimeLibraryManifest,
+    RuntimeLibraryPolicy,
+)
 from data_pipeline.acquisition import sha256_file
 from evaluation.control_scoring import (
     ControlScoringInventory,
     EmbeddingCachePolicy,
     verify_embedding_cache_files,
 )
+from foundation.protected_io import read_strict_json_object
+from foundation.provenance import content_sha256
 from operations.embedding_producer import (
     EmbeddingProducerConfig,
     EmbeddingProductionPolicy,
@@ -30,17 +36,10 @@ from operations.process_supervisor import (
     SupervisedProcessStatus,
     run_supervised_process,
 )
-from foundation.protected_io import read_strict_json_object
-from foundation.provenance import content_sha256
-from artifact_contracts.runtime_library_provenance import (
-    RuntimeLibraryManifest,
-    RuntimeLibraryPolicy,
-)
 from operations.worker_environment import (
     WorkerEnvironmentIdentity,
     build_sanitized_worker_environment,
 )
-
 
 _PROVENANCE_NAMES = (
     "dependency_lock", "model", "model_lineage", "onnx_config",
@@ -48,7 +47,7 @@ _PROVENANCE_NAMES = (
 )
 _CODE_SOURCE_DIRECTORY = Path(__file__).resolve().parents[1]
 _CODE_SOURCE_PACKAGE_NAMES = (
-    "artifact_contracts",
+    "contracts",
     "data_pipeline",
     "evaluation",
     "foundation",

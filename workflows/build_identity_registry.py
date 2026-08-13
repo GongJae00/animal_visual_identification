@@ -14,6 +14,9 @@ import time
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
+from contracts.source_provenance import build_offline_tool_provenance
+from foundation.protected_io import read_strict_json_object, write_private_json_bundle
+from foundation.provenance import content_sha256
 from identity_governance.identity_registry import (
     IdentityRegistryRecord,
     create_registry_database,
@@ -21,9 +24,6 @@ from identity_governance.identity_registry import (
     register_records,
 )
 from identity_governance.protected_public_split import PublicSplitSourceBundle
-from foundation.protected_io import read_strict_json_object, write_private_json_bundle
-from artifact_contracts.source_provenance import build_offline_tool_provenance
-from foundation.provenance import content_sha256
 
 
 def main() -> None:

@@ -7,7 +7,7 @@ import json
 import os
 from pathlib import Path
 
-from artifact_contracts.source_provenance import build_source_provenance
+from contracts.source_provenance import build_source_provenance
 from experiments.identity_topology import (
     IdentityTopologyConfig,
     audit_identity_topology,
@@ -17,7 +17,6 @@ from foundation.protected_io import (
     write_private_json_bundle,
 )
 from foundation.provenance import content_sha256
-
 
 REPORT_BUNDLE_SCHEMA_VERSION = "cvi.embedding_identity_topology_audit_bundle.v1"
 _DEFAULT_CONFIG = IdentityTopologyConfig()

@@ -12,6 +12,13 @@ from tempfile import TemporaryDirectory
 from types import SimpleNamespace
 from unittest.mock import patch
 
+from contracts.runtime_library_provenance import (
+    ExpectedRuntimeBinary,
+    RuntimeBinaryEntry,
+    RuntimeLibraryManifest,
+    RuntimeLibraryPhase,
+    RuntimeLibraryPolicy,
+)
 from evaluation.batch_invariance import (
     BatchInvarianceDecision,
     BatchInvariancePolicy,
@@ -22,40 +29,33 @@ from evaluation.batch_invariance import (
     evaluate_batch_composition_invariance,
     verify_batch_invariance_receipt_external_anchors,
 )
+from evaluation.control_scoring import (
+    ArtifactSourceKind,
+    ControlScoringInventory,
+    ScoringArtifactEntry,
+)
+from foundation.provenance import content_sha256
 from operations.batch_invariance_runner import (
     BatchFreshWorkerDiscovery,
     BatchFreshWorkerReceipt,
     BatchWorkerExecutionPolicy,
     run_batch_invariance_fresh_worker,
 )
-from evaluation.control_scoring import (
-    ArtifactSourceKind,
-    ControlScoringInventory,
-    ScoringArtifactEntry,
-)
 from operations.embedding_producer import (
     EmbeddingBackendIdentity,
     EmbeddingProducerConfig,
     EmbeddingRuntimeResources,
 )
-from representation_learning.optimization import PromotionDecision
 from operations.process_supervisor import (
     ProcessSupervisorPolicy,
     SupervisedProcessResult,
     SupervisedProcessStatus,
 )
-from foundation.provenance import content_sha256
-from artifact_contracts.runtime_library_provenance import (
-    ExpectedRuntimeBinary,
-    RuntimeBinaryEntry,
-    RuntimeLibraryManifest,
-    RuntimeLibraryPhase,
-    RuntimeLibraryPolicy,
-)
 from operations.worker_environment import (
     ISOLATED_WORKER_BOOTSTRAP,
     build_sanitized_worker_environment,
 )
+from representation_learning.optimization import PromotionDecision
 
 
 def digest(payload: bytes) -> str:

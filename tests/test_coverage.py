@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import unittest
 
-from artifact_contracts.contracts import Modality
+from contracts.contracts import Modality
 from evidence_fusion.coverage import (
     CoverageAccumulator,
     CoverageObservation,

@@ -12,11 +12,17 @@ from pathlib import Path
 import numpy as np
 import torch
 
-from identity_methods.appearance import ReceiptBoundDinov2Small
-from artifact_contracts.artifact_manifest import NoseEmbeddingManifest, UsageLane, preprocess_image
+from contracts.artifact_manifest import (
+    NoseEmbeddingManifest,
+    UsageLane,
+    preprocess_image,
+)
 from experiments.sibetan_multievidence import (
-    BRANCHES, evaluate_effective_k_panel, face_reliability,
-    fit_effective_k_weights, nose_reliability,
+    BRANCHES,
+    evaluate_effective_k_panel,
+    face_reliability,
+    fit_effective_k_weights,
+    nose_reliability,
 )
 from experiments.unified_multievidence import (
     _extract_dino_embeddings,
@@ -25,13 +31,15 @@ from experiments.unified_multievidence import (
     _read_bound_rgb,
     _roi_source_key,
 )
-from localization.roi_manifest import read_roi_manifest
-from localization.nose_region.native_yt import validate_manifest_bundle
-from localization.nose_region.embedding_consistency_training import load_consistency_checkpoint
-from localization.nose_region.embedding_training import load_receipt_bound_dinov2
 from foundation.protected_io import read_strict_json_document, write_private_json_bundle
 from foundation.provenance import content_sha256
-
+from identity_methods.appearance import ReceiptBoundDinov2Small
+from localization.nose_region.embedding_consistency_training import (
+    load_consistency_checkpoint,
+)
+from localization.nose_region.embedding_training import load_receipt_bound_dinov2
+from localization.nose_region.native_yt import validate_manifest_bundle
+from localization.roi_manifest import read_roi_manifest
 
 SCHEMA = "cvi.yt_masked_multievidence_policy.v2"
 BUNDLE_SCHEMA = "cvi.yt_masked_multievidence_policy_bundle.v2"

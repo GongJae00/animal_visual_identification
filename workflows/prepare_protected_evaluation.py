@@ -6,8 +6,8 @@ import argparse
 import json
 from pathlib import Path
 
+from contracts.source_provenance import build_offline_tool_provenance
 from evaluation.protected_evaluation import prepare_protected_evaluation
-from artifact_contracts.source_provenance import build_offline_tool_provenance
 
 
 def main() -> None:

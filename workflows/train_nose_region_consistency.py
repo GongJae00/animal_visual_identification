@@ -6,7 +6,7 @@ import argparse
 import json
 from pathlib import Path
 
-from artifact_contracts.model_parity import ParityThresholds
+from contracts.model_parity import ParityThresholds
 from localization.nose_region.embedding_consistency_training import train_and_export
 
 

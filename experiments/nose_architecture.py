@@ -14,7 +14,7 @@ from typing import Any, Mapping, Sequence
 import numpy as np
 from PIL import Image
 
-from artifact_contracts.artifact_manifest import (
+from contracts.artifact_manifest import (
     ArtifactContractError,
     ExactOnnxRuntime,
     NoseEmbeddingManifest,
@@ -26,13 +26,12 @@ from evaluation.retrieval import (
     compute_cosine_score_matrix,
     identity_clustered_bootstrap_ci,
 )
+from foundation.protected_io import read_strict_json_document, write_private_json_bundle
+from foundation.provenance import content_sha256
 from identity_methods.nose.restoration import RestorationConfig, restore_nose_frames
 from identity_methods.nose.temporal import aggregate_nose_embeddings
 from localization.nose_region.embedding_views import student_masked_rgb
 from localization.nose_region.native_yt import validate_manifest_bundle
-from foundation.protected_io import read_strict_json_document, write_private_json_bundle
-from foundation.provenance import content_sha256
-
 
 REPORT_SCHEMA = "cvi.yt_nose_architecture_evaluation.v2"
 REPORT_BUNDLE_SCHEMA = "cvi.yt_nose_architecture_evaluation_bundle.v2"
@@ -73,7 +72,7 @@ _CODE_PATHS = (
     "experiments/nose_architecture.py",
     "identity_methods/nose/restoration.py",
     "identity_methods/nose/temporal.py",
-    "artifact_contracts/artifact_manifest.py",
+    "contracts/artifact_manifest.py",
     "evaluation/retrieval.py",
     "localization/nose_region/embedding_views.py",
     "localization/nose_region/native_yt.py",
@@ -193,7 +192,9 @@ def _load_consistency_lineage(
     if lineage_document.canonical_payload_sha256 != expected_content_sha256:
         raise ValueError("embedding lineage content SHA-256 differs from the external pin")
     lineage_root = lineage_path.parent.resolve(strict=True)
-    from localization.nose_region.embedding_consistency_training import validate_lineage_manifest
+    from localization.nose_region.embedding_consistency_training import (
+        validate_lineage_manifest,
+    )
 
     validate_lineage_manifest(lineage_document.payload, lineage_root)
     artifacts = lineage_document.payload["artifacts"]

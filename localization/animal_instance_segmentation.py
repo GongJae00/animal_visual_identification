@@ -9,7 +9,7 @@ from dataclasses import dataclass
 import numpy as np
 from PIL import Image
 
-from artifact_contracts.instance_segmentation_model import (
+from contracts.instance_segmentation_model import (
     InstanceSegmentationArtifact,
 )
 

@@ -13,7 +13,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import operations.embedding_production_runner as embedding_runner
-
+from contracts.runtime_library_provenance import RuntimeLibraryManifest
 from data_pipeline.acquisition import sha256_file
 from evaluation.benchmark import TimingSummary
 from evaluation.control_scoring import (
@@ -27,6 +27,28 @@ from evaluation.control_scoring import (
     embedding_cache_key,
     verify_embedding_cache_files,
 )
+from evaluation.numerical_admission import (
+    NumericalAdmissionDecision,
+    NumericalDriftPolicy,
+    compare_embedding_caches,
+)
+from evaluation.score_drift_admission import (
+    FrozenScoreMarginBoundary,
+    RetrievalScoreRequest,
+    RetrievalScoreWorkload,
+    ScoreDriftAdmissionPlan,
+    ScoreDriftAdmissionReceipt,
+    ScoreDriftDecision,
+    ScoreDriftPolicy,
+    ScoreDriftPrecommitment,
+    build_score_drift_admission_plan,
+    build_score_drift_precommitment,
+    compare_score_rank_threshold_drift,
+    score_drift_scoring_semantics_sha256,
+    validate_retrieval_workload_content_separation,
+    verify_score_drift_receipt_external_anchors,
+)
+from foundation.provenance import content_sha256
 from operations.embedding_producer import (
     EmbeddingBackendIdentity,
     EmbeddingProducerConfig,
@@ -39,36 +61,13 @@ from operations.embedding_production_runner import (
     EmbeddingProductionPrecommitment,
     EmbeddingWorkerExecutionPolicy,
 )
-from evaluation.numerical_admission import (
-    NumericalAdmissionDecision,
-    NumericalDriftPolicy,
-    compare_embedding_caches,
-)
-from representation_learning.optimization import PromotionDecision
 from operations.process_supervisor import (
     ProcessSupervisorPolicy,
     SupervisedProcessResult,
     SupervisedProcessStatus,
 )
-from foundation.provenance import content_sha256
-from artifact_contracts.runtime_library_provenance import RuntimeLibraryManifest
-from evaluation.score_drift_admission import (
-    FrozenScoreMarginBoundary,
-    RetrievalScoreRequest,
-    RetrievalScoreWorkload,
-    ScoreDriftAdmissionReceipt,
-    ScoreDriftAdmissionPlan,
-    ScoreDriftPrecommitment,
-    ScoreDriftDecision,
-    ScoreDriftPolicy,
-    compare_score_rank_threshold_drift,
-    build_score_drift_admission_plan,
-    build_score_drift_precommitment,
-    score_drift_scoring_semantics_sha256,
-    validate_retrieval_workload_content_separation,
-    verify_score_drift_receipt_external_anchors,
-)
 from operations.worker_environment import build_sanitized_worker_environment
+from representation_learning.optimization import PromotionDecision
 
 HASH_A = "a" * 64
 HASH_B = "b" * 64

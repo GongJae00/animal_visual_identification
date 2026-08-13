@@ -10,22 +10,22 @@ from pathlib import Path
 _REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(_REPOSITORY_ROOT))
 
-from artifact_contracts.dinov2_contract import (
+from contracts.dinov2_contract import (
     Dinov2LocalArtifactContract,
     Dinov2OnnxArtifactManifest,
 )
-from artifact_contracts.model_parity import (
+from contracts.model_parity import (
     ModelUsageLane,
     ParityThresholds,
     load_model_parity_receipt,
     validate_parity_binding,
 )
-from operations.onnx_backend import ImagePreprocessingConfig
-from artifact_contracts.pretrained_supporting_asset_intake import (
+from contracts.pretrained_supporting_asset_intake import (
     parse_bounded_strict_json_object,
 )
 from foundation.provenance import content_sha256
 from foundation.retained_file import read_retained_regular_file
+from operations.onnx_backend import ImagePreprocessingConfig
 from workflows.export_pretrained_to_onnx import export_dinov2_small
 
 

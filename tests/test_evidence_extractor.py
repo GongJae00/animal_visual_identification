@@ -10,7 +10,7 @@ from unittest.mock import patch
 import numpy as np
 from PIL import Image
 
-from artifact_contracts.model_contract import (
+from contracts.model_contract import (
     ConvNeXtModelManifest,
     DogFaceNetModelManifest,
     OnnxEvidenceContractError,
@@ -18,8 +18,8 @@ from artifact_contracts.model_contract import (
     OnnxPreprocessingContract,
     PetReIDModelManifest,
 )
-from identity_methods.backbones.extractors import EvidenceExtractorRegistry
 from foundation.provenance import content_sha256
+from identity_methods.backbones.extractors import EvidenceExtractorRegistry
 
 
 def _require_onnx() -> bool:

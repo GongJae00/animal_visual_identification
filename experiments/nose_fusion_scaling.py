@@ -12,7 +12,7 @@ from typing import Any, Mapping, Sequence
 import numpy as np
 from PIL import Image
 
-from artifact_contracts.artifact_manifest import (
+from contracts.artifact_manifest import (
     ArtifactContractError,
     ExactOnnxRuntime,
     NoseEmbeddingManifest,
@@ -22,11 +22,10 @@ from evaluation.retrieval import (
     compute_cosine_score_matrix,
     identity_clustered_bootstrap_ci,
 )
-from identity_methods.nose.temporal import aggregate_nose_embeddings
-from localization.nose_region.native_yt import validate_manifest_bundle
 from foundation.protected_io import read_strict_json_document, write_private_json_bundle
 from foundation.provenance import content_sha256
-
+from identity_methods.nose.temporal import aggregate_nose_embeddings
+from localization.nose_region.native_yt import validate_manifest_bundle
 
 REPORT_SCHEMA = "cvi.yt_nose_fusion_scaling_evaluation.v1"
 REPORT_BUNDLE_SCHEMA = "cvi.yt_nose_fusion_scaling_evaluation_bundle.v1"
@@ -49,7 +48,7 @@ _BOOTSTRAP_METRICS = ("Rank-1", "Rank-5", "MRR", "mAP")
 _CODE_PATHS = (
     "experiments/nose_fusion_scaling.py",
     "identity_methods/nose/temporal.py",
-    "artifact_contracts/artifact_manifest.py",
+    "contracts/artifact_manifest.py",
     "evaluation/retrieval.py",
     "localization/nose_region/native_yt.py",
     "foundation/protected_io.py",

@@ -50,7 +50,7 @@ jobs:
         run: |
           git diff --check
           uv run --no-sync python -m compileall -q \
-            artifact_contracts canine_identity data_pipeline evaluation \
+            canine_identity contracts data_pipeline evaluation \
             evidence_fusion experiments foundation identity_governance \
             identity_methods identity_retrieval localization operations \
             representation_learning visualization workflows
@@ -70,7 +70,8 @@ jobs:
           with zipfile.ZipFile(wheel_path) as wheel:
               names = set(wheel.namelist())
           assert any(name.endswith(".dist-info/licenses/LICENSE") for name in names)
-          assert "artifact_contracts/schemas/cvi.evaluation.report.v3.schema.json" in names
+          assert "contracts/schemas/cvi.evaluation.report.v3.schema.json" in names
+          assert not any(name.startswith("artifact_contracts/") for name in names)
           assert "visualization/__init__.py" in names
           assert not any(name.startswith("vis/") for name in names)
           PY
@@ -86,7 +87,7 @@ jobs:
           import canine_identity
           import torch
 
-          schema = resources.files("artifact_contracts").joinpath(
+          schema = resources.files("contracts").joinpath(
               "schemas/cvi.evaluation.report.v3.schema.json"
           )
           assert schema.is_file()

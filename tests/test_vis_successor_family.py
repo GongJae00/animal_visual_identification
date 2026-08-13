@@ -348,7 +348,7 @@ def test_public_successor_family_is_ordered_aggregate_only_and_deterministic(
     jsonschema = pytest.importorskip("jsonschema")
     schema_path = (
         Path(__file__).resolve().parents[1]
-        / "artifact_contracts/schemas/cvi.figure_data.bundle.v1.schema.json"
+        / "contracts/schemas/cvi.figure_data.bundle.v1.schema.json"
     )
     schema_document = json.loads(schema_path.read_text(encoding="utf-8"))
     validator = jsonschema.Draft202012Validator(schema_document)

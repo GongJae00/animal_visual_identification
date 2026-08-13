@@ -104,7 +104,7 @@ expected by its channel implementation.
 
 ## Artifact Handling
 
-Known local model artifacts are inventoried by `artifact_contracts.model_catalog`. Call
+Known local model artifacts are inventoried by `contracts.model_catalog`. Call
 `get_model_artifact("<role>")` for logical selection and
 `verify_model_artifact("<role>")` when exact bytes are required. Role aliases
 are logical lookups, not filesystem symlinks. Current roles include

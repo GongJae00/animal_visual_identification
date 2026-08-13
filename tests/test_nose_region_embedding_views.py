@@ -3,15 +3,15 @@ from __future__ import annotations
 import hashlib
 import io
 import json
-from pathlib import Path
 import subprocess
 import sys
+from pathlib import Path
 
 import numpy as np
 import pytest
 from PIL import Image
 
-from artifact_contracts.artifact_manifest import (
+from contracts.artifact_manifest import (
     ArtifactContractError,
     ArtifactLicense,
     ExactOnnxRuntime,
@@ -19,6 +19,7 @@ from artifact_contracts.artifact_manifest import (
     NoseMaskManifest,
     UsageLane,
 )
+from foundation.provenance import content_sha256
 from identity_governance.identity_registry import compute_registered_dog_id
 from localization.nose_region.embedding_views import (
     MANIFEST_FILENAME,
@@ -32,8 +33,6 @@ from localization.nose_region.native_yt import (
     build_manifest_bundle,
     process_native_sample,
 )
-from foundation.provenance import content_sha256
-
 
 pytest.importorskip("onnx")
 pytest.importorskip("onnxruntime")

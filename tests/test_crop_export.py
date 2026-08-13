@@ -7,8 +7,8 @@ import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
+from contracts.contracts import Modality
 from data_pipeline.acquisition import sha256_file
-from artifact_contracts.contracts import Modality
 from data_pipeline.crop_export import (
     CropBox,
     CropExportPolicy,

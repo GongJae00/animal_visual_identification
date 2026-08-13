@@ -12,19 +12,18 @@ from typing import Any, Mapping, Sequence
 import numpy as np
 from PIL import Image
 
-from artifact_contracts.artifact_manifest import (
+from contracts.artifact_manifest import (
     ArtifactContractError,
     ExactOnnxRuntime,
     NoseEmbeddingManifest,
     preprocess_image,
 )
 from evaluation.retrieval import compute_cosine_score_matrix
+from foundation.protected_io import read_strict_json_document, write_private_json_bundle
+from foundation.provenance import content_sha256
 from identity_methods.nose.restoration import RestorationConfig, restore_nose_frames
 from identity_methods.nose.temporal import aggregate_nose_embeddings
 from localization.nose_region.native_yt import validate_manifest_bundle
-from foundation.protected_io import read_strict_json_document, write_private_json_bundle
-from foundation.provenance import content_sha256
-
 
 REPORT_SCHEMA = "cvi.yt_nose_raw_restored_evaluation.v1"
 REPORT_BUNDLE_SCHEMA = "cvi.yt_nose_raw_restored_evaluation_bundle.v1"
@@ -48,7 +47,7 @@ _CODE_PATHS = (
     "experiments/nose_restoration.py",
     "identity_methods/nose/restoration.py",
     "identity_methods/nose/temporal.py",
-    "artifact_contracts/artifact_manifest.py",
+    "contracts/artifact_manifest.py",
     "localization/nose_region/native_yt.py",
     "workflows/evaluate_yt_nose_restoration.py",
 )

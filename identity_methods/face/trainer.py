@@ -9,7 +9,7 @@ from typing import Any
 import torch
 from torch.utils.data import DataLoader
 
-from artifact_contracts.dinov2_contract import Dinov2LocalArtifactContract
+from contracts.dinov2_contract import Dinov2LocalArtifactContract
 from identity_methods.face.losses import FaceIDObjective, FaceResidualObjective
 from identity_methods.face.model import FaceIDModel
 from identity_methods.face.residual_model import FaceIDResidualModel

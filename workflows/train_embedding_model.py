@@ -13,16 +13,20 @@ from typing import Any
 import torch
 from torch import nn
 
-from artifact_contracts.pretrained_weight_intake import (
+from contracts.pretrained_weight_intake import (
     PretrainedWeightIntakeReceipt,
     PretrainedWeightSourceContract,
     validate_pretrained_weight_receipt_binding,
 )
+from data_pipeline.public_crop_manifest import PublicCropManifest
 from foundation.protected_io import read_strict_json_object
 from foundation.provenance import content_sha256
-from data_pipeline.public_crop_manifest import PublicCropManifest
 from foundation.retained_file import read_retained_regular_file
 from identity_governance.role_exposure import RoleExposureLedger, RoleExposureReceipt
+from identity_governance.training_admission import (
+    TrainingAdmissionManifest,
+    TrainingAdmissionReceipt,
+)
 from representation_learning.trainer import (
     ConvNeXtEmbedding,
     Dinov2Embedding,
@@ -30,11 +34,6 @@ from representation_learning.trainer import (
     evaluate_pretrained_development,
     train_model,
 )
-from identity_governance.training_admission import (
-    TrainingAdmissionManifest,
-    TrainingAdmissionReceipt,
-)
-
 
 _BACKBONE_DIMENSIONS = {
     "dinov2-small": 384,

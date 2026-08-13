@@ -9,20 +9,20 @@ import os
 from pathlib import Path
 from typing import Any
 
-from artifact_contracts.animal_parsing_runtime import (
+from contracts.animal_parsing_runtime import (
     QUALIFICATION,
     AnimalParsingRuntimeManifest,
     ParsingEvaluationBinding,
     animal_parsing_runtime_bundle,
 )
-from artifact_contracts.foreground_segmentation_model import (
+from contracts.foreground_segmentation_model import (
     ForegroundSegmentationArtifact,
 )
-from artifact_contracts.instance_segmentation_model import (
+from contracts.instance_segmentation_model import (
     InstanceSegmentationArtifact,
 )
-from artifact_contracts.model_file_binding import ModelFileBinding
-from artifact_contracts.source_provenance import build_source_provenance
+from contracts.model_file_binding import ModelFileBinding
+from contracts.source_provenance import build_source_provenance
 from foundation.protected_io import json_document_bytes, read_strict_json_document
 from foundation.protected_publication import fsync_directory
 from foundation.provenance import content_sha256

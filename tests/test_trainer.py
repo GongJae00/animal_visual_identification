@@ -1145,7 +1145,7 @@ class ConvNeXtOnnxExportTests(unittest.TestCase):
                 self.assertTrue(np.isfinite(embedding).all())
 
             from identity_methods.backbones.extractors import OnnxExtractor
-            from artifact_contracts.model_contract import (
+            from contracts.model_contract import (
                 OnnxEvidenceModelManifest,
                 OnnxPreprocessingContract,
             )

@@ -11,7 +11,7 @@ from dataclasses import replace
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from artifact_contracts.pretrained_weight_intake import (
+from contracts.pretrained_weight_intake import (
     PretrainedWeightChecksumAuthority,
     PretrainedWeightFileFormat,
     PretrainedWeightIntakeReceipt,
@@ -388,7 +388,7 @@ class PretrainedWeightIntakeTests(unittest.TestCase):
     ) -> None:
         contract_path = (
             Path(__file__).parents[1]
-            / "artifact_contracts"
+            / "contracts"
             / "configs"
             / "pretrained-weights"
             / "torchvision-resnet18-imagenet1k-v1-336d36e8.json"

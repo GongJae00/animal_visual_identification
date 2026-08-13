@@ -10,7 +10,7 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 
-from artifact_contracts.three_region_artifact import (
+from contracts.three_region_artifact import (
     completion_for_record,
     read_three_region_artifact,
     validate_three_region_artifact_bundle,

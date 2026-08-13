@@ -7,8 +7,8 @@ from dataclasses import replace
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from unittest.mock import patch
 from types import SimpleNamespace
+from unittest.mock import patch
 
 try:
     import numpy as np
@@ -22,6 +22,10 @@ except ModuleNotFoundError:
 else:
     OPTIONAL_ONNX_AVAILABLE = True
 
+from contracts.runtime_library_provenance import (
+    RuntimeLibraryManifest,
+    RuntimeLibraryPhase,
+)
 from data_pipeline.acquisition import sha256_file
 from evaluation.batch_invariance import (
     BatchInvarianceDecision,
@@ -35,6 +39,12 @@ from evaluation.control_scoring import (
     EmbeddingCachePolicy,
     ScoringArtifactEntry,
 )
+from evaluation.numerical_admission import (
+    NumericalAdmissionDecision,
+    NumericalDriftPolicy,
+    compare_embedding_caches,
+)
+from foundation.provenance import content_sha256
 from operations.embedding_producer import (
     EmbeddingProducerConfig,
     EmbeddingProductionPolicy,
@@ -53,16 +63,6 @@ from operations.onnx_backend import (
     OnnxRuntimeCpuBackend,
     OnnxRuntimeCudaBackend,
     preprocess_image_batch,
-)
-from evaluation.numerical_admission import (
-    NumericalAdmissionDecision,
-    NumericalDriftPolicy,
-    compare_embedding_caches,
-)
-from foundation.provenance import content_sha256
-from artifact_contracts.runtime_library_provenance import (
-    RuntimeLibraryManifest,
-    RuntimeLibraryPhase,
 )
 
 

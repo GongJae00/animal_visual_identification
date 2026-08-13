@@ -112,7 +112,7 @@ by this evaluator. A verified v3 report must not be promoted to model-selection
 or final-reporting evidence without such an independently governed review.
 
 The canonical v3 JSON Schema is the installed package resource
-`artifact_contracts/schemas/cvi.evaluation.report.v3.schema.json`. Validation and schema
+`contracts/schemas/cvi.evaluation.report.v3.schema.json`. Validation and schema
 receipt hashing load that resource through `importlib.resources`, so they do
 not depend on a source checkout or current working directory.
 

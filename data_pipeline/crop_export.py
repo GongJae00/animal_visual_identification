@@ -12,7 +12,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any
 
-from artifact_contracts.contracts import Modality
+from contracts.contracts import Modality
 from data_pipeline.acquisition import sha256_file
 from data_pipeline.pair_artifacts import (
     PairArtifactEntry,

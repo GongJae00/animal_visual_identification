@@ -9,6 +9,7 @@ from dataclasses import replace
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
+from contracts.source_provenance import build_offline_tool_provenance
 from identity_methods.classical.pdq_official_regression import (
     CANONICAL_NATIVE_BINARY_SHA256,
     PDQOfficialRegressionReceipt,
@@ -16,8 +17,6 @@ from identity_methods.classical.pdq_official_regression import (
     publish_official_pdq_regression,
     run_official_pdq_regression,
 )
-from artifact_contracts.source_provenance import build_offline_tool_provenance
-
 
 ROOT = Path(__file__).parents[1]
 SOURCE_ROOT = Path(os.environ.get("CANINE_IDENTITY_PDQ_OFFICIAL_SOURCE_ROOT") or os.devnull)

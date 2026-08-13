@@ -821,7 +821,7 @@ def load_protected_evaluation(
 
 
 def validate_protected_report(report: dict[str, Any]) -> StrictJsonDocument:
-    resource = files("artifact_contracts").joinpath("schemas").joinpath(
+    resource = files("contracts").joinpath("schemas").joinpath(
         REPORT_SCHEMA_FILENAME
     )
     with as_file(resource) as schema_path:

@@ -10,7 +10,7 @@ from typing import Any
 import numpy as np
 from PIL import Image
 
-from artifact_contracts.prompt_segmentation_model import PromptSegmentationArtifact
+from contracts.prompt_segmentation_model import PromptSegmentationArtifact
 
 
 @dataclass(frozen=True, slots=True)

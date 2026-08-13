@@ -10,7 +10,7 @@ import onnx
 from onnx import TensorProto, helper, numpy_helper
 from PIL import Image
 
-from artifact_contracts.artifact_manifest import (
+from contracts.artifact_manifest import (
     ArtifactContractError,
     ArtifactLicense,
     ClaheTransform,

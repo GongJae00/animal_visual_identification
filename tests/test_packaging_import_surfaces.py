@@ -176,7 +176,7 @@ if loaded:
 
 class ModelPathTests(unittest.TestCase):
     def test_dogflw_download_is_disabled_without_an_authoritative_hash(self) -> None:
-        from artifact_contracts.model_paths import DOGFLW_LANDMARK_MD5
+        from contracts.model_paths import DOGFLW_LANDMARK_MD5
         from workflows.download_models import download_model
 
         self.assertIsNone(DOGFLW_LANDMARK_MD5)
@@ -197,7 +197,7 @@ class ModelPathTests(unittest.TestCase):
                     sys.executable,
                     "-c",
                     (
-                        "import artifact_contracts.model_paths; "
+                        "import contracts.model_paths; "
                         "from pathlib import Path; "
                         f"assert not Path({str(target)!r}).exists()"
                     ),

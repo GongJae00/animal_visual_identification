@@ -22,20 +22,27 @@ from PIL import Image, ImageFilter
 from torch.nn import functional as F
 from torch.utils.data import DataLoader, Dataset
 
-from artifact_contracts.artifact_manifest import (
+from contracts.artifact_manifest import (
     ArtifactLicense,
     ImagePreprocessing,
     NoseEmbeddingManifest,
     UsageLane,
     preprocess_image,
 )
-from artifact_contracts.model_parity import (
+from contracts.model_parity import (
     ModelParityReceipt,
     ModelUsageLane,
     ParityFixtureKind,
     ParityFixtureResult,
     ParityThresholds,
 )
+from foundation.protected_io import (
+    json_document_bytes,
+    read_strict_json_document,
+    read_strict_json_object,
+)
+from foundation.protected_publication import fsync_directory, rename_directory_noreplace
+from foundation.provenance import content_sha256
 from localization.nose_region.embedding_training import (
     ArcFaceClassificationHead,
     IdentityBalancedBatchSampler,
@@ -44,10 +51,14 @@ from localization.nose_region.embedding_training import (
     build_dev_protocol,
     evaluate_dev_leave_one_out,
     export_static_onnx,
-    load_embedding_checkpoint as load_parent_checkpoint,
     load_receipt_bound_dinov2,
-    validate_lineage_manifest as validate_parent_lineage,
     validate_static_onnx,
+)
+from localization.nose_region.embedding_training import (
+    load_embedding_checkpoint as load_parent_checkpoint,
+)
+from localization.nose_region.embedding_training import (
+    validate_lineage_manifest as validate_parent_lineage,
 )
 from localization.nose_region.embedding_views import (
     load_embedding_views_manifest,
@@ -55,14 +66,6 @@ from localization.nose_region.embedding_views import (
 )
 from localization.nose_region.manifest import read_nose_region_manifest
 from localization.nose_region.native_yt import validate_manifest_bundle
-from foundation.protected_io import (
-    json_document_bytes,
-    read_strict_json_document,
-    read_strict_json_object,
-)
-from foundation.protected_publication import fsync_directory, rename_directory_noreplace
-from foundation.provenance import content_sha256
-
 
 CHECKPOINT_SCHEMA = "cvi.nose_region_rgb_embedding_consistency_checkpoint.v3"
 LINEAGE_SCHEMA = "cvi.nose_region_rgb_embedding_consistency_artifact_bundle.v3"

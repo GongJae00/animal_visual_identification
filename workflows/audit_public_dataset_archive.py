@@ -6,14 +6,14 @@ import argparse
 import json
 from pathlib import Path
 
-from foundation.protected_io import read_strict_json_object, write_private_json_bundle
-from foundation.provenance import content_sha256
+from contracts.source_provenance import build_offline_tool_provenance
 from data_pipeline.public_dataset import (
     PublicDatasetArchivePolicy,
     PublicDatasetSourceContract,
     audit_public_dataset_zip,
 )
-from artifact_contracts.source_provenance import build_offline_tool_provenance
+from foundation.protected_io import read_strict_json_object, write_private_json_bundle
+from foundation.provenance import content_sha256
 
 
 def main() -> None:

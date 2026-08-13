@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from enum import StrEnum
 from typing import Any
 
-from artifact_contracts.contracts import Modality
+from contracts.contracts import Modality
 from foundation.provenance import content_sha256
 
 

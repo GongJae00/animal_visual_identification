@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from artifact_contracts.source_provenance import (
+from contracts.source_provenance import (
     build_offline_tool_provenance,
     build_source_provenance,
 )
@@ -10,7 +10,6 @@ from identity_methods.face.checkpoint import (
     build_faceid_source_contract,
     expected_faceid_contract_for_checkpoint,
 )
-
 
 ROOT = Path(__file__).resolve().parents[1]
 
