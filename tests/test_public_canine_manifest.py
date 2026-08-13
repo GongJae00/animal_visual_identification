@@ -6,27 +6,26 @@ import unittest
 from dataclasses import replace
 from pathlib import Path
 
-from data_pipeline.public_canine_manifest import (
-    ArchiveReceiptBinding,
-    CanineRegion,
+from data.public_canine_manifest import (
     DOGFACE_DATASET,
     DOGFACE_POLICY,
-    IdentitySemantics,
     MPDD_DATASET,
     MPDD_POLICY,
-    PublicCanineManifest,
-    PublicCanineRecord,
     SIBETAN_DATASET,
     SIBETAN_POLICY,
     YT_DATASET,
     YT_ORIGINAL_POLICY,
     YT_RANDOM_BACKGROUND_POLICY,
+    ArchiveReceiptBinding,
+    CanineRegion,
+    IdentitySemantics,
+    PublicCanineManifest,
+    PublicCanineRecord,
     parse_dogfacenet224,
     parse_mpdd,
     parse_sibetan,
     parse_yt_bb_dog,
 )
-
 
 _SECURE_ROOT = Path(os.environ.get("CANINE_IDENTITY_PUBLIC_CANINE_SECURE_ROOT") or os.devnull)
 _RECEIPT_DIGEST = hashlib.sha256(b"focused semantic parser test receipt").hexdigest()

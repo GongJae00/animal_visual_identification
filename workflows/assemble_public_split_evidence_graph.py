@@ -7,7 +7,7 @@ import json
 from pathlib import Path
 
 from contracts.source_provenance import build_offline_tool_provenance
-from data_pipeline.public_duplicate_adjudication import (
+from data.public_duplicate_adjudication import (
     assemble_frozen_evidence_graph,
     read_adjudication_ledger,
     read_source_bundle,

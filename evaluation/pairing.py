@@ -9,7 +9,7 @@ from math import isfinite
 from typing import Any, Iterable
 
 from contracts.contracts import Modality
-from data_pipeline.dataset import (
+from data.dataset import (
     EvaluationStage,
     SplitManifest,
     SplitRole,

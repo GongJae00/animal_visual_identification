@@ -11,22 +11,22 @@ from dataclasses import replace
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from data_pipeline.acquisition import sha256_file
+from data.acquisition import sha256_file
 from evaluation.control_scoring import (
     ArtifactCacheBinding,
     EmbeddingCacheEntry,
     EmbeddingCacheManifest,
     embedding_cache_key,
 )
-from operations.embedding_producer import (
-    EmbeddingBackendIdentity,
-    EmbeddingProducerConfig,
-)
 from evaluation.numerical_admission import (
     NumericalAdmissionDecision,
     NumericalAdmissionReceipt,
     NumericalDriftPolicy,
     compare_embedding_caches,
+)
+from operations.embedding_producer import (
+    EmbeddingBackendIdentity,
+    EmbeddingProducerConfig,
 )
 
 HASH_A = "a" * 64

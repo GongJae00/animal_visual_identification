@@ -19,14 +19,14 @@ from pathlib import Path, PurePosixPath
 
 from PIL import Image
 
-from data_pipeline.public_canine_manifest import (
+from data.public_canine_manifest import (
     DOGFACE_TEST_MD5,
     DOGFACE_TEST_SHA256,
     DOGFACE_TRAIN_MD5,
     DOGFACE_TRAIN_SHA256,
     _read_published_class_file,
 )
-from data_pipeline.types import (
+from data.types import (
     CaptureGroupKind,
     UnifiedCanidSample,
 )

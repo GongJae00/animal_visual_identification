@@ -7,7 +7,7 @@ from typing import Any
 
 import numpy as np
 
-from data_pipeline.types import UnifiedCanidSample
+from data.types import UnifiedCanidSample
 
 
 def compute_dataset_statistics(

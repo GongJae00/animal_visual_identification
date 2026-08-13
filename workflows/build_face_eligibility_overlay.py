@@ -8,14 +8,14 @@ import os
 from collections.abc import Sequence
 from pathlib import Path, PurePosixPath
 
-from data_pipeline.public_canine_manifest import (
+from data.public_canine_manifest import (
     DOGFACE_TEST_MD5,
     DOGFACE_TEST_SHA256,
     DOGFACE_TRAIN_MD5,
     DOGFACE_TRAIN_SHA256,
     _read_published_class_file,
 )
-from data_pipeline.source_lock import get_record
+from data.source_lock import get_record
 from foundation.protected_io import (
     read_strict_json_document,
     write_private_json_bundle,

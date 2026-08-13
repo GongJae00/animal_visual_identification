@@ -9,6 +9,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
+from data.public_canine_manifest import PublicCanineRecord
+from foundation.protected_io import read_strict_json_object, write_private_json_bundle
+from foundation.provenance import content_sha256
 from identity_methods.classical.pdq_contracts import PDQFingerprint, PDQSearchPolicy
 from identity_methods.classical.pdq_mih import find_pdq_near_duplicate_candidates
 from identity_methods.classical.pdq_native import (
@@ -19,14 +22,12 @@ from identity_methods.classical.pdq_native import (
     hash_rgb_batch,
     verify_native_pdq_build,
 )
-from foundation.protected_io import read_strict_json_object, write_private_json_bundle
-from foundation.provenance import content_sha256
-from data_pipeline.public_canine_manifest import PublicCanineRecord
+from identity_methods.classical.phash_mih import opaque_sample_id
 from identity_methods.classical.public_canine_phash_audit import (
     PublicCaninePHashPolicy,
     PublicCaninePHashSource,
-    _AuthenticatedSource,
     _authenticate_source,
+    _AuthenticatedSource,
     _bound_container_info,
     _bound_member_info,
     _canonical_rgb_member,
@@ -39,8 +40,6 @@ from identity_methods.classical.public_canine_phash_audit import (
     _validate_source_set,
     _verify_archive_stability,
 )
-from identity_methods.classical.phash_mih import opaque_sample_id
-
 
 MAXIMUM_FINGERPRINT_CHUNK_SAMPLES = 10_000
 _PASS = "PASS_BOUNDED_LABEL_BLIND_PDQ_CANDIDATE_GENERATION"

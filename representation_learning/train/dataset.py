@@ -8,13 +8,13 @@ import torch
 from PIL import Image
 from torch.utils.data import Dataset
 
-from data_pipeline.adapters import (
+from data.adapters import (
     PetFaceDogSplitSample,
     load_petface_dog_split,
     read_petface_dog_images,
 )
-from data_pipeline.source_lock import get_record
-from data_pipeline.types import DatasetAdmission
+from data.source_lock import get_record
+from data.types import DatasetAdmission
 
 
 class PetFaceDataset(Dataset):

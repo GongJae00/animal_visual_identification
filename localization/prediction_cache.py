@@ -8,10 +8,13 @@ from typing import Any
 
 import numpy as np
 
-from data_pipeline.types import UnifiedCanidSample
-from localization.types import DetectionBox, LocalizationResult
-from foundation.protected_io import read_content_hashed_json_bundle, write_private_json_bundle
+from data.types import UnifiedCanidSample
+from foundation.protected_io import (
+    read_content_hashed_json_bundle,
+    write_private_json_bundle,
+)
 from foundation.provenance import content_sha256
+from localization.types import DetectionBox, LocalizationResult
 
 _BUNDLE_SCHEMA = "localization_prediction_cache_bundle.v1"
 _CACHE_SCHEMA = "localization_prediction_cache.v1"

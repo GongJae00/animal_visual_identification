@@ -3,16 +3,16 @@ from __future__ import annotations
 import errno
 import hashlib
 import os
-import zipfile
 import unittest
+import zipfile
 from dataclasses import replace
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest import mock
 
+import data.public_dataset_extraction as extraction_module
 import foundation.protected_publication as protected_publication
-import data_pipeline.public_dataset_extraction as extraction_module
-from data_pipeline.public_dataset import (
+from data.public_dataset import (
     ArchiveSuffixCount,
     DatasetUsageLane,
     PublicDatasetArchivePolicy,
@@ -20,7 +20,7 @@ from data_pipeline.public_dataset import (
     SourceChecksumAuthority,
     audit_public_dataset_zip,
 )
-from data_pipeline.public_dataset_extraction import (
+from data.public_dataset_extraction import (
     ExtractedPublicDatasetFile,
     extract_audited_public_dataset_zip,
 )

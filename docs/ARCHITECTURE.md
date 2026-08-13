@@ -49,7 +49,7 @@ same representation path has run for query or enrollment input.
 |---|---|
 | `foundation/` | Deterministic hashing, protected I/O, publication, and retained-file primitives |
 | `contracts/` | Model, source, runtime-library, intake, parity, and fail-closed region-evidence schemas |
-| `data_pipeline/` | Dataset adapters, acquisition, manifests, crop export, and duplicate evidence intake |
+| `data/` | Dataset adapters, acquisition, manifests, crop export, and duplicate evidence intake |
 | `identity_governance/` | UUID registries, duplicate closure, split roles, exposure, research admission, and retrospective identity K-folds |
 | `localization/` | Detection, ROI geometry, prediction caches, identity-free localization folds, and region materialization/training |
 | `identity_methods/` | Backbones plus Appearance, Face, Nose, and classical identity methods |

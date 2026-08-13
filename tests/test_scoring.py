@@ -5,13 +5,14 @@ from dataclasses import replace
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
+from data.acquisition import sha256_file
+from data.dataset import EvaluationStage
 from evaluation import (
     ClusterBootstrapConfig,
     ClusterUnit,
     FrozenVerificationThreshold,
     VerificationDirection,
 )
-from data_pipeline.dataset import EvaluationStage
 from evaluation.pairing import (
     NegativeQuota,
     PairArtifactBinding,
@@ -21,7 +22,6 @@ from evaluation.pairing import (
     PairScoringRequest,
     PairStratum,
 )
-from foundation.provenance import content_sha256
 from evaluation.scoring import (
     BlindPairScore,
     BlindScoreReceipt,
@@ -31,7 +31,7 @@ from evaluation.scoring import (
     join_blind_scores,
     verify_pair_artifact_files,
 )
-from data_pipeline.acquisition import sha256_file
+from foundation.provenance import content_sha256
 
 HASH_A = "a" * 64
 HASH_B = "b" * 64

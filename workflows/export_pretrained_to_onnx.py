@@ -32,7 +32,7 @@ from contracts.model_parity import (
 from contracts.pretrained_supporting_asset_intake import (
     parse_bounded_strict_json_object,
 )
-from data_pipeline.crop_export import CropExportReceipt
+from data.crop_export import CropExportReceipt
 from foundation.protected_io import read_strict_json_object
 from foundation.provenance import content_sha256
 from foundation.retained_file import read_retained_regular_file

@@ -7,7 +7,7 @@ from dataclasses import replace
 
 import pytest
 
-from data_pipeline.types import UnifiedCanidSample
+from data.types import UnifiedCanidSample
 from foundation.provenance import content_sha256
 from identity_governance.identity_registry import compute_sample_token
 from localization.fold_protocol import (

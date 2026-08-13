@@ -8,19 +8,19 @@ from hashlib import sha256
 from pathlib import Path, PurePosixPath
 from typing import TYPE_CHECKING, Any
 
-from data_pipeline.acquisition import sha256_file
+from data.acquisition import sha256_file
 from evaluation.pairing import (
     PairConstructionResult,
     PairScoringRequest,
     PairStratum,
 )
-from foundation.provenance import content_sha256
 from evaluation.scoring import (
     PairArtifactEntry,
     PairArtifactManifest,
     PairArtifactVerification,
     validate_pair_artifact_manifest,
 )
+from foundation.provenance import content_sha256
 
 if TYPE_CHECKING:
     from evaluation.mask_semantics import MaskSemanticVerification

@@ -18,9 +18,9 @@ from typing import Any
 
 from PIL import Image, UnidentifiedImageError
 
-from data_pipeline.adapters import ADAPTERS
-from data_pipeline.source_lock import SOURCE_REGISTRY, get_record
-from data_pipeline.types import DatasetAdmission, UnifiedCanidSample
+from data.adapters import ADAPTERS
+from data.source_lock import SOURCE_REGISTRY, get_record
+from data.types import DatasetAdmission, UnifiedCanidSample
 from foundation.provenance import content_sha256
 
 ROUTE_PLAN_SCHEMA = "cvi.full128_route_plan.v3"

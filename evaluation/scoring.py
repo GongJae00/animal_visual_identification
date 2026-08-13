@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from math import isfinite
 from typing import Any
 
-from data_pipeline.pair_artifacts import (
+from data.pair_artifacts import (
     PairArtifactEntry,
     PairArtifactManifest,
     PairArtifactVerification,

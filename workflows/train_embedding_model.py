@@ -18,7 +18,7 @@ from contracts.pretrained_weight_intake import (
     PretrainedWeightSourceContract,
     validate_pretrained_weight_receipt_binding,
 )
-from data_pipeline.public_crop_manifest import PublicCropManifest
+from data.public_crop_manifest import PublicCropManifest
 from foundation.protected_io import read_strict_json_object
 from foundation.provenance import content_sha256
 from foundation.retained_file import read_retained_regular_file

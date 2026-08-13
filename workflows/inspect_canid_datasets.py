@@ -5,10 +5,10 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from data_pipeline.adapters import ADAPTERS
-from data_pipeline.duplicates import find_exact_duplicates, summarize_duplicates
-from data_pipeline.report import compute_dataset_statistics
-from data_pipeline.source_lock import SOURCE_REGISTRY, admitted_records
+from data.adapters import ADAPTERS
+from data.duplicates import find_exact_duplicates, summarize_duplicates
+from data.report import compute_dataset_statistics
+from data.source_lock import SOURCE_REGISTRY, admitted_records
 
 
 def main() -> None:

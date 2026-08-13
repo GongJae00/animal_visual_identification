@@ -6,14 +6,14 @@ import os
 from pathlib import Path
 from typing import Any
 
+import cv2
 import numpy as np
 import torch
-import cv2
 from PIL import Image
 from torch.utils.data import Dataset
 
-from data_pipeline.adapters import adapt_dogfacenet224
-from data_pipeline.types import UnifiedCanidSample
+from data.adapters import adapt_dogfacenet224
+from data.types import UnifiedCanidSample
 from localization.roi import normalize_source_point_to_square_crop
 
 _POSE_ORDER = (

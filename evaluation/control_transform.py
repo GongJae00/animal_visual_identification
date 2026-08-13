@@ -16,7 +16,8 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any
 
-from data_pipeline.acquisition import sha256_file
+from data.acquisition import sha256_file
+from data.crop_export import ImageProbe, probe_still_image
 from evaluation.controls import (
     ControlMaskManifest,
     ControlMaskVerification,
@@ -28,15 +29,14 @@ from evaluation.controls import (
     control_artifact_token,
     verify_control_mask_files,
 )
-from data_pipeline.crop_export import ImageProbe, probe_still_image
 from evaluation.mask_semantics import MaskSemanticVerification
-from foundation.provenance import content_sha256
 from evaluation.scoring import (
     PairArtifactEntry,
     PairArtifactManifest,
     PairArtifactVerification,
     verify_pair_artifact_files,
 )
+from foundation.provenance import content_sha256
 
 SUPPORTED_SEMANTICS_VERSION = "cvi.visual_control_transform.v1"
 _SAFE_TOKEN = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}")

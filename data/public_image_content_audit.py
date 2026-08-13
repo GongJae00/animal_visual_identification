@@ -24,9 +24,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from data.public_canine_manifest import PublicCanineManifest, PublicCanineRecord
 from foundation.provenance import content_sha256
-from data_pipeline.public_canine_manifest import PublicCanineManifest, PublicCanineRecord
-
 
 _PIXEL_HASH_DOMAIN = b"CVI_PIXEL_CANONICAL_RGB_V1\0"
 _ALLOWED_ZIP_COMPRESSION = (zipfile.ZIP_STORED, zipfile.ZIP_DEFLATED)

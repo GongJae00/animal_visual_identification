@@ -6,7 +6,7 @@ import argparse
 import json
 from pathlib import Path
 
-from data_pipeline.dataset import SplitManifest
+from data.dataset import SplitManifest
 from evaluation.pairing import (
     PairingPolicy,
     construct_verification_pairs,
@@ -14,9 +14,10 @@ from evaluation.pairing import (
 )
 from foundation.protected_io import (
     read_strict_json_object as _read_object,
+)
+from foundation.protected_io import (
     write_private_json_bundle as _write_bundle,
 )
-
 
 
 def main() -> None:

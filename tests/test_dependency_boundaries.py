@@ -8,7 +8,7 @@ INTERNAL_PACKAGES = {
     "apps",
     "contracts",
     "canine_identity",
-    "data_pipeline",
+    "data",
     "evaluation",
     "evidence_fusion",
     "experiments",

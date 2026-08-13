@@ -4,19 +4,19 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from data_pipeline.public_canine_manifest import (
-    ArchiveReceiptBinding,
+from data.public_canine_manifest import (
     DOGFACE_DATASET,
     MPDD_DATASET,
     SIBETAN_DATASET,
     YT_DATASET,
+    ArchiveReceiptBinding,
     PublicCanineManifest,
     parse_dogfacenet224,
     parse_mpdd,
     parse_sibetan,
     parse_yt_bb_dog,
 )
-from data_pipeline.public_canine_semantic_receipt import (
+from data.public_canine_semantic_receipt import (
     PublicCanineSemanticReceipt,
     summarize_public_canine_manifest,
 )

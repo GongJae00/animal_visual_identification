@@ -26,7 +26,7 @@ from contracts.runtime_library_provenance import (
     RuntimeLibraryManifest,
     RuntimeLibraryPhase,
 )
-from data_pipeline.acquisition import sha256_file
+from data.acquisition import sha256_file
 from evaluation.batch_invariance import (
     BatchInvarianceDecision,
     BatchInvariancePolicy,

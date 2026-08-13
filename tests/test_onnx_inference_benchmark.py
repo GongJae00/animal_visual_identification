@@ -30,7 +30,7 @@ from contracts.runtime_library_provenance import (
     RuntimeLibraryPolicy,
     freeze_runtime_library_policy,
 )
-from data_pipeline.acquisition import sha256_file
+from data.acquisition import sha256_file
 from evaluation.batch_invariance import (
     BatchInvariancePolicy,
     build_batch_invariance_precommitment,

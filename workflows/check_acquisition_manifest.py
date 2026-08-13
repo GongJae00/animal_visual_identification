@@ -6,7 +6,7 @@ import argparse
 import json
 from pathlib import Path
 
-from data_pipeline.acquisition import AcquisitionManifest
+from data.acquisition import AcquisitionManifest
 
 
 def main() -> None:

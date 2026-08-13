@@ -12,7 +12,9 @@ from typing import Any
 
 from PIL import Image
 
-from data_pipeline.types import UnifiedCanidSample
+from data.types import UnifiedCanidSample
+from foundation.protected_io import read_strict_json_document
+from foundation.provenance import content_sha256
 from localization.consensus import consensus_dog_instances
 from localization.prediction_cache import cache_record_to_result
 from localization.quality import (
@@ -25,8 +27,6 @@ from localization.roi import (
     face_and_weak_nose_rois_from_pose,
     square_padded_crop_with_mask,
 )
-from foundation.protected_io import read_strict_json_document
-from foundation.provenance import content_sha256
 
 _BUNDLE_SCHEMA = "cvi.canid_roi_manifest_bundle.v2"
 _MANIFEST_SCHEMA = "cvi.canid_roi_manifest.v2"

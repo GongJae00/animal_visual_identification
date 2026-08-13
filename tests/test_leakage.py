@@ -3,7 +3,7 @@ from __future__ import annotations
 import unittest
 
 from contracts.contracts import Modality
-from data_pipeline.dataset import SplitRole, TrackletRecord
+from data.dataset import SplitRole, TrackletRecord
 from identity_governance.leakage import association_audit
 
 

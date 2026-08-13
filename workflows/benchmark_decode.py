@@ -6,7 +6,7 @@ import argparse
 import json
 from pathlib import Path
 
-from data_pipeline.decode import DecodeBackend, DecodeConfig, benchmark_decode
+from data.decode import DecodeBackend, DecodeConfig, benchmark_decode
 from operations.telemetry import monitor_operation
 
 

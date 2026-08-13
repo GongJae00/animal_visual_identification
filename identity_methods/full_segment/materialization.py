@@ -32,8 +32,8 @@ from contracts.foreground_segmentation_model import (
 from contracts.instance_segmentation_model import (
     InstanceSegmentationArtifact,
 )
-from data_pipeline.source_lock import get_record
-from data_pipeline.types import DatasetAdmission
+from data.source_lock import get_record
+from data.types import DatasetAdmission
 from foundation.protected_io import (
     json_document_bytes,
     read_strict_json_document,

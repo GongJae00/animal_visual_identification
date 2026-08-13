@@ -10,8 +10,8 @@ from typing import Any
 import pytest
 from PIL import Image
 
-from data_pipeline.source_lock import get_record
-from data_pipeline.types import CaptureGroupKind, UnifiedCanidSample
+from data.source_lock import get_record
+from data.types import CaptureGroupKind, UnifiedCanidSample
 from identity_methods.full_segment import route_plan
 from identity_methods.full_segment.route_plan import (
     CANONICAL_DATASETS,

@@ -9,11 +9,11 @@ import shutil
 import tempfile
 from pathlib import Path
 
-from data_pipeline.adapters import ADAPTERS
-from data_pipeline.source_lock import get_record
+from data.adapters import ADAPTERS
+from data.source_lock import get_record
+from foundation.protected_io import write_private_json_bundle
 from localization.prediction_cache import read_prediction_cache
 from localization.roi_manifest import build_roi_manifest
-from foundation.protected_io import write_private_json_bundle
 
 
 def parse_args() -> argparse.Namespace:

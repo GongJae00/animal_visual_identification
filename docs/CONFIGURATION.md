@@ -76,7 +76,7 @@ committed.
 
 Tracked configs live with their owning packages: public examples under
 `canine_identity/configs/`, operational policies under `operations/configs/`,
-data policies under `data_pipeline/configs/`, schemas under
+data policies under `data/configs/`, schemas under
 `contracts/configs/`, and research definitions under
 `experiments/configs/`. Their independent schemas are not interchangeable with
 retrieval config v2 and must not be passed to `IdentityEngine` unless they

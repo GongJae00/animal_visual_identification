@@ -7,12 +7,12 @@ import json
 from pathlib import Path
 
 from contracts.source_provenance import build_offline_tool_provenance
-from data_pipeline.public_dataset import (
+from data.public_dataset import (
     PublicDatasetArchivePolicy,
     PublicDatasetArchiveReceipt,
     PublicDatasetSourceContract,
 )
-from data_pipeline.public_dataset_extraction import extract_audited_public_dataset_zip
+from data.public_dataset_extraction import extract_audited_public_dataset_zip
 from foundation.protected_io import read_strict_json_object, write_private_json_bundle
 from foundation.provenance import content_sha256
 

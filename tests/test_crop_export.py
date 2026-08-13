@@ -8,8 +8,8 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from contracts.contracts import Modality
-from data_pipeline.acquisition import sha256_file
-from data_pipeline.crop_export import (
+from data.acquisition import sha256_file
+from data.crop_export import (
     CropBox,
     CropExportPolicy,
     OracleCropSource,

@@ -6,7 +6,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from data_pipeline.acquisition import (
+from data.acquisition import (
     AcquisitionManifest,
     CameraSpecification,
     IRMechanism,

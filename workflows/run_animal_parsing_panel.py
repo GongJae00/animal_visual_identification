@@ -22,9 +22,9 @@ from contracts.foreground_segmentation_model import (
 from contracts.instance_segmentation_model import (
     InstanceSegmentationArtifact,
 )
-from data_pipeline.acquisition import sha256_file
-from data_pipeline.adapters import adapt_ap10k_dog
-from data_pipeline.types import UnifiedCanidSample
+from data.acquisition import sha256_file
+from data.adapters import adapt_ap10k_dog
+from data.types import UnifiedCanidSample
 from foundation.protected_io import json_document_bytes
 from foundation.protected_publication import (
     fsync_directory,

@@ -17,7 +17,7 @@ from contracts.runtime_library_provenance import (
     RuntimeLibraryPhase,
     RuntimeLibraryTracker,
 )
-from data_pipeline.acquisition import sha256_file
+from data.acquisition import sha256_file
 from evaluation.control_scoring import ControlScoringInventory
 from evaluation.operation_ports import EmbeddingBatchBackend, EmbeddingProducerConfig
 from foundation.provenance import content_sha256

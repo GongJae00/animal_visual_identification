@@ -4,8 +4,8 @@ import os
 import unittest
 from pathlib import Path
 
-from data_pipeline.source_lock import SOURCE_REGISTRY, admitted_records, get_record
-from data_pipeline.types import DatasetAdmission, UnifiedCanidSample
+from data.source_lock import SOURCE_REGISTRY, admitted_records, get_record
+from data.types import DatasetAdmission, UnifiedCanidSample
 from identity_governance.generated_identity_registry import create_provisional_identity
 
 

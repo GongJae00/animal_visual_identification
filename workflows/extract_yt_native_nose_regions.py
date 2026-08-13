@@ -17,12 +17,12 @@ from typing import Any, Mapping, Sequence
 from PIL import Image
 
 from contracts.source_provenance import build_offline_tool_provenance
-from data_pipeline.public_canine_manifest import (
+from data.public_canine_manifest import (
     YT_DATASET,
     ArchiveReceiptBinding,
     parse_yt_bb_dog,
 )
-from data_pipeline.public_dataset_receipt_io import read_public_archive_receipt_bundle
+from data.public_dataset_receipt_io import read_public_archive_receipt_bundle
 from foundation.protected_io import json_document_bytes, read_strict_json_document
 from foundation.provenance import content_sha256
 from identity_governance.identity_registry import (

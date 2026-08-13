@@ -13,9 +13,7 @@ from pathlib import Path, PurePosixPath
 from tempfile import mkdtemp
 from typing import Any, BinaryIO
 
-from foundation.protected_publication import fsync_directory, rename_directory_noreplace
-from foundation.provenance import content_sha256
-from data_pipeline.public_dataset import (
+from data.public_dataset import (
     PublicDatasetArchivePolicy,
     PublicDatasetArchiveReceipt,
     PublicDatasetSourceContract,
@@ -25,6 +23,8 @@ from data_pipeline.public_dataset import (
     _validate_sha256,
     _validate_zip_members,
 )
+from foundation.protected_publication import fsync_directory, rename_directory_noreplace
+from foundation.provenance import content_sha256
 
 
 @dataclass(frozen=True, slots=True)

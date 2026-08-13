@@ -8,7 +8,7 @@ from collections import Counter
 from pathlib import Path
 
 from contracts.source_provenance import build_offline_tool_provenance
-from data_pipeline.public_duplicate_adjudication import (
+from data.public_duplicate_adjudication import (
     AdjudicationMode,
     build_adjudication_chunk,
     build_duplicate_evidence_source_generation,

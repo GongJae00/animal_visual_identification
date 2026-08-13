@@ -12,7 +12,7 @@ from typing import Any
 import numpy as np
 from PIL import Image
 
-from data_pipeline.types import UnifiedCanidSample
+from data.types import UnifiedCanidSample
 
 
 def canonical_pixel_hash(image_path: Path) -> str:

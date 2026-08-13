@@ -11,8 +11,8 @@ import numpy as np
 import pytest
 from PIL import Image
 
-from data_pipeline.source_lock import get_record
-from data_pipeline.types import CaptureGroupKind, UnifiedCanidSample
+from data.source_lock import get_record
+from data.types import CaptureGroupKind, UnifiedCanidSample
 from foundation.protected_io import json_document_bytes
 from foundation.provenance import content_sha256
 from identity_governance.generated_identity_registry import GENERATED_DOG_NAMESPACE

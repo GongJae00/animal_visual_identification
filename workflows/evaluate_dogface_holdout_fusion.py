@@ -18,6 +18,8 @@ from typing import Any, Callable, Mapping, Sequence
 import numpy as np
 import torch
 
+from data.public_canine_manifest import DOGFACE_DATASET
+from data.public_dataset_receipt_io import read_public_archive_receipt_bundle
 from evaluation.calibration import (
     compute_probability_calibration_metrics,
     fit_isotonic_calibration,
@@ -32,28 +34,18 @@ from evaluation.robustness_protocol import (
     RobustnessProtocolConfig,
     build_dataset_balanced_oof_protocol,
 )
-from identity_methods.face.checkpoint import (
-    expected_faceid_contract_for_checkpoint,
-    file_sha256,
-    normalize_dino_local_artifact_contract,
-    validate_checkpoint_runtime_bindings,
-    validate_checkpoint_structure,
-)
-from identity_methods.face.trainer import build_faceid_model, load_receipt_bound_frozen_dino
 from evidence_fusion.oof_simplex import OOFSimplexConfig, fit_oof_simplex
-from identity_governance.identity_registry import (
-    compute_identity_token,
-    compute_public_subject_token,
-    compute_registered_dog_id,
-)
 from foundation.protected_io import (
     read_strict_json_document,
     write_private_json_bundle,
     write_private_json_directory_bundle,
 )
 from foundation.provenance import content_sha256
-from data_pipeline.public_canine_manifest import DOGFACE_DATASET
-from data_pipeline.public_dataset_receipt_io import read_public_archive_receipt_bundle
+from identity_governance.identity_registry import (
+    compute_identity_token,
+    compute_public_subject_token,
+    compute_registered_dog_id,
+)
 from identity_governance.role_exposure import (
     ExposureDeclarationKind,
     ExposureStage,
@@ -66,6 +58,17 @@ from identity_governance.role_exposure import (
     verify_role_exposure_receipt,
 )
 from identity_governance.split_role_exposure import verify_split_role_exposure_inputs
+from identity_methods.face.checkpoint import (
+    expected_faceid_contract_for_checkpoint,
+    file_sha256,
+    normalize_dino_local_artifact_contract,
+    validate_checkpoint_runtime_bindings,
+    validate_checkpoint_structure,
+)
+from identity_methods.face.trainer import (
+    build_faceid_model,
+    load_receipt_bound_frozen_dino,
+)
 
 if __package__:
     from workflows import evaluate_external_appearance as external
@@ -113,9 +116,9 @@ _CODE_PATHS = (
     "identity_governance/role_exposure.py",
     "foundation/protected_io.py",
     "identity_governance/protected_public_split.py",
-    "data_pipeline/public_canine_manifest.py",
-    "data_pipeline/public_canine_semantic_intake.py",
-    "data_pipeline/public_dataset_receipt_io.py",
+    "data/public_canine_manifest.py",
+    "data/public_canine_semantic_intake.py",
+    "data/public_dataset_receipt_io.py",
     "identity_governance/training_admission.py",
     "identity_governance/identity_registry.py",
     "identity_governance/split_role_exposure.py",

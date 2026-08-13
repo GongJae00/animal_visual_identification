@@ -7,14 +7,14 @@ from dataclasses import replace
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from data_pipeline.public_dataset import (
+from data.public_dataset import (
     DatasetUsageLane,
     PublicDatasetArchivePolicy,
     PublicDatasetSourceContract,
     SourceChecksumAuthority,
     audit_public_dataset_zip,
 )
-from data_pipeline.public_dataset_extraction import (
+from data.public_dataset_extraction import (
     PublicDatasetExtractionReceipt,
     extract_audited_public_dataset_zip,
 )

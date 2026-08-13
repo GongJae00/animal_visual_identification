@@ -5,6 +5,7 @@ import json
 import os
 import sys
 import unittest
+from dataclasses import replace
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from types import SimpleNamespace
@@ -105,6 +106,63 @@ def _input_files(root: Path, runtime_policy: RuntimeLibraryPolicy) -> dict[str, 
 
 
 class EmbeddingProductionRunnerAdversarialTests(unittest.TestCase):
+    def test_historical_source_inventory_parses_but_cannot_execute(self) -> None:
+        policy = _execution_policy()
+        historical = replace(
+            _precommitment(
+                execution_policy_sha256=policy.policy_sha256,
+                environment_sha256=HASH_A,
+            ),
+            code_source_sha256=(("data_pipeline/acquisition.py", HASH_A, 1),),
+            code_source_manifest_sha256=runner.content_sha256(
+                [["data_pipeline/acquisition.py", HASH_A, 1]]
+            ),
+            code_source_files=1,
+            code_source_bytes=1,
+        )
+
+        parsed = EmbeddingProductionPrecommitment.from_dict(historical.to_dict())
+        self.assertEqual(parsed, historical)
+        with (
+            patch.object(runner, "run_supervised_process") as launch,
+            self.assertRaisesRegex(RuntimeError, "protected Python sources changed"),
+        ):
+            run_embedding_production_fresh_worker(
+                backend="cpu",
+                files={},
+                precommitment=parsed,
+                expected_precommitment_sha256=parsed.precommitment_sha256,
+                python_executable=Path(sys.executable),
+                execution_policy=policy,
+                output_directory=Path("unreachable"),
+                discovery=True,
+            )
+        launch.assert_not_called()
+
+    def test_historical_source_inventory_rejects_unsafe_paths(self) -> None:
+        precommitment = _precommitment(
+            execution_policy_sha256=HASH_A,
+            environment_sha256=HASH_A,
+        )
+        for name in (
+            "../source.py",
+            "/absolute/source.py",
+            "package\\source.py",
+            "source.txt",
+        ):
+            payload = precommitment.to_dict()
+            payload["code_source_sha256"] = [[name, HASH_A, 1]]
+            payload["code_source_manifest_sha256"] = runner.content_sha256(
+                payload["code_source_sha256"]
+            )
+            payload["code_source_files"] = 1
+            payload["code_source_bytes"] = 1
+            with self.subTest(name=name), self.assertRaisesRegex(
+                ValueError,
+                "code-source manifest",
+            ):
+                EmbeddingProductionPrecommitment.from_dict(payload)
+
     def test_code_snapshot_is_complete_and_independent_of_workspace_changes(
         self,
     ) -> None:

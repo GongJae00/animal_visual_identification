@@ -7,7 +7,7 @@ import json
 from dataclasses import asdict
 from pathlib import Path
 
-from data_pipeline.acquisition import audit_video_timestamps
+from data.acquisition import audit_video_timestamps
 
 
 def main() -> None:

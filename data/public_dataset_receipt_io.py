@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from data.public_dataset import PublicDatasetArchiveReceipt
 from foundation.protected_io import read_strict_json_object
 from foundation.provenance import content_sha256
-from data_pipeline.public_dataset import PublicDatasetArchiveReceipt
 
 
 def read_public_archive_receipt_bundle(path: Path) -> PublicDatasetArchiveReceipt:

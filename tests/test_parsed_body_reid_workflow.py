@@ -8,7 +8,7 @@ import numpy as np
 import pytest
 from PIL import Image
 
-from data_pipeline.types import CaptureGroupKind, UnifiedCanidSample
+from data.types import CaptureGroupKind, UnifiedCanidSample
 from identity_governance.generated_identity_registry import create_provisional_identity
 from localization.animal_parsing import (
     AnimalIdentityCrop,

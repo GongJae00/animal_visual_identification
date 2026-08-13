@@ -10,8 +10,8 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 
-from data_pipeline.adapters import ADAPTERS
-from data_pipeline.source_lock import get_record
+from data.adapters import ADAPTERS
+from data.source_lock import get_record
 from localization.adapters import (
     TorchvisionFasterRCNNDogAdapter,
     UltralyticsDogAdapter,

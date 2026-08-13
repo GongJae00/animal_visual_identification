@@ -15,7 +15,7 @@ from contracts.three_region_artifact import (
     read_three_region_artifact,
     validate_three_region_artifact_bundle,
 )
-from data_pipeline.types import CaptureGroupKind, UnifiedCanidSample
+from data.types import CaptureGroupKind, UnifiedCanidSample
 from foundation.protected_io import write_private_json_bundle
 from foundation.provenance import content_sha256
 from identity_governance.identity_registry import compute_registered_dog_id

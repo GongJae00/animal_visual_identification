@@ -10,7 +10,7 @@ from typing import Any
 import numpy as np
 from PIL import Image, ImageDraw
 
-from data_pipeline.types import UnifiedCanidSample
+from data.types import UnifiedCanidSample
 from localization.adapters import AbstractLocalizationAdapter
 from localization.quality import (
     compute_iou,

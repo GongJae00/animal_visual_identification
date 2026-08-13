@@ -9,11 +9,12 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
-from evaluation.controls import (
-    ControlEvaluationBinding,
-    ControlPanelSummary,
-    ControlStratumCount,
-    VisualControlKind,
+from data.dataset import EvaluationStage
+from evaluation import (
+    ClusterBootstrapConfig,
+    ClusterUnit,
+    FrozenVerificationThreshold,
+    VerificationDirection,
 )
 from evaluation.control_evaluation import (
     ControlEvaluationPolicy,
@@ -29,13 +30,12 @@ from evaluation.control_scoring import (
     EmbeddingCacheManifest,
     embedding_cache_key,
 )
-from evaluation import (
-    ClusterBootstrapConfig,
-    ClusterUnit,
-    FrozenVerificationThreshold,
-    VerificationDirection,
+from evaluation.controls import (
+    ControlEvaluationBinding,
+    ControlPanelSummary,
+    ControlStratumCount,
+    VisualControlKind,
 )
-from data_pipeline.dataset import EvaluationStage
 from evaluation.pairing import (
     NegativeQuota,
     PairArtifactBinding,

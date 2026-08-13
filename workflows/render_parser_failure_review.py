@@ -16,7 +16,7 @@ from typing import Any
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
-from data_pipeline.source_lock import get_record
+from data.source_lock import get_record
 from foundation.protected_io import read_strict_json_document, write_private_json_bundle
 from foundation.protected_publication import fsync_directory, rename_directory_noreplace
 from foundation.provenance import content_sha256

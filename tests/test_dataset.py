@@ -4,7 +4,7 @@ import json
 import unittest
 
 from contracts.contracts import Modality
-from data_pipeline.dataset import (
+from data.dataset import (
     PresenceState,
     RoleModalityRule,
     SplitManifest,

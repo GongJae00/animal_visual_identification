@@ -9,7 +9,7 @@ from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
 
-from data_pipeline.types import UnifiedCanidSample
+from data.types import UnifiedCanidSample
 from foundation.protected_io import read_strict_json_document
 from foundation.provenance import content_sha256
 

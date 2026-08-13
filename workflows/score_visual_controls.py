@@ -6,6 +6,7 @@ import argparse
 import json
 from pathlib import Path
 
+from data.crop_export import CropExportReceipt
 from evaluation.control_scoring import (
     ControlScorePolicy,
     EmbeddingCacheManifest,
@@ -16,7 +17,6 @@ from evaluation.control_scoring import (
     verify_embedding_cache_files,
 )
 from evaluation.control_transform import ControlTransformReceipt
-from data_pipeline.crop_export import CropExportReceipt
 from foundation.protected_io import (
     read_strict_json_object,
     write_private_json_bundle,

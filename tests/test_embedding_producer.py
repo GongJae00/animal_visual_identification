@@ -6,7 +6,7 @@ from dataclasses import replace
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from data_pipeline.acquisition import sha256_file
+from data.acquisition import sha256_file
 from evaluation.control_scoring import (
     ArtifactSourceKind,
     ControlScoringInventory,

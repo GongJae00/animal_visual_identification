@@ -10,8 +10,8 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
-from data_pipeline.acquisition import sha256_file
-from evaluation.controls import ControlScoringRequest
+from data.acquisition import sha256_file
+from data.crop_export import CropExportReceipt
 from evaluation.control_scoring import (
     ArtifactCacheBinding,
     ArtifactSourceKind,
@@ -33,13 +33,13 @@ from evaluation.control_transform import (
     ControlTransformReceipt,
     verify_control_artifact_files,
 )
-from data_pipeline.crop_export import CropExportReceipt
-from foundation.provenance import content_sha256
+from evaluation.controls import ControlScoringRequest
 from evaluation.scoring import (
     PairArtifactEntry,
     PairArtifactManifest,
     verify_pair_artifact_files,
 )
+from foundation.provenance import content_sha256
 from workflows.score_visual_controls import main
 
 HASH_A = "a" * 64

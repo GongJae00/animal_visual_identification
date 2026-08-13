@@ -11,7 +11,7 @@ from pathlib import Path
 import pytest
 from PIL import Image
 
-from data_pipeline.adapters import (
+from data.adapters import (
     ADAPTERS,
     RESEARCH_INTAKE_ADAPTERS,
     _verified_path,
@@ -24,8 +24,8 @@ from data_pipeline.adapters import (
     adapt_sibetan,
     load_petface_dog_split,
 )
-from data_pipeline.report import compute_dataset_statistics
-from data_pipeline.types import CaptureGroupKind
+from data.report import compute_dataset_statistics
+from data.types import CaptureGroupKind
 from representation_learning.train.dataset import PetFaceDataset
 
 _PETFACE_README = """# PetFace Dataset
@@ -81,11 +81,11 @@ def _write_dogface_fixture(
         payload = "".join(f"{value}\n" for value in values).encode("ascii")
         (root / f"classes_{split}.txt").write_bytes(payload)
         monkeypatch.setattr(
-            f"data_pipeline.adapters.DOGFACE_{split.upper()}_SHA256",
+            f"data.adapters.DOGFACE_{split.upper()}_SHA256",
             hashlib.sha256(payload).hexdigest(),
         )
         monkeypatch.setattr(
-            f"data_pipeline.adapters.DOGFACE_{split.upper()}_MD5",
+            f"data.adapters.DOGFACE_{split.upper()}_MD5",
             hashlib.md5(payload, usedforsecurity=False).hexdigest(),
         )
 

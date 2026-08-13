@@ -12,7 +12,7 @@ from tempfile import TemporaryDirectory
 from time import perf_counter_ns
 from typing import Any, Callable, Protocol
 
-from data_pipeline.acquisition import sha256_file
+from data.acquisition import sha256_file
 from evaluation.benchmark import TimingSummary
 from evaluation.control_scoring import (
     ArtifactCacheBinding,

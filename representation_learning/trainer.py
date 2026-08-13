@@ -7,8 +7,8 @@ import math
 import os
 import random
 import time
-from collections.abc import Callable
 from collections import Counter
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
@@ -18,22 +18,22 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader, Dataset, Sampler
 
-
-from data_pipeline.public_crop_manifest import (
+from data.public_crop_manifest import (
     PublicCropArtifact,
     PublicCropManifest,
     read_verified_crop_artifact,
 )
+from identity_governance.role_exposure import RoleExposureLedger, RoleExposureReceipt
 from identity_governance.training_admission import (
     TrainingAdmissionManifest,
     TrainingAdmissionReceipt,
     TrainingCropRow,
     verify_training_admission_receipt,
 )
-from identity_governance.role_exposure import RoleExposureLedger, RoleExposureReceipt
 from representation_learning.train.augment import RandAugment
-from representation_learning.train.config import TrainConfig  # noqa: F401 — canonical, backward compat
-
+from representation_learning.train.config import (
+    TrainConfig,  # noqa: F401 — canonical, backward compat
+)
 
 # ---------------------------------------------------------------------------
 # Image cache — preload all crops into RAM

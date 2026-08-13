@@ -9,13 +9,14 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any
 
-from data_pipeline.crop_export import (
+from data.crop_export import (
     CropExportPolicy,
     export_oracle_crops,
     oracle_crop_sources_from_payload,
 )
 from evaluation.pairing import pair_construction_from_bundle_payloads
 from foundation.protected_io import read_strict_json_object as _read_object
+
 
 def _receipt_target(path: Path) -> Path:
     if path.is_symlink():

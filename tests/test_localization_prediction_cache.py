@@ -9,7 +9,8 @@ from pathlib import Path
 
 from PIL import Image
 
-from data_pipeline.types import CaptureGroupKind, UnifiedCanidSample
+from data.types import CaptureGroupKind, UnifiedCanidSample
+from foundation.provenance import content_sha256
 from identity_governance.identity_registry import compute_registered_dog_id
 from localization.prediction_cache import (
     build_prediction_cache,
@@ -22,7 +23,6 @@ from localization.types import (
     KeypointSet,
     LocalizationResult,
 )
-from foundation.provenance import content_sha256
 
 
 def _sha256(path: Path) -> str:

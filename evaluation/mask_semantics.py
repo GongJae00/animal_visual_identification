@@ -9,6 +9,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any
 
+from data.crop_export import probe_still_image
 from evaluation.controls import (
     ControlMaskManifest,
     ControlMaskVerification,
@@ -16,13 +17,12 @@ from evaluation.controls import (
     MaskRole,
     verify_control_mask_files,
 )
-from data_pipeline.crop_export import probe_still_image
-from foundation.provenance import content_sha256
 from evaluation.scoring import (
     PairArtifactManifest,
     PairArtifactVerification,
     verify_pair_artifact_files,
 )
+from foundation.provenance import content_sha256
 
 
 @dataclass(frozen=True, slots=True)

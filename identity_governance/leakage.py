@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from math import log, sqrt
 from typing import Literal
 
-from data_pipeline.dataset import TrackletRecord
+from data.dataset import TrackletRecord
 
 DomainKey = Literal["camera_id", "cage_id", "site_id"]
 

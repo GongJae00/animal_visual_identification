@@ -11,7 +11,7 @@ import numpy as np
 import pytest
 from PIL import Image
 
-from data_pipeline.source_lock import get_record
+from data.source_lock import get_record
 from foundation.provenance import content_sha256
 from identity_governance.full_split_census import (
     FullStatus,

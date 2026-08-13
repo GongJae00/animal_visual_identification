@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from typing import Any, Protocol
 
-from data_pipeline.acquisition import sha256_file
+from data.acquisition import sha256_file
 from foundation.provenance import content_sha256
 
 

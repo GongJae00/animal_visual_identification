@@ -24,7 +24,7 @@ from contracts.foreground_segmentation_model import (
 from contracts.instance_segmentation_model import (
     InstanceSegmentationArtifact,
 )
-from data_pipeline.acquisition import sha256_file
+from data.acquisition import sha256_file
 from foundation.protected_io import json_document_bytes
 from foundation.protected_publication import fsync_directory, rename_directory_noreplace
 from foundation.provenance import content_sha256

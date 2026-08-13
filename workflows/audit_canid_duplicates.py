@@ -5,9 +5,9 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from data_pipeline.adapters import ADAPTERS
-from data_pipeline.duplicates import find_cross_dataset_duplicates, find_exact_duplicates
-from data_pipeline.source_lock import admitted_records
+from data.adapters import ADAPTERS
+from data.duplicates import find_cross_dataset_duplicates, find_exact_duplicates
+from data.source_lock import admitted_records
 
 
 def main() -> None:

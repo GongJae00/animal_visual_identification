@@ -17,6 +17,9 @@ contracts remain readable.
   remain unchanged.
 - Renamed the internal retrieval package from `identity_retrieval` to `retrieval`.
   Gallery v3-v5 readers and persisted `cvi.gallery_*` identifiers remain unchanged.
+- Renamed the internal data-processing package from `data_pipeline` to `data`.
+  Historical content-bound source paths remain unchanged in archived receipts;
+  their v2 readers reject execution against a different current source inventory.
 
 ### Part 1 - Parser Policy And Full128 Materialization
 

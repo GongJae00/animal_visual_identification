@@ -29,6 +29,19 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from data.public_canine_manifest import (
+    DOGFACE_DATASET,
+    MPDD_DATASET,
+    SIBETAN_DATASET,
+    YT_DATASET,
+    ArchiveReceiptBinding,
+    PublicCanineManifest,
+    PublicCanineRecord,
+)
+from data.public_canine_semantic_intake import derive_public_canine_semantics
+from data.public_dataset_receipt_io import read_public_archive_receipt_bundle
+from foundation.protected_io import read_strict_json_object, write_private_json_bundle
+from foundation.provenance import content_sha256
 from identity_methods.classical.phash_mih import (
     MAXIMUM_EXACT_RADIUS,
     CandidateLimitExceeded,
@@ -38,20 +51,6 @@ from identity_methods.classical.phash_mih import (
     fingerprint_luma32,
     opaque_sample_id,
 )
-from foundation.protected_io import read_strict_json_object, write_private_json_bundle
-from foundation.provenance import content_sha256
-from data_pipeline.public_canine_manifest import (
-    ArchiveReceiptBinding,
-    DOGFACE_DATASET,
-    MPDD_DATASET,
-    SIBETAN_DATASET,
-    YT_DATASET,
-    PublicCanineManifest,
-    PublicCanineRecord,
-)
-from data_pipeline.public_canine_semantic_intake import derive_public_canine_semantics
-from data_pipeline.public_dataset_receipt_io import read_public_archive_receipt_bundle
-
 
 _DATASETS = (DOGFACE_DATASET, MPDD_DATASET, SIBETAN_DATASET, YT_DATASET)
 _HEX_SHA256 = re.compile(r"[0-9a-f]{64}\Z")

@@ -14,7 +14,7 @@ from tempfile import TemporaryDirectory
 
 import operations.embedding_production_runner as embedding_runner
 from contracts.runtime_library_provenance import RuntimeLibraryManifest
-from data_pipeline.acquisition import sha256_file
+from data.acquisition import sha256_file
 from evaluation.benchmark import TimingSummary
 from evaluation.control_scoring import (
     ArtifactCacheBinding,

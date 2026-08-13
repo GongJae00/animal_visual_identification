@@ -1,13 +1,13 @@
 from __future__ import annotations
 
+import subprocess
+import sys
 import unittest
 from dataclasses import replace
 from pathlib import Path
-import subprocess
-import sys
 
-from data_pipeline.public_canine_manifest import PublicCanineManifest
-from data_pipeline.public_canine_semantic_receipt import (
+from data.public_canine_manifest import PublicCanineManifest
+from data.public_canine_semantic_receipt import (
     PublicCanineSemanticReceipt,
     summarize_public_canine_manifest,
 )

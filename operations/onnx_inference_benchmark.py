@@ -21,7 +21,7 @@ from contracts.runtime_library_provenance import (
     RuntimeLibraryPolicy,
     RuntimeLibraryTracker,
 )
-from data_pipeline.acquisition import sha256_file
+from data.acquisition import sha256_file
 from evaluation.benchmark import TimingSummary
 from foundation.protected_io import read_strict_json_object, write_private_json_bundle
 from foundation.provenance import content_sha256

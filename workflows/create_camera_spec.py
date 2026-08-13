@@ -6,7 +6,7 @@ import argparse
 import json
 from pathlib import Path
 
-from data_pipeline.acquisition import CameraSpecification, IRMechanism
+from data.acquisition import CameraSpecification, IRMechanism
 
 
 def main() -> None:

@@ -12,10 +12,13 @@ from pathlib import Path
 
 from PIL import Image
 
-from data_pipeline.adapters import adapt_sibetan
-from experiments.sibetan_evidence import build_evidence_bundle_v2, validate_evidence_bundle_v2
-from localization.prediction_cache import read_prediction_cache
-from localization.roi_manifest import read_roi_manifest
+from data.adapters import adapt_sibetan
+from experiments.sibetan_evidence import (
+    build_evidence_bundle_v2,
+    validate_evidence_bundle_v2,
+)
+from foundation.protected_io import write_private_json_bundle
+from foundation.provenance import content_sha256
 from localization.nose_region.manifest import encode_png_crop
 from localization.nose_region.native_yt import (
     compute_quality,
@@ -23,9 +26,8 @@ from localization.nose_region.native_yt import (
     nose_geometry,
     predict_localizer,
 )
-from foundation.protected_io import write_private_json_bundle
-from foundation.provenance import content_sha256
-
+from localization.prediction_cache import read_prediction_cache
+from localization.roi_manifest import read_roi_manifest
 
 POLICY = {
     "target_association": "EXACTLY_ONE_POSE_DOG_INSTANCE",

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import unittest
 
-from data_pipeline.types import UnifiedCanidSample, CaptureGroupKind
+from data.types import CaptureGroupKind, UnifiedCanidSample
 
 
 class CanidOriginSplitTests(unittest.TestCase):

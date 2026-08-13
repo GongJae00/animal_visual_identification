@@ -1,20 +1,20 @@
 from __future__ import annotations
 
 import hashlib
-from pathlib import Path, PurePosixPath
 import tempfile
 import unittest
 import uuid
+from pathlib import Path, PurePosixPath
 
 import numpy as np
 from PIL import Image
 
-from data_pipeline.duplicates import (
+from data.duplicates import (
     canonical_pixel_hash,
     find_exact_duplicates,
     summarize_duplicates,
 )
-from data_pipeline.types import UnifiedCanidSample
+from data.types import UnifiedCanidSample
 
 
 def _sample(sample_id: str, image_path: str) -> UnifiedCanidSample:

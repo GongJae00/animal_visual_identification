@@ -6,8 +6,8 @@ import argparse
 import json
 from pathlib import Path
 
-from data_pipeline.adapters import ADAPTERS
-from data_pipeline.source_lock import admitted_records
+from data.adapters import ADAPTERS
+from data.source_lock import admitted_records
 
 
 def parse_args() -> argparse.Namespace:

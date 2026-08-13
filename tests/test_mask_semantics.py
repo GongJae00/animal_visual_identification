@@ -6,7 +6,7 @@ import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from data_pipeline.acquisition import sha256_file
+from data.acquisition import sha256_file
 from evaluation.controls import (
     ControlMaskEntry,
     ControlMaskManifest,

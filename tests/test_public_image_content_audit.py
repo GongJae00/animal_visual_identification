@@ -17,17 +17,16 @@ except ModuleNotFoundError:
 else:
     PILLOW_AVAILABLE = True
 
-from data_pipeline.public_canine_manifest import (
+from data.public_canine_manifest import (
     CanineRegion,
     IdentitySemantics,
     PublicCanineManifest,
     PublicCanineRecord,
 )
-from data_pipeline.public_image_content_audit import (
+from data.public_image_content_audit import (
     ImageContentAuditPolicy,
     audit_public_canine_image_content,
 )
-
 
 _RECEIPT_SHA256 = hashlib.sha256(b"synthetic archive receipt").hexdigest()
 

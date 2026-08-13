@@ -16,10 +16,28 @@ from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from typing import Any, Mapping, Sequence
 
+from data.public_canine_manifest import (
+    DOGFACE_DATASET,
+    MPDD_DATASET,
+    ArchiveReceiptBinding,
+    PublicCanineRecord,
+)
+from data.public_canine_semantic_intake import derive_public_canine_semantics
+from data.public_dataset_receipt_io import read_public_archive_receipt_bundle
+from foundation.protected_io import (
+    StrictJsonDocument,
+    json_document_bytes,
+    read_strict_json_document,
+)
+from foundation.provenance import content_sha256
 from identity_governance.identity_registry import (
     compute_identity_token,
     compute_registered_dog_id,
     compute_sample_token,
+)
+from identity_governance.protected_public_split import PublicSplitSourceBundle
+from identity_governance.split_registry_binding import (
+    validate_assignment_and_evaluator_binding,
 )
 from localization.nose_region.manifest import (
     LICENSING_LANES,
@@ -32,23 +50,6 @@ from localization.nose_region.manifest import (
     frontality_from_keypoints,
     normalized_box_to_pixel_box,
 )
-from foundation.protected_io import (
-    StrictJsonDocument,
-    json_document_bytes,
-    read_strict_json_document,
-)
-from identity_governance.protected_public_split import PublicSplitSourceBundle
-from foundation.provenance import content_sha256
-from data_pipeline.public_canine_manifest import (
-    ArchiveReceiptBinding,
-    DOGFACE_DATASET,
-    MPDD_DATASET,
-    PublicCanineRecord,
-)
-from data_pipeline.public_canine_semantic_intake import derive_public_canine_semantics
-from data_pipeline.public_dataset_receipt_io import read_public_archive_receipt_bundle
-from identity_governance.split_registry_binding import validate_assignment_and_evaluator_binding
-
 
 _SOURCE_SPEC_SCHEMA = "cvi.nose_region_external_source_spec.v1"
 _SOURCE_SCHEMA = "cvi.nose_region_archive_source.v1"
@@ -706,8 +707,8 @@ def _canonical_sha256(payload: object) -> str:
 
 
 def _load_localizer(checkpoint_bytes: bytes, device_name: str):
-    import torch
     import timm
+    import torch
 
     from localization.nose_region.localizer import (
         INPUT_SIZE,

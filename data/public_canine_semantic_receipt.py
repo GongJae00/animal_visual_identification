@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
+import re
 from collections import Counter, defaultdict
 from dataclasses import dataclass
-import re
 from typing import Any
 
+from data.public_canine_manifest import PublicCanineManifest, PublicCanineRecord
 from foundation.provenance import content_sha256
-from data_pipeline.public_canine_manifest import PublicCanineManifest, PublicCanineRecord
 
 
 @dataclass(frozen=True, slots=True)

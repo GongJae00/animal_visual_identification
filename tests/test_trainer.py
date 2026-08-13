@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import hashlib
-import tempfile
 import subprocess
 import sys
+import tempfile
 import unittest
 from dataclasses import replace
 from pathlib import Path
@@ -11,41 +11,11 @@ from unittest.mock import patch
 
 import torch
 
-from representation_learning.trainer import (
-    AdmittedCropDataset,
-    ArcFaceHead,
-    ArcFaceModel,
-    AppearanceBoundedResidual,
-    ConvNeXtEmbedding,
-    Dinov2Embedding,
-    IdentityBalancedSampler,
-    TrainConfig,
-    _build_label_index,
-    _build_dataloader,
-    _checkpoint_payload,
-    compute_embeddings,
-    _count_parameters,
-    _a4_metric_learning_loss,
-    _evaluate_development_retrieval,
-    evaluate_pretrained_development,
-    _prepare_training_images,
-    _prepare_a4_training_images,
-    _metric_learning_loss,
-    _selection_improves,
-    _warmup_cosine_schedule,
-    train_model,
-)
-from representation_learning.train.augment import RandAugment
-from data_pipeline.public_crop_manifest import (
+from data.public_crop_manifest import (
     PublicCropArtifact,
     PublicCropManifest,
     canonical_rgb_pixel_sha256,
     verify_public_crop_manifest,
-)
-from identity_governance.training_admission import (
-    TrainingAdmissionManifest,
-    TrainingCropRow,
-    admit_training,
 )
 from identity_governance.role_exposure import (
     ExposureDeclarationKind,
@@ -54,6 +24,36 @@ from identity_governance.role_exposure import (
     RoleExposureDeclarationRecord,
     create_role_exposure_receipt,
     merge_role_exposure_declarations,
+)
+from identity_governance.training_admission import (
+    TrainingAdmissionManifest,
+    TrainingCropRow,
+    admit_training,
+)
+from representation_learning.train.augment import RandAugment
+from representation_learning.trainer import (
+    AdmittedCropDataset,
+    AppearanceBoundedResidual,
+    ArcFaceHead,
+    ArcFaceModel,
+    ConvNeXtEmbedding,
+    Dinov2Embedding,
+    IdentityBalancedSampler,
+    TrainConfig,
+    _a4_metric_learning_loss,
+    _build_dataloader,
+    _build_label_index,
+    _checkpoint_payload,
+    _count_parameters,
+    _evaluate_development_retrieval,
+    _metric_learning_loss,
+    _prepare_a4_training_images,
+    _prepare_training_images,
+    _selection_improves,
+    _warmup_cosine_schedule,
+    compute_embeddings,
+    evaluate_pretrained_development,
+    train_model,
 )
 
 
@@ -1022,11 +1022,11 @@ class ArcFaceModelTests(unittest.TestCase):
         self.assertEqual(embeddings.shape, (4, 64))
 
     def test_export_to_onnx(self) -> None:
+        import tempfile
+
         import numpy as np
         import onnx
         import onnxruntime as ort
-
-        import tempfile
         cfg = TrainConfig(embedding_dim=64, num_classes=5)
         model = ArcFaceModel(cfg, backbone_factory=_DummyBackbone)
         with tempfile.NamedTemporaryFile(suffix=".onnx") as f:
@@ -1094,6 +1094,7 @@ class ArcFaceModelTests(unittest.TestCase):
 class ConvNeXtOnnxExportTests(unittest.TestCase):
     def test_export_and_reload(self) -> None:
         import tempfile
+
         import numpy as np
         import onnx
         import onnxruntime as ort
@@ -1144,11 +1145,11 @@ class ConvNeXtOnnxExportTests(unittest.TestCase):
                 self.assertEqual(embedding.shape, (batch_size, 768))
                 self.assertTrue(np.isfinite(embedding).all())
 
-            from identity_methods.backbones.extractors import OnnxExtractor
             from contracts.model_contract import (
                 OnnxEvidenceModelManifest,
                 OnnxPreprocessingContract,
             )
+            from identity_methods.backbones.extractors import OnnxExtractor
             manifest = OnnxEvidenceModelManifest(
                 model_id="convnext-export-test",
                 model_sha256=hashlib.sha256(path.read_bytes()).hexdigest(),

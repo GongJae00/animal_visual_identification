@@ -13,8 +13,8 @@ from tempfile import TemporaryDirectory
 from typing import Any
 
 from contracts.contracts import Modality
-from data_pipeline.acquisition import sha256_file
-from data_pipeline.pair_artifacts import (
+from data.acquisition import sha256_file
+from data.pair_artifacts import (
     PairArtifactEntry,
     PairArtifactManifest,
     PairArtifactVerification,

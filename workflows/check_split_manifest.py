@@ -6,7 +6,7 @@ import argparse
 import json
 from pathlib import Path
 
-from data_pipeline.dataset import SplitManifest
+from data.dataset import SplitManifest
 from identity_governance.leakage import association_audit
 
 

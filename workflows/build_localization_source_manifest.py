@@ -6,8 +6,8 @@ import argparse
 import json
 from pathlib import Path
 
-from data_pipeline.adapters import ADAPTERS
-from data_pipeline.source_lock import get_record
+from data.adapters import ADAPTERS
+from data.source_lock import get_record
 from foundation.protected_io import write_private_json_bundle
 from foundation.provenance import content_sha256
 from localization.fold_protocol import build_localization_source_manifest

@@ -15,7 +15,7 @@ from contracts.runtime_library_provenance import (
     freeze_runtime_library_policy,
     parse_executable_mappings,
 )
-from data_pipeline.acquisition import sha256_file
+from data.acquisition import sha256_file
 from foundation.provenance import content_sha256
 
 

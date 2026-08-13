@@ -46,7 +46,7 @@ Detection, tracking, temporal aggregation, open-set rejection, service deploymen
 
 ## 연구 경로
 
-연구 코드는 `contracts/`, `data_pipeline/`, `identity_governance/`, `localization/`, `identity_methods/`, `representation_learning/`, `evidence_fusion/`, `retrieval/`, `evaluation/`, `experiments/`로 분리되어 있습니다. 실행 정의는 `workflows/`, 주요 tracked config는 각 기능 package와 `experiments/configs/`에 있습니다. Raw data, checkpoint, gallery, cache, run result는 Git 밖에 둡니다.
+연구 코드는 `contracts/`, `data/`, `identity_governance/`, `localization/`, `identity_methods/`, `representation_learning/`, `evidence_fusion/`, `retrieval/`, `evaluation/`, `experiments/`로 분리되어 있습니다. 실행 정의는 `workflows/`, 주요 tracked config는 각 기능 package와 `experiments/configs/`에 있습니다. Raw data, checkpoint, gallery, cache, run result는 Git 밖에 둡니다.
 
 현재 확인된 trend와 해석 한계는 [연구 진행 요약](docs/RESEARCH_PROGRESS.md), 향후 admission 조건은 [Roadmap](docs/ROADMAP.md)을 참고하십시오.
 

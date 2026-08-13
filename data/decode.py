@@ -13,7 +13,7 @@ from statistics import fmean
 from time import perf_counter_ns
 from typing import Any, Protocol
 
-from data_pipeline.acquisition import probe_video_file, sha256_file
+from data.acquisition import probe_video_file, sha256_file
 from foundation.provenance import content_sha256
 from foundation.timing import TimingSummary
 

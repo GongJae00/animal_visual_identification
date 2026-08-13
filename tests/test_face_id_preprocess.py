@@ -5,8 +5,8 @@ import unittest
 import numpy as np
 import torch
 
+from data.types import CaptureGroupKind, UnifiedCanidSample
 from identity_methods.face.dataset import FaceReIDDataset, align_face_rgb
-from data_pipeline.types import UnifiedCanidSample, CaptureGroupKind
 
 
 class FaceDatasetTests(unittest.TestCase):

@@ -5,7 +5,7 @@ from copy import deepcopy
 from dataclasses import replace
 
 from contracts.contracts import Modality
-from data_pipeline.dataset import (
+from data.dataset import (
     EvaluationStage,
     SplitManifest,
     SplitPolicy,

@@ -11,8 +11,8 @@ from itertools import islice
 from pathlib import Path
 from typing import Any
 
-from data_pipeline.source_lock import SOURCE_REGISTRY, get_record
-from data_pipeline.types import DatasetAdmission
+from data.source_lock import SOURCE_REGISTRY, get_record
+from data.types import DatasetAdmission
 from foundation.protected_io import read_strict_json_document
 from foundation.provenance import content_sha256
 from identity_governance.full_split_census import (

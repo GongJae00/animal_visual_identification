@@ -9,7 +9,16 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
-from data_pipeline.acquisition import sha256_file
+from data.acquisition import sha256_file
+from data.crop_export import CropExportReceipt
+from evaluation.control_transform import (
+    SUPPORTED_SEMANTICS_VERSION,
+    ControlTransformConfig,
+    ControlTransformConfigManifest,
+    ControlTransformExecutionPolicy,
+    build_control_transform_command,
+    execute_control_transforms,
+)
 from evaluation.controls import (
     ControlMaskEntry,
     ControlMaskManifest,
@@ -21,25 +30,16 @@ from evaluation.controls import (
     control_artifact_token,
     verify_control_mask_files,
 )
-from evaluation.control_transform import (
-    ControlTransformConfig,
-    ControlTransformConfigManifest,
-    ControlTransformExecutionPolicy,
-    SUPPORTED_SEMANTICS_VERSION,
-    build_control_transform_command,
-    execute_control_transforms,
-)
-from data_pipeline.crop_export import CropExportReceipt
 from evaluation.mask_semantics import (
     MaskSemanticPolicy,
     verify_mask_pixel_semantics,
 )
-from foundation.provenance import content_sha256
 from evaluation.scoring import (
     PairArtifactEntry,
     PairArtifactManifest,
     verify_pair_artifact_files,
 )
+from foundation.provenance import content_sha256
 from workflows.execute_visual_control_transforms import main
 
 HASH_A = "a" * 64

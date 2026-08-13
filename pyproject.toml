@@ -107,7 +107,7 @@ conflicts = [
 module-name = [
     "contracts",
     "canine_identity",
-    "data_pipeline",
+    "data",
     "evaluation",
     "evidence_fusion",
     "experiments",

@@ -14,7 +14,7 @@ from typing import Any
 import numpy as np
 from PIL import Image
 
-from data_pipeline.adapters import adapt_ap10k_dog
+from data.adapters import adapt_ap10k_dog
 from foundation.protected_io import read_strict_json_document, write_private_json_bundle
 from foundation.protected_publication import fsync_directory, rename_directory_noreplace
 from foundation.provenance import content_sha256

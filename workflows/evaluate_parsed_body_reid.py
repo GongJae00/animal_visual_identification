@@ -31,9 +31,9 @@ from contracts.foreground_segmentation_model import (
 from contracts.instance_segmentation_model import (
     InstanceSegmentationArtifact,
 )
-from data_pipeline.adapters import adapt_yt_bb_dog
-from data_pipeline.source_lock import get_record
-from data_pipeline.types import UnifiedCanidSample
+from data.adapters import adapt_yt_bb_dog
+from data.source_lock import get_record
+from data.types import UnifiedCanidSample
 from evaluation.retrieval import (
     compute_cosine_score_matrix,
     evaluate_multi_template_closed_set,
@@ -296,9 +296,9 @@ def _source_file_hashes(repository_root: Path) -> dict[str, str]:
             "contracts/dinov2_contract.py",
             "contracts/foreground_segmentation_model.py",
             "contracts/instance_segmentation_model.py",
-            "data_pipeline/adapters.py",
-            "data_pipeline/source_lock.py",
-            "data_pipeline/types.py",
+            "data/adapters.py",
+            "data/source_lock.py",
+            "data/types.py",
             "evaluation/retrieval.py",
             "foundation/protected_io.py",
             "foundation/protected_publication.py",

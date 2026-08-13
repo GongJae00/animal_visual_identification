@@ -6,8 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from foundation.provenance import content_sha256
-from data_pipeline.public_dataset import (
+from data.public_dataset import (
     PublicDatasetArchivePolicy,
     PublicDatasetArchiveReceipt,
     PublicDatasetSourceContract,
@@ -15,10 +14,11 @@ from data_pipeline.public_dataset import (
     _validate_sha256,
     audit_public_dataset_zip,
 )
-from data_pipeline.public_dataset_extraction import (
+from data.public_dataset_extraction import (
     ExtractedPublicDatasetFile,
     PublicDatasetExtractionReceipt,
 )
+from foundation.provenance import content_sha256
 
 
 @dataclass(frozen=True, slots=True)

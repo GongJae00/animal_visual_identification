@@ -9,9 +9,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Mapping
 
-from data_pipeline.acquisition import sha256_file
+from data.acquisition import sha256_file
 from foundation.provenance import content_sha256
-
 
 SANITIZED_WORKER_ENVIRONMENT_NAMES = tuple(sorted({
     "CUDA_HOME", "CUDA_PATH", "CUDA_VISIBLE_DEVICES", "CUDA_DEVICE_ORDER",

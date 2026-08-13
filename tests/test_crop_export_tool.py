@@ -12,8 +12,8 @@ from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
 from contracts.contracts import Modality
-from data_pipeline.acquisition import sha256_file
-from data_pipeline.crop_export import CropBox, CropExportPolicy, OracleCropSource
+from data.acquisition import sha256_file
+from data.crop_export import CropBox, CropExportPolicy, OracleCropSource
 from evaluation.pairing import (
     PairArtifactBinding,
     PairConstructionResult,

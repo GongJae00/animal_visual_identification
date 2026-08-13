@@ -9,7 +9,7 @@ import json
 import os
 from collections.abc import Mapping
 from dataclasses import dataclass
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from tempfile import TemporaryDirectory
 from typing import Any
 
@@ -17,7 +17,7 @@ from contracts.runtime_library_provenance import (
     RuntimeLibraryManifest,
     RuntimeLibraryPolicy,
 )
-from data_pipeline.acquisition import sha256_file
+from data.acquisition import sha256_file
 from evaluation.control_scoring import (
     ControlScoringInventory,
     EmbeddingCachePolicy,
@@ -49,7 +49,7 @@ _PROVENANCE_NAMES = (
 _CODE_SOURCE_DIRECTORY = Path(__file__).resolve().parents[1]
 _CODE_SOURCE_PACKAGE_NAMES = (
     "contracts",
-    "data_pipeline",
+    "data",
     "evaluation",
     "foundation",
     "identity_governance",
@@ -138,8 +138,11 @@ class EmbeddingProductionPrecommitment:
         for _, digest, byte_size in self.provenance_sha256:
             _sha256(digest, "provenance digest")
             _positive_int(byte_size, "provenance byte size")
-        if tuple(item[0] for item in self.code_source_sha256) != (
-            _CODE_SOURCE_NAMES
+        code_source_names = tuple(item[0] for item in self.code_source_sha256)
+        if (
+            not code_source_names
+            or code_source_names != tuple(sorted(set(code_source_names)))
+            or any(not _valid_code_source_name(name) for name in code_source_names)
         ):
             raise ValueError("embedding code-source manifest differs")
         for _, digest, byte_size in self.code_source_sha256:
@@ -216,6 +219,19 @@ class EmbeddingProductionPrecommitment:
             tuple(item) for item in values["code_source_sha256"]
         )
         return cls(**values)
+
+
+def _valid_code_source_name(value: object) -> bool:
+    if not isinstance(value, str) or not value:
+        return False
+    path = PurePosixPath(value)
+    return (
+        not path.is_absolute()
+        and value == path.as_posix()
+        and len(path.parts) >= 2
+        and all(part not in {"", ".", ".."} for part in path.parts)
+        and path.suffix == ".py"
+    )
 
 
 @dataclass(frozen=True, slots=True)

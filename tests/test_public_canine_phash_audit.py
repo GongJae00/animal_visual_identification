@@ -19,14 +19,22 @@ except ModuleNotFoundError:
 else:
     PILLOW_AVAILABLE = True
 
-from identity_methods.classical.phash_mih import CandidateLimitExceeded, PHashFingerprint, opaque_sample_id
-from foundation.protected_io import read_strict_json_object
-from foundation.provenance import content_sha256
-from data_pipeline.public_canine_manifest import (
+from data.public_canine_manifest import (
     CanineRegion,
     IdentitySemantics,
     PublicCanineManifest,
     PublicCanineRecord,
+)
+from data.public_image_content_audit import (
+    ImageContentAuditPolicy,
+    audit_public_canine_image_content,
+)
+from foundation.protected_io import read_strict_json_object
+from foundation.provenance import content_sha256
+from identity_methods.classical.phash_mih import (
+    CandidateLimitExceeded,
+    PHashFingerprint,
+    opaque_sample_id,
 )
 from identity_methods.classical.public_canine_phash_audit import (
     PublicCaninePHashPolicy,
@@ -42,11 +50,6 @@ from identity_methods.classical.public_canine_phash_audit import (
     read_public_canine_phash_sources,
     run_public_canine_phash_audit,
 )
-from data_pipeline.public_image_content_audit import (
-    ImageContentAuditPolicy,
-    audit_public_canine_image_content,
-)
-
 
 _DATASETS = ("dogfacenet224", "mpdd", "sibetan", "yt-bb-dog")
 _ARCHIVE_RECEIPT = hashlib.sha256(b"archive receipt").hexdigest()

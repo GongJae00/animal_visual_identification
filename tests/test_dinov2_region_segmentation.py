@@ -9,7 +9,7 @@ from typing import ClassVar
 import numpy as np
 from PIL import Image
 
-from data_pipeline.types import UnifiedCanidSample
+from data.types import UnifiedCanidSample
 from localization.dinov2_region_segmentation import (
     EMBEDDING_DIMENSION,
     PATCH_GRID,

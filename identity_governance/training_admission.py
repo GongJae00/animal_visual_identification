@@ -7,13 +7,13 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from foundation.provenance import content_sha256
-from data_pipeline.public_crop_manifest import (
+from data.public_crop_manifest import (
     PublicCropArtifact,
     PublicCropManifest,
     PublicCropVerification,
     verify_public_crop_manifest,
 )
+from foundation.provenance import content_sha256
 from identity_governance.role_exposure import (
     CandidateRoleAssignment,
     CandidateRoleRecord,
@@ -23,7 +23,6 @@ from identity_governance.role_exposure import (
     validate_candidate_assignment,
     verify_role_exposure_receipt,
 )
-
 
 _LANE_ROLE_SUFFIX = {
     "MODEL_TRAINING": "_FIT",

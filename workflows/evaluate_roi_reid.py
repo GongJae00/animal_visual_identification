@@ -14,18 +14,18 @@ import numpy as np
 import torch
 from PIL import Image
 
-from data_pipeline.adapters import ADAPTERS
-from data_pipeline.source_lock import get_record
+from data.adapters import ADAPTERS
+from data.source_lock import get_record
 from evaluation.retrieval import (
     compute_cosine_score_matrix,
     evaluate_multi_template_closed_set,
 )
-from identity_methods.appearance import ReceiptBoundDinov2Small
-from localization.roi_manifest import read_roi_manifest
 from foundation.protected_io import write_private_json_bundle
 from foundation.provenance import content_sha256
-from representation_learning.trainer import ArcFaceModel, Dinov2Embedding, TrainConfig
 from identity_governance.training_admission import TrainingAdmissionReceipt
+from identity_methods.appearance import ReceiptBoundDinov2Small
+from localization.roi_manifest import read_roi_manifest
+from representation_learning.trainer import ArcFaceModel, Dinov2Embedding, TrainConfig
 
 _CHANNEL_PATH = {
     "source": "dog_crop_path",

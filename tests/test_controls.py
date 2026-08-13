@@ -4,7 +4,7 @@ import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from data_pipeline.acquisition import sha256_file
+from data.acquisition import sha256_file
 from evaluation.controls import (
     ControlMaskEntry,
     ControlMaskManifest,
@@ -19,6 +19,11 @@ from evaluation.controls import (
     plan_visual_control_audit,
     verify_control_mask_files,
 )
+from evaluation.mask_semantics import (
+    MaskEntrySemanticReceipt,
+    MaskPixelStats,
+    MaskSemanticVerification,
+)
 from evaluation.pairing import (
     PairArtifactBinding,
     PairConstructionResult,
@@ -26,17 +31,12 @@ from evaluation.pairing import (
     PairScoringRequest,
     PairStratum,
 )
-from evaluation.mask_semantics import (
-    MaskEntrySemanticReceipt,
-    MaskPixelStats,
-    MaskSemanticVerification,
-)
-from foundation.provenance import content_sha256
 from evaluation.scoring import (
     PairArtifactEntry,
     PairArtifactManifest,
     PairArtifactVerification,
 )
+from foundation.provenance import content_sha256
 
 HASH_A = "a" * 64
 HASH_B = "b" * 64
