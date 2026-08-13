@@ -34,7 +34,8 @@ contracts remain readable.
 - Outcome: 36,195 of 49,253 observations materialized, 518 more than v5, with
   no v5-success-to-v6-terminal regressions. The comparison mixes parser policy,
   runtime source closure, and route-policy versions; it is not a biometric result.
-- Compatibility: parser policy v5 and Full128 route-plan v2 remain accepted
+- Compatibility: parser policies v4/v5, parser runtime manifest/bundle v1, and
+  Full128 route-plan v2 remain accepted
   because completed external artifacts bind those schemas. They are compatibility
   readers, not current defaults.
 
@@ -54,7 +55,8 @@ contracts remain readable.
 
 - Gallery v4 and v5 remain readable; gallery v3 requires explicit migration.
 - Full128 route-plan v2 remains readable beside current v3.
-- Parser policy v5 remains readable beside current dog-only v6.
+- Parser policies v4/v5 and runtime manifest/bundle v1 remain readable beside
+  current dog-only policy v6 and runtime v2.
 - Successor private evaluation v1 remains readable; new reports use compact v2
   traces that omit repeated Q/K vectors and bind them through the embedding cache.
 

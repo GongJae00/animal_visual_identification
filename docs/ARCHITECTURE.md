@@ -90,7 +90,9 @@ Compatibility is narrow:
 - Existing PDQ receipts continue to parse and verify `cvi.offline_tool_provenance.v1`; newly built provenance uses the logical v2 closure.
 - Existing gallery, checkpoint, receipt, and evaluation schema identifiers remain unchanged unless the source-provenance metadata itself is explicitly versioned.
 - Gallery v4 and v5 are accepted; gallery v3 requires explicit migration.
-- Full128 route-plan v2 and parser policy v5 remain readable for completed external artifacts. Current generation uses route-plan v3 and dog-only parser policy v6.
+- Full128 route-plan v2, parser policies v4/v5, and parser runtime
+  manifest/bundle v1 remain readable for completed external artifacts. Current
+  generation uses route-plan v3, dog-only parser policy v6, and parser runtime v2.
 
 ## External Artifacts
 
