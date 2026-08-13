@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import importlib.metadata
 import json
 import os
 from pathlib import Path
@@ -32,9 +33,11 @@ from localization.animal_parsing import (
 )
 
 _SOURCE_PATHS = (
+    "identity_methods/full_segment/materialization.py",
     "localization/animal_instance_segmentation.py",
     "localization/animal_parsing.py",
     "localization/foreground_segmentation.py",
+    "localization/full_segment_cache.py",
 )
 
 
@@ -49,6 +52,8 @@ def main() -> int:
         "--evaluation-report", type=Path, action="append", required=True
     )
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--batch-size", type=int, choices=(1, 2, 4, 8, 16), default=4)
+    parser.add_argument("--publication-workers", type=int, choices=(1, 4), default=4)
     args = parser.parse_args()
     bundle = build_manifest(
         repository_root=args.repository_root,
@@ -57,6 +62,8 @@ def main() -> int:
         instance_model_directory=args.instance_model_directory,
         instance_model_manifest=args.instance_model_manifest,
         evaluation_reports=tuple(args.evaluation_report),
+        batch_size=args.batch_size,
+        publication_workers=args.publication_workers,
     )
     _write_output(args.output, json_document_bytes(bundle))
     print(
@@ -81,6 +88,8 @@ def build_manifest(
     instance_model_directory: Path,
     instance_model_manifest: Path,
     evaluation_reports: tuple[Path, ...],
+    batch_size: int = 4,
+    publication_workers: int = 4,
 ) -> dict[str, Any]:
     root = repository_root.resolve(strict=True)
     if repository_root.is_symlink() or not root.is_dir():
@@ -102,7 +111,7 @@ def build_manifest(
     )
     source_provenance = build_source_provenance(
         (root.joinpath(*relative_path.split("/")) for relative_path in _SOURCE_PATHS),
-        logical_component="cvi.animal_parsing_runtime.v1",
+        logical_component="cvi.animal_parsing_runtime.v2",
     )
     sources = tuple(
         ModelFileBinding(
@@ -113,7 +122,7 @@ def build_manifest(
         for row in source_provenance["code_source_files"]
     )
     manifest = AnimalParsingRuntimeManifest(
-        parser_family="RF_DETR_BIREFNET_SEEDED_EXPANSION_EXCLUSIVE_OWNERSHIP_V1",
+        parser_family="RF_DETR_BIREFNET_BATCHED_SEEDED_EXPANSION_EXCLUSIVE_OWNERSHIP_V2",
         qualification=QUALIFICATION,
         ontology=PARSING_ONTOLOGY,
         ontology_description=PARSING_ONTOLOGY_DESCRIPTION,
@@ -124,6 +133,35 @@ def build_manifest(
         foreground_model_bundle_raw_sha256=foreground.bundle_sha256,
         instance_model_manifest_sha256=instance.manifest.manifest_sha256,
         instance_model_bundle_raw_sha256=instance.bundle_sha256,
+        inference_batching={
+            "job_batch_size": batch_size,
+            "instance_batch_size": batch_size,
+            "foreground_batch_size": batch_size,
+            "job_ordering": "SOURCE_SHA256_ASC",
+            "publication_workers": publication_workers,
+            "shape_policy": "EXACT_PREPROCESSED_SHAPE_BUCKETS",
+            "oom_policy": "FAIL_CLOSED_NO_RETRY",
+        },
+        frozen_cache={
+            "array_encoding": "BASE64_ZLIB_C_ORDER",
+            "zlib_level": 1,
+            "retained_arrays": [
+                "instance_probability",
+                "foreground_probability",
+                "ownership_probability",
+                "hard_mask",
+            ],
+        },
+        runtime_libraries={
+            name: importlib.metadata.version(distribution)
+            for name, distribution in {
+                "numpy": "numpy",
+                "pillow": "Pillow",
+                "torch": "torch",
+                "torchvision": "torchvision",
+                "transformers": "transformers",
+            }.items()
+        },
         source_files=sources,
         evaluation_reports=reports,
     )

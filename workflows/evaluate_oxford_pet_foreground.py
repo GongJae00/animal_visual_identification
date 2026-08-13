@@ -72,6 +72,7 @@ def main() -> int:
     parser.add_argument("--sample-count", type=int)
     parser.add_argument("--threshold", type=float, default=0.5)
     parser.add_argument("--device", default="cuda")
+    parser.add_argument("--batch-size", type=int, default=4)
     args = parser.parse_args()
     report = run_evaluation(
         dataset_root=args.dataset_root,
@@ -87,6 +88,7 @@ def main() -> int:
         sample_count=args.sample_count,
         threshold=args.threshold,
         device=args.device,
+        batch_size=args.batch_size,
     )
     print(
         json.dumps(
@@ -118,9 +120,16 @@ def run_evaluation(
     sample_count: int | None,
     threshold: float,
     device: str,
+    batch_size: int = 4,
 ) -> dict[str, Any]:
     if output_directory.exists() or output_directory.is_symlink():
         raise FileExistsError(output_directory)
+    if (
+        isinstance(batch_size, bool)
+        or not isinstance(batch_size, int)
+        or batch_size <= 0
+    ):
+        raise ValueError("Oxford parser batch size must be positive")
     output_parent = output_directory.parent.resolve(strict=True)
     root = dataset_root.resolve(strict=True)
     if root.is_symlink() or not root.is_dir():
@@ -149,24 +158,128 @@ def run_evaluation(
         device=device,
         mask_threshold=threshold,
     )
-    parsing_policy = AnimalParsingPolicy(foreground_threshold=threshold)
+    parsing_policy = AnimalParsingPolicy(
+        class_names=("dog", "cat") if species in {"all", "cat"} else ("dog",),
+        foreground_threshold=threshold,
+        schema_version=(
+            "cvi.animal_parsing_policy.v5"
+            if species in {"all", "cat"}
+            else "cvi.animal_parsing_policy.v6"
+        ),
+    )
     parsing_runtime = AnimalParsingRuntime(
         instance_runtime=instance_runtime,
         foreground_runtime=foreground_runtime,
         policy=parsing_policy,
     )
     records: list[dict[str, Any]] = []
+    for start in range(0, len(samples), batch_size):
+        records.extend(
+            _evaluate_chunk(
+                samples[start : start + batch_size],
+                dataset_root=root,
+                parsing_runtime=parsing_runtime,
+                threshold=threshold,
+                batch_size=batch_size,
+            )
+        )
+    report = {
+        "schema_version": REPORT_SCHEMA,
+        "interpretation": INTERPRETATION,
+        "dataset": {
+            "name": "Oxford-IIIT Pet",
+            "split": split,
+            "species_filter": species,
+            "trimap_semantics": {
+                "1": "foreground",
+                "2": "background",
+                "3": "not_classified_excluded_from_metrics",
+            },
+            "images_archive": _external_file_binding(images_archive),
+            "annotations_archive": _external_file_binding(annotations_archive),
+            "research_use_only": True,
+        },
+        "selection": {
+            "algorithm": (
+                "ALL_ELIGIBLE_IN_CANONICAL_NAME_ORDER"
+                if sample_count is None
+                else "SHA256_DOMAIN_SEPARATED_V1"
+            ),
+            "requested_count": sample_count,
+            "inference_batch_size": batch_size,
+            "selected_count": len(selected_samples),
+            "evaluated_count": len(samples),
+            "excluded_count": len(exclusions),
+        },
+        "exclusions": exclusions,
+        "threshold": threshold,
+        "parsing_policy": parsing_policy.to_dict(),
+        "parsing_policy_sha256": parsing_policy.policy_sha256,
+        "model": _artifact_binding(foreground_artifact),
+        "semantic_gate_model": {
+            **_artifact_binding(instance_artifact),
+            "target_class_policy": (
+                "PREDICT_ALL_DOG_AND_CAT"
+                if species in {"all", "cat"}
+                else "PREDICT_DOG_ONLY"
+            ),
+            "query_selection_policy": "NO_ANNOTATION_ASSISTANCE",
+            "evaluation_matching_policy": "POSTHOC_TRIMAP_IOU_SAME_SPECIES",
+        },
+        "metric_policy": {
+            "classified_pixel_iou": "TP/(TP+FP+FN)",
+            "classified_pixel_dice": "2TP/(2TP+FP+FN)",
+            "foreground_recall": "TP/(TP+FN)",
+            "background_leakage_rate": "FP/(FP+TN)",
+            "correction_rate": "(FP+FN)/(TP+FP+FN+TN)",
+            "macro_average": "UNWEIGHTED_PER_IMAGE_MEAN",
+            "micro_average": "PIXEL_COUNTS_POOLED_ACROSS_IMAGES",
+        },
+        "records": records,
+        "aggregates": _aggregate_records(records),
+    }
+    with TemporaryDirectory(
+        prefix=".oxford-foreground-", dir=output_parent
+    ) as temporary:
+        staging = Path(temporary) / "evaluation"
+        staging.mkdir(mode=0o700)
+        _write_regular_file(staging / "report.json", json_document_bytes(report))
+        fsync_directory(staging)
+        rename_directory_noreplace(staging, output_parent / output_directory.name)
+    fsync_directory(output_parent / output_directory.name)
+    fsync_directory(output_parent)
+    return report
+
+
+def _evaluate_chunk(
+    samples: tuple[OxfordPetSample, ...],
+    *,
+    dataset_root: Path,
+    parsing_runtime: AnimalParsingRuntime,
+    threshold: float,
+    batch_size: int,
+) -> list[dict[str, Any]]:
+    prepared = []
     for sample in samples:
-        image_path = root / "images" / f"{sample.name}.jpg"
-        trimap_path = root / "annotations" / "trimaps" / f"{sample.name}.png"
-        _require_retained_dataset_file(image_path, root=root, subject="image")
-        _require_retained_dataset_file(trimap_path, root=root, subject="trimap")
+        image_path = dataset_root / "images" / f"{sample.name}.jpg"
+        trimap_path = dataset_root / "annotations" / "trimaps" / f"{sample.name}.png"
+        _require_retained_dataset_file(image_path, root=dataset_root, subject="image")
+        _require_retained_dataset_file(trimap_path, root=dataset_root, subject="trimap")
         with Image.open(image_path) as opened:
             source = opened.convert("RGB")
         trimap = _load_trimap(trimap_path, expected_size=source.size)
-        started = time.perf_counter()
-        parsing = parsing_runtime.predict(source)
-        parsing_seconds = time.perf_counter() - started
+        prepared.append((sample, image_path, trimap_path, source, trimap))
+
+    started = time.perf_counter()
+    parsed_values = parsing_runtime.predict_batch(
+        tuple(item[3] for item in prepared),
+        instance_batch_size=batch_size,
+        foreground_batch_size=batch_size,
+    )
+    parsing_seconds = (time.perf_counter() - started) / len(prepared)
+    records: list[dict[str, Any]] = []
+    for values, parsing in zip(prepared, parsed_values, strict=True):
+        sample, image_path, trimap_path, source, trimap = values
         matched = _match_parsed_instance(
             parsing.instances, trimap=trimap, species=sample.species
         )
@@ -209,8 +322,8 @@ def run_evaluation(
                 "class_id": sample.class_id,
                 "species": sample.species,
                 "breed_id": sample.breed_id,
-                "source_image": _file_binding(image_path, root),
-                "ground_truth_trimap": _file_binding(trimap_path, root),
+                "source_image": _file_binding(image_path, dataset_root),
+                "ground_truth_trimap": _file_binding(trimap_path, dataset_root),
                 "source_width": source.width,
                 "source_height": source.height,
                 "inference": {
@@ -226,14 +339,18 @@ def run_evaluation(
                         "evaluation": _evaluate_mask(birefnet_mask, trimap),
                         "state": "CANDIDATE" if matched is not None else "MISSED",
                         "reasons": (
-                            [] if matched is not None else ["NO_MATCHING_SPECIES_INSTANCE"]
+                            []
+                            if matched is not None
+                            else ["NO_MATCHING_SPECIES_INSTANCE"]
                         ),
                     },
                     "rf_detr": {
                         "evaluation": _evaluate_mask(instance_mask, trimap),
                         "state": "CANDIDATE" if matched is not None else "MISSED",
                         "reasons": (
-                            [] if matched is not None else ["NO_MATCHING_SPECIES_INSTANCE"]
+                            []
+                            if matched is not None
+                            else ["NO_MATCHING_SPECIES_INSTANCE"]
                         ),
                         "class_score": matched_score,
                         "query_index": matched_query,
@@ -248,65 +365,7 @@ def run_evaluation(
                 },
             }
         )
-    report = {
-        "schema_version": REPORT_SCHEMA,
-        "interpretation": INTERPRETATION,
-        "dataset": {
-            "name": "Oxford-IIIT Pet",
-            "split": split,
-            "species_filter": species,
-            "trimap_semantics": {
-                "1": "foreground",
-                "2": "background",
-                "3": "not_classified_excluded_from_metrics",
-            },
-            "images_archive": _external_file_binding(images_archive),
-            "annotations_archive": _external_file_binding(annotations_archive),
-            "research_use_only": True,
-        },
-        "selection": {
-            "algorithm": (
-                "ALL_ELIGIBLE_IN_CANONICAL_NAME_ORDER"
-                if sample_count is None
-                else "SHA256_DOMAIN_SEPARATED_V1"
-            ),
-            "requested_count": sample_count,
-            "selected_count": len(selected_samples),
-            "evaluated_count": len(samples),
-            "excluded_count": len(exclusions),
-        },
-        "exclusions": exclusions,
-        "threshold": threshold,
-        "parsing_policy": parsing_policy.to_dict(),
-        "parsing_policy_sha256": parsing_policy.policy_sha256,
-        "model": _artifact_binding(foreground_artifact),
-        "semantic_gate_model": {
-            **_artifact_binding(instance_artifact),
-            "target_class_policy": "PREDICT_ALL_DOG_AND_CAT",
-            "query_selection_policy": "NO_ANNOTATION_ASSISTANCE",
-            "evaluation_matching_policy": "POSTHOC_TRIMAP_IOU_SAME_SPECIES",
-        },
-        "metric_policy": {
-            "classified_pixel_iou": "TP/(TP+FP+FN)",
-            "classified_pixel_dice": "2TP/(2TP+FP+FN)",
-            "foreground_recall": "TP/(TP+FN)",
-            "background_leakage_rate": "FP/(FP+TN)",
-            "correction_rate": "(FP+FN)/(TP+FP+FN+TN)",
-            "macro_average": "UNWEIGHTED_PER_IMAGE_MEAN",
-            "micro_average": "PIXEL_COUNTS_POOLED_ACROSS_IMAGES",
-        },
-        "records": records,
-        "aggregates": _aggregate_records(records),
-    }
-    with TemporaryDirectory(prefix=".oxford-foreground-", dir=output_parent) as temporary:
-        staging = Path(temporary) / "evaluation"
-        staging.mkdir(mode=0o700)
-        _write_regular_file(staging / "report.json", json_document_bytes(report))
-        fsync_directory(staging)
-        rename_directory_noreplace(staging, output_parent / output_directory.name)
-    fsync_directory(output_parent / output_directory.name)
-    fsync_directory(output_parent)
-    return report
+    return records
 
 
 def _load_split_samples(
@@ -388,15 +447,9 @@ def _preflight_samples(
     exclusions: list[dict[str, Any]] = []
     for sample in samples:
         image_path = dataset_root / "images" / f"{sample.name}.jpg"
-        trimap_path = (
-            dataset_root / "annotations" / "trimaps" / f"{sample.name}.png"
-        )
-        _require_retained_dataset_file(
-            image_path, root=dataset_root, subject="image"
-        )
-        _require_retained_dataset_file(
-            trimap_path, root=dataset_root, subject="trimap"
-        )
+        trimap_path = dataset_root / "annotations" / "trimaps" / f"{sample.name}.png"
+        _require_retained_dataset_file(image_path, root=dataset_root, subject="image")
+        _require_retained_dataset_file(trimap_path, root=dataset_root, subject="trimap")
         with Image.open(image_path) as opened:
             source_size = opened.size
         trimap = _read_trimap(trimap_path, expected_size=source_size)
@@ -407,9 +460,7 @@ def _preflight_samples(
                     "species": sample.species,
                     "reason": "GROUND_TRUTH_TRIMAP_HAS_NO_FOREGROUND",
                     "source_image": _file_binding(image_path, dataset_root),
-                    "ground_truth_trimap": _file_binding(
-                        trimap_path, dataset_root
-                    ),
+                    "ground_truth_trimap": _file_binding(trimap_path, dataset_root),
                     "trimap_labels": [int(value) for value in np.unique(trimap)],
                 }
             )
@@ -432,9 +483,7 @@ def _match_parsed_instance(
     return max(
         candidates,
         key=lambda item: (
-            _evaluate_mask(item.hard_mask, trimap)["metrics"][
-                "classified_pixel_iou"
-            ],
+            _evaluate_mask(item.hard_mask, trimap)["metrics"]["classified_pixel_iou"],
             item.class_score,
             -item.query_index,
         ),
@@ -509,17 +558,14 @@ def _aggregate_evaluations(evaluations: list[dict[str, Any]]) -> dict[str, Any]:
     count_names = tuple(evaluations[0]["counts"])
     metric_names = tuple(evaluations[0]["metrics"])
     counts = {
-        name: sum(item["counts"][name] for item in evaluations)
-        for name in count_names
+        name: sum(item["counts"][name] for item in evaluations) for name in count_names
     }
     return {
         "record_count": len(evaluations),
         "counts": counts,
         "micro_average": _metrics_from_counts(counts),
         "macro_average": {
-            name: float(
-                np.mean([item["metrics"][name] for item in evaluations])
-            )
+            name: float(np.mean([item["metrics"][name] for item in evaluations]))
             for name in metric_names
         },
     }

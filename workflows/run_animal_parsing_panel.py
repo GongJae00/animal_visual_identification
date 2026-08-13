@@ -80,6 +80,7 @@ def main() -> int:
     parser.add_argument("--multi-source-count", type=int, default=2)
     parser.add_argument("--threshold", type=float, default=0.5)
     parser.add_argument("--device", default="cuda")
+    parser.add_argument("--batch-size", type=int, default=4)
     args = parser.parse_args()
     report = run_panel(
         dataset_root=args.dataset_root,
@@ -92,6 +93,7 @@ def main() -> int:
         multi_source_count=args.multi_source_count,
         threshold=args.threshold,
         device=args.device,
+        batch_size=args.batch_size,
     )
     print(
         json.dumps(
@@ -122,9 +124,16 @@ def run_panel(
     multi_source_count: int,
     threshold: float,
     device: str,
+    batch_size: int = 4,
 ) -> dict[str, Any]:
     if output_directory.exists() or output_directory.is_symlink():
         raise FileExistsError(output_directory)
+    if (
+        isinstance(batch_size, bool)
+        or not isinstance(batch_size, int)
+        or batch_size <= 0
+    ):
+        raise ValueError("animal parsing panel batch size must be positive")
     output_parent = output_directory.parent.resolve(strict=True)
     groups = _select_ap10k_source_groups(
         adapt_ap10k_dog(dataset_root),
@@ -161,6 +170,7 @@ def run_panel(
             (staging / name).mkdir(mode=0o700)
         records: list[dict[str, Any]] = []
         rows: list[tuple[Image.Image, Image.Image, Image.Image, str]] = []
+        loaded = []
         for group in groups:
             sample = group.source
             source_path = root.joinpath(*Path(sample.image_path).parts)
@@ -170,7 +180,19 @@ def run_panel(
                 source = opened.convert("RGB")
             if source.size != (sample.width, sample.height):
                 raise ValueError("animal parsing panel source dimensions differ")
-            parsed = runtime.predict(source)
+            loaded.append((group, source))
+        parsed_values = []
+        for start in range(0, len(loaded), batch_size):
+            chunk = loaded[start : start + batch_size]
+            parsed_values.extend(
+                runtime.predict_batch(
+                    tuple(source for _group, source in chunk),
+                    instance_batch_size=batch_size,
+                    foreground_batch_size=batch_size,
+                )
+            )
+        for (group, source), parsed in zip(loaded, parsed_values, strict=True):
+            sample = group.source
             matches = _match_predictions_to_annotations(
                 parsed.instances, group.annotations, minimum_box_iou=0.5
             )
@@ -197,9 +219,7 @@ def run_panel(
                 Image.fromarray(instance.hard_mask * 255, mode="L").save(
                     mask_path, format="PNG", optimize=False
                 )
-                crop = materialize_identity_crop(
-                    source, instance, require_usable=False
-                )
+                crop = materialize_identity_crop(source, instance, require_usable=False)
                 crop_path = staging / "masked_crops" / f"{stem}.png"
                 crop.masked_rgb.save(crop_path, format="PNG", optimize=False)
                 prediction_rows.append(
@@ -220,15 +240,11 @@ def run_panel(
                             "state": instance.quality.state,
                             "reasons": list(instance.quality.reasons),
                             "flags": list(instance.quality.flags),
-                            "semantic_shape_iou": (
-                                instance.quality.semantic_shape_iou
-                            ),
+                            "semantic_shape_iou": (instance.quality.semantic_shape_iou),
                             "ownership_retention": (
                                 instance.quality.ownership_retention
                             ),
-                            "foreground_pixels": (
-                                instance.quality.foreground_pixels
-                            ),
+                            "foreground_pixels": (instance.quality.foreground_pixels),
                             "component_count": instance.quality.component_count,
                             "touches_source_border": (
                                 instance.quality.touches_source_border
@@ -290,6 +306,7 @@ def run_panel(
                 "algorithm": "SHA256_SOURCE_GROUP_STRATIFIED_MULTI_DOG_V1",
                 "requested_source_count": sample_count,
                 "requested_multi_dog_source_count": multi_source_count,
+                "inference_batch_size": batch_size,
             },
             "records": records,
             "contact_sheet": _file_binding(contact_sheet_path, staging),
@@ -331,7 +348,8 @@ def _select_ap10k_source_groups(
     for source_group_id, values in grouped.items():
         values.sort(
             key=lambda item: (
-                int(item.metadata.get("annotation_id", -1)), item.sample_id
+                int(item.metadata.get("annotation_id", -1)),
+                item.sample_id,
             )
         )
         reference = values[0]
@@ -363,8 +381,7 @@ def _select_ap10k_source_groups(
     selected.extend(
         group
         for group in groups
-        if group.source_group_id not in selected_ids
-        and len(selected) < sample_count
+        if group.source_group_id not in selected_ids and len(selected) < sample_count
     )
     return tuple(sorted(selected, key=_group_order))
 
@@ -466,7 +483,9 @@ def _instance_overlay(
 ) -> Image.Image:
     values = np.asarray(source, dtype=np.uint8).copy()
     for instance in instances:
-        color = np.asarray(_COLORS[instance.instance_index % len(_COLORS)], dtype=np.float32)
+        color = np.asarray(
+            _COLORS[instance.instance_index % len(_COLORS)], dtype=np.float32
+        )
         foreground = instance.hard_mask.astype(bool)
         values[foreground] = np.rint(
             values[foreground].astype(np.float32) * 0.5 + color * 0.5
@@ -502,7 +521,9 @@ def _contact_sheet(
         raise ValueError("animal parsing panel cannot render an empty contact sheet")
     header = 44
     row_height = _TILE_HEIGHT + 28
-    sheet = Image.new("RGB", (_TILE_WIDTH * 3, header + row_height * len(rows)), "white")
+    sheet = Image.new(
+        "RGB", (_TILE_WIDTH * 3, header + row_height * len(rows)), "white"
+    )
     draw = ImageDraw.Draw(sheet)
     for index, label in enumerate(
         ("SOURCE + AP10K GT BOXES", "UNASSISTED PARSED INSTANCES", "MASKED APPEARANCE")
@@ -520,7 +541,9 @@ def _contain(image: Image.Image) -> Image.Image:
     copy = image.convert("RGB")
     copy.thumbnail((_TILE_WIDTH, _TILE_HEIGHT), Image.Resampling.LANCZOS)
     tile = Image.new("RGB", (_TILE_WIDTH, _TILE_HEIGHT), (238, 238, 238))
-    tile.paste(copy, ((_TILE_WIDTH - copy.width) // 2, (_TILE_HEIGHT - copy.height) // 2))
+    tile.paste(
+        copy, ((_TILE_WIDTH - copy.width) // 2, (_TILE_HEIGHT - copy.height) // 2)
+    )
     return tile
 
 

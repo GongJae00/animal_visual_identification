@@ -9,6 +9,7 @@ from PIL import Image
 from workflows.evaluate_oxford_pet_foreground import (
     OxfordPetSample,
     _aggregate_evaluations,
+    _evaluate_chunk,
     _evaluate_mask,
     _load_split_samples,
     _load_trimap,
@@ -119,3 +120,65 @@ def test_oxford_preflight_records_empty_ground_truth_exclusion(
     assert eligible == (samples[0],)
     assert exclusions[0]["sample_name"] == "beagle_2"
     assert exclusions[0]["reason"] == "GROUND_TRUTH_TRIMAP_HAS_NO_FOREGROUND"
+
+
+def test_oxford_chunk_preserves_order_and_splits_elapsed_time(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    (tmp_path / "images").mkdir()
+    trimaps = tmp_path / "annotations" / "trimaps"
+    trimaps.mkdir(parents=True)
+    samples = (
+        OxfordPetSample("beagle_1", 5, "dog", 1),
+        OxfordPetSample("beagle_2", 5, "dog", 1),
+    )
+    for width, sample in enumerate(samples, start=3):
+        Image.new("RGB", (width, 2), "white").save(
+            tmp_path / "images" / f"{sample.name}.jpg"
+        )
+        trimap = np.full((2, width), 2, dtype=np.uint8)
+        trimap[0, 0] = 1
+        Image.fromarray(trimap).save(trimaps / f"{sample.name}.png")
+
+    calls = []
+
+    class ParsingRuntime:
+        def predict_batch(
+            self,
+            sources: tuple[Image.Image, ...],
+            *,
+            instance_batch_size: int,
+            foreground_batch_size: int,
+        ) -> tuple[object, ...]:
+            calls.append(
+                (
+                    tuple(source.size for source in sources),
+                    instance_batch_size,
+                    foreground_batch_size,
+                )
+            )
+            return tuple(type("Prediction", (), {"instances": ()})() for _ in sources)
+
+    elapsed = iter((10.0, 14.0))
+    monkeypatch.setattr(
+        "workflows.evaluate_oxford_pet_foreground.time.perf_counter",
+        lambda: next(elapsed),
+    )
+    records = _evaluate_chunk(
+        samples,
+        dataset_root=tmp_path,
+        parsing_runtime=ParsingRuntime(),  # type: ignore[arg-type]
+        threshold=0.5,
+        batch_size=4,
+    )
+
+    assert [record["sample_name"] for record in records] == [
+        "beagle_1",
+        "beagle_2",
+    ]
+    assert [record["source_width"] for record in records] == [3, 4]
+    assert [record["inference"]["elapsed_seconds"] for record in records] == [
+        2.0,
+        2.0,
+    ]
+    assert calls == [(((3, 2), (4, 2)), 4, 4)]

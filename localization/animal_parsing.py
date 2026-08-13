@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
 
@@ -30,7 +31,7 @@ PARSING_ONTOLOGY_DESCRIPTION = (
 
 @dataclass(frozen=True, slots=True)
 class AnimalParsingPolicy:
-    class_names: tuple[str, ...] = ("dog", "cat")
+    class_names: tuple[str, ...] = ("dog",)
     duplicate_mask_iou: float = 0.6
     maximum_instances: int = 32
     refinement_context_fraction: float = 0.1
@@ -47,10 +48,14 @@ class AnimalParsingPolicy:
     minimum_ownership_retention: float = 0.5
     review_component_count: int = 4
     maximum_component_count: int = 16
-    schema_version: str = "cvi.animal_parsing_policy.v4"
+    schema_version: str = "cvi.animal_parsing_policy.v6"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.animal_parsing_policy.v4":
+        if self.schema_version not in {
+            "cvi.animal_parsing_policy.v4",
+            "cvi.animal_parsing_policy.v5",
+            "cvi.animal_parsing_policy.v6",
+        }:
             raise ValueError("animal parsing policy schema differs")
         if (
             not isinstance(self.class_names, tuple)
@@ -59,6 +64,10 @@ class AnimalParsingPolicy:
             or len(self.class_names) != len(set(self.class_names))
         ):
             raise ValueError("animal parsing classes must be unique canonical names")
+        if self.schema_version == "cvi.animal_parsing_policy.v6" and self.class_names != (
+            "dog",
+        ):
+            raise ValueError("animal parsing policy v6 must be dog-only")
         for name in (
             "duplicate_mask_iou",
             "semantic_support_threshold",
@@ -99,8 +108,7 @@ class AnimalParsingPolicy:
                 raise ValueError(f"animal parsing {name} must be positive")
         if (
             self.semantic_support_threshold >= self.semantic_core_threshold
-            or self.minimum_semantic_shape_iou
-            > self.review_semantic_shape_iou
+            or self.minimum_semantic_shape_iou > self.review_semantic_shape_iou
             or self.minimum_support_dilation_pixels
             > self.maximum_support_dilation_pixels
             or self.minimum_ownership_retention > self.review_ownership_retention
@@ -123,12 +131,8 @@ class AnimalParsingPolicy:
             "semantic_core_threshold": self.semantic_core_threshold,
             "foreground_threshold": self.foreground_threshold,
             "support_dilation_fraction": self.support_dilation_fraction,
-            "minimum_support_dilation_pixels": (
-                self.minimum_support_dilation_pixels
-            ),
-            "maximum_support_dilation_pixels": (
-                self.maximum_support_dilation_pixels
-            ),
+            "minimum_support_dilation_pixels": (self.minimum_support_dilation_pixels),
+            "maximum_support_dilation_pixels": (self.maximum_support_dilation_pixels),
             "minimum_mask_pixels": self.minimum_mask_pixels,
             "minimum_semantic_shape_iou": self.minimum_semantic_shape_iou,
             "review_semantic_shape_iou": self.review_semantic_shape_iou,
@@ -137,6 +141,17 @@ class AnimalParsingPolicy:
             "review_component_count": self.review_component_count,
             "maximum_component_count": self.maximum_component_count,
         }
+
+    @classmethod
+    def from_dict(cls, value: object) -> AnimalParsingPolicy:
+        if not isinstance(value, Mapping) or set(value) != set(cls.__dataclass_fields__):
+            raise ValueError("animal parsing policy fields differ")
+        fields = dict(value)
+        class_names = fields["class_names"]
+        if not isinstance(class_names, list):
+            raise TypeError("animal parsing policy classes must be an array")
+        fields["class_names"] = tuple(class_names)
+        return cls(**fields)
 
 
 @dataclass(frozen=True, slots=True)
@@ -321,6 +336,84 @@ class AnimalParsingRuntime:
             policy_sha256=self.policy.policy_sha256,
         )
 
+    def predict_batch(
+        self,
+        images: tuple[Image.Image, ...],
+        *,
+        instance_batch_size: int,
+        foreground_batch_size: int,
+    ) -> tuple[AnimalParsingPrediction, ...]:
+        """Parse multiple sources while preserving per-source candidate order."""
+
+        if not isinstance(images, tuple) or not images:
+            raise ValueError("animal parsing batch must be non-empty")
+        rgbs = tuple(image.convert("RGB") for image in images)
+        candidates_by_image = self.instance_runtime.predict_all_batch(
+            rgbs,
+            class_names=self.policy.class_names,
+            duplicate_mask_iou=self.policy.duplicate_mask_iou,
+            maximum_instances=self.policy.maximum_instances,
+            maximum_batch_size=instance_batch_size,
+        )
+        requests = []
+        for image_index, (rgb, candidates) in enumerate(
+            zip(rgbs, candidates_by_image, strict=True)
+        ):
+            for candidate_index, candidate in enumerate(candidates):
+                refinement_box = _expand_box(
+                    candidate.source_box_xyxy,
+                    width=rgb.width,
+                    height=rgb.height,
+                    fraction=self.policy.refinement_context_fraction,
+                )
+                requests.append(
+                    (image_index, candidate_index, candidate, refinement_box)
+                )
+        foregrounds = (
+            self.foreground_runtime.predict_batch(
+                tuple(rgbs[item[0]] for item in requests),
+                target_boxes_xyxy=tuple(item[3] for item in requests),
+                maximum_batch_size=foreground_batch_size,
+            )
+            if requests
+            else ()
+        )
+        drafts_by_image: list[list[_DraftInstance]] = [[] for _ in rgbs]
+        for request, foreground in zip(requests, foregrounds, strict=True):
+            image_index, _candidate_index, candidate, refinement_box = request
+            mask, ownership, agreement, refinement_empty = _seeded_refinement(
+                foreground_probability=foreground.probability,
+                instance_probability=candidate.probability,
+                policy=self.policy,
+            )
+            drafts_by_image[image_index].append(
+                _DraftInstance(
+                    candidate=candidate,
+                    refinement_box_xyxy=refinement_box,
+                    foreground_probability=foreground.probability,
+                    ownership_probability=ownership,
+                    preownership_mask=mask,
+                    semantic_shape_iou=agreement,
+                    refinement_empty=refinement_empty,
+                )
+            )
+        predictions = []
+        for rgb, drafts in zip(rgbs, drafts_by_image, strict=True):
+            owned_masks = _exclusive_ownership(drafts, shape=(rgb.height, rgb.width))
+            instances = tuple(
+                _finalize_instance(index, draft, owned_masks[index], self.policy)
+                for index, draft in enumerate(drafts)
+            )
+            predictions.append(
+                AnimalParsingPrediction(
+                    source_width=rgb.width,
+                    source_height=rgb.height,
+                    instances=instances,
+                    policy_sha256=self.policy.policy_sha256,
+                )
+            )
+        return tuple(predictions)
+
 
 def materialize_identity_crop(
     image: Image.Image,
@@ -339,7 +432,9 @@ def materialize_identity_crop(
         or not 0.0 <= context_fraction <= 1.0
         or len(background_rgb) != 3
         or any(
-            isinstance(value, bool) or not isinstance(value, int) or not 0 <= value <= 255
+            isinstance(value, bool)
+            or not isinstance(value, int)
+            or not 0 <= value <= 255
             for value in background_rgb
         )
     ):
@@ -480,13 +575,13 @@ def _finalize_instance(
 ) -> ParsedAnimalInstance:
     preownership_pixels = int(draft.preownership_mask.sum())
     foreground_pixels = int(hard_mask.sum())
-    retention = (
-        foreground_pixels / preownership_pixels if preownership_pixels else 0.0
-    )
+    retention = foreground_pixels / preownership_pixels if preownership_pixels else 0.0
     reasons: list[str] = []
     flags: list[str] = []
     if foreground_pixels < policy.minimum_mask_pixels:
         reasons.append("MASK_SUPPORT_BELOW_POLICY")
+    if foreground_pixels == hard_mask.size:
+        reasons.append("FULL_FRAME_FOREGROUND")
     if retention < policy.minimum_ownership_retention:
         reasons.append("OWNERSHIP_RETENTION_BELOW_POLICY")
     elif retention < policy.review_ownership_retention:
@@ -564,9 +659,12 @@ def _expand_box(
         raise ValueError("animal parsing expansion box differs")
     pad_x = math.ceil((x2 - x1) * fraction)
     pad_y = math.ceil((y2 - y1) * fraction)
-    return max(0, x1 - pad_x), max(0, y1 - pad_y), min(
-        width, x2 + pad_x
-    ), min(height, y2 + pad_y)
+    return (
+        max(0, x1 - pad_x),
+        max(0, y1 - pad_y),
+        min(width, x2 + pad_x),
+        min(height, y2 + pad_y),
+    )
 
 
 def _remove_small_components(mask: np.ndarray, *, minimum_pixels: int) -> np.ndarray:

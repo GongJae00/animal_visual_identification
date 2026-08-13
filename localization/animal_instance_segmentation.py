@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+from collections import defaultdict
 from dataclasses import dataclass
 
 import numpy as np
@@ -84,7 +85,9 @@ class AnimalInstanceSegmentationRuntime:
         self._dtype = torch.float16 if self._device.type == "cuda" else torch.float32
         artifact.revalidate_local_files()
         root = str(artifact.model_directory)
-        self._processor = AutoImageProcessor.from_pretrained(root, local_files_only=True)
+        self._processor = AutoImageProcessor.from_pretrained(
+            root, local_files_only=True
+        )
         self._model = RfDetrForInstanceSegmentation.from_pretrained(
             root, local_files_only=True, dtype=self._dtype
         ).to(self._device)
@@ -101,6 +104,31 @@ class AnimalInstanceSegmentationRuntime:
         duplicate_mask_iou: float = 0.8,
         maximum_instances: int = 32,
     ) -> tuple[AnimalInstanceCandidate, ...]:
+        return self.predict_all_batch(
+            (image,),
+            class_names=class_names,
+            duplicate_mask_iou=duplicate_mask_iou,
+            maximum_instances=maximum_instances,
+            maximum_batch_size=1,
+        )[0]
+
+    def predict_all_batch(
+        self,
+        images: tuple[Image.Image, ...],
+        *,
+        class_names: tuple[str, ...],
+        duplicate_mask_iou: float = 0.8,
+        maximum_instances: int = 32,
+        maximum_batch_size: int = 1,
+    ) -> tuple[tuple[AnimalInstanceCandidate, ...], ...]:
+        """Infer same-shaped preprocessed images together without padding changes."""
+
+        if (
+            not isinstance(images, tuple)
+            or not images
+            or any(not isinstance(image, Image.Image) for image in images)
+        ):
+            raise ValueError("animal instance batch must contain PIL images")
         if (
             not isinstance(class_names, tuple)
             or not class_names
@@ -108,10 +136,7 @@ class AnimalInstanceSegmentationRuntime:
             or len(class_names) != len(set(class_names))
         ):
             raise ValueError("animal instance classes must be unique canonical names")
-        if (
-            not math.isfinite(duplicate_mask_iou)
-            or not 0.0 < duplicate_mask_iou < 1.0
-        ):
+        if not math.isfinite(duplicate_mask_iou) or not 0.0 < duplicate_mask_iou < 1.0:
             raise ValueError("animal instance duplicate IoU threshold differs")
         if (
             isinstance(maximum_instances, bool)
@@ -119,6 +144,12 @@ class AnimalInstanceSegmentationRuntime:
             or maximum_instances <= 0
         ):
             raise ValueError("animal instance maximum count must be positive")
+        if (
+            isinstance(maximum_batch_size, bool)
+            or not isinstance(maximum_batch_size, int)
+            or maximum_batch_size <= 0
+        ):
+            raise ValueError("animal instance batch size must be positive")
         class_ids: dict[int, str] = {}
         for name in class_names:
             try:
@@ -131,41 +162,92 @@ class AnimalInstanceSegmentationRuntime:
                 raise ValueError("animal instance target classes share a class ID")
             class_ids[class_id] = name
 
-        rgb = image.convert("RGB")
-        width, height = rgb.size
-        class_probabilities, mask_probabilities, query_indices = self._infer(
-            rgb,
-            class_ids=tuple(sorted(class_ids)),
+        rgbs = tuple(image.convert("RGB") for image in images)
+        prepared = tuple(
+            {
+                name: value
+                for name, value in self._processor(
+                    images=rgb, return_tensors="pt"
+                ).items()
+            }
+            for rgb in rgbs
         )
-        candidates = _all_target_candidates(
-            class_probabilities=class_probabilities,
-            mask_probabilities=mask_probabilities,
-            class_names_by_id=class_ids,
-            mask_threshold=self.mask_threshold,
-            minimum_class_score=self.minimum_class_score,
-            query_indices=query_indices,
+        buckets: dict[tuple[tuple[str, tuple[int, ...]], ...], list[int]] = defaultdict(
+            list
         )
-        retained = _suppress_duplicate_candidates(
-            candidates,
-            duplicate_mask_iou=duplicate_mask_iou,
-            maximum_instances=maximum_instances,
-        )
-        if any(item.hard_mask.shape != (height, width) for item in retained):
-            raise RuntimeError("animal instance source dimensions differ")
-        return tuple(
-            sorted(
-                retained,
-                key=lambda item: (
-                    item.source_box_xyxy[1],
-                    item.source_box_xyxy[0],
-                    item.source_box_xyxy[3],
-                    item.source_box_xyxy[2],
-                    item.class_id,
-                    -item.class_score,
-                    item.query_index,
-                ),
+        for index, inputs in enumerate(prepared):
+            signature = tuple(
+                (name, tuple(value.shape[1:])) for name, value in sorted(inputs.items())
             )
+            buckets[signature].append(index)
+
+        inferred: list[tuple[np.ndarray, np.ndarray, np.ndarray] | None] = [None] * len(
+            rgbs
         )
+        for indices in buckets.values():
+            for start in range(0, len(indices), maximum_batch_size):
+                selected_indices = indices[start : start + maximum_batch_size]
+                batch = {
+                    name: self._torch.cat(
+                        [prepared[index][name] for index in selected_indices], dim=0
+                    ).to(self._device)
+                    for name in prepared[selected_indices[0]]
+                }
+                with self._torch.inference_mode():
+                    outputs = self._model(**batch)
+                if (
+                    outputs.logits.ndim != 3
+                    or outputs.pred_masks.ndim != 4
+                    or outputs.logits.shape[0] != len(selected_indices)
+                    or outputs.pred_masks.shape[0] != len(selected_indices)
+                ):
+                    raise RuntimeError("animal instance batched model output differs")
+                for batch_index, source_index in enumerate(selected_indices):
+                    inferred[source_index] = self._postprocess_output(
+                        outputs.logits[batch_index],
+                        outputs.pred_masks[batch_index],
+                        class_ids=tuple(sorted(class_ids)),
+                        source_size=rgbs[source_index].size,
+                    )
+
+        results: list[tuple[AnimalInstanceCandidate, ...]] = []
+        for rgb, values in zip(rgbs, inferred, strict=True):
+            if values is None:
+                raise AssertionError("animal instance batch inference is incomplete")
+            class_probabilities, mask_probabilities, query_indices = values
+            candidates = _all_target_candidates(
+                class_probabilities=class_probabilities,
+                mask_probabilities=mask_probabilities,
+                class_names_by_id=class_ids,
+                mask_threshold=self.mask_threshold,
+                minimum_class_score=self.minimum_class_score,
+                query_indices=query_indices,
+            )
+            retained = _suppress_duplicate_candidates(
+                candidates,
+                duplicate_mask_iou=duplicate_mask_iou,
+                maximum_instances=maximum_instances,
+            )
+            width, height = rgb.size
+            if any(item.hard_mask.shape != (height, width) for item in retained):
+                raise RuntimeError("animal instance source dimensions differ")
+            results.append(
+                tuple(
+                    sorted(
+                        retained,
+                        key=lambda item: (
+                            item.source_box_xyxy[1],
+                            item.source_box_xyxy[0],
+                            item.source_box_xyxy[3],
+                            item.source_box_xyxy[2],
+                            item.class_id,
+                            -item.class_score,
+                            item.query_index,
+                        ),
+                    )
+                )
+            )
+        return tuple(results)
 
     def _infer(
         self, rgb: Image.Image, *, class_ids: tuple[int, ...]
@@ -177,28 +259,47 @@ class AnimalInstanceSegmentationRuntime:
         }
         with self._torch.inference_mode():
             outputs = self._model(**inputs)
-            class_probabilities = outputs.logits[0].softmax(dim=-1).float()
-            target_ids = self._torch.asarray(class_ids, device=class_probabilities.device)
-            selected = class_probabilities[:, target_ids].amax(dim=1) >= (
-                self.minimum_class_score
+        return self._postprocess_output(
+            outputs.logits[0],
+            outputs.pred_masks[0],
+            class_ids=class_ids,
+            source_size=(width, height),
+        )
+
+    def _postprocess_output(
+        self,
+        logits: object,
+        pred_masks: object,
+        *,
+        class_ids: tuple[int, ...],
+        source_size: tuple[int, int],
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        width, height = source_size
+        class_probabilities = logits.softmax(dim=-1).float()
+        target_ids = self._torch.asarray(class_ids, device=class_probabilities.device)
+        selected = class_probabilities[:, target_ids].amax(dim=1) >= (
+            self.minimum_class_score
+        )
+        query_indices = selected.nonzero(as_tuple=False)[:, 0]
+        class_probabilities = class_probabilities[selected].cpu().numpy()
+        if not query_indices.numel():
+            return (
+                class_probabilities,
+                np.empty((0, height, width), dtype=np.float32),
+                query_indices.cpu().numpy(),
             )
-            query_indices = selected.nonzero(as_tuple=False)[:, 0]
-            class_probabilities = class_probabilities[selected].cpu().numpy()
-            if not query_indices.numel():
-                return (
-                    class_probabilities,
-                    np.empty((0, height, width), dtype=np.float32),
-                    query_indices.cpu().numpy(),
-                )
-            mask_probabilities = outputs.pred_masks[0].sigmoid().float()[selected]
-            mask_probabilities = self._torch.nn.functional.interpolate(
+        mask_probabilities = pred_masks.sigmoid().float()[selected]
+        mask_probabilities = (
+            self._torch.nn.functional.interpolate(
                 mask_probabilities.unsqueeze(1),
                 size=(height, width),
                 mode="bilinear",
                 align_corners=False,
-            )[:, 0].cpu().numpy()
-            query_indices = query_indices.cpu().numpy()
-        return class_probabilities, mask_probabilities, query_indices
+            )[:, 0]
+            .cpu()
+            .numpy()
+        )
+        return class_probabilities, mask_probabilities, query_indices.cpu().numpy()
 
 
 def _all_target_candidates(
@@ -251,9 +352,7 @@ def _all_target_candidates(
         probability = np.ascontiguousarray(
             np.clip(mask_probabilities[query_index], 0.0, 1.0), dtype=np.float32
         )
-        hard_mask = np.ascontiguousarray(
-            probability >= mask_threshold, dtype=np.uint8
-        )
+        hard_mask = np.ascontiguousarray(probability >= mask_threshold, dtype=np.uint8)
         if not hard_mask.any():
             continue
         candidates.append(
@@ -289,9 +388,10 @@ def _suppress_duplicate_candidates(
                 np.count_nonzero(candidate.hard_mask & existing.hard_mask)
             )
             union = area + existing_area - intersection
-            if intersection / union >= duplicate_mask_iou or intersection / min(
-                area, existing_area
-            ) >= 0.9:
+            if (
+                intersection / union >= duplicate_mask_iou
+                or intersection / min(area, existing_area) >= 0.9
+            ):
                 duplicate = True
                 break
         if duplicate:

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+from collections import defaultdict
 from dataclasses import dataclass
 
 import numpy as np
@@ -60,7 +61,9 @@ class ForegroundSegmentationRuntime:
         if artifact.manifest.model_family != "BIREFNET_DYNAMIC_SWIN_V1_LARGE":
             raise ValueError("unsupported foreground model family")
         if not math.isfinite(threshold) or not 0.0 < threshold < 1.0:
-            raise ValueError("foreground threshold must lie strictly between zero and one")
+            raise ValueError(
+                "foreground threshold must lie strictly between zero and one"
+            )
         import torch
         from transformers import AutoModelForImageSegmentation
 
@@ -86,69 +89,136 @@ class ForegroundSegmentationRuntime:
         *,
         target_box_xyxy: tuple[float, float, float, float] | None = None,
     ) -> ForegroundSegmentationPrediction:
-        rgb = image.convert("RGB")
-        source_width, source_height = rgb.size
-        box = _validate_target_box(
-            target_box_xyxy, width=source_width, height=source_height
-        )
-        crop = rgb.crop(box)
-        inference_width, inference_height = _compute_inference_size(
-            crop.width,
-            crop.height,
-            multiple=self.artifact.manifest.input_multiple,
-            minimum_side=self.artifact.manifest.minimum_inference_side,
-            maximum_side=self.artifact.manifest.maximum_inference_side,
-        )
-        resized = crop.resize(
-            (inference_width, inference_height), Image.Resampling.BILINEAR
-        )
-        pixels = np.asarray(resized, dtype=np.float32) / 255.0
-        pixels -= _RGB_MEAN
-        pixels /= _RGB_STD
-        tensor = self._torch.from_numpy(pixels.transpose(2, 0, 1)).unsqueeze(0)
-        tensor = tensor.to(device=self._device, dtype=self._dtype)
-        with self._torch.inference_mode():
-            output = self._model(tensor)
-            logits = output[-1]
-            if logits.ndim != 4 or logits.shape[:2] != (1, 1):
-                raise RuntimeError("foreground model output shape differs")
-            probability = logits.sigmoid().to(dtype=self._torch.float32)
-            probability = self._torch.nn.functional.interpolate(
-                probability,
-                size=(box[3] - box[1], box[2] - box[0]),
-                mode="bilinear",
-                align_corners=False,
-            )[0, 0].cpu().numpy()
-        if not np.isfinite(probability).all():
-            raise RuntimeError("foreground model output is non-finite")
-        source_probability = np.zeros((source_height, source_width), dtype=np.float32)
-        source_probability[box[1] : box[3], box[0] : box[2]] = probability
-        np.clip(source_probability, 0.0, 1.0, out=source_probability)
-        source_probability = np.ascontiguousarray(source_probability, dtype=np.float32)
-        hard_mask = np.ascontiguousarray(
-            source_probability >= self.threshold, dtype=np.uint8
-        )
-        foreground_fraction = float(hard_mask.mean())
-        border = np.concatenate(
-            (hard_mask[0], hard_mask[-1], hard_mask[:, 0], hard_mask[:, -1])
-        )
-        reasons: list[str] = []
-        if not hard_mask.any():
-            reasons.append("EMPTY_FOREGROUND")
-        if hard_mask.all():
-            reasons.append("FULL_FRAME_FOREGROUND")
-        return ForegroundSegmentationPrediction(
-            probability=source_probability,
-            hard_mask=hard_mask,
-            source_box_xyxy=box,
-            inference_width=inference_width,
-            inference_height=inference_height,
-            threshold=self.threshold,
-            foreground_fraction=foreground_fraction,
-            border_foreground_fraction=float(border.mean()),
-            state="ABSTAIN" if reasons else "CANDIDATE",
-            reasons=tuple(reasons),
-        )
+        return self.predict_batch(
+            (image,),
+            target_boxes_xyxy=(target_box_xyxy,),
+            maximum_batch_size=1,
+        )[0]
+
+    def predict_batch(
+        self,
+        images: tuple[Image.Image, ...],
+        *,
+        target_boxes_xyxy: tuple[tuple[float, float, float, float] | None, ...],
+        maximum_batch_size: int = 1,
+    ) -> tuple[ForegroundSegmentationPrediction, ...]:
+        """Infer exact-shape refinement crops in fixed-size batches."""
+
+        if (
+            not isinstance(images, tuple)
+            or not images
+            or len(images) != len(target_boxes_xyxy)
+            or any(not isinstance(image, Image.Image) for image in images)
+        ):
+            raise ValueError("foreground batch inputs must be aligned PIL images")
+        if (
+            isinstance(maximum_batch_size, bool)
+            or not isinstance(maximum_batch_size, int)
+            or maximum_batch_size <= 0
+        ):
+            raise ValueError("foreground batch size must be positive")
+        prepared = []
+        for index, (image, target_box) in enumerate(
+            zip(images, target_boxes_xyxy, strict=True)
+        ):
+            rgb = image.convert("RGB")
+            source_width, source_height = rgb.size
+            box = _validate_target_box(
+                target_box, width=source_width, height=source_height
+            )
+            crop = rgb.crop(box)
+            inference_width, inference_height = _compute_inference_size(
+                crop.width,
+                crop.height,
+                multiple=self.artifact.manifest.input_multiple,
+                minimum_side=self.artifact.manifest.minimum_inference_side,
+                maximum_side=self.artifact.manifest.maximum_inference_side,
+            )
+            resized = crop.resize(
+                (inference_width, inference_height), Image.Resampling.BILINEAR
+            )
+            pixels = np.asarray(resized, dtype=np.float32) / 255.0
+            pixels -= _RGB_MEAN
+            pixels /= _RGB_STD
+            tensor = self._torch.from_numpy(pixels.transpose(2, 0, 1)).to(
+                dtype=self._dtype
+            )
+            prepared.append((index, rgb, box, tensor))
+
+        buckets: dict[
+            tuple[int, int],
+            list[tuple[int, Image.Image, tuple[int, int, int, int], object]],
+        ] = defaultdict(list)
+        for item in prepared:
+            buckets[tuple(item[3].shape[-2:])].append(item)
+        probabilities: list[np.ndarray | None] = [None] * len(images)
+        for bucket in buckets.values():
+            for start in range(0, len(bucket), maximum_batch_size):
+                chunk = bucket[start : start + maximum_batch_size]
+                tensor = self._torch.stack([item[3] for item in chunk]).to(self._device)
+                with self._torch.inference_mode():
+                    output = self._model(tensor)
+                    logits = output[-1]
+                    if logits.ndim != 4 or logits.shape[:2] != (len(chunk), 1):
+                        raise RuntimeError("foreground model output shape differs")
+                    values = logits.sigmoid().to(dtype=self._torch.float32)
+                    for batch_index, (index, _rgb, box, _tensor) in enumerate(chunk):
+                        probability = (
+                            self._torch.nn.functional.interpolate(
+                                values[batch_index : batch_index + 1],
+                                size=(box[3] - box[1], box[2] - box[0]),
+                                mode="bilinear",
+                                align_corners=False,
+                            )[0, 0]
+                            .cpu()
+                            .numpy()
+                        )
+                        probabilities[index] = probability
+
+        results = []
+        for (_index, rgb, box, tensor), probability in zip(
+            prepared, probabilities, strict=True
+        ):
+            if probability is None:
+                raise AssertionError("foreground batch inference is incomplete")
+            source_width, source_height = rgb.size
+            if not np.isfinite(probability).all():
+                raise RuntimeError("foreground model output is non-finite")
+            source_probability = np.zeros(
+                (source_height, source_width), dtype=np.float32
+            )
+            source_probability[box[1] : box[3], box[0] : box[2]] = probability
+            np.clip(source_probability, 0.0, 1.0, out=source_probability)
+            source_probability = np.ascontiguousarray(
+                source_probability, dtype=np.float32
+            )
+            hard_mask = np.ascontiguousarray(
+                source_probability >= self.threshold, dtype=np.uint8
+            )
+            foreground_fraction = float(hard_mask.mean())
+            border = np.concatenate(
+                (hard_mask[0], hard_mask[-1], hard_mask[:, 0], hard_mask[:, -1])
+            )
+            reasons: list[str] = []
+            if not hard_mask.any():
+                reasons.append("EMPTY_FOREGROUND")
+            if hard_mask.all():
+                reasons.append("FULL_FRAME_FOREGROUND")
+            results.append(
+                ForegroundSegmentationPrediction(
+                    probability=source_probability,
+                    hard_mask=hard_mask,
+                    source_box_xyxy=box,
+                    inference_width=int(tensor.shape[-1]),
+                    inference_height=int(tensor.shape[-2]),
+                    threshold=self.threshold,
+                    foreground_fraction=foreground_fraction,
+                    border_foreground_fraction=float(border.mean()),
+                    state="ABSTAIN" if reasons else "CANDIDATE",
+                    reasons=tuple(reasons),
+                )
+            )
+        return tuple(results)
 
 
 def _compute_inference_size(
@@ -160,9 +230,16 @@ def _compute_inference_size(
     maximum_side: int,
 ) -> tuple[int, int]:
     values = (width, height, multiple, minimum_side, maximum_side)
-    if any(isinstance(value, bool) or not isinstance(value, int) or value <= 0 for value in values):
+    if any(
+        isinstance(value, bool) or not isinstance(value, int) or value <= 0
+        for value in values
+    ):
         raise ValueError("foreground inference dimensions must be positive integers")
-    if minimum_side > maximum_side or minimum_side % multiple or maximum_side % multiple:
+    if (
+        minimum_side > maximum_side
+        or minimum_side % multiple
+        or maximum_side % multiple
+    ):
         raise ValueError("foreground inference bounds differ")
     scale = max(1.0, minimum_side / min(width, height))
     scale = min(scale, maximum_side / max(width, height))
