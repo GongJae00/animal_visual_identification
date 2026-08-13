@@ -1,13 +1,13 @@
-"""Exact artifact contracts for scaffolded nose and landmark channels."""
+"""Exact artifact contracts for nose and landmark channels."""
 
 from __future__ import annotations
 
+import math
+import re
 from dataclasses import dataclass, fields
 from enum import Enum
 from hashlib import sha256
-import math
 from pathlib import Path
-import re
 from typing import Any
 
 import cv2
@@ -15,7 +15,6 @@ import numpy as np
 from PIL import Image
 
 from artifact_contracts.model_contracts import validated_onnx_bytes
-
 
 _SHA256_RE = re.compile(r"[0-9a-f]{64}")
 

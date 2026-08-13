@@ -28,6 +28,26 @@ AP10K_BODY_17_KEYPOINT_NAMES = (
     "right_knee",
     "right_back_paw",
 )
+AP10K_BODY_17_EDGES = (
+    ("left_eye", "nose_center"),
+    ("right_eye", "nose_center"),
+    ("left_eye", "neck"),
+    ("right_eye", "neck"),
+    ("neck", "left_shoulder"),
+    ("neck", "right_shoulder"),
+    ("left_shoulder", "left_elbow"),
+    ("left_elbow", "left_front_paw"),
+    ("right_shoulder", "right_elbow"),
+    ("right_elbow", "right_front_paw"),
+    ("left_shoulder", "left_hip"),
+    ("right_shoulder", "right_hip"),
+    ("left_hip", "left_knee"),
+    ("left_knee", "left_back_paw"),
+    ("right_hip", "right_knee"),
+    ("right_knee", "right_back_paw"),
+    ("left_hip", "tail_base"),
+    ("right_hip", "tail_base"),
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -124,6 +144,7 @@ class LocalizationBenchmarkEntry:
 
 __all__ = [
     "DetectionBox",
+    "AP10K_BODY_17_EDGES",
     "AP10K_BODY_17_KEYPOINT_NAMES",
     "AP10K_BODY_17_SCHEMA",
     "Keypoint",
