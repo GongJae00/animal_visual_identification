@@ -5,23 +5,23 @@ from __future__ import annotations
 import hashlib
 import math
 import struct
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Any, Mapping, Sequence
+from typing import Any
 
-from data_pipeline.acquisition import sha256_file
-from evaluation.control_scoring import ControlScoringInventory
-from operations.embedding_producer import EmbeddingBatchBackend, EmbeddingProducerConfig
-from representation_learning.optimization import PromotionDecision
-from foundation.provenance import content_sha256
 from artifact_contracts.runtime_library_provenance import (
     RuntimeLibraryManifest,
     RuntimeLibraryPhase,
     RuntimeLibraryTracker,
 )
-
+from data_pipeline.acquisition import sha256_file
+from evaluation.control_scoring import ControlScoringInventory
+from evaluation.operation_ports import EmbeddingBatchBackend, EmbeddingProducerConfig
+from foundation.provenance import content_sha256
+from representation_learning.optimization import PromotionDecision
 
 _SCENARIOS = (
     "FULL_BATCH",

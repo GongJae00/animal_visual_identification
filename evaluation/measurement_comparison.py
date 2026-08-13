@@ -8,18 +8,17 @@ from math import isfinite
 from typing import Any
 
 from evaluation.control_scoring import EmbeddingCacheManifest
-from operations.embedding_producer import EmbeddingBackendIdentity, EmbeddingProducerConfig
 from evaluation.numerical_admission import (
     NumericalAdmissionDecision,
     NumericalAdmissionReceipt,
 )
-from operations.onnx_inference_benchmark import (
-    OnnxBenchmarkBackend,
+from evaluation.operation_ports import (
+    EmbeddingProducerConfig,
     OnnxInferenceBenchmarkPolicy,
     OnnxInferenceBenchmarkSummary,
 )
-from representation_learning.optimization import PromotionDecision
 from foundation.provenance import content_sha256
+from representation_learning.optimization import PromotionDecision
 
 
 class MeasurementAdmissionDecision(StrEnum):
@@ -217,9 +216,9 @@ def compare_paired_inference_measurements(
 ) -> PairedInferenceMeasurementReceipt:
     """Admit matched measurements while forcing promotion to remain unresolved."""
 
-    if reference.backend is not OnnxBenchmarkBackend.CPU:
+    if reference.backend.value != "CPU":
         raise ValueError("paired reference must be the strict CPU backend")
-    if candidate.backend is not OnnxBenchmarkBackend.CUDA:
+    if candidate.backend.value != "CUDA":
         raise ValueError("paired candidate must be the full-graph CUDA backend")
     if (
         not reference.policy.unrelated_system_work_excluded_by_operator
@@ -368,10 +367,10 @@ def _validate_producer_and_manifest_binding(
             raise ValueError(f"{label} producer {name} binding differs")
     if config.backend.backend_config_sha256 != summary.backend_config_sha256:
         raise ValueError(f"{label} producer backend config binding differs")
-    worker_identity = EmbeddingBackendIdentity.from_dict(
-        summary.worker_results[0]["measurement"]["backend_identity"]
-    )
-    if config.backend != worker_identity:
+    worker_identity = summary.worker_results[0]["measurement"]["backend_identity"]
+    if not isinstance(worker_identity, dict) or (
+        config.backend.to_dict() != worker_identity
+    ):
         raise ValueError(f"{label} producer backend identity differs")
     if (
         config.input_width * config.input_height * config.input_channels

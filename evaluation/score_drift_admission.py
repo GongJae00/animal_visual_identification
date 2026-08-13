@@ -6,10 +6,11 @@ import hashlib
 import math
 import struct
 from collections import Counter
+from collections.abc import Iterator
 from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any
 
 from evaluation.control_scoring import (
     ControlScoringInventory,
@@ -19,18 +20,18 @@ from evaluation.control_scoring import (
     EmbeddingCacheVerification,
     verify_embedding_cache_files,
 )
-from operations.embedding_producer import (
-    EmbeddingProducerConfig,
-    EmbeddingProductionReceipt,
-)
 from evaluation.numerical_admission import (
     NumericalAdmissionDecision,
     NumericalAdmissionReceipt,
     NumericalDriftPolicy,
     compare_embedding_caches,
 )
-from representation_learning.optimization import PromotionDecision
+from evaluation.operation_ports import (
+    EmbeddingProducerConfig,
+    EmbeddingProductionReceipt,
+)
 from foundation.provenance import content_sha256
+from representation_learning.optimization import PromotionDecision
 
 
 class ScoreDriftDecision(StrEnum):

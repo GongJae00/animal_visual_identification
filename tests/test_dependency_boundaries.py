@@ -67,6 +67,8 @@ def test_dependency_direction() -> None:
                     "representation_learning",
                     "workflows",
                 }
+            elif package == "evaluation":
+                forbidden = imported & {"operations"}
             elif package in ALGORITHM_PACKAGES:
                 forbidden = imported & {"evaluation", "operations", "workflows"}
             else:

@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from evaluation.control_scoring import EmbeddingCacheManifest
-from operations.embedding_producer import EmbeddingProducerConfig
+from evaluation.operation_ports import EmbeddingProducerConfig
 from foundation.provenance import content_sha256
 
 
