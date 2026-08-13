@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import os
 import pickle
 import subprocess
@@ -381,6 +382,55 @@ class PretrainedWeightIntakeTests(unittest.TestCase):
             payload["unexpected"] = True
             with self.assertRaisesRegex(ValueError, "fields differ"):
                 PretrainedWeightSourceContract.from_dict(payload)
+
+    def test_repository_b2_contract_records_only_observed_checksum_authority(
+        self,
+    ) -> None:
+        contract_path = (
+            Path(__file__).parents[1]
+            / "artifact_contracts"
+            / "configs"
+            / "pretrained-weights"
+            / "torchvision-resnet18-imagenet1k-v1-336d36e8.json"
+        )
+        contract = PretrainedWeightSourceContract.from_dict(
+            json.loads(contract_path.read_text(encoding="utf-8"))
+        )
+
+        self.assertEqual(
+            contract.source_model_id,
+            "torchvision.models.ResNet18_Weights.IMAGENET1K_V1",
+        )
+        self.assertEqual(
+            contract.source_revision,
+            "torchvision-v0.26.0@336d36e8db990a905498c73933e35231876e28bc",
+        )
+        self.assertEqual(
+            contract.source_file_url,
+            "https://download.pytorch.org/models/resnet18-f37072fd.pth",
+        )
+        self.assertEqual(contract.weight_filename, "resnet18-f37072fd.pth")
+        self.assertEqual(contract.expected_file_bytes, 46_830_571)
+        self.assertEqual(
+            contract.expected_sha256,
+            "f37072fd47e89c5e827621c5baffa7500819f7896bbacec160b1a16c560e07ec",
+        )
+        self.assertIs(
+            contract.checksum_authority,
+            PretrainedWeightChecksumAuthority.UNVERIFIED_SHA256,
+        )
+        self.assertIs(
+            contract.license_usage_lane,
+            PretrainedWeightUsageLane.RESEARCH_ONLY,
+        )
+        self.assertIs(contract.target_lane, PretrainedWeightUsageLane.RESEARCH_ONLY)
+        self.assertEqual(contract.license_id, "UNVERIFIED_WEIGHT_LICENSE_SCOPE")
+        self.assertIn("official filename hash prefix", contract.training_description)
+        self.assertIn("Supervised ImageNet-1K ResNet18", contract.training_description)
+        self.assertEqual(
+            contract.contract_sha256,
+            "d6b36cb256ab2ecf1b16dd13ec8f929ad707c83439146e6313ee201faef04aa6",
+        )
 
 
 if __name__ == "__main__":

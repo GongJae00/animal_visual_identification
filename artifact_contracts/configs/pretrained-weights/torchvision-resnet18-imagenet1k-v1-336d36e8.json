@@ -1,0 +1,20 @@
+{
+  "schema_version": "cvi.pretrained_weight_source_contract.v1",
+  "source_model_id": "torchvision.models.ResNet18_Weights.IMAGENET1K_V1",
+  "source_revision": "torchvision-v0.26.0@336d36e8db990a905498c73933e35231876e28bc",
+  "source_model_page_url": "https://github.com/pytorch/vision/blob/336d36e8db990a905498c73933e35231876e28bc/torchvision/models/resnet.py",
+  "source_file_url": "https://download.pytorch.org/models/resnet18-f37072fd.pth",
+  "weight_filename": "resnet18-f37072fd.pth",
+  "license_id": "UNVERIFIED_WEIGHT_LICENSE_SCOPE",
+  "license_url": "https://raw.githubusercontent.com/pytorch/vision/336d36e8db990a905498c73933e35231876e28bc/LICENSE",
+  "license_snapshot_sha256": "6502f676851cfe25f8af75531dfb32375b7325b73c37e7b43741fa422893e71d",
+  "license_usage_lane": "RESEARCH_ONLY",
+  "training_description": "Supervised ImageNet-1K ResNet18. The commit-pinned torchvision source binds ResNet18_Weights.IMAGENET1K_V1 to resnet18-f37072fd.pth; f37072fd is an official filename hash prefix, while the expected full SHA-256 is locally observed rather than publisher-published. The repository license snapshot does not establish the pretrained-weight license scope.",
+  "training_description_url": "https://raw.githubusercontent.com/pytorch/vision/336d36e8db990a905498c73933e35231876e28bc/torchvision/models/resnet.py",
+  "training_description_snapshot_sha256": "9faf2f321fdaf7edbd791aedc6e3610c7edf9c892112cbd75861beae1e9518d1",
+  "expected_file_bytes": 46830571,
+  "expected_sha256": "f37072fd47e89c5e827621c5baffa7500819f7896bbacec160b1a16c560e07ec",
+  "checksum_authority": "UNVERIFIED_SHA256",
+  "target_lane": "RESEARCH_ONLY",
+  "file_format": "PYTORCH_STATE_DICT"
+}
