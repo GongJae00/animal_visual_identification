@@ -12,16 +12,16 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any
 
-from data_pipeline.acquisition import sha256_file
 from artifact_contracts.contracts import Modality
-from evaluation.pairing import PairConstructionResult
-from foundation.provenance import content_sha256
-from evaluation.scoring import (
+from data_pipeline.acquisition import sha256_file
+from data_pipeline.pair_artifacts import (
     PairArtifactEntry,
     PairArtifactManifest,
     PairArtifactVerification,
+    PairConstructionView,
     verify_pair_artifact_files,
 )
+from foundation.provenance import content_sha256
 
 
 @dataclass(frozen=True, slots=True)
@@ -415,7 +415,7 @@ def build_crop_command(
 
 
 def export_oracle_crops(
-    construction: PairConstructionResult,
+    construction: PairConstructionView,
     *,
     sources: tuple[OracleCropSource, ...],
     policy: CropExportPolicy,
@@ -582,7 +582,7 @@ def _source_map(
     return result
 
 
-def _validate_bindings(construction: PairConstructionResult) -> None:
+def _validate_bindings(construction: PairConstructionView) -> None:
     tokens = tuple(
         binding.artifact_token for binding in construction.artifact_bindings
     )
