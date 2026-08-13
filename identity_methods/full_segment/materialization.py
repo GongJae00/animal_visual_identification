@@ -1765,10 +1765,12 @@ def _publish_sample(
     derived: tuple[bytes, dict[str, Any]] | None,
     shard_selection: dict[str, Any],
 ) -> None:
-    from workflows.materialize_full_segment import (
+    from identity_methods.full_segment.sample_materialization import (
         REQUEST_SCHEMA as MATERIALIZATION_REQUEST_SCHEMA,
     )
-    from workflows.materialize_full_segment import run_prevalidated as materialize_one
+    from identity_methods.full_segment.sample_materialization import (
+        run_prevalidated as materialize_one,
+    )
 
     with TemporaryDirectory(prefix=f".{target.name}-", dir=target.parent) as temporary:
         temporary_root = Path(temporary)

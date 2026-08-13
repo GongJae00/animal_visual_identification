@@ -3,7 +3,6 @@ from __future__ import annotations
 import ast
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 INTERNAL_PACKAGES = {
     "apps",
@@ -69,7 +68,7 @@ def test_dependency_direction() -> None:
                     "workflows",
                 }
             elif package in ALGORITHM_PACKAGES:
-                forbidden = imported & {"evaluation", "operations"}
+                forbidden = imported & {"evaluation", "operations", "workflows"}
             else:
                 forbidden = set()
             if forbidden:

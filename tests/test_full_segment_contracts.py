@@ -10,7 +10,7 @@ import numpy as np
 import pytest
 from PIL import Image
 
-import workflows.materialize_full_segment as materialize_workflow
+import identity_methods.full_segment.sample_materialization as materialize_workflow
 from foundation.provenance import content_sha256
 from localization.animal_parsing import (
     AnimalParsingPrediction,
