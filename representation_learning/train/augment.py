@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import random
 
-import numpy as np
 import torch
 
 
@@ -12,7 +11,6 @@ class RandAugment:
         self._m = m
 
     def __call__(self, img: torch.Tensor) -> torch.Tensor:
-        c, h, w = img.shape
         for _ in range(self._n):
             op = random.choice([
                 self._adjust_brightness,
@@ -102,18 +100,3 @@ class RandAugment:
         import torchvision.transforms.functional as TF
         shear = self._scale() * random.uniform(-20, 20)
         return TF.affine(img.unsqueeze(0), angle=0, translate=(0, 0), scale=1.0, shear=(0, shear)).squeeze(0)
-
-
-class MixUp:
-    def __init__(self, alpha: float = 0.2):
-        self._alpha = alpha
-
-    def __call__(self, images: torch.Tensor, labels: torch.Tensor
-                 ) -> tuple[torch.Tensor, torch.Tensor]:
-        if self._alpha <= 0:
-            return images, labels
-        lam = np.random.beta(self._alpha, self._alpha)
-        idx = torch.randperm(images.shape[0])
-        mixed = lam * images + (1 - lam) * images[idx]
-        mixed_labels = lam * labels.float() + (1 - lam) * labels[idx].float()
-        return mixed, mixed_labels

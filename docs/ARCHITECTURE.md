@@ -61,7 +61,7 @@ same representation path has run for query or enrollment input.
 | `operations/` | Isolated workers, runtime discovery, ONNX execution, supervision, and telemetry |
 | `workflows/` | Source-checkout commands that orchestrate owned packages |
 | `experiments/` | Research-only branch comparisons and major experiment configs |
-| `apps/report/` | Optional report generation application; generated reports remain outside Git |
+| `vis/` | Contract-bound research figures and report rendering; generated reports remain outside Git |
 | `setup/` | Environment, bootstrap, and release guidance |
 | `tests/` | Behavioral, contract, security, numerical, packaging, and dependency-boundary tests |
 

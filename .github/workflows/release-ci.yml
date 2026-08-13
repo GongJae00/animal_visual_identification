@@ -50,10 +50,10 @@ jobs:
         run: |
           git diff --check
           uv run --no-sync python -m compileall -q \
-            apps artifact_contracts canine_identity data_pipeline evaluation \
+            artifact_contracts canine_identity data_pipeline evaluation \
             evidence_fusion experiments foundation identity_governance \
             identity_methods identity_retrieval localization operations \
-            representation_learning workflows
+            representation_learning vis workflows
 
       - name: Build distributions
         run: uv build --out-dir dist
