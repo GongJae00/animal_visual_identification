@@ -15,6 +15,8 @@ contracts remain readable.
 - Renamed the internal artifact-schema package from `artifact_contracts` to
   `contracts`. Persisted `cvi.*` identifiers and artifact-contract field names
   remain unchanged.
+- Renamed the internal retrieval package from `identity_retrieval` to `retrieval`.
+  Gallery v3-v5 readers and persisted `cvi.gallery_*` identifiers remain unchanged.
 
 ### Part 1 - Parser Policy And Full128 Materialization
 

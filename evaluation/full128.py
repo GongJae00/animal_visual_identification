@@ -30,7 +30,7 @@ from identity_methods.full_segment.inventory import (
     INVENTORY_SCHEMA,
 )
 from identity_methods.full_segment.manifests import build_baseline_family_manifest
-from identity_retrieval.qkv import FULL128_CHANNEL, SCORER_ALGORITHM
+from retrieval.qkv import FULL128_CHANNEL, SCORER_ALGORITHM
 
 PANEL_SCHEMA = "cvi.full128_evaluation_panel.v1"
 CACHE_DESCRIPTOR_SCHEMA = "cvi.full128_packed_embedding_cache_descriptor.v1"
@@ -1195,12 +1195,12 @@ def _evaluate_canonical_gallery(
     bootstrap_resamples: int,
     bootstrap_seed: int,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
-    from identity_retrieval.gallery import (
+    from retrieval.gallery import (
         GalleryEnrollment,
         IdentityGallery,
         IdentityRegistryPolicy,
     )
-    from identity_retrieval.qkv import EnrollmentRank
+    from retrieval.qkv import EnrollmentRank
 
     gallery_tokens = dataset["gallery_sample_tokens_by_k"][str(enrollment_k)]
     identities = frozenset(

@@ -19,7 +19,7 @@ from typing import Any, BinaryIO
 import faiss
 import numpy as np
 
-from identity_retrieval.gallery import IdentityGallery
+from retrieval.gallery import IdentityGallery
 
 _MANIFEST_SCHEMA = "cvi.gallery_manifest.v3"
 _TEMPLATE_SCHEMA = "cvi.gallery_template.v1"

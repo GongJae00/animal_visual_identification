@@ -6,9 +6,9 @@ from typing import Any
 
 from PIL import Image
 
-from identity_retrieval.gallery import IdentityGallery
-from identity_retrieval.pipeline.extraction import EvidenceExtractionPipeline
-from identity_retrieval.qkv import QueryExclusions
+from retrieval.gallery import IdentityGallery
+from retrieval.pipeline.extraction import EvidenceExtractionPipeline
+from retrieval.qkv import QueryExclusions
 
 
 @dataclass

@@ -18,7 +18,7 @@ from evidence_fusion.quality import (
     estimate_blur,
     observe_quality,
 )
-from identity_retrieval.pipeline.extraction import EvidenceExtractionPipeline
+from retrieval.pipeline.extraction import EvidenceExtractionPipeline
 
 
 class _TestEvidencer(AbstractEvidencer):

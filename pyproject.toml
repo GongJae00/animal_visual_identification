@@ -114,7 +114,7 @@ module-name = [
     "foundation",
     "identity_governance",
     "identity_methods",
-    "identity_retrieval",
+    "retrieval",
     "localization",
     "operations",
     "representation_learning",

@@ -55,7 +55,7 @@ from identity_methods.full_segment.manifests import (
     build_model_manifest,
     build_preprocessing_manifest,
 )
-from identity_retrieval.gallery import IdentityGallery, IdentityRegistryPolicy
+from retrieval.gallery import IdentityGallery, IdentityRegistryPolicy
 from workflows.evaluate_full128_family import main as evaluate_workflow
 
 

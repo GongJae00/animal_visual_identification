@@ -32,9 +32,9 @@ from contracts.model_contract import (
 )
 from evidence_fusion.base import AbstractEvidencer
 from identity_governance.identity_registry import compute_registered_dog_id
-from identity_retrieval.gallery import IdentityGallery
-from identity_retrieval.pipeline.extraction import EvidenceExtractionPipeline
-from identity_retrieval.pipeline.retrieval import IdentityRetrievalPipeline
+from retrieval.gallery import IdentityGallery
+from retrieval.pipeline.extraction import EvidenceExtractionPipeline
+from retrieval.pipeline.retrieval import IdentityRetrievalPipeline
 
 
 class _FixedEvidencer(AbstractEvidencer):
@@ -486,7 +486,7 @@ class GalleryContractTests(unittest.TestCase):
         manifest_path = self.root / "gallery_manifest.json"
         manifest_path.write_bytes(b" " * 17)
         with (
-            patch("identity_retrieval.gallery._MAXIMUM_MANIFEST_BYTES", 16),
+            patch("retrieval.gallery._MAXIMUM_MANIFEST_BYTES", 16),
             self.assertRaisesRegex(RuntimeError, "byte limit"),
         ):
             IdentityGallery(self.root, dim=2, read_only=True)
@@ -513,7 +513,7 @@ class GalleryContractTests(unittest.TestCase):
         index.close()
 
         with (
-            patch("identity_retrieval.gallery._MAXIMUM_SIDECAR_JSON_BYTES", 16),
+            patch("retrieval.gallery._MAXIMUM_SIDECAR_JSON_BYTES", 16),
             self.assertRaisesRegex(RuntimeError, "byte limit"),
         ):
             IdentityGallery(self.root, dim=2, read_only=True)
@@ -532,7 +532,7 @@ class GalleryContractTests(unittest.TestCase):
         index.close()
 
         with (
-            patch("identity_retrieval.gallery.faiss.read_index") as read_index,
+            patch("retrieval.gallery.faiss.read_index") as read_index,
             self.assertRaisesRegex(RuntimeError, "required index.*byte limit"),
         ):
             IdentityGallery(self.root, dim=2, read_only=True)
@@ -558,7 +558,7 @@ class GalleryContractTests(unittest.TestCase):
                 index.enroll(np.array([0.0, 1.0]), dog_two)
 
                 with (
-                    patch(f"identity_retrieval.gallery.{limit_name}", 16),
+                    patch(f"retrieval.gallery.{limit_name}", 16),
                     self.assertRaisesRegex(RuntimeError, message),
                 ):
                     index.save()

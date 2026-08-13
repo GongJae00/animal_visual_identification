@@ -15,7 +15,7 @@ INTERNAL_PACKAGES = {
     "foundation",
     "identity_governance",
     "identity_methods",
-    "identity_retrieval",
+    "retrieval",
     "localization",
     "operations",
     "representation_learning",
@@ -25,7 +25,7 @@ INTERNAL_PACKAGES = {
 ALGORITHM_PACKAGES = {
     "evidence_fusion",
     "identity_methods",
-    "identity_retrieval",
+    "retrieval",
     "localization",
     "representation_learning",
 }

@@ -17,7 +17,7 @@ import faiss
 import numpy as np
 
 from foundation.protected_publication import rename_directory_noreplace
-from identity_retrieval.qkv import (
+from retrieval.qkv import (
     FULL128_CHANNEL,
     SCORER_ALGORITHM,
     AvailableIntersectionScorer,

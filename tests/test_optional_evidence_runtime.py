@@ -22,10 +22,10 @@ from evidence_fusion.base import (
     RequiredEvidenceUnavailableError,
 )
 from identity_governance.identity_registry import compute_registered_dog_id
-from identity_retrieval.gallery import IdentityGallery
-from identity_retrieval.pipeline.extraction import EvidenceExtractionPipeline
-from identity_retrieval.pipeline.retrieval import IdentityRetrievalPipeline
-from identity_retrieval.qkv import RetrievalQuery
+from retrieval.gallery import IdentityGallery
+from retrieval.pipeline.extraction import EvidenceExtractionPipeline
+from retrieval.pipeline.retrieval import IdentityRetrievalPipeline
+from retrieval.qkv import RetrievalQuery
 from workflows.migrate_gallery_v3_to_v4 import migrate_gallery
 
 
@@ -311,7 +311,7 @@ class ExactOptionalGalleryTests(unittest.TestCase):
         index.close()
 
         with (
-            patch("identity_retrieval.gallery.np.load") as np_load,
+            patch("retrieval.gallery.np.load") as np_load,
             self.assertRaisesRegex(RuntimeError, "optional vectors.*byte limit"),
         ):
             IdentityGallery(
@@ -337,7 +337,7 @@ class ExactOptionalGalleryTests(unittest.TestCase):
         index.close()
 
         with (
-            patch("identity_retrieval.gallery.np.load") as np_load,
+            patch("retrieval.gallery.np.load") as np_load,
             self.assertRaisesRegex(RuntimeError, "member.*invalid"),
         ):
             IdentityGallery(
@@ -367,7 +367,7 @@ class ExactOptionalGalleryTests(unittest.TestCase):
         index.close()
 
         with (
-            patch("identity_retrieval.gallery.np.load") as np_load,
+            patch("retrieval.gallery.np.load") as np_load,
             self.assertRaisesRegex(RuntimeError, "dtype or shape"),
         ):
             IdentityGallery(

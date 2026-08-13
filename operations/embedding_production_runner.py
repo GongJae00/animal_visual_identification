@@ -7,10 +7,11 @@ import errno
 import hashlib
 import json
 import os
+from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Any, Mapping
+from typing import Any
 
 from contracts.runtime_library_provenance import (
     RuntimeLibraryManifest,
@@ -52,7 +53,7 @@ _CODE_SOURCE_PACKAGE_NAMES = (
     "evaluation",
     "foundation",
     "identity_governance",
-    "identity_retrieval",
+    "retrieval",
     "operations",
     "representation_learning",
 )

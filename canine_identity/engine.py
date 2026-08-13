@@ -155,10 +155,10 @@ class IdentityEngine:
         self._init_pipeline()
 
     def _init_pipeline(self) -> None:
-        from identity_retrieval.gallery import IdentityGallery
-        from identity_retrieval.pipeline.extraction import EvidenceExtractionPipeline
-        from identity_retrieval.pipeline.retrieval import IdentityRetrievalPipeline
-        from identity_retrieval.qkv import (
+        from retrieval.gallery import IdentityGallery
+        from retrieval.pipeline.extraction import EvidenceExtractionPipeline
+        from retrieval.pipeline.retrieval import IdentityRetrievalPipeline
+        from retrieval.qkv import (
             AvailableIntersectionScorer,
             EvidenceChannelSpec,
             canonical_channel_weights,

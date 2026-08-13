@@ -8,15 +8,15 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-import identity_retrieval.gallery as gallery_module
+import retrieval.gallery as gallery_module
 from identity_governance.generated_identity_registry import create_provisional_identity
 from identity_governance.identity_registry import compute_registered_dog_id
-from identity_retrieval.gallery import (
+from retrieval.gallery import (
     GalleryEnrollment,
     IdentityGallery,
     IdentityRegistryPolicy,
 )
-from identity_retrieval.qkv import (
+from retrieval.qkv import (
     SCORER_ALGORITHM,
     AvailableIntersectionScorer,
     EnrollmentRank,

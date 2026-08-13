@@ -1116,12 +1116,12 @@ def _evaluate_cohort(
     descriptor: Mapping[str, Any],
     gallery_directory: Path,
 ) -> tuple[dict[str, Any], dict[str, Any], list[dict[str, Any]]]:
-    from identity_retrieval.gallery import (
+    from retrieval.gallery import (
         GalleryEnrollment,
         IdentityGallery,
         IdentityRegistryPolicy,
     )
-    from identity_retrieval.qkv import EnrollmentRank
+    from retrieval.qkv import EnrollmentRank
 
     query_tokens = cohort["query_sample_tokens"]
     gallery_tokens = cohort["gallery_sample_tokens"]

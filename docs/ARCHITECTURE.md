@@ -55,7 +55,7 @@ same representation path has run for query or enrollment input.
 | `identity_methods/` | Backbones plus Appearance, Face, Nose, and classical identity methods |
 | `representation_learning/` | Trainable representations, heads, objectives, and training orchestration |
 | `evidence_fusion/` | Evidence observations, quality, calibration state, and research-only aggregation utilities |
-| `identity_retrieval/` | QKV retrieval contracts, K/V gallery persistence, exact QK scoring, identity aggregation, and crop enrollment/search pipelines |
+| `retrieval/` | QKV retrieval contracts, K/V gallery persistence, exact QK scoring, identity aggregation, and crop enrollment/search pipelines |
 | `evaluation/` | Verification, retrieval, calibration, robustness, controls, cache evaluation, and protected evaluation |
 | `canine_identity/` | Public crop-level runtime only |
 | `operations/` | Isolated workers, runtime discovery, ONNX execution, supervision, and telemetry |

@@ -52,7 +52,7 @@ jobs:
           uv run --no-sync python -m compileall -q \
             canine_identity contracts data_pipeline evaluation \
             evidence_fusion experiments foundation identity_governance \
-            identity_methods identity_retrieval localization operations \
+            identity_methods localization operations retrieval \
             representation_learning visualization workflows
 
       - name: Build distributions
@@ -72,6 +72,8 @@ jobs:
           assert any(name.endswith(".dist-info/licenses/LICENSE") for name in names)
           assert "contracts/schemas/cvi.evaluation.report.v3.schema.json" in names
           assert not any(name.startswith("artifact_contracts/") for name in names)
+          assert "retrieval/__init__.py" in names
+          assert not any(name.startswith("identity_retrieval/") for name in names)
           assert "visualization/__init__.py" in names
           assert not any(name.startswith("vis/") for name in names)
           PY
