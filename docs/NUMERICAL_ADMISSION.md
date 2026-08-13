@@ -80,12 +80,10 @@ Downstream protected CLIs accept this authenticated bundle, not an unwrapped
 receipt object. A modified decision or summary therefore changes and fails the
 joined receipt digest.
 
-## Remaining extensions
+## Downstream gates
 
 - connect the exact post-preprocessing tensor hash now emitted by the
   fresh-worker benchmark to the cache admission receipt itself;
-- extend existing fresh-process, same-session, and singleton/batch checks with
-  permutation, tail-batch, duplicate, and padded-batch invariance;
 - run the implemented `docs/SCORE_DRIFT_ADMISSION.md` gate on the exact opaque
   query×candidate workload;
 - compare the separate supervised cold/session/first-run, warm tensor-API, and

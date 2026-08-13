@@ -8,6 +8,8 @@
 - [Known Limitations](KNOWN_LIMITATIONS.md): current product and research limits.
 - [Research Progress](RESEARCH_PROGRESS.md): concise research-only trend summary.
 - [Roadmap](ROADMAP.md): future admission gates only.
+- [Version History](../CHANGELOG.md): implemented versions, rationale, evidence,
+  and persisted compatibility contracts.
 
 ## Runtime And Artifacts
 

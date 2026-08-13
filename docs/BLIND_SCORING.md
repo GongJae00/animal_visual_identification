@@ -40,6 +40,7 @@ score receipt's artifact hash must match it.
 The file verifier does reread byte size and SHA-256 with mutation checks. The
 artifact directory may contain only regular files named exactly
 `artifact-token.png`, `.jpg`, or `.jpeg`; symlinks, subdirectories, missing
-files, and extra identity-named files are rejected. Image decode, dimensions,
-pixel semantics, and embedded metadata remain a later exporter validation. The
-contract does not yet create real crops or prove those semantic properties.
+files, and extra identity-named files are rejected. The canonical crop exporter
+also validates PNG decode, dimensions, pixel format, and metadata policy. A generic
+externally prepared hash manifest alone still does not prove those semantic
+properties.

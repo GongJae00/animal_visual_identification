@@ -23,6 +23,11 @@ unknown top-level fields, and non-object roots are rejected.
 | `fused_dim` | Optional | Must equal the sum of all configured channel dimensions |
 | `open_set` | Optional | Omit it or set disabled; enabled open-set is rejected |
 
+The compatibility-facing names `index_dir`, `fusion_weights`, and `fused_dim`
+remain part of config v2. Internally they configure the K/V gallery directory,
+the exact availability-aware QK channel weights, and the total channel embedding
+dimension. They do not imply a fused query vector or an attention mechanism.
+
 At least one channel must be required. A required channel that cannot produce
 evidence aborts enrollment or search. An optional channel records availability
 and contributes only when present for both query and template.
@@ -44,7 +49,7 @@ changing them requires a separate gallery or an explicit migration.
 | `landmark_onnx` | Keypoint and graph models with both manifests and explicit device |
 | `nose_print_onnx` | Detector, embedding, ROI policy, manifests, device, and optional mask bundle |
 
-The legacy `dinov2` and `appearance` type names are rejected by `IdentityEngine`; there is
+The unbound `dinov2` and `appearance` type names are rejected by `IdentityEngine`; there is
 no public opt-in for the unpinned Torch Hub loader. For DINOv2, only the exact
 `dinov2_local` schema is accepted. Its `model_dir`, `weight_intake_bundle`, and
 `preprocessor_intake_bundle` must refer to admitted local artifacts, and

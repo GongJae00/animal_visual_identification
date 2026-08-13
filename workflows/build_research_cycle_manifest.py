@@ -20,6 +20,13 @@ from identity_governance.research_cycle_admission import (
 )
 from identity_governance.role_exposure import RoleExposureLedger, RoleExposureReceipt
 
+_SOURCE_MANIFEST_LIMITS = {
+    "maximum_bytes": 536_870_912,
+    "maximum_nodes": 10_000_000,
+    "maximum_keys": 5_000_000,
+    "maximum_array_length": 1_000_000,
+}
+
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
@@ -61,7 +68,9 @@ def main() -> int:
     for dataset, path_text in args.source_manifest:
         if dataset in observed:
             raise ValueError(f"duplicate --source-manifest dataset: {dataset}")
-        document = read_strict_json_document(Path(path_text))
+        document = read_strict_json_document(
+            Path(path_text), **_SOURCE_MANIFEST_LIMITS
+        )
         observed[dataset] = document.canonical_payload_sha256
     if observed != declared:
         raise ValueError("source manifest content hashes differ from source admissions")

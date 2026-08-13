@@ -10,9 +10,10 @@ artifact hashes, internal receipts, or claims of final biometric performance.
 - Retrieval is closed-set candidate ranking. A returned top match is not an
   authenticated identity decision, and no-match or unknown-dog rejection is
   disabled in the canonical API.
-- No canine-trained checkpoint or benchmark result is bundled. The README
-  provides a receipt-bound local DINOv2 configuration template, but it is not
-  runnable until the user supplies admitted model and preprocessing artifacts.
+- No canine-trained checkpoint or benchmark result is bundled. Receipt-bound
+  local DINOv2 requirements are documented in `CONFIGURATION.md`, but no runnable
+  retrieval configuration is shipped; the user must supply admitted model and
+  preprocessing artifacts.
 - Tests cover software contracts and synthetic behavior. They do not establish
   accuracy, fairness, robustness, longitudinal stability, or production safety.
 
@@ -35,6 +36,10 @@ artifact hashes, internal receipts, or claims of final biometric performance.
   embeddings. Its positive publisher-panel result is same-track, and a frozen
   SiBeTan substitution did not improve Rank-1. It is not an admitted runtime
   channel or evidence of physical nose-ridge topology.
+- The Full128 successor family is an offline retrospective comparison. B5-SPATIAL
+  had a positive DEV point difference from B3 in three seeds, but the
+  precommitted paired-interval promotion gate returned `NO_GO`. Neither candidate
+  is connected to `IdentityEngine`.
 
 ## Calibration And Evaluation
 
@@ -45,11 +50,19 @@ artifact hashes, internal receipts, or claims of final biometric performance.
   low-light, motion-blur, seasonal, or long-term stability claim.
 - Dataset identity leakage, near duplicates, sequence correlation, and crop
   context remain protocol risks that each evaluation must control explicitly.
+- Full128 MPDD K1/K3/K5 cohorts are unavailable in the authoritative successor
+  evaluation panel because required governed materialization is incomplete. The
+  available DogFace cohorts are exposed diagnostics, not an independent final
+  cohort.
+- Full128 uniform, channel, and spatial B5 variants do not establish robustness.
+  Mask perturbation and background perturbation were not assessed.
 
 ## Scale And Operations
 
 - Candidate scoring is exact over stored templates and has not been validated
   as a large-gallery, low-latency service.
+- Full128 successor latency, throughput, memory, power, and on-device behavior
+  were not assessed because no target device or runtime artifact was specified.
 - A gallery permits one POSIX-locked writer. There is no supported distributed
   writer, transaction service, replication protocol, backup workflow, or online
   migration service.

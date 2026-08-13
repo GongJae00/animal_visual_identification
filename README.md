@@ -1,8 +1,8 @@
 # Canine Video Identity
 
-강아지의 Appearance, Face, Nose evidence를 연구하고, 검증된 crop-level identity retrieval runtime을 제공하는 프로젝트입니다. 공개 runtime은 영상 전체 시스템이 아니라 호출자가 제공한 crop을 등록하고 local gallery에서 closed-set 후보를 찾는 범위로 제한됩니다.
+강아지의 Appearance, Face, Nose evidence를 연구하고, contract-tested crop-level identity retrieval runtime을 제공하는 프로젝트입니다. 공개 runtime은 영상 전체 시스템이 아니라 호출자가 제공한 crop을 등록하고 local gallery에서 closed-set 후보를 찾는 범위로 제한됩니다.
 
-## 빠른 시작
+## 설치와 API 형태
 
 Linux, Python 3.12, [`uv`](https://docs.astral.sh/uv/)가 필요합니다. CPU와 CUDA lane을 함께 설치하지 마십시오.
 
@@ -30,7 +30,7 @@ matches: list[Match] = engine.search(
 engine.close()
 ```
 
-각 channel에는 사용자가 별도로 준비하고 검증한 local model, preprocessing manifest, receipt가 필요합니다. 저장소는 identity model이나 dataset을 자동으로 내려받지 않습니다. `cvi.*` 문자열은 기존 artifact bytes와 gallery 호환성을 위해 유지하는 versioned schema identifier이며 Python package 이름이 아닙니다.
+이 예제는 API 형태를 보여줍니다. 저장소에는 실행 가능한 retrieval config나 identity model이 포함되지 않습니다. Channel별 요구 artifact는 [Configuration](docs/CONFIGURATION.md)을 따르며, dataset과 weight는 자동으로 내려받지 않습니다. `cvi.*` 문자열은 기존 artifact bytes와 gallery 호환성을 위해 유지하는 versioned schema identifier이며 Python package 이름이 아닙니다.
 
 ## 공개 Runtime 범위
 
@@ -46,9 +46,9 @@ Detection, tracking, temporal aggregation, open-set rejection, service deploymen
 
 ## 연구 경로
 
-연구 코드는 `data_pipeline/`, `localization/`, `identity_methods/`, `representation_learning/`, `evidence_fusion/`, `evaluation/`, `experiments/`로 분리되어 있습니다. 실행 정의는 `workflows/`, 주요 tracked config는 각 기능 package와 `experiments/configs/`에 있습니다. Raw data, checkpoint, gallery, cache, run result는 Git 밖에 둡니다.
+연구 코드는 `artifact_contracts/`, `data_pipeline/`, `identity_governance/`, `localization/`, `identity_methods/`, `representation_learning/`, `evidence_fusion/`, `identity_retrieval/`, `evaluation/`, `experiments/`로 분리되어 있습니다. 실행 정의는 `workflows/`, 주요 tracked config는 각 기능 package와 `experiments/configs/`에 있습니다. Raw data, checkpoint, gallery, cache, run result는 Git 밖에 둡니다.
 
-현재 확인된 trend와 해석 한계는 [연구 진행 요약](docs/RESEARCH_PROGRESS.md), 향후 admission 조건은 [Roadmap](docs/ROADMAP.md)을 참고하십시오. 기존 `LiteratureReview.md`는 사용자 작업을 보존하고 있으며 파일명과 최종 내용 범위는 별도 결정이 필요합니다.
+현재 확인된 trend와 해석 한계는 [연구 진행 요약](docs/RESEARCH_PROGRESS.md), 향후 admission 조건은 [Roadmap](docs/ROADMAP.md)을 참고하십시오.
 
 ## 개발 검증
 

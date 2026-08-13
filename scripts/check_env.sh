@@ -30,7 +30,7 @@ import importlib
 import os
 
 modules = (
-    "cvi",
+    "canine_identity",
     "faiss",
     "jsonschema",
     "numpy",
