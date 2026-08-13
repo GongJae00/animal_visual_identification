@@ -44,7 +44,10 @@ jobs:
         run: uv lock --check
 
       - name: Run portable test suite
-        run: uv run --no-sync pytest -m "not controlled_host"
+        run: |
+          uv run --no-sync pytest tests/test_full128_training.py
+          uv run --no-sync pytest -m "not controlled_host" \
+            --ignore=tests/test_full128_training.py
 
       - name: Check source diff and compile Python
         run: |
