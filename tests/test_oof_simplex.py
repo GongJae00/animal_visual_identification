@@ -1,18 +1,17 @@
 from __future__ import annotations
 
-from dataclasses import FrozenInstanceError
 import json
+from dataclasses import FrozenInstanceError
 
 import numpy as np
 import pytest
 
-from evidence_fusion import (
+from evidence_fusion.oof_simplex import (
     OOF_SIMPLEX_SCHEMA_VERSION,
     OOFSimplexConfig,
     OOFSimplexError,
     fit_oof_simplex,
 )
-
 
 LABELS = np.asarray([0, 1, 0, 1, 0, 1, 0, 1])
 FOLDS = np.asarray([0, 0, 1, 1, 0, 0, 1, 1])

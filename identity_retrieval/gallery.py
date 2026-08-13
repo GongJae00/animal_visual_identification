@@ -4,6 +4,7 @@ import fcntl
 import hashlib
 import json
 import os
+import shutil
 import stat
 import zipfile
 from copy import deepcopy
@@ -15,17 +16,35 @@ from uuid import UUID, uuid4
 import faiss
 import numpy as np
 
-from identity_retrieval.index.base import AbstractIdentityIndex
+from foundation.protected_publication import rename_directory_noreplace
+from identity_retrieval.qkv import (
+    FULL128_CHANNEL,
+    SCORER_ALGORITHM,
+    AvailableIntersectionScorer,
+    EnrollmentRank,
+    EvidenceChannelSpec,
+    GalleryKey,
+    GalleryValue,
+    IdentityEvidenceKind,
+    QueryExclusions,
+    RetrievalQuery,
+    ScoredGalleryValue,
+)
 
-
-_MANIFEST_SCHEMA = "cvi.gallery_manifest.v4"
-_TEMPLATE_SCHEMA = "cvi.gallery_template.v1"
+_MANIFEST_SCHEMA_V4 = "cvi.gallery_manifest.v4"
+_MANIFEST_SCHEMA_V5 = "cvi.gallery_manifest.v5"
+_TEMPLATE_SCHEMA_V1 = "cvi.gallery_template.v1"
+_TEMPLATE_SCHEMA_V2 = "cvi.gallery_template.v2"
+_TEMPLATE_ID_DOMAIN = _TEMPLATE_SCHEMA_V1
 _IDENTITY_AGGREGATION = "max"
-_SCORER_ALGORITHM = "exact_available_intersection_weighted_cosine.v1"
+_IDENTITY_POLICY_SCHEMA = "cvi.gallery_identity_policy.v1"
+_REGISTERED_ONLY = "REGISTERED_ONLY"
+_SEARCH_BLOCK_ROWS = 65_536
 _MAXIMUM_MANIFEST_BYTES = 2 * 1024 * 1024
 _MAXIMUM_SIDECAR_JSON_BYTES = 64 * 1024 * 1024
 _MAXIMUM_METADATA_BYTES = 64 * 1024
 _MAXIMUM_IDEMPOTENCY_KEY_BYTES = _MAXIMUM_METADATA_BYTES
+_MAXIMUM_PROVENANCE_TEXT_BYTES = 4 * 1024
 _MAXIMUM_GALLERY_TEMPLATES = 1_000_000
 _MAXIMUM_BINARY_FILE_BYTES = 64 * 1024 * 1024 * 1024
 _BINARY_FORMAT_OVERHEAD_BYTES = 1024 * 1024
@@ -36,11 +55,78 @@ _RESERVED_METADATA_KEYS = {
 
 
 @dataclass(frozen=True, slots=True)
-class _Channel:
-    name: str
-    dimension: int
-    optional: bool
-    weight: float
+class IdentityRegistryPolicy:
+    """Fail-closed admission policy for registered-only gallery identities."""
+
+    registered_identity_ids: frozenset[str] | None = None
+    provisional_generated_identity_ids: frozenset[str] = frozenset()
+
+    def __post_init__(self) -> None:
+        registered = self.registered_identity_ids
+        if registered is not None and not isinstance(registered, frozenset):
+            registered = frozenset(registered)
+            object.__setattr__(self, "registered_identity_ids", registered)
+        provisional = self.provisional_generated_identity_ids
+        if not isinstance(provisional, frozenset):
+            provisional = frozenset(provisional)
+            object.__setattr__(self, "provisional_generated_identity_ids", provisional)
+        for values in (registered, provisional):
+            if values is not None and any(not _is_canonical_uuid5(value) for value in values):
+                raise ValueError("identity registry policy IDs must be canonical UUIDv5")
+        if registered is not None and registered & provisional:
+            raise ValueError("identity registry policy namespaces overlap")
+
+    @property
+    def descriptor(self) -> dict[str, str | None]:
+        digest: str | None = None
+        if self.registered_identity_ids is not None or self.provisional_generated_identity_ids:
+            payload = {
+                "registered": sorted(self.registered_identity_ids or ()),
+                "provisional_genid": sorted(self.provisional_generated_identity_ids),
+            }
+            digest = hashlib.sha256(
+                json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("ascii")
+            ).hexdigest()
+        return {
+            "schema_version": _IDENTITY_POLICY_SCHEMA,
+            "mode": _REGISTERED_ONLY,
+            "registry_sha256": digest,
+        }
+
+    def validate(self, identity_id: str, kind: IdentityEvidenceKind) -> None:
+        if kind is not IdentityEvidenceKind.REGISTERED:
+            raise ValueError("registered-only gallery rejects provisional GenID evidence")
+        if identity_id in self.provisional_generated_identity_ids:
+            raise ValueError("registered-only gallery rejects a registry-known provisional GenID")
+        if (
+            self.registered_identity_ids is not None
+            and identity_id not in self.registered_identity_ids
+        ):
+            raise ValueError("registered identity is absent from the configured registry")
+
+
+@dataclass(frozen=True, slots=True)
+class GalleryEnrollment:
+    embedding: np.ndarray | dict[str, np.ndarray]
+    registered_identity_id: str
+    breed: str = "unknown"
+    metadata: dict[str, Any] | None = None
+    idempotency_key: str | None = None
+    content_sha256: str | None = None
+    availability: dict[str, bool] | None = None
+    identity_evidence_kind: IdentityEvidenceKind = IdentityEvidenceKind.REGISTERED
+    enrollment_rank: EnrollmentRank | None = None
+    enrollment_view: str | None = None
+    duplicate_group_ids: tuple[str, ...] = ()
+
+
+def _publish_directory_no_replace(source: Path, destination: Path) -> None:
+    try:
+        rename_directory_noreplace(source, destination)
+    except FileExistsError as exc:
+        raise FileExistsError(
+            "bulk gallery build destination already exists"
+        ) from exc
 
 
 def _open_regular_file(
@@ -110,7 +196,7 @@ def _checked_size_sum(label: str, *values: int) -> int:
 def _binary_file_limits(
     template_count: int,
     required_dimension: int,
-    optional_channels: tuple[_Channel, ...],
+    optional_channels: tuple[EvidenceChannelSpec, ...],
 ) -> dict[str, int]:
     required_payload = _checked_size_product(
         "gallery required index",
@@ -151,7 +237,7 @@ def _binary_file_limits(
 
 def _optional_member_limit(
     template_count: int,
-    channel: _Channel,
+    channel: EvidenceChannelSpec,
     member_kind: str,
 ) -> int:
     if member_kind == "rows":
@@ -191,9 +277,9 @@ def _deflate_compressed_limit(uncompressed_limit: int) -> int:
 def _preflight_optional_vectors_npz(
     stream,
     template_count: int,
-    optional_channels: tuple[_Channel, ...],
+    optional_channels: tuple[EvidenceChannelSpec, ...],
 ) -> None:
-    expected: dict[str, tuple[_Channel, str]] = {}
+    expected: dict[str, tuple[EvidenceChannelSpec, str]] = {}
     member_limits: dict[str, int] = {}
     for channel_index, channel in enumerate(optional_channels):
         for member_kind in ("rows", "vectors"):
@@ -351,7 +437,7 @@ def _parse_strict_json_object(payload: bytes, label: str) -> dict[str, Any]:
     except (UnicodeDecodeError, json.JSONDecodeError) as exc:
         raise RuntimeError(f"{label} must be strict UTF-8 JSON") from exc
     if not isinstance(value, dict):
-        raise RuntimeError(f"{label} must be a JSON object")
+        raise RuntimeError(f"{label} must be a JSON object")  # noqa: TRY004
     return value
 
 
@@ -410,17 +496,17 @@ def _write_json_file(
         os.fsync(stream.fileno())
 
 
-class SpeciesFilteredIndex(AbstractIdentityIndex):
-    """Generation-published gallery with exact sparse-channel scoring."""
+class IdentityGallery:
+    """Generation-published K/V gallery with exact sparse-channel QK scoring."""
 
     def __init__(
         self,
-        base_index_dir: Path,
-        breed_mapping: dict[str, list[str]] | None = None,
+        gallery_directory: Path,
         dim: int = 640,
         embedding_contract: dict[str, Any] | None = None,
         *,
         read_only: bool = False,
+        registry_policy: IdentityRegistryPolicy | None = None,
     ) -> None:
         if not isinstance(dim, int) or isinstance(dim, bool) or dim <= 0:
             raise ValueError("gallery dimension must be a positive integer")
@@ -429,6 +515,7 @@ class SpeciesFilteredIndex(AbstractIdentityIndex):
             embedding_contract, dim
         )
         self._channels = _contract_channels(self._embedding_contract, dim)
+        self._scorer = AvailableIntersectionScorer(self._channels)
         self._required_channels = tuple(
             channel for channel in self._channels if not channel.optional
         )
@@ -438,8 +525,19 @@ class SpeciesFilteredIndex(AbstractIdentityIndex):
         if not self._required_channels:
             raise ValueError("gallery contract requires at least one required channel")
         self._required_dim = sum(channel.dimension for channel in self._required_channels)
-        self._scorer_hash = _scorer_hash(self._channels)
-        self._base_dir = base_index_dir
+        self._scorer_hash = self._scorer.scorer_hash
+        self._full128_fast_path = (
+            len(self._channels) == 1
+            and self._channels[0].name == FULL128_CHANNEL
+            and self._channels[0].dimension == 128
+            and not self._channels[0].optional
+        )
+        if registry_policy is None:
+            registry_policy = IdentityRegistryPolicy()
+        if not isinstance(registry_policy, IdentityRegistryPolicy):
+            raise TypeError("registry_policy must be an IdentityRegistryPolicy")
+        self._registry_policy = registry_policy
+        self._base_dir = gallery_directory
         if _path_entry_exists(self._base_dir) and self._base_dir.is_symlink():
             raise RuntimeError("gallery root must not be a symbolic link")
         self._base_dir.mkdir(parents=True, exist_ok=True)
@@ -451,7 +549,18 @@ class SpeciesFilteredIndex(AbstractIdentityIndex):
             channel.name: {} for channel in self._optional_channels
         }
         self._availability: dict[int, dict[str, bool]] = {}
-        self._breed_mapping = breed_mapping or {}
+        self._identity_kinds: dict[int, IdentityEvidenceKind] = {}
+        self._enrollment_ranks: dict[int, EnrollmentRank | None] = {}
+        self._enrollment_views: dict[int, str | None] = {}
+        self._duplicate_group_ids: dict[int, tuple[str, ...]] = {}
+        self._template_id_index: dict[str, int] = {}
+        self._content_sha256_index: dict[str, int] = {}
+        self._idempotency_key_index: dict[str, int] = {}
+        self._duplicate_group_index: dict[str, set[int]] = {}
+        self._identity_rows: dict[str, list[int]] = {}
+        self._identity_ordinals: dict[str, int] = {}
+        self._row_identity_ordinals: list[int] = []
+        self._loaded_manifest_schema: str | None = None
         self._read_only = read_only
         self._lock_stream = None
         if not read_only:
@@ -483,14 +592,14 @@ class SpeciesFilteredIndex(AbstractIdentityIndex):
 
         try:
             manifest_path = self._base_dir / "gallery_manifest.json"
-            legacy_paths = (
+            unversioned_paths = (
                 self._base_dir / "master.idx",
                 self._base_dir / "metadata.json",
                 self._base_dir / "breed_index.json",
             )
             if _path_entry_exists(manifest_path):
                 self._load_snapshot(manifest_path)
-            elif any(_path_entry_exists(path) for path in legacy_paths):
+            elif any(_path_entry_exists(path) for path in unversioned_paths):
                 raise RuntimeError(
                     "unversioned gallery files are not accepted; rebuild the gallery"
                 )
@@ -498,6 +607,7 @@ class SpeciesFilteredIndex(AbstractIdentityIndex):
                 if read_only:
                     raise RuntimeError("read-only gallery does not exist")
                 self._index = faiss.IndexFlatIP(self._required_dim)
+                self._rebuild_runtime_indexes()
         except Exception:
             self.close()
             raise
@@ -512,15 +622,24 @@ class SpeciesFilteredIndex(AbstractIdentityIndex):
             "gallery manifest",
             maximum_bytes=_MAXIMUM_MANIFEST_BYTES,
         )
-        required = {
+        common = {
             "schema_version", "dimension", "required_dimension",
             "embedding_contract", "count", "template_count", "identity_count",
             "identity_aggregation", "scorer", "files",
         }
-        if set(manifest) != required or manifest["schema_version"] != _MANIFEST_SCHEMA:
+        schema = manifest.get("schema_version")
+        expected = common if schema == _MANIFEST_SCHEMA_V4 else common | {"identity_policy"}
+        if schema not in {_MANIFEST_SCHEMA_V4, _MANIFEST_SCHEMA_V5} or set(manifest) != expected:
             raise RuntimeError(
-                "gallery is not manifest v4; migrate v3 into a new output directory"
+                "gallery is not an exact supported v4/v5 manifest; migrate v3 into "
+                "a new output directory"
             )
+        if (
+            schema == _MANIFEST_SCHEMA_V5
+            and manifest["identity_policy"] != self._registry_policy.descriptor
+        ):
+            raise RuntimeError("gallery identity registry policy differs from runtime")
+        self._loaded_manifest_schema = schema
         for field in ("count", "template_count", "identity_count"):
             if not _is_cardinality(
                 manifest[field], maximum=_MAXIMUM_GALLERY_TEMPLATES
@@ -541,7 +660,7 @@ class SpeciesFilteredIndex(AbstractIdentityIndex):
         if manifest["embedding_contract"] != self._embedding_contract:
             raise RuntimeError("gallery embedding contract differs from runtime")
         if manifest["scorer"] != {
-            "algorithm": _SCORER_ALGORITHM,
+            "algorithm": SCORER_ALGORITHM,
             "hash": self._scorer_hash,
             "exact": True,
         }:
@@ -611,7 +730,57 @@ class SpeciesFilteredIndex(AbstractIdentityIndex):
             self._index = faiss.read_index(str(descriptor_path))
         if int(self._index.ntotal) != template_count:
             raise RuntimeError("gallery index and manifest cardinality are inconsistent")
-        self._metadata = {int(key): value for key, value in metadata.items()}
+        self._metadata = {}
+        self._identity_kinds = {}
+        self._enrollment_ranks = {}
+        self._enrollment_views = {}
+        self._duplicate_group_ids = {}
+        for key, value in metadata.items():
+            row = int(key)
+            if not isinstance(value, dict):
+                raise RuntimeError(  # noqa: TRY004
+                    "gallery metadata row has an invalid schema"
+                )
+            if schema == _MANIFEST_SCHEMA_V4:
+                self._metadata[row] = value
+                self._identity_kinds[row] = IdentityEvidenceKind.REGISTERED
+                self._enrollment_ranks[row] = None
+                self._enrollment_views[row] = None
+                self._duplicate_group_ids[row] = ()
+                continue
+            v5_fields = {
+                "registered_dog_id", "template_id", "content_sha256",
+                "idempotency_key", "template_schema", "metadata",
+                "identity_evidence_kind", "enrollment_rank", "enrollment_view",
+                "duplicate_group_ids",
+            }
+            if set(value) != v5_fields:
+                raise RuntimeError("gallery v5 metadata row has an invalid schema")
+            try:
+                kind = IdentityEvidenceKind(value["identity_evidence_kind"])
+                rank = (
+                    None
+                    if value["enrollment_rank"] is None
+                    else EnrollmentRank(value["enrollment_rank"])
+                )
+            except (TypeError, ValueError) as exc:
+                raise RuntimeError("gallery v5 enrollment provenance is invalid") from exc
+            duplicate_group_ids = value["duplicate_group_ids"]
+            if not isinstance(duplicate_group_ids, list):
+                raise RuntimeError(  # noqa: TRY004
+                    "gallery v5 duplicate-group provenance must be an array"
+                )
+            self._metadata[row] = {
+                name: value[name]
+                for name in (
+                    "registered_dog_id", "template_id", "content_sha256",
+                    "idempotency_key", "template_schema", "metadata",
+                )
+            }
+            self._identity_kinds[row] = kind
+            self._enrollment_ranks[row] = rank
+            self._enrollment_views[row] = value["enrollment_view"]
+            self._duplicate_group_ids[row] = tuple(duplicate_group_ids)
         self._breed_index = {int(key): value for key, value in breeds.items()}
         self._availability = {
             int(key): value for key, value in availability.items()
@@ -662,6 +831,7 @@ class SpeciesFilteredIndex(AbstractIdentityIndex):
             expected_template_count=manifest["template_count"],
             expected_identity_count=manifest["identity_count"],
         )
+        self._rebuild_runtime_indexes()
 
     def _validate_state(
         self,
@@ -679,6 +849,10 @@ class SpeciesFilteredIndex(AbstractIdentityIndex):
             set(self._metadata) != expected_keys
             or set(self._breed_index) != expected_keys
             or set(self._availability) != expected_keys
+            or set(self._identity_kinds) != expected_keys
+            or set(self._enrollment_ranks) != expected_keys
+            or set(self._enrollment_views) != expected_keys
+            or set(self._duplicate_group_ids) != expected_keys
         ):
             raise RuntimeError("gallery index and sidecar cardinality are inconsistent")
         channel_names = {channel.name for channel in self._channels}
@@ -700,7 +874,9 @@ class SpeciesFilteredIndex(AbstractIdentityIndex):
                     "gallery contains a non-canonical UUIDv5 registered_dog_id"
                 )
             if not isinstance(meta["metadata"], dict):
-                raise RuntimeError("gallery identity metadata must be an object")
+                raise RuntimeError(  # noqa: TRY004
+                    "gallery identity metadata must be an object"
+                )
             try:
                 _canonical_metadata(meta["metadata"])
             except ValueError as exc:
@@ -708,8 +884,15 @@ class SpeciesFilteredIndex(AbstractIdentityIndex):
             template_id = meta["template_id"]
             content_sha256 = meta["content_sha256"]
             idempotency_key = meta["idempotency_key"]
-            if meta["template_schema"] != _TEMPLATE_SCHEMA:
+            if meta["template_schema"] not in {
+                _TEMPLATE_SCHEMA_V1, _TEMPLATE_SCHEMA_V2
+            }:
                 raise RuntimeError("gallery template metadata has an invalid schema")
+            if (
+                self._loaded_manifest_schema == _MANIFEST_SCHEMA_V4
+                and meta["template_schema"] != _TEMPLATE_SCHEMA_V1
+            ):
+                raise RuntimeError("gallery v4 contains a non-v1 template schema")
             if not _is_sha256(content_sha256):
                 raise RuntimeError("gallery contains an invalid template content hash")
             if template_id != _template_id(content_sha256):
@@ -723,7 +906,45 @@ class SpeciesFilteredIndex(AbstractIdentityIndex):
             if set(meta["metadata"]) & _RESERVED_METADATA_KEYS:
                 raise RuntimeError("gallery user metadata contains reserved fields")
             if not isinstance(self._breed_index[idx], str):
-                raise RuntimeError("gallery breed metadata must be a string")
+                raise RuntimeError(  # noqa: TRY004
+                    "gallery breed metadata must be a string"
+                )
+            kind = self._identity_kinds[idx]
+            if not isinstance(kind, IdentityEvidenceKind):
+                raise RuntimeError(  # noqa: TRY004
+                    "gallery identity evidence kind is invalid"
+                )
+            try:
+                self._registry_policy.validate(registered_id, kind)
+            except ValueError as exc:
+                raise RuntimeError("gallery identity violates its registry policy") from exc
+            rank = self._enrollment_ranks[idx]
+            view = self._enrollment_views[idx]
+            if (rank is None) != (view is None) or (
+                rank is not None and not isinstance(rank, EnrollmentRank)
+            ) or (
+                view is not None
+                and not _is_bounded_utf8_text(
+                    view,
+                    maximum_bytes=_MAXIMUM_PROVENANCE_TEXT_BYTES,
+                    allow_empty=False,
+                )
+            ):
+                raise RuntimeError("gallery enrollment rank/view provenance is invalid")
+            duplicate_group_ids = self._duplicate_group_ids[idx]
+            if (
+                not isinstance(duplicate_group_ids, tuple)
+                or tuple(sorted(set(duplicate_group_ids))) != duplicate_group_ids
+                or any(
+                    not _is_bounded_utf8_text(
+                        value,
+                        maximum_bytes=_MAXIMUM_PROVENANCE_TEXT_BYTES,
+                        allow_empty=False,
+                    )
+                    for value in duplicate_group_ids
+                )
+            ):
+                raise RuntimeError("gallery duplicate-group provenance is invalid")
             row_availability = self._availability[idx]
             if (
                 not isinstance(row_availability, dict)
@@ -766,6 +987,30 @@ class SpeciesFilteredIndex(AbstractIdentityIndex):
         if expected_identity_count is not None and expected_identity_count != identity_count:
             raise RuntimeError("gallery manifest identity count is inconsistent")
 
+    def _rebuild_runtime_indexes(self) -> None:
+        self._template_id_index = {}
+        self._content_sha256_index = {}
+        self._idempotency_key_index = {}
+        self._duplicate_group_index = {}
+        self._identity_rows = {}
+        self._identity_ordinals = {}
+        row_ordinals: list[int] = []
+        for row in range(int(self._index.ntotal)):
+            metadata = self._metadata[row]
+            self._template_id_index[metadata["template_id"]] = row
+            self._content_sha256_index[metadata["content_sha256"]] = row
+            self._idempotency_key_index[metadata["idempotency_key"]] = row
+            identity_id = metadata["registered_dog_id"]
+            if identity_id not in self._identity_ordinals:
+                self._identity_ordinals[identity_id] = len(self._identity_ordinals)
+                self._identity_rows[identity_id] = []
+            ordinal = self._identity_ordinals[identity_id]
+            self._identity_rows[identity_id].append(row)
+            row_ordinals.append(ordinal)
+            for duplicate_group_id in self._duplicate_group_ids[row]:
+                self._duplicate_group_index.setdefault(duplicate_group_id, set()).add(row)
+        self._row_identity_ordinals = row_ordinals
+
     def enroll(
         self,
         embedding: np.ndarray | dict[str, np.ndarray],
@@ -773,10 +1018,20 @@ class SpeciesFilteredIndex(AbstractIdentityIndex):
         metadata: dict | None = None,
         idempotency_key: str | None = None,
         content_sha256: str | None = None,
+        *,
+        availability: dict[str, bool] | None = None,
+        identity_evidence_kind: IdentityEvidenceKind = IdentityEvidenceKind.REGISTERED,
+        enrollment_rank: EnrollmentRank | None = None,
+        enrollment_view: str | None = None,
+        duplicate_group_ids: tuple[str, ...] = (),
     ) -> int:
         return self.enroll_with_breed(
             embedding, registered_dog_id, "unknown", metadata, idempotency_key,
-            content_sha256,
+            content_sha256, availability=availability,
+            identity_evidence_kind=identity_evidence_kind,
+            enrollment_rank=enrollment_rank,
+            enrollment_view=enrollment_view,
+            duplicate_group_ids=duplicate_group_ids,
         )
 
     def enroll_with_breed(
@@ -787,16 +1042,47 @@ class SpeciesFilteredIndex(AbstractIdentityIndex):
         metadata: dict | None = None,
         idempotency_key: str | None = None,
         content_sha256: str | None = None,
+        *,
+        availability: dict[str, bool] | None = None,
+        identity_evidence_kind: IdentityEvidenceKind = IdentityEvidenceKind.REGISTERED,
+        enrollment_rank: EnrollmentRank | None = None,
+        enrollment_view: str | None = None,
+        duplicate_group_ids: tuple[str, ...] = (),
     ) -> int:
         if not _is_canonical_uuid5(dog_id):
             raise ValueError(
                 "registered_dog_id must be a canonical lowercase UUIDv5 string"
             )
         self._ensure_writer()
+        if not isinstance(identity_evidence_kind, IdentityEvidenceKind):
+            raise TypeError("identity_evidence_kind must be an IdentityEvidenceKind")
+        self._registry_policy.validate(dog_id, identity_evidence_kind)
+        if (enrollment_rank is None) != (enrollment_view is None):
+            raise ValueError("enrollment rank and view must be provided together")
+        if enrollment_rank is not None and not isinstance(enrollment_rank, EnrollmentRank):
+            raise TypeError("enrollment_rank must be K1, K3, or K5")
+        if enrollment_view is not None and not _is_bounded_utf8_text(
+            enrollment_view,
+            maximum_bytes=_MAXIMUM_PROVENANCE_TEXT_BYTES,
+            allow_empty=False,
+        ):
+            raise ValueError("enrollment_view must be bounded non-empty UTF-8 text")
+        if not isinstance(duplicate_group_ids, tuple):
+            duplicate_group_ids = tuple(duplicate_group_ids)
+        duplicate_group_ids = tuple(sorted(set(duplicate_group_ids)))
+        if any(
+            not _is_bounded_utf8_text(
+                value,
+                maximum_bytes=_MAXIMUM_PROVENANCE_TEXT_BYTES,
+                allow_empty=False,
+            )
+            for value in duplicate_group_ids
+        ):
+            raise ValueError("duplicate_group_ids must contain bounded non-empty text")
         if int(self._index.ntotal) >= _MAXIMUM_GALLERY_TEMPLATES:
             raise RuntimeError("gallery template cardinality limit has been reached")
         if not isinstance(breed, str):
-            raise ValueError("breed must be a string")
+            raise TypeError("breed must be a string")
         canonical_metadata = _canonical_metadata(metadata)
         vectors = self._canonical_vectors(embedding)
         if content_sha256 is None:
@@ -819,66 +1105,210 @@ class SpeciesFilteredIndex(AbstractIdentityIndex):
         ):
             raise ValueError("idempotency_key must be a bounded non-empty UTF-8 string")
 
-        availability = {
+        derived_availability = {
             channel.name: channel.name in vectors for channel in self._channels
         }
-        for existing_idx, existing in self._metadata.items():
-            same_template = (
-                existing["template_id"] == template_id
-                and existing["content_sha256"] == content_sha256
-            )
-            if same_template and existing["registered_dog_id"] != dog_id:
+        if availability is not None and availability != derived_availability:
+            raise ValueError("gallery-key availability differs from its vectors")
+        availability = derived_availability
+        existing_content_row = self._content_sha256_index.get(content_sha256)
+        existing_idempotency_row = self._idempotency_key_index.get(idempotency_key)
+        if existing_content_row is not None:
+            existing = self._metadata[existing_content_row]
+            if existing["registered_dog_id"] != dog_id:
                 raise ValueError(
                     f"template/content {template_id!r} is already bound to different "
                     f"registered identity {existing['registered_dog_id']!r}"
                 )
+            exact_retry = (
+                existing["idempotency_key"] == idempotency_key
+                and existing["metadata"] == canonical_metadata
+                and self._breed_index[existing_content_row] == breed
+                and self._availability[existing_content_row] == availability
+                and self._identity_kinds[existing_content_row] is identity_evidence_kind
+                and self._enrollment_ranks[existing_content_row] is enrollment_rank
+                and self._enrollment_views[existing_content_row] == enrollment_view
+                and self._duplicate_group_ids[existing_content_row] == duplicate_group_ids
+                and self._vectors_equal(existing_content_row, vectors)
+            )
+            if exact_retry:
+                return int(existing_content_row)
             if existing["idempotency_key"] == idempotency_key:
-                exact_retry = (
-                    existing["registered_dog_id"] == dog_id
-                    and same_template
-                    and existing["metadata"] == canonical_metadata
-                    and self._breed_index[existing_idx] == breed
-                    and self._availability[existing_idx] == availability
-                    and self._vectors_equal(existing_idx, vectors)
-                )
-                if exact_retry:
-                    return int(existing_idx)
                 raise ValueError(
                     f"idempotency key {idempotency_key!r} conflicts with an existing enrollment"
                 )
-            if same_template:
+            else:
                 raise ValueError(
                     f"template/content {template_id!r} is already enrolled with different "
                     "immutable evidence or metadata"
                 )
-            if existing["content_sha256"] == content_sha256:
-                raise ValueError(
-                    "template content is already bound to registered identity "
-                    f"{existing['registered_dog_id']!r}"
-                )
+        if existing_idempotency_row is not None:
+            raise ValueError(
+                f"idempotency key {idempotency_key!r} conflicts with an existing enrollment"
+            )
 
         idx = int(self._index.ntotal)
+        key = GalleryKey(idx, vectors, availability)
+        value = GalleryValue(
+            template_row=idx,
+            registered_identity_id=dog_id,
+            template_id=template_id,
+            content_sha256=content_sha256,
+            idempotency_key=idempotency_key,
+            template_schema=(
+                _TEMPLATE_SCHEMA_V2
+                if enrollment_rank is not None or duplicate_group_ids
+                else _TEMPLATE_SCHEMA_V1
+            ),
+            breed=breed,
+            metadata=canonical_metadata,
+            identity_evidence_kind=identity_evidence_kind,
+            enrollment_rank=enrollment_rank,
+            enrollment_view=enrollment_view,
+            duplicate_group_ids=duplicate_group_ids,
+        )
         required = np.concatenate(
-            [vectors[channel.name] for channel in self._required_channels]
+            [key.vectors[channel.name] for channel in self._required_channels]
         ).astype(np.float32, copy=False)
         self._index.add(required.reshape(1, -1))
         for channel in self._optional_channels:
-            if channel.name in vectors:
-                self._optional_vectors[channel.name][idx] = vectors[channel.name]
-        self._availability[idx] = availability
+            if channel.name in key.vectors:
+                self._optional_vectors[channel.name][idx] = key.vectors[channel.name]
+        self._availability[idx] = dict(key.availability)
         self._metadata[idx] = {
-            "registered_dog_id": dog_id,
-            "template_id": template_id,
-            "content_sha256": content_sha256,
-            "idempotency_key": idempotency_key,
-            "template_schema": _TEMPLATE_SCHEMA,
-            "metadata": canonical_metadata,
+            "registered_dog_id": value.registered_identity_id,
+            "template_id": value.template_id,
+            "content_sha256": value.content_sha256,
+            "idempotency_key": value.idempotency_key,
+            "template_schema": value.template_schema,
+            "metadata": value.metadata,
         }
-        self._breed_index[idx] = breed
+        self._breed_index[idx] = value.breed
+        self._identity_kinds[idx] = value.identity_evidence_kind
+        self._enrollment_ranks[idx] = value.enrollment_rank
+        self._enrollment_views[idx] = value.enrollment_view
+        self._duplicate_group_ids[idx] = value.duplicate_group_ids
+        self._template_id_index[value.template_id] = idx
+        self._content_sha256_index[value.content_sha256] = idx
+        self._idempotency_key_index[value.idempotency_key] = idx
+        identity_id = value.registered_identity_id
+        if identity_id not in self._identity_ordinals:
+            self._identity_ordinals[identity_id] = len(self._identity_ordinals)
+            self._identity_rows[identity_id] = []
+        self._identity_rows[identity_id].append(idx)
+        self._row_identity_ordinals.append(self._identity_ordinals[identity_id])
+        for duplicate_group_id in value.duplicate_group_ids:
+            self._duplicate_group_index.setdefault(duplicate_group_id, set()).add(idx)
         return idx
 
+    def enroll_many(self, enrollments: list[GalleryEnrollment]) -> list[int]:
+        """Enroll a deterministic bulk without publishing intermediate rows."""
+
+        self._ensure_writer()
+        if not isinstance(enrollments, list) or any(
+            not isinstance(value, GalleryEnrollment) for value in enrollments
+        ):
+            raise TypeError("enrollments must be a list of GalleryEnrollment values")
+        ordered: list[tuple[tuple[str, str, str, str], GalleryEnrollment]] = []
+        for enrollment in enrollments:
+            vectors = self._canonical_vectors(enrollment.embedding)
+            content_sha256 = enrollment.content_sha256
+            if content_sha256 is None:
+                digest = hashlib.sha256()
+                for channel in self._channels:
+                    digest.update(channel.name.encode("utf-8"))
+                    digest.update(b"\0")
+                    if channel.name in vectors:
+                        digest.update(
+                            vectors[channel.name].astype("<f4", copy=False).tobytes()
+                        )
+                content_sha256 = digest.hexdigest()
+            ordered.append((
+                (
+                    enrollment.registered_identity_id,
+                    enrollment.enrollment_rank.value
+                    if isinstance(enrollment.enrollment_rank, EnrollmentRank)
+                    else "",
+                    enrollment.enrollment_view or "",
+                    content_sha256,
+                ),
+                enrollment,
+            ))
+        rows: list[int] = []
+        for _, enrollment in sorted(ordered, key=lambda item: item[0]):
+            rows.append(self.enroll_with_breed(
+                enrollment.embedding,
+                enrollment.registered_identity_id,
+                enrollment.breed,
+                enrollment.metadata,
+                enrollment.idempotency_key,
+                enrollment.content_sha256,
+                availability=enrollment.availability,
+                identity_evidence_kind=enrollment.identity_evidence_kind,
+                enrollment_rank=enrollment.enrollment_rank,
+                enrollment_view=enrollment.enrollment_view,
+                duplicate_group_ids=enrollment.duplicate_group_ids,
+            ))
+        return rows
+
+    @classmethod
+    def build(
+        cls,
+        gallery_directory: Path,
+        enrollments: list[GalleryEnrollment],
+        dim: int = 640,
+        embedding_contract: dict[str, Any] | None = None,
+        *,
+        registry_policy: IdentityRegistryPolicy | None = None,
+    ) -> IdentityGallery:
+        """Build and atomically publish one immutable content-addressed generation."""
+
+        destination = Path(os.path.abspath(gallery_directory))
+        parent = destination.parent
+        if not parent.is_dir() or parent.is_symlink():
+            raise RuntimeError("bulk gallery build parent must be a non-symlink directory")
+        if _path_entry_exists(destination):
+            raise FileExistsError("bulk gallery build destination already exists")
+        staging = parent / f".{destination.name}.build-{uuid4().hex}"
+        gallery: IdentityGallery | None = None
+        published = False
+        try:
+            gallery = cls(
+                staging,
+                dim=dim,
+                embedding_contract=embedding_contract,
+                registry_policy=registry_policy,
+            )
+            gallery.enroll_many(enrollments)
+            gallery.save()
+            gallery.close()
+            _publish_directory_no_replace(staging, destination)
+            published = True
+            directory_fd = os.open(parent, os.O_RDONLY)
+            try:
+                os.fsync(directory_fd)
+            finally:
+                os.close(directory_fd)
+            return cls(
+                destination,
+                dim=dim,
+                embedding_contract=embedding_contract,
+                read_only=True,
+                registry_policy=registry_policy,
+            )
+        except Exception:
+            if gallery is not None:
+                gallery.close()
+            raise
+        finally:
+            if not published and _path_entry_exists(staging):
+                shutil.rmtree(staging)
+
     def _canonical_vectors(
-        self, embedding: np.ndarray | dict[str, np.ndarray]
+        self,
+        embedding: np.ndarray | dict[str, np.ndarray],
+        *,
+        normalize: bool = True,
     ) -> dict[str, np.ndarray]:
         if isinstance(embedding, np.ndarray):
             if len(self._channels) != 1:
@@ -911,16 +1341,20 @@ class SpeciesFilteredIndex(AbstractIdentityIndex):
             norm = float(np.linalg.norm(vector))
             if not np.isfinite(norm) or norm <= 1e-8:
                 raise ValueError(f"channel {name!r} must have non-zero finite norm")
-            vectors[name] = np.asarray(vector / norm, dtype=np.float32)
+            vectors[name] = (
+                np.asarray(vector / norm, dtype=np.float32)
+                if normalize
+                else vector.copy()
+            )
         return vectors
 
     def _vectors_equal(self, index: int, vectors: dict[str, np.ndarray]) -> bool:
-        existing = self._template_vectors(index)
+        existing = self._gallery_key(index).vectors
         return set(existing) == set(vectors) and all(
             np.array_equal(existing[name], vectors[name]) for name in existing
         )
 
-    def _template_vectors(self, index: int) -> dict[str, np.ndarray]:
+    def _gallery_key(self, index: int) -> GalleryKey:
         required = self._index.reconstruct(index)
         vectors: dict[str, np.ndarray] = {}
         offset = 0
@@ -931,123 +1365,303 @@ class SpeciesFilteredIndex(AbstractIdentityIndex):
             vector = self._optional_vectors[channel.name].get(index)
             if vector is not None:
                 vectors[channel.name] = vector
-        return vectors
+        return GalleryKey(index, vectors, dict(self._availability[index]))
+
+    def _gallery_value(self, index: int) -> GalleryValue:
+        metadata = self._metadata[index]
+        return GalleryValue(
+            template_row=index,
+            registered_identity_id=metadata["registered_dog_id"],
+            template_id=metadata["template_id"],
+            content_sha256=metadata["content_sha256"],
+            idempotency_key=metadata["idempotency_key"],
+            template_schema=metadata["template_schema"],
+            breed=self._breed_index[index],
+            metadata=metadata["metadata"],
+            identity_evidence_kind=self._identity_kinds[index],
+            enrollment_rank=self._enrollment_ranks[index],
+            enrollment_view=self._enrollment_views[index],
+            duplicate_group_ids=self._duplicate_group_ids[index],
+        )
+
+    def prepare_query(
+        self,
+        vectors: np.ndarray | dict[str, np.ndarray],
+        availability: dict[str, bool] | None = None,
+        exclusions: QueryExclusions | None = None,
+    ) -> RetrievalQuery:
+        canonical = self._canonical_vectors(vectors, normalize=False)
+        derived = {
+            channel.name: channel.name in canonical for channel in self._channels
+        }
+        if availability is not None and availability != derived:
+            raise ValueError("query availability differs from its vectors")
+        return RetrievalQuery(canonical, derived, exclusions or QueryExclusions())
+
+    def _validated_query(
+        self, query: np.ndarray | dict[str, np.ndarray] | RetrievalQuery
+    ) -> RetrievalQuery:
+        if not isinstance(query, RetrievalQuery):
+            return self.prepare_query(query)
+        expected_names = {channel.name for channel in self._channels}
+        if set(query.availability) != expected_names:
+            raise ValueError("query availability differs from gallery channels")
+        missing_required = {
+            channel.name for channel in self._required_channels
+        } - set(query.vectors)
+        if missing_required:
+            raise ValueError(
+                f"required embedding channels are missing: {sorted(missing_required)}"
+            )
+        dimensions = {channel.name: channel.dimension for channel in self._channels}
+        for name, vector in query.vectors.items():
+            if name not in dimensions or vector.shape != (dimensions[name],):
+                raise ValueError(f"query channel {name!r} dimension differs")
+        return query
 
     def search_filtered(
         self,
-        query: np.ndarray | dict[str, np.ndarray],
+        query: np.ndarray | dict[str, np.ndarray] | RetrievalQuery,
         allowed_breeds: list[str] | None = None,
         top_k: int = 5,
+        *,
+        exclusions: QueryExclusions | None = None,
     ) -> list[tuple[int, float, dict]]:
         if isinstance(top_k, bool) or not isinstance(top_k, int) or top_k <= 0:
             raise ValueError("top_k must be a positive integer")
         if self._index.ntotal == 0:
             return []
-        vectors = self._canonical_vectors(query)
-        breed_set = set(allowed_breeds or [])
-        best_by_identity: dict[str, tuple[int, float, dict]] = {}
-        for idx in range(int(self._index.ntotal)):
-            if breed_set and self._breed_index[idx] not in breed_set:
-                continue
-            candidate = self._score_template(vectors, idx)
-            meta = self._metadata[idx]
-            registered_id = meta["registered_dog_id"]
-            row = (idx, candidate[0], candidate[1])
-            current = best_by_identity.get(registered_id)
-            if current is None or row[1] > current[1] or (
-                row[1] == current[1]
-                and row[2]["template_id"] < current[2]["template_id"]
-            ):
-                best_by_identity[registered_id] = row
-        aggregated = sorted(
-            best_by_identity.values(),
-            key=lambda item: (-item[1], item[2]["registered_dog_id"]),
-        )[:top_k]
-        return [(idx, score, deepcopy(meta)) for idx, score, meta in aggregated]
+        prepared = self._query_with_exclusions(query, exclusions)
+        eligible = self._eligible_rows(prepared.exclusions, allowed_breeds)
+        scores = self._all_template_scores(prepared, eligible)
+        return [
+            self._result_tuple(prepared, candidate)
+            for candidate in self._ranked_candidates(prepared, scores, top_k)
+        ]
 
     def search(
-        self, query: np.ndarray | dict[str, np.ndarray], top_k: int = 5
+        self,
+        query: np.ndarray | dict[str, np.ndarray] | RetrievalQuery,
+        top_k: int = 5,
+        *,
+        exclusions: QueryExclusions | None = None,
     ) -> list[tuple[int, float, dict]]:
-        return self.search_filtered(query, None, top_k)
+        return self.search_filtered(query, None, top_k, exclusions=exclusions)
+
+    def rank_of_identity(
+        self,
+        query: np.ndarray | dict[str, np.ndarray] | RetrievalQuery,
+        registered_dog_id: str,
+        *,
+        exclusions: QueryExclusions | None = None,
+    ) -> int | None:
+        """Return one identity's exact rank without materializing search results."""
+
+        if not _is_canonical_uuid5(registered_dog_id):
+            raise ValueError("registered_dog_id must be a canonical lowercase UUIDv5 string")
+        target_ordinal = self._identity_ordinals.get(registered_dog_id)
+        if target_ordinal is None or self._index.ntotal == 0:
+            return None
+        prepared = self._query_with_exclusions(query, exclusions)
+        eligible = self._eligible_rows(prepared.exclusions, None)
+        scores = self._all_template_scores(prepared, eligible)
+        identity_scores = np.full(
+            len(self._identity_ordinals), -np.inf, dtype=scores.dtype
+        )
+        np.maximum.at(
+            identity_scores,
+            np.asarray(self._row_identity_ordinals, dtype=np.int64),
+            scores,
+        )
+        target_score = identity_scores[target_ordinal]
+        if not np.isfinite(target_score):
+            return None
+        identity_ids = np.empty(len(self._identity_ordinals), dtype=object)
+        for identity_id, ordinal in self._identity_ordinals.items():
+            identity_ids[ordinal] = identity_id
+        precedes_tied_target = (identity_scores == target_score) & (
+            identity_ids < registered_dog_id
+        )
+        return 1 + int(
+            np.count_nonzero(identity_scores > target_score)
+            + np.count_nonzero(precedes_tied_target)
+        )
 
     def explain_identity(
         self,
-        query: np.ndarray | dict[str, np.ndarray],
+        query: np.ndarray | dict[str, np.ndarray] | RetrievalQuery,
         registered_dog_id: str,
+        *,
+        exclusions: QueryExclusions | None = None,
     ) -> tuple[int, float, dict] | None:
-        vectors = self._canonical_vectors(query)
-        best: tuple[int, float, dict] | None = None
-        for idx in range(int(self._index.ntotal)):
-            if self._metadata[idx]["registered_dog_id"] != registered_dog_id:
-                continue
-            score, meta = self._score_template(vectors, idx)
-            row = (idx, score, meta)
-            if best is None or score > best[1] or (
-                score == best[1]
-                and meta["template_id"] < best[2]["template_id"]
-            ):
-                best = row
-        return None if best is None else (best[0], best[1], deepcopy(best[2]))
+        prepared = self._query_with_exclusions(query, exclusions)
+        rows = self._identity_rows.get(registered_dog_id)
+        if not rows:
+            return None
+        eligible = self._eligible_rows(prepared.exclusions, None)
+        scores = self._all_template_scores(prepared, eligible)
+        eligible_rows = [row for row in rows if np.isfinite(scores[row])]
+        if not eligible_rows:
+            return None
+        best_score = max(float(scores[row]) for row in eligible_rows)
+        winning_row = min(
+            (row for row in eligible_rows if float(scores[row]) == best_score),
+            key=lambda row: self._metadata[row]["template_id"],
+        )
+        return self._result_tuple(
+            prepared, self._scored_candidate(prepared, winning_row)
+        )
 
-    def _score_template(
-        self, query: dict[str, np.ndarray], index: int
-    ) -> tuple[float, dict[str, Any]]:
-        template = self._template_vectors(index)
-        intersection = [
-            channel for channel in self._channels
-            if channel.name in query and channel.name in template
-        ]
-        total_weight = sum(channel.weight for channel in intersection)
-        if total_weight <= 0.0:
-            raise RuntimeError("no positively weighted evidence intersection remains")
-        evidence = {
-            channel.name: float(np.dot(query[channel.name], template[channel.name]))
-            for channel in intersection
+    def _query_with_exclusions(
+        self,
+        query: np.ndarray | dict[str, np.ndarray] | RetrievalQuery,
+        exclusions: QueryExclusions | None,
+    ) -> RetrievalQuery:
+        prepared = self._validated_query(query)
+        if exclusions is None:
+            return prepared
+        if not isinstance(exclusions, QueryExclusions):
+            raise TypeError("exclusions must be a QueryExclusions value")
+        if prepared.exclusions != QueryExclusions():
+            raise ValueError("query and search call both specify exclusions")
+        return RetrievalQuery(prepared.vectors, prepared.availability, exclusions)
+
+    def _eligible_rows(
+        self,
+        exclusions: QueryExclusions,
+        allowed_breeds: list[str] | None,
+    ) -> np.ndarray:
+        eligible = np.ones(int(self._index.ntotal), dtype=np.bool_)
+        breed_set = set(allowed_breeds or ())
+        if breed_set:
+            for row, breed in self._breed_index.items():
+                if breed not in breed_set:
+                    eligible[row] = False
+        for template_id in exclusions.template_ids:
+            row = self._template_id_index.get(template_id)
+            if row is not None:
+                eligible[row] = False
+        for content_sha256 in exclusions.content_sha256s:
+            row = self._content_sha256_index.get(content_sha256)
+            if row is not None:
+                eligible[row] = False
+        for duplicate_group_id in exclusions.duplicate_group_ids:
+            rows = self._duplicate_group_index.get(duplicate_group_id)
+            if rows:
+                eligible[np.fromiter(rows, dtype=np.int64)] = False
+        return eligible
+
+    def _all_template_scores(
+        self, query: RetrievalQuery, eligible: np.ndarray
+    ) -> np.ndarray:
+        count = int(self._index.ntotal)
+        if self._full128_fast_path:
+            scores = np.empty(count, dtype=np.float32)
+            query_vector = query.vectors[FULL128_CHANNEL]
+            for start in range(0, count, _SEARCH_BLOCK_ROWS):
+                length = min(_SEARCH_BLOCK_ROWS, count - start)
+                matrix = self._index.reconstruct_n(start, length)
+                scores[start:start + length] = matrix @ query_vector
+            scores[~eligible] = -np.inf
+            return scores
+
+        numerator = np.zeros(count, dtype=np.float64)
+        denominator = np.zeros(count, dtype=np.float64)
+        required_weight = sum(channel.weight for channel in self._required_channels)
+        denominator.fill(required_weight)
+        for start in range(0, count, _SEARCH_BLOCK_ROWS):
+            length = min(_SEARCH_BLOCK_ROWS, count - start)
+            matrix = self._index.reconstruct_n(start, length)
+            offset = 0
+            for channel in self._required_channels:
+                section = matrix[:, offset:offset + channel.dimension]
+                numerator[start:start + length] += (
+                    channel.weight * (section @ query.vectors[channel.name])
+                )
+                offset += channel.dimension
+        for channel in self._optional_channels:
+            if not query.availability[channel.name] or channel.weight == 0.0:
+                continue
+            query_vector = query.vectors[channel.name]
+            for row, vector in self._optional_vectors[channel.name].items():
+                numerator[row] += channel.weight * float(np.dot(query_vector, vector))
+                denominator[row] += channel.weight
+        scores = numerator / denominator
+        scores[~eligible] = -np.inf
+        return scores
+
+    def _ranked_candidates(
+        self, query: RetrievalQuery, scores: np.ndarray, top_k: int
+    ) -> list[ScoredGalleryValue]:
+        identity_count = len(self._identity_ordinals)
+        identity_scores = np.full(identity_count, -np.inf, dtype=scores.dtype)
+        ordinals = np.asarray(self._row_identity_ordinals, dtype=np.int64)
+        np.maximum.at(identity_scores, ordinals, scores)
+        identities_by_ordinal = [""] * identity_count
+        for identity_id, ordinal in self._identity_ordinals.items():
+            identities_by_ordinal[ordinal] = identity_id
+        ranked_ordinals = sorted(
+            (
+                ordinal
+                for ordinal, score in enumerate(identity_scores)
+                if np.isfinite(score)
+            ),
+            key=lambda ordinal: (
+                -float(identity_scores[ordinal]), identities_by_ordinal[ordinal]
+            ),
+        )[:top_k]
+        candidates: list[ScoredGalleryValue] = []
+        for ordinal in ranked_ordinals:
+            identity_id = identities_by_ordinal[ordinal]
+            best_score = float(identity_scores[ordinal])
+            winning_row = min(
+                (
+                    row
+                    for row in self._identity_rows[identity_id]
+                    if float(scores[row]) == best_score
+                ),
+                key=lambda row: self._metadata[row]["template_id"],
+            )
+            candidates.append(self._scored_candidate(query, winning_row))
+        return candidates
+
+    def _scored_candidate(
+        self, query: RetrievalQuery, row: int
+    ) -> ScoredGalleryValue:
+        key = self._gallery_key(row)
+        return ScoredGalleryValue(
+            value=self._gallery_value(row),
+            query_key_score=self._scorer.score(query, key),
+            template_availability=dict(key.availability),
+        )
+
+    def _result_tuple(
+        self, query: RetrievalQuery, candidate: ScoredGalleryValue
+    ) -> tuple[int, float, dict[str, Any]]:
+        value = candidate.value
+        score = candidate.query_key_score
+        meta = {
+            "registered_dog_id": value.registered_identity_id,
+            "template_id": value.template_id,
+            "content_sha256": value.content_sha256,
+            "idempotency_key": value.idempotency_key,
+            "template_schema": value.template_schema,
+            "metadata": deepcopy(value.metadata),
         }
-        score = sum(
-            channel.weight * evidence[channel.name] for channel in intersection
-        ) / total_weight
-        # Candidate ranking only mutates synthetic top-level fields. Deep-copy
-        # user metadata once for the selected results, not for every template.
-        meta = dict(self._metadata[index])
-        meta["_evidence"] = evidence
-        meta["_evidence_availability"] = {
-            channel.name: channel.name in query and channel.name in template
-            for channel in self._channels
-        }
-        meta["_query_availability"] = {
-            channel.name: channel.name in query for channel in self._channels
-        }
-        meta["_template_availability"] = dict(self._availability[index])
+        meta["_evidence"] = dict(score.evidence)
+        meta["_evidence_availability"] = dict(score.evidence_availability)
+        meta["_query_availability"] = dict(query.availability)
+        meta["_template_availability"] = dict(candidate.template_availability)
         meta["_scorer_hash"] = self._scorer_hash
         meta["_exact"] = True
-        return float(score), meta
-
-    def search_with_evidence(
-        self,
-        query: np.ndarray | dict[str, np.ndarray],
-        top_k: int = 5,
-        slices: list[tuple[int, int, str]] | None = None,
-    ) -> list[dict[str, Any]]:
-        if slices is not None:
-            raise ValueError("v4 evidence slices come from the gallery contract")
-        return [
-            {
-                "index": idx,
-                "registered_dog_id": meta["registered_dog_id"],
-                "template_id": meta["template_id"],
-                "similarity": score,
-                "evidence": dict(meta["_evidence"]),
-                "evidence_availability": dict(meta["_evidence_availability"]),
-                "scorer_hash": meta["_scorer_hash"],
-                "exact": meta["_exact"],
-                "metadata": _result_metadata(meta),
-            }
-            for idx, score, meta in self.search(query, top_k)
-        ]
-
-    def remove(self, index: int) -> None:
-        raise NotImplementedError("remove not supported for SpeciesFilteredIndex")
+        meta["_identity_evidence_kind"] = value.identity_evidence_kind.value
+        meta["_enrollment_rank"] = (
+            value.enrollment_rank.value if value.enrollment_rank is not None else None
+        )
+        meta["_enrollment_view"] = value.enrollment_view
+        meta["_duplicate_group_ids"] = list(value.duplicate_group_ids)
+        meta["_winning_template_row"] = value.template_row
+        return value.template_row, score.similarity, meta
 
     @property
     def size(self) -> int:
@@ -1064,8 +1678,8 @@ class SpeciesFilteredIndex(AbstractIdentityIndex):
     def __del__(self) -> None:
         try:
             self.close()
-        except Exception:
-            pass
+        except Exception:  # noqa: BLE001
+            return
 
     def _ensure_writer(self) -> None:
         if self._read_only or self._lock_stream is None:
@@ -1075,6 +1689,27 @@ class SpeciesFilteredIndex(AbstractIdentityIndex):
         self._ensure_writer()
         self._validate_state()
         template_count = int(self._index.ntotal)
+        enhanced = (
+            self._loaded_manifest_schema == _MANIFEST_SCHEMA_V5
+            or self._registry_policy.descriptor["registry_sha256"] is not None
+            or any(rank is not None for rank in self._enrollment_ranks.values())
+            or any(self._duplicate_group_ids.values())
+        )
+        manifest_schema = _MANIFEST_SCHEMA_V5 if enhanced else _MANIFEST_SCHEMA_V4
+        serialized_metadata: dict[int, dict[str, Any]] = {}
+        for row, metadata in self._metadata.items():
+            serialized_metadata[row] = dict(metadata)
+            if enhanced:
+                serialized_metadata[row].update({
+                    "identity_evidence_kind": self._identity_kinds[row].value,
+                    "enrollment_rank": (
+                        self._enrollment_ranks[row].value
+                        if self._enrollment_ranks[row] is not None
+                        else None
+                    ),
+                    "enrollment_view": self._enrollment_views[row],
+                    "duplicate_group_ids": list(self._duplicate_group_ids[row]),
+                })
         binary_limits = _binary_file_limits(
             template_count, self._required_dim, self._optional_channels
         )
@@ -1116,7 +1751,7 @@ class SpeciesFilteredIndex(AbstractIdentityIndex):
             )
             _write_json_file(
                 temporary["metadata"],
-                self._metadata,
+                serialized_metadata,
                 "gallery metadata sidecar",
                 maximum_bytes=_MAXIMUM_SIDECAR_JSON_BYTES,
             )
@@ -1167,7 +1802,7 @@ class SpeciesFilteredIndex(AbstractIdentityIndex):
                         "file is corrupted; refusing to overwrite it"
                     )
             manifest = {
-                "schema_version": _MANIFEST_SCHEMA,
+                "schema_version": manifest_schema,
                 "dimension": self._dim,
                 "required_dimension": self._required_dim,
                 "embedding_contract": self._embedding_contract,
@@ -1178,7 +1813,7 @@ class SpeciesFilteredIndex(AbstractIdentityIndex):
                 }),
                 "identity_aggregation": _IDENTITY_AGGREGATION,
                 "scorer": {
-                    "algorithm": _SCORER_ALGORITHM,
+                    "algorithm": SCORER_ALGORITHM,
                     "hash": self._scorer_hash,
                     "exact": True,
                 },
@@ -1187,6 +1822,8 @@ class SpeciesFilteredIndex(AbstractIdentityIndex):
                     for kind, path in destinations.items()
                 },
             }
+            if enhanced:
+                manifest["identity_policy"] = self._registry_policy.descriptor
             manifest_path = self._base_dir / "gallery_manifest.json"
             if _path_entry_exists(manifest_path):
                 manifest_stat = manifest_path.lstat()
@@ -1215,6 +1852,7 @@ class SpeciesFilteredIndex(AbstractIdentityIndex):
                     published_destinations.append(destination)
             os.replace(manifest_tmp, manifest_path)
             manifest_published = True
+            self._loaded_manifest_schema = manifest_schema
             directory_fd = os.open(self._base_dir, os.O_RDONLY)
             try:
                 os.fsync(directory_fd)
@@ -1255,21 +1893,23 @@ def _canonical_embedding_contract(
     return canonical
 
 
-def _contract_channels(contract: dict[str, Any], dimension: int) -> tuple[_Channel, ...]:
+def _contract_channels(
+    contract: dict[str, Any], dimension: int
+) -> tuple[EvidenceChannelSpec, ...]:
     raw_channels = contract.get("channels")
     fusion = contract.get("fusion")
     if not isinstance(raw_channels, list) or not raw_channels or not all(
         isinstance(value, dict) for value in raw_channels
     ):
-        return (_Channel("__opaque__", dimension, False, 1.0),)
+        return (EvidenceChannelSpec("__opaque__", dimension, False, 1.0),)
     if not isinstance(fusion, dict) or fusion.get("type") not in {
-        "weighted_concatenated_cosine", _SCORER_ALGORITHM
+        "weighted_concatenated_cosine", SCORER_ALGORITHM
     }:
         raise ValueError("gallery contract requires an exact fusion contract")
     weights = fusion.get("weights")
     if not isinstance(weights, list) or len(weights) != len(raw_channels):
         raise ValueError("gallery fusion weights must match channels")
-    channels: list[_Channel] = []
+    channels: list[EvidenceChannelSpec] = []
     for index, payload in enumerate(raw_channels):
         name = payload.get("name")
         channel_dim = payload.get("dimension")
@@ -1284,7 +1924,7 @@ def _contract_channels(contract: dict[str, Any], dimension: int) -> tuple[_Chann
             or not np.isfinite(weight) or weight < 0.0
         ):
             raise ValueError("gallery channel contract is invalid")
-        channels.append(_Channel(name, channel_dim, optional, float(weight)))
+        channels.append(EvidenceChannelSpec(name, channel_dim, optional, float(weight)))
     if len({channel.name for channel in channels}) != len(channels):
         raise ValueError("gallery channel names must be unique")
     if sum(channel.dimension for channel in channels) != dimension:
@@ -1294,25 +1934,6 @@ def _contract_channels(contract: dict[str, Any], dimension: int) -> tuple[_Chann
     if sum(channel.weight for channel in channels if not channel.optional) <= 0.0:
         raise ValueError("required gallery channels must retain positive fusion weight")
     return tuple(channels)
-
-
-def _scorer_hash(channels: tuple[_Channel, ...]) -> str:
-    total = sum(channel.weight for channel in channels)
-    payload = {
-        "algorithm": _SCORER_ALGORITHM,
-        "channels": [
-            {
-                "name": channel.name,
-                "dimension": channel.dimension,
-                "optional": channel.optional,
-            }
-            for channel in channels
-        ],
-        "weights": [channel.weight / total for channel in channels],
-    }
-    return hashlib.sha256(json.dumps(
-        payload, sort_keys=True, separators=(",", ":"), allow_nan=False
-    ).encode("utf-8")).hexdigest()
 
 
 def _validate_unit_vector(vector: np.ndarray, dimension: int, name: str) -> None:
@@ -1330,7 +1951,7 @@ def _canonical_metadata(metadata: dict | None) -> dict[str, Any]:
     if metadata is None:
         return {}
     if not isinstance(metadata, dict):
-        raise ValueError("metadata must be an object")
+        raise TypeError("metadata must be an object")
     if any(not isinstance(key, str) for key in metadata):
         raise ValueError("metadata keys must be strings")
     if set(metadata) & _RESERVED_METADATA_KEYS:
@@ -1369,7 +1990,7 @@ def _canonical_metadata(metadata: dict | None) -> dict[str, Any]:
         raise ValueError("metadata exceeds its JSON size limit")
     canonical = json.loads(encoded.decode("utf-8"))
     if not isinstance(canonical, dict):
-        raise ValueError("metadata must be an object")
+        raise TypeError("metadata must be an object")
     return canonical
 
 
@@ -1389,7 +2010,7 @@ def _is_bounded_utf8_text(
 
 def _template_id(content_sha256: str) -> str:
     return hashlib.sha256(
-        f"{_TEMPLATE_SCHEMA}\0{content_sha256}".encode("ascii")
+        f"{_TEMPLATE_ID_DOMAIN}\0{content_sha256}".encode("ascii")
     ).hexdigest()
 
 
@@ -1420,13 +2041,3 @@ def _is_cardinality(value: object, *, maximum: int | None = None) -> bool:
         and value >= 0
         and (maximum is None or value <= maximum)
     )
-
-
-def _result_metadata(meta: dict[str, Any]) -> dict[str, Any]:
-    return {
-        **meta["metadata"],
-        "template_id": meta["template_id"],
-        "content_sha256": meta["content_sha256"],
-        "idempotency_key": meta["idempotency_key"],
-        "template_schema": meta["template_schema"],
-    }

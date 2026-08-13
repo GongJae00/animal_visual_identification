@@ -1,14 +1,11 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 import math
+from dataclasses import dataclass
 from pathlib import Path
-import warnings
 
 import cv2
 import numpy as np
-import torch
-import torch.nn as nn
 from PIL import Image
 
 from artifact_contracts.artifact_manifest import (
@@ -21,54 +18,6 @@ from artifact_contracts.artifact_manifest import (
 )
 from evidence_fusion.base import EvidenceObservation, EvidenceUnavailableReason
 from foundation.provenance import content_sha256
-
-
-class TinyViTBackbone(nn.Module):
-    def __init__(self, embedding_dim: int = 512):
-        raise RuntimeError(
-            "TinyViTBackbone is disabled: the former implementation was an "
-            "untrained CNN, not TinyViT. Supply an exact nose embedding artifact."
-        )
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        raise RuntimeError("TinyViTBackbone is disabled")
-
-
-class MagFaceNoseHead(nn.Module):
-    """Disabled random training head retained only for an explicit failure."""
-
-    def __init__(self, *args: object, **kwargs: object):
-        raise RuntimeError(
-            "MagFaceNoseHead is disabled until a trained, exact checkpoint contract exists"
-        )
-
-    def forward(self, *args: object, **kwargs: object) -> torch.Tensor:
-        raise RuntimeError("MagFaceNoseHead is disabled")
-
-
-class NoseEnhancer:
-    """Disabled ambiguous alias; CLAHE is an optional preprocessing transform."""
-
-    def __init__(self, *args: object, **kwargs: object):
-        raise RuntimeError(
-            "NoseEnhancer is disabled; declare optional ClaheTransform in the artifact manifest"
-        )
-
-
-class MiewIDNoseExtractor:
-    """Disabled former alias: MiewID is not a nose-print embedding model."""
-
-    def __init__(self, onnx_path: Path, input_size: int = 440):
-        warnings.warn(
-            "MiewIDNoseExtractor is deprecated and disabled because MiewID is "
-            "a whole-crop wildlife ReID model, not a nose biometric.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        raise RuntimeError(
-            "MiewIDNoseExtractor is deprecated and disabled; use an exact "
-            "detector and nose-embedding artifact bundle"
-        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -179,10 +128,6 @@ class NoseRoiPolicy:
             )
 
 
-NoseAbstainReason = EvidenceUnavailableReason
-NoseEvidenceResult = EvidenceObservation
-
-
 class NosePrintExtractor:
     """Composed detector-to-ROI-to-embedding channel with typed abstention."""
 
@@ -252,7 +197,7 @@ class NosePrintExtractor:
     def output_dim(self) -> int:
         return self._embedding_manifest.output_shape[1]
 
-    def extract(self, image: Image.Image) -> NoseEvidenceResult:
+    def extract(self, image: Image.Image) -> EvidenceObservation:
         detection = self._detector.detect(image)
         if detection is None:
             return EvidenceObservation.unavailable(
@@ -302,20 +247,14 @@ class NosePrintExtractor:
             },
         )
 
-    def extract_batch(self, images: list[Image.Image]) -> list[NoseEvidenceResult]:
+    def extract_batch(self, images: list[Image.Image]) -> list[EvidenceObservation]:
         return [self.extract(image) for image in images]
 
 
 __all__ = [
     "DNPMask",
-    "MiewIDNoseExtractor",
-    "MagFaceNoseHead",
-    "NoseAbstainReason",
     "NoseDetection",
-    "NoseEnhancer",
-    "NoseEvidenceResult",
     "NosePrintExtractor",
     "NoseRoiPolicy",
-    "TinyViTBackbone",
     "YoloNoseDetector",
 ]

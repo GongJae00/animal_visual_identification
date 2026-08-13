@@ -1,14 +1,13 @@
 from __future__ import annotations
 
+import math
 from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum
-import math
 from typing import Any, TypeAlias
 
 import numpy as np
 from PIL import Image
-
 
 RoiBox: TypeAlias = tuple[int, int, int, int]
 

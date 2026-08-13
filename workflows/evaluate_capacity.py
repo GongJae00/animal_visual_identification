@@ -1,4 +1,4 @@
-"""Evaluate a content-addressed first-order IdentityEngine capacity plan."""
+"""Evaluate a content-addressed first-order offline systems capacity plan."""
 
 from __future__ import annotations
 

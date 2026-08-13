@@ -18,7 +18,7 @@ from evidence_fusion.quality import (
     estimate_blur,
     observe_quality,
 )
-from identity_retrieval.pipeline.enroll import MultiEvidencePipeline
+from identity_retrieval.pipeline.extraction import EvidenceExtractionPipeline
 
 
 class _TestEvidencer(AbstractEvidencer):
@@ -147,7 +147,7 @@ class QualityValidationTests(unittest.TestCase):
 
 class EnrollmentQualityTests(unittest.TestCase):
     def test_missing_quality_never_defaults_to_one(self) -> None:
-        pipeline = MultiEvidencePipeline({"appearance": _TestEvidencer()})
+        pipeline = EvidenceExtractionPipeline({"appearance": _TestEvidencer()})
         observations = pipeline.estimate_quality(Image.new("RGB", (8, 8)))
 
         observation = observations["appearance"]
@@ -156,7 +156,7 @@ class EnrollmentQualityTests(unittest.TestCase):
         self.assertNotEqual(observation.score, 1.0)
 
     def test_channel_hooks_map_the_same_diagnostics_deterministically(self) -> None:
-        pipeline = MultiEvidencePipeline({
+        pipeline = EvidenceExtractionPipeline({
             "permissive": _TestEvidencer(minimum_brightness=100.0),
             "strict": _TestEvidencer(minimum_brightness=200.0),
         })
@@ -172,7 +172,7 @@ class EnrollmentQualityTests(unittest.TestCase):
         self.assertEqual(first["strict"].channel, "strict")
 
     def test_extract_with_quality_returns_typed_observations(self) -> None:
-        pipeline = MultiEvidencePipeline({
+        pipeline = EvidenceExtractionPipeline({
             "appearance": _TestEvidencer(minimum_brightness=100.0),
         })
         embeddings, observations = pipeline.extract_with_quality(

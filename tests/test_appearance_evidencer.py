@@ -13,10 +13,6 @@ import numpy as np
 import torch
 from PIL import Image
 
-from identity_methods.appearance import (
-    Dinov2WithUncertainty,
-    ReceiptBoundDinov2Small,
-)
 from artifact_contracts.pretrained_supporting_asset_intake import (
     PretrainedSupportingAssetKind,
     PretrainedSupportingAssetSourceContract,
@@ -30,6 +26,7 @@ from artifact_contracts.pretrained_weight_intake import (
     audit_pretrained_weight_file,
 )
 from foundation.provenance import content_sha256
+from identity_methods.appearance import ReceiptBoundDinov2Small
 
 
 def _sha256(path: Path) -> str:
@@ -204,20 +201,6 @@ def _receipt_bound(paths: dict[str, Path]) -> ReceiptBoundDinov2Small:
     )
 
 
-class _DummyDino(torch.nn.Module):
-    def __init__(self, *, nonfinite: bool = False) -> None:
-        super().__init__()
-        self.anchor = torch.nn.Parameter(torch.ones(384))
-        self.nonfinite = nonfinite
-
-    def forward(self, images: torch.Tensor) -> torch.Tensor:
-        output = self.anchor.unsqueeze(0).expand(images.shape[0], -1)
-        if self.nonfinite:
-            output = output.clone()
-            output[:, 0] = torch.nan
-        return output
-
-
 class _DummyHfDino(torch.nn.Module):
     def __init__(self, *, nonfinite: bool = False) -> None:
         super().__init__()
@@ -277,6 +260,9 @@ class ReceiptBoundAppearanceTests(unittest.TestCase):
             )
             fields = evidencer.gallery_contract_fields
             self.assertEqual(fields["model_sha256"], _sha256(paths["weight"]))
+            self.assertEqual(
+                fields["model_config_sha256"], _sha256(paths["config"])
+            )
             self.assertEqual(
                 fields["preprocessor_sha256"], _sha256(paths["preprocessor"])
             )
@@ -377,48 +363,10 @@ class ReceiptBoundAppearanceTests(unittest.TestCase):
             fake_transformers, _ = _fake_transformers(
                 _DummyHfDino(nonfinite=True)
             )
-            with patch.dict(sys.modules, {"transformers": fake_transformers}):
-                with self.assertRaisesRegex(RuntimeError, "non-finite"):
-                    evidencer.extract(Image.new("RGB", (224, 224)))
-
-
-class LegacyAppearanceEvidencerTests(unittest.TestCase):
-    def test_requires_an_explicit_backbone(self) -> None:
-        with self.assertRaisesRegex(ValueError, "explicit DINOv2-small backbone"):
-            Dinov2WithUncertainty(None)
-
-    def test_injected_research_backbone_shape_dtype_and_norm(self) -> None:
-        evidencer = Dinov2WithUncertainty(backbone=_DummyDino())
-        embeddings = evidencer.extract_batch(
-            [Image.new("L", (32, 16), color=128), Image.new("RGBA", (16, 32))]
-        )
-        self.assertEqual(embeddings.shape, (2, 384))
-        self.assertEqual(embeddings.dtype, np.float32)
-        np.testing.assert_allclose(
-            np.linalg.norm(embeddings, axis=1), np.ones(2), atol=1e-6
-        )
-
-    def test_dimension_batch_cap_and_nonfinite_fail_closed(self) -> None:
-        with self.assertRaises(ValueError):
-            Dinov2WithUncertainty(backbone=_DummyDino(), embedding_dim=256)
-        evidencer = Dinov2WithUncertainty(
-            backbone=_DummyDino(), max_batch_size=1
-        )
-        with self.assertRaisesRegex(ValueError, "exceeds cap"):
-            evidencer.extract_batch([Image.new("RGB", (2, 2))] * 2)
-        with self.assertRaisesRegex(RuntimeError, "non-finite"):
-            Dinov2WithUncertainty(backbone=_DummyDino(nonfinite=True)).extract(
-                Image.new("RGB", (2, 2))
-            )
-
-    @unittest.skipUnless(torch.cuda.is_available(), "CUDA unavailable")
-    def test_explicit_cuda_path_returns_cpu_numpy(self) -> None:
-        evidencer = Dinov2WithUncertainty(
-            backbone=_DummyDino(), device="cuda"
-        )
-        embedding = evidencer.extract(Image.new("RGB", (2, 2)))
-        self.assertEqual(embedding.shape, (384,))
-        self.assertEqual(embedding.dtype, np.float32)
+            with patch.dict(
+                sys.modules, {"transformers": fake_transformers}
+            ), self.assertRaisesRegex(RuntimeError, "non-finite"):
+                evidencer.extract(Image.new("RGB", (224, 224)))
 
 
 if __name__ == "__main__":

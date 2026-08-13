@@ -6,7 +6,6 @@ import sys
 import tempfile
 import types
 import unittest
-import warnings
 from hashlib import sha256
 from pathlib import Path
 from unittest.mock import patch
@@ -15,7 +14,6 @@ import numpy as np
 import onnx
 from PIL import Image
 
-from canine_identity.engine import IdentityEngine
 from artifact_contracts.artifact_manifest import (
     ArtifactContractError,
     ArtifactLicense,
@@ -24,13 +22,6 @@ from artifact_contracts.artifact_manifest import (
     NoseEmbeddingManifest,
     UsageLane,
 )
-from localization.landmark_graph import LandmarkEvidencer
-from identity_methods.backbones.miewid import (
-    MIEWID_OUTPUT_DIM,
-    MiewIDArtifactManifest,
-    MiewIDModelContractError,
-    MiewIDReIDExtractor,
-)
 from artifact_contracts.model_parity import (
     ModelParityReceipt,
     ModelUsageLane,
@@ -38,22 +29,29 @@ from artifact_contracts.model_parity import (
     ParityFixtureResult,
     ParityThresholds,
 )
-from identity_methods.nose.extractor import (
-    DNPMask,
-    MiewIDNoseExtractor,
-    YoloNoseDetector,
-)
-from identity_methods.backbones.extractors import (
-    EvidenceExtractorRegistry,
-    OnnxExtractor,
-    SuperAnimalExtractor,
-)
 from artifact_contracts.model_paths import (
     MIEWID_MSV3_HF_REPO,
     MIEWID_MSV3_REVISION,
     MIEWID_MSV3_WEIGHTS_SHA256,
 )
+from canine_identity.engine import IdentityEngine
 from foundation.provenance import content_sha256
+from identity_methods.backbones.extractors import (
+    EvidenceExtractorRegistry,
+    OnnxExtractor,
+    SuperAnimalExtractor,
+)
+from identity_methods.backbones.miewid import (
+    MIEWID_OUTPUT_DIM,
+    MiewIDArtifactManifest,
+    MiewIDModelContractError,
+    MiewIDReIDExtractor,
+)
+from identity_methods.nose.extractor import (
+    DNPMask,
+    YoloNoseDetector,
+)
+from localization.landmark_graph import LandmarkEvidencer
 from workflows.download_models import _convert_superanimal_to_onnx, download_model
 
 
@@ -616,14 +614,6 @@ class EvidenceModelContractTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "exact MiewID bundle schema"):
                 runtime._build_evidence()
 
-    def test_deprecated_nose_alias_has_only_a_clear_failure(self) -> None:
-        with self._artifact() as artifact, warnings.catch_warnings(record=True) as caught:
-            warnings.simplefilter("always", DeprecationWarning)
-            with self.assertRaisesRegex(RuntimeError, "deprecated and disabled"):
-                MiewIDNoseExtractor(Path(artifact.name), input_size=160)
-        self.assertEqual(len(caught), 1)
-        self.assertTrue(issubclass(caught[0].category, DeprecationWarning))
-
     def test_untrained_channels_are_not_runtime_defaults(self) -> None:
         with self.assertRaises(TypeError):
             LandmarkEvidencer()
@@ -708,6 +698,8 @@ class EvidenceModelContractTests(unittest.TestCase):
         ).read_text()
         self.assertIn("SuperAnimal runtime: DISABLED", script)
         self.assertNotIn("--model superanimal", script)
+        self.assertIn('"canine_identity",', script)
+        self.assertNotIn('"cvi",', script)
         downloader = (
             Path(__file__).resolve().parents[1] / "workflows" / "download_models.py"
         ).read_text()

@@ -1,4 +1,4 @@
-"""Receipt-bound and legacy research DINOv2 appearance embedders."""
+"""Receipt-bound DINOv2 appearance embedding."""
 
 from __future__ import annotations
 
@@ -7,8 +7,8 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 
-from evidence_fusion.base import AbstractEvidencer
 from artifact_contracts.dinov2_contract import Dinov2LocalArtifactContract
+from evidence_fusion.base import AbstractEvidencer
 
 
 class ReceiptBoundDinov2Small(AbstractEvidencer):
@@ -60,9 +60,14 @@ class ReceiptBoundDinov2Small(AbstractEvidencer):
         return self._contract.preprocessor_receipt_sha256
 
     @property
+    def config_sha256(self) -> str:
+        return self._contract.config_sha256
+
+    @property
     def gallery_contract_fields(self) -> dict[str, str]:
         return {
             "model_sha256": self.model_sha256,
+            "model_config_sha256": self.config_sha256,
             "preprocessor_sha256": self.preprocessor_sha256,
             "weight_intake_receipt_sha256": self.weight_receipt_sha256,
             "preprocessor_intake_receipt_sha256": (
@@ -177,112 +182,3 @@ class ReceiptBoundDinov2Small(AbstractEvidencer):
 
     def extract_batch(self, images: list[Image.Image]) -> np.ndarray:
         return self._extract_tensor(images)
-
-
-class Dinov2WithUncertainty(AbstractEvidencer):
-    """Research wrapper for a caller-supplied DINOv2-small backbone."""
-    name = "appearance"
-    output_dim = 384
-
-    def __init__(self, backbone: object,
-                 embedding_dim: int = 384,
-                 evidential_checkpoint: str | None = None,
-                 device: str = "cpu",
-                 max_batch_size: int = 32):
-        if embedding_dim != self.output_dim:
-            raise ValueError("DINOv2-small output dimension must be 384")
-        if device not in {"cpu", "cuda"}:
-            raise ValueError("device must be 'cpu' or 'cuda'")
-        if isinstance(max_batch_size, bool) or max_batch_size <= 0:
-            raise ValueError("max_batch_size must be positive")
-        if backbone is None:
-            raise ValueError("an explicit DINOv2-small backbone is required")
-        self._backbone = backbone
-        self._embedding_dim = embedding_dim
-        self._evidential_checkpoint = evidential_checkpoint
-        self._evidential = None
-        self._loaded = False
-        self._device_name = device
-        self._max_batch_size = max_batch_size
-
-    def _ensure_loaded(self) -> None:
-        if self._loaded:
-            return
-        import torch
-        if self._device_name == "cuda" and not torch.cuda.is_available():
-            raise RuntimeError("CUDA was requested but is unavailable")
-        if not isinstance(self._backbone, torch.nn.Module):
-            raise TypeError("DINOv2 backbone must be a torch.nn.Module")
-        self._backbone.to(torch.device(self._device_name)).eval()
-        for p in self._backbone.parameters():
-            p.requires_grad = False
-        if self._evidential_checkpoint:
-            raise RuntimeError(
-                "Evidential uncertainty is disabled: no strict, calibrated "
-                "checkpoint-loading contract is implemented."
-            )
-        self._loaded = True
-
-    def _preprocess(self, images: list[Image.Image]):
-        import torch
-
-        if not images:
-            raise ValueError("at least one image is required")
-        if len(images) > self._max_batch_size:
-            raise ValueError(
-                f"batch size {len(images)} exceeds cap {self._max_batch_size}"
-            )
-        arrays = [
-            np.asarray(
-                image.convert("RGB").resize(
-                    (224, 224), Image.Resampling.BILINEAR
-                ),
-                dtype=np.uint8,
-            )
-            for image in images
-        ]
-        batch = np.stack(arrays).transpose(0, 3, 1, 2)
-        device = torch.device(self._device_name)
-        tensor = torch.from_numpy(batch).to(
-            device=device, dtype=torch.float32, non_blocking=device.type == "cuda"
-        ).div_(255.0)
-        mean = torch.tensor(
-            [0.485, 0.456, 0.406], device=device, dtype=torch.float32
-        ).view(1, 3, 1, 1)
-        std = torch.tensor(
-            [0.229, 0.224, 0.225], device=device, dtype=torch.float32
-        ).view(1, 3, 1, 1)
-        return tensor.sub_(mean).div_(std)
-
-    def _extract_tensor(self, images: list[Image.Image]) -> np.ndarray:
-        self._ensure_loaded()
-        import torch
-
-        tensor = self._preprocess(images)
-        with torch.inference_mode():
-            embeddings = self._backbone(tensor)
-        if embeddings.ndim != 2 or embeddings.shape != (
-            len(images), self.output_dim
-        ):
-            raise RuntimeError(
-                "DINOv2 output must have shape "
-                f"[{len(images)}, {self.output_dim}]"
-            )
-        if not torch.isfinite(embeddings).all():
-            raise RuntimeError("DINOv2 output contains non-finite values")
-        norms = torch.linalg.vector_norm(embeddings.float(), dim=1, keepdim=True)
-        if torch.any(norms <= 1e-8):
-            raise RuntimeError("DINOv2 output contains a zero embedding")
-        return (embeddings.float() / norms).cpu().numpy().astype(
-            np.float32, copy=False
-        )
-
-    def extract(self, image: Image.Image) -> np.ndarray:
-        return self._extract_tensor([image])[0]
-
-    def extract_batch(self, images: list[Image.Image]) -> np.ndarray:
-        return self._extract_tensor(images)
-
-    def extract_with_uncertainty(self, image: Image.Image
-                                 ) -> tuple[np.ndarray, None, None]:
-        return self.extract(image), None, None

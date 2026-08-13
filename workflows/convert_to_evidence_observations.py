@@ -1,4 +1,4 @@
-"""Convert detector/tracker output to EvidenceObservation JSONL for G1 coverage."""
+"""Convert detector/tracker output to CoverageObservation JSONL for G1 coverage."""
 
 from __future__ import annotations
 
@@ -8,10 +8,12 @@ from pathlib import Path
 from typing import Any
 
 
-def parse_detection(det: dict[str, Any], frame_timestamp_ns: int, camera_id: str | None = None,
-                    session_id: str | None = None, track_id: str | None = None) -> dict[str, Any]:
-    """Parse a single detection dict to EvidenceObservation fields."""
-    obs = {
+def parse_coverage_observation(det: dict[str, Any], frame_timestamp_ns: int,
+                               camera_id: str | None = None,
+                               session_id: str | None = None,
+                               track_id: str | None = None) -> dict[str, Any]:
+    """Parse a single detection dict to CoverageObservation fields."""
+    coverage_observation = {
         "timestamp_ns": frame_timestamp_ns,
         "modality": det.get("modality", "RGB"),
         "dog_count": 1 if det.get("bbox") or det.get("box") else 0,
@@ -21,9 +23,11 @@ def parse_detection(det: dict[str, Any], frame_timestamp_ns: int, camera_id: str
     bbox = det.get("bbox") or det.get("box")
     if bbox:
         if isinstance(bbox, dict):
-            obs["dog_crop_height_px"] = int(bbox.get("h", bbox.get("height", 0)))
+            coverage_observation["dog_crop_height_px"] = int(
+                bbox.get("h", bbox.get("height", 0))
+            )
         elif isinstance(bbox, (list, tuple)) and len(bbox) >= 4:
-            obs["dog_crop_height_px"] = int(bbox[3])
+            coverage_observation["dog_crop_height_px"] = int(bbox[3])
 
     # Quality metrics
     for field in ("head_long_edge_px", "face_min_edge_px", "visible_fraction",
@@ -32,19 +36,19 @@ def parse_detection(det: dict[str, Any], frame_timestamp_ns: int, camera_id: str
                   "ir_saturation_fraction"):
         if field in det:
             val = det[field]
-            obs[field] = float(val) if val is not None else None
+            coverage_observation[field] = float(val) if val is not None else None
 
     if "exposure_ok" in det:
-        obs["exposure_ok"] = bool(det["exposure_ok"])
+        coverage_observation["exposure_ok"] = bool(det["exposure_ok"])
 
     # Track namespace - only include if all three are available
     has_track = track_id or "track_id" in det
     if has_track and camera_id and session_id:
-        obs["camera_id"] = camera_id
-        obs["session_id"] = session_id
-        obs["track_id"] = track_id or str(det["track_id"])
+        coverage_observation["camera_id"] = camera_id
+        coverage_observation["session_id"] = session_id
+        coverage_observation["track_id"] = track_id or str(det["track_id"])
 
-    return obs
+    return coverage_observation
 
 
 def convert_jsonl_input(input_path: Path, output_path: Path,
@@ -53,7 +57,7 @@ def convert_jsonl_input(input_path: Path, output_path: Path,
                         default_modality: str = "RGB") -> None:
     """Convert JSONL where each line is either:
     - Frame format: {timestamp_ns, detections: [...]}
-    - Already-formatted EvidenceObservation: {timestamp_ns, dog_count, ...}
+    - Already-formatted CoverageObservation: {timestamp_ns, dog_count, ...}
     """
     with input_path.open() as fin, output_path.open("w") as fout:
         for line in fin:
@@ -62,22 +66,22 @@ def convert_jsonl_input(input_path: Path, output_path: Path,
                 continue
             frame = json.loads(line)
             
-            # Check if already in EvidenceObservation format (has dog_count)
+            # Check if already in CoverageObservation format (has dog_count)
             if "dog_count" in frame:
                 # Already formatted - pass through, optionally add camera/session ONLY if track_id present
-                obs = dict(frame)
+                coverage_observation = dict(frame)
                 has_track = "track_id" in frame and frame["track_id"] is not None
                 if camera_id and session_id and has_track:
-                    if "camera_id" not in obs:
-                        obs["camera_id"] = camera_id
-                    if "session_id" not in obs:
-                        obs["session_id"] = session_id
+                    if "camera_id" not in coverage_observation:
+                        coverage_observation["camera_id"] = camera_id
+                    if "session_id" not in coverage_observation:
+                        coverage_observation["session_id"] = session_id
                 # If no track_id, remove camera_id/session_id to avoid namespace violation
                 elif not has_track:
-                    obs.pop("camera_id", None)
-                    obs.pop("session_id", None)
-                    obs.pop("track_id", None)
-                fout.write(json.dumps(obs) + "\n")
+                    coverage_observation.pop("camera_id", None)
+                    coverage_observation.pop("session_id", None)
+                    coverage_observation.pop("track_id", None)
+                fout.write(json.dumps(coverage_observation) + "\n")
             else:
                 # Frame format with detections
                 ts = frame.get("timestamp_ns") or frame.get("timestamp") or frame.get("ts")
@@ -86,24 +90,29 @@ def convert_jsonl_input(input_path: Path, output_path: Path,
                 ts = int(ts)
                 detections = frame.get("detections", frame.get("dets", []))
                 if not detections:
-                    obs = {
+                    coverage_observation = {
                         "timestamp_ns": ts,
                         "modality": frame.get("modality", default_modality),
                         "dog_count": 0,
                     }
                     # Only add namespace if track_id available for no-dog frames
                     if camera_id and session_id and "track_id" in frame:
-                        obs["camera_id"] = camera_id
-                        obs["session_id"] = session_id
-                        obs["track_id"] = str(frame["track_id"])
-                    fout.write(json.dumps(obs) + "\n")
+                        coverage_observation["camera_id"] = camera_id
+                        coverage_observation["session_id"] = session_id
+                        coverage_observation["track_id"] = str(frame["track_id"])
+                    fout.write(json.dumps(coverage_observation) + "\n")
                 else:
                     for i, det in enumerate(detections):
                         # Only add namespace if this detection has track_id
                         has_track = "track_id" in det
-                        obs = parse_detection(det, ts, camera_id, session_id,
-                                              det.get("track_id") if has_track else None)
-                        fout.write(json.dumps(obs) + "\n")
+                        coverage_observation = parse_coverage_observation(
+                            det,
+                            ts,
+                            camera_id,
+                            session_id,
+                            det.get("track_id") if has_track else None,
+                        )
+                        fout.write(json.dumps(coverage_observation) + "\n")
 
 
 def convert_mot_txt(input_path: Path, output_path: Path,
@@ -118,10 +127,10 @@ def convert_mot_txt(input_path: Path, output_path: Path,
                 continue
             frame_idx = int(parts[0])
             track_id = parts[1]
-            x, y, w, h = map(float, parts[2:6])
+            h = float(parts[5])
             conf = float(parts[6])
             ts = frame_idx * period_ns
-            obs = {
+            coverage_observation = {
                 "timestamp_ns": ts,
                 "modality": "RGB",
                 "dog_count": 1,
@@ -129,10 +138,10 @@ def convert_mot_txt(input_path: Path, output_path: Path,
                 "localization_confidence": conf,
             }
             if camera_id and session_id:
-                obs["camera_id"] = camera_id
-                obs["session_id"] = session_id
-                obs["track_id"] = track_id
-            fout.write(json.dumps(obs) + "\n")
+                coverage_observation["camera_id"] = camera_id
+                coverage_observation["session_id"] = session_id
+                coverage_observation["track_id"] = track_id
+            fout.write(json.dumps(coverage_observation) + "\n")
 
 
 def convert_coco_json(input_path: Path, output_path: Path,
@@ -149,7 +158,7 @@ def convert_coco_json(input_path: Path, output_path: Path,
             ts = img.get("timestamp_ns") or img.get("timestamp") or 0
             ts = int(ts)
             bbox = ann.get("bbox", [])
-            obs = {
+            coverage_observation = {
                 "timestamp_ns": ts,
                 "modality": img.get("modality", "RGB"),
                 "dog_count": 1,
@@ -157,18 +166,22 @@ def convert_coco_json(input_path: Path, output_path: Path,
                 "localization_confidence": ann.get("score"),
             }
             if camera_id and session_id:
-                obs["camera_id"] = camera_id
-                obs["session_id"] = session_id
+                coverage_observation["camera_id"] = camera_id
+                coverage_observation["session_id"] = session_id
                 if ann.get("track_id") is not None:
-                    obs["track_id"] = str(ann["track_id"])
+                    coverage_observation["track_id"] = str(ann["track_id"])
             # Remove None values
-            obs = {k: v for k, v in obs.items() if v is not None}
-            fout.write(json.dumps(obs) + "\n")
+            coverage_observation = {
+                key: value
+                for key, value in coverage_observation.items()
+                if value is not None
+            }
+            fout.write(json.dumps(coverage_observation) + "\n")
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Convert detector/tracker output to G1 EvidenceObservation JSONL"
+        description="Convert detector/tracker output to G1 CoverageObservation JSONL"
     )
     parser.add_argument("input", type=Path)
     parser.add_argument("output", type=Path)

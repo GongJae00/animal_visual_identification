@@ -6,7 +6,11 @@ import argparse
 import json
 from pathlib import Path
 
-from evidence_fusion.coverage import CoverageAccumulator, CoveragePolicy, EvidenceObservation
+from evidence_fusion.coverage import (
+    CoverageAccumulator,
+    CoverageObservation,
+    CoveragePolicy,
+)
 
 
 def main() -> None:
@@ -30,7 +34,7 @@ def main() -> None:
                 continue
             try:
                 payload = json.loads(line)
-                accumulator.observe(EvidenceObservation.from_dict(payload))
+                accumulator.observe(CoverageObservation.from_dict(payload))
             except (KeyError, TypeError, ValueError, json.JSONDecodeError) as error:
                 raise ValueError(
                     f"invalid observation at line {line_number}: {error}"

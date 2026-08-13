@@ -7,7 +7,6 @@ from sklearn.isotonic import IsotonicRegression
 
 from foundation.protected_io import read_strict_json_object, write_private_json_bundle
 
-
 _SCHEMA_VERSION = "cvi.isotonic_calibrator.v1"
 
 
@@ -93,7 +92,7 @@ class PerChannelCalibrator:
         write_private_json_bundle(((path, payload),))
 
     @classmethod
-    def load(cls, path: Path) -> "PerChannelCalibrator":
+    def load(cls, path: Path) -> PerChannelCalibrator:
         payload = read_strict_json_object(path)
         if set(payload) != {"schema_version", "channels"} or payload[
             "schema_version"

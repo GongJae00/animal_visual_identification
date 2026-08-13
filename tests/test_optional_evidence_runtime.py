@@ -7,6 +7,7 @@ import tempfile
 import unittest
 import zipfile
 from pathlib import Path
+from typing import ClassVar
 from unittest.mock import patch
 
 import faiss
@@ -20,11 +21,11 @@ from evidence_fusion.base import (
     EvidenceUnavailableReason,
     RequiredEvidenceUnavailableError,
 )
-from evidence_fusion.fuser import LearnedWeightFuser
 from identity_governance.identity_registry import compute_registered_dog_id
-from identity_retrieval.index.hierarchical import SpeciesFilteredIndex
-from identity_retrieval.pipeline.enroll import MultiEvidencePipeline
-from identity_retrieval.pipeline.search import IdentitySearchPipeline
+from identity_retrieval.gallery import IdentityGallery
+from identity_retrieval.pipeline.extraction import EvidenceExtractionPipeline
+from identity_retrieval.pipeline.retrieval import IdentityRetrievalPipeline
+from identity_retrieval.qkv import RetrievalQuery
 from workflows.migrate_gallery_v3_to_v4 import migrate_gallery
 
 
@@ -49,7 +50,7 @@ class _BrokenEvidence(_FixedEvidence):
 
 
 class _ConfiguredNoseEvidence(AbstractEvidencer):
-    calls: list[tuple[tuple, dict]] = []
+    calls: ClassVar[list[tuple[tuple, dict]]] = []
     output_dim = 3
 
     def __init__(self, *args, **kwargs) -> None:
@@ -112,7 +113,7 @@ class ObservationBoundaryTests(unittest.TestCase):
         unavailable = EvidenceObservation.unavailable(
             "optional", EvidenceUnavailableReason.NO_ROI
         )
-        pipeline = MultiEvidencePipeline(
+        pipeline = EvidenceExtractionPipeline(
             {
                 "required": _FixedEvidence(np.asarray([1.0, 0.0], np.float32)),
                 "optional": _FixedEvidence(unavailable),
@@ -126,12 +127,14 @@ class ObservationBoundaryTests(unittest.TestCase):
             "required"
         })
 
-        required = MultiEvidencePipeline({"optional": _FixedEvidence(unavailable)})
+        required = EvidenceExtractionPipeline(
+            {"optional": _FixedEvidence(unavailable)}
+        )
         with self.assertRaises(RequiredEvidenceUnavailableError):
             required.extract_all(Image.new("RGB", (2, 2)))
 
     def test_operational_errors_are_not_converted_to_unavailable(self) -> None:
-        pipeline = MultiEvidencePipeline(
+        pipeline = EvidenceExtractionPipeline(
             {
                 "required": _FixedEvidence(np.asarray([1.0, 0.0], np.float32)),
                 "optional": _BrokenEvidence(np.asarray([1.0, 0.0], np.float32)),
@@ -150,8 +153,41 @@ class ExactOptionalGalleryTests(unittest.TestCase):
     def tearDown(self) -> None:
         self.temporary.cleanup()
 
+    def test_prebuilt_query_cannot_omit_required_channels(self) -> None:
+        gallery = IdentityGallery(
+            self.root, dim=4, embedding_contract=_contract()
+        )
+        try:
+            gallery.enroll(
+                {"required": np.asarray([1.0, 0.0], np.float32)},
+                _dog_id("required-query"),
+            )
+            query = RetrievalQuery(
+                vectors={"optional": np.asarray([1.0, 0.0], np.float32)},
+                availability={"required": False, "optional": True},
+            )
+            with self.assertRaisesRegex(ValueError, "required embedding channels"):
+                gallery.search(query)
+        finally:
+            gallery.close()
+
+    def test_query_vectors_are_immutable_defensive_copies(self) -> None:
+        source = np.asarray([1.0, 0.0], np.float32)
+        query = RetrievalQuery(
+            vectors={"required": source},
+            availability={"required": True, "optional": False},
+        )
+        source[0] = np.nan
+        np.testing.assert_array_equal(
+            query.vectors["required"], np.asarray([1.0, 0.0], np.float32)
+        )
+        with self.assertRaisesRegex(ValueError, "read-only"):
+            query.vectors["required"][0] = np.nan
+        with self.assertRaisesRegex(ValueError, "WRITEABLE"):
+            query.vectors["required"].setflags(write=True)
+
     def test_exact_search_is_exhaustive_and_renormalizes_intersection(self) -> None:
-        index = SpeciesFilteredIndex(self.root, dim=4, embedding_contract=_contract())
+        index = IdentityGallery(self.root, dim=4, embedding_contract=_contract())
         try:
             for number in range(20):
                 index.enroll(
@@ -193,7 +229,7 @@ class ExactOptionalGalleryTests(unittest.TestCase):
             index.close()
 
     def test_identity_max_uses_one_complete_winning_template(self) -> None:
-        index = SpeciesFilteredIndex(self.root, dim=4, embedding_contract=_contract())
+        index = IdentityGallery(self.root, dim=4, embedding_contract=_contract())
         try:
             dog_id = _dog_id("identity-max")
             index.enroll(
@@ -222,7 +258,7 @@ class ExactOptionalGalleryTests(unittest.TestCase):
     def test_v4_round_trip_sidecar_and_single_writer(self) -> None:
         dog_one = compute_registered_dog_id("fixture:v1:optional:dog:1")
         dog_two = compute_registered_dog_id("fixture:v1:optional:dog:2")
-        index = SpeciesFilteredIndex(self.root, dim=4, embedding_contract=_contract())
+        index = IdentityGallery(self.root, dim=4, embedding_contract=_contract())
         index.enroll(
             {"required": np.asarray([1.0, 0.0], np.float32)}, dog_one
         )
@@ -234,7 +270,7 @@ class ExactOptionalGalleryTests(unittest.TestCase):
             dog_two,
         )
         with self.assertRaisesRegex(RuntimeError, "active writer"):
-            SpeciesFilteredIndex(self.root, dim=4, embedding_contract=_contract())
+            IdentityGallery(self.root, dim=4, embedding_contract=_contract())
         index.save()
         manifest = json.loads(
             (self.root / "gallery_manifest.json").read_text(encoding="utf-8")
@@ -245,7 +281,7 @@ class ExactOptionalGalleryTests(unittest.TestCase):
         availability = json.loads(availability_path.read_text(encoding="utf-8"))
         self.assertEqual(availability["0"], {"optional": False, "required": True})
         self.assertEqual(availability["1"], {"optional": True, "required": True})
-        loaded = SpeciesFilteredIndex(
+        loaded = IdentityGallery(
             self.root, dim=4, embedding_contract=_contract(), read_only=True
         )
         try:
@@ -256,7 +292,7 @@ class ExactOptionalGalleryTests(unittest.TestCase):
 
     def test_oversized_optional_vectors_rejected_before_npz_load(self) -> None:
         dog_id = compute_registered_dog_id("fixture:v1:optional:oversized")
-        index = SpeciesFilteredIndex(self.root, dim=4, embedding_contract=_contract())
+        index = IdentityGallery(self.root, dim=4, embedding_contract=_contract())
         index.enroll(
             {
                 "required": np.asarray([1.0, 0.0], np.float32),
@@ -275,16 +311,16 @@ class ExactOptionalGalleryTests(unittest.TestCase):
         index.close()
 
         with (
-            patch("identity_retrieval.index.hierarchical.np.load") as np_load,
+            patch("identity_retrieval.gallery.np.load") as np_load,
             self.assertRaisesRegex(RuntimeError, "optional vectors.*byte limit"),
         ):
-            SpeciesFilteredIndex(
+            IdentityGallery(
                 self.root, dim=4, embedding_contract=_contract(), read_only=True
             )
         np_load.assert_not_called()
 
     def test_compressed_oversized_npz_member_fails_before_materialization(self) -> None:
-        index = SpeciesFilteredIndex(self.root, dim=4, embedding_contract=_contract())
+        index = IdentityGallery(self.root, dim=4, embedding_contract=_contract())
         index.enroll(
             {
                 "required": np.asarray([1.0, 0.0], np.float32),
@@ -301,16 +337,16 @@ class ExactOptionalGalleryTests(unittest.TestCase):
         index.close()
 
         with (
-            patch("identity_retrieval.index.hierarchical.np.load") as np_load,
+            patch("identity_retrieval.gallery.np.load") as np_load,
             self.assertRaisesRegex(RuntimeError, "member.*invalid"),
         ):
-            SpeciesFilteredIndex(
+            IdentityGallery(
                 self.root, dim=4, embedding_contract=_contract(), read_only=True
             )
         np_load.assert_not_called()
 
     def test_forged_huge_npy_shape_fails_before_materialization(self) -> None:
-        index = SpeciesFilteredIndex(self.root, dim=4, embedding_contract=_contract())
+        index = IdentityGallery(self.root, dim=4, embedding_contract=_contract())
         index.enroll(
             {
                 "required": np.asarray([1.0, 0.0], np.float32),
@@ -331,17 +367,17 @@ class ExactOptionalGalleryTests(unittest.TestCase):
         index.close()
 
         with (
-            patch("identity_retrieval.index.hierarchical.np.load") as np_load,
+            patch("identity_retrieval.gallery.np.load") as np_load,
             self.assertRaisesRegex(RuntimeError, "dtype or shape"),
         ):
-            SpeciesFilteredIndex(
+            IdentityGallery(
                 self.root, dim=4, embedding_contract=_contract(), read_only=True
             )
         np_load.assert_not_called()
 
     def test_pipeline_returns_auditable_fields_and_exact_explain(self) -> None:
-        index = SpeciesFilteredIndex(self.root, dim=4, embedding_contract=_contract())
-        evidence = MultiEvidencePipeline(
+        index = IdentityGallery(self.root, dim=4, embedding_contract=_contract())
+        evidence = EvidenceExtractionPipeline(
             {
                 "required": _FixedEvidence(np.asarray([1.0, 0.0], np.float32)),
                 "optional": _FixedEvidence(EvidenceObservation.unavailable(
@@ -350,9 +386,7 @@ class ExactOptionalGalleryTests(unittest.TestCase):
             },
             {"optional"},
         )
-        pipeline = IdentitySearchPipeline(
-            evidence, index, LearnedWeightFuser(["required", "optional"], [0.1, 0.9])
-        )
+        pipeline = IdentityRetrievalPipeline(evidence, index)
         image = Image.new("RGB", (2, 2))
         try:
             dog_id = _dog_id("pipeline")
@@ -397,19 +431,21 @@ class ConfigAndMigrationTests(unittest.TestCase):
                 IdentityEngine({**config, "optional_channels": ["required", "optional"]})
             runtime = IdentityEngine({**config, "optional_channels": ["optional"]})
             try:
-                channels = runtime._index._embedding_contract["channels"]
+                channels = runtime._gallery._embedding_contract["channels"]
                 self.assertEqual([channel["optional"] for channel in channels], [
                     False, True,
                 ])
                 self.assertEqual(
-                    runtime._fuser.scorer_hash, runtime._index.scorer_hash
+                    runtime._gallery.scorer_hash,
+                    runtime._gallery._scorer.scorer_hash,
                 )
+                self.assertEqual(len(runtime._gallery.scorer_hash), 64)
                 self.assertEqual(
-                    runtime._index._embedding_contract["fusion"]["type"],
+                    runtime._gallery._embedding_contract["fusion"]["type"],
                     "exact_available_intersection_weighted_cosine.v1",
                 )
             finally:
-                runtime._index.close()
+                runtime._gallery.close()
 
     def test_legacy_v1_is_all_required_only(self) -> None:
         fixed = {"required": _FixedEvidence(np.asarray([1.0, 0.0], np.float32))}
@@ -424,10 +460,10 @@ class ConfigAndMigrationTests(unittest.TestCase):
             })
             try:
                 self.assertFalse(
-                    runtime._index._embedding_contract["channels"][0]["optional"]
+                    runtime._gallery._embedding_contract["channels"][0]["optional"]
                 )
             finally:
-                runtime._index.close()
+                runtime._gallery.close()
 
     def test_nose_bundle_schema_is_composite_and_exact(self) -> None:
         runtime = IdentityEngine.__new__(IdentityEngine)
@@ -552,7 +588,7 @@ class ConfigAndMigrationTests(unittest.TestCase):
                 source_snapshot,
             )
             self.assertEqual(output.stat().st_mode & 0o777, 0o700)
-            migrated = SpeciesFilteredIndex(output, dim=2, read_only=True)
+            migrated = IdentityGallery(output, dim=2, read_only=True)
             try:
                 np.testing.assert_array_equal(migrated._index.reconstruct(0), vector[0])
             finally:

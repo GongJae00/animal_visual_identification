@@ -100,7 +100,7 @@ class CoveragePolicy:
 
 
 @dataclass(frozen=True, slots=True)
-class EvidenceObservation:
+class CoverageObservation:
     timestamp_ns: int
     modality: Modality
     dog_count: int
@@ -184,11 +184,11 @@ class EvidenceObservation:
         }
 
     @classmethod
-    def from_dict(cls, payload: dict[str, Any]) -> EvidenceObservation:
+    def from_dict(cls, payload: dict[str, Any]) -> CoverageObservation:
         _reject_unknown_keys(
             payload,
             set(cls.__dataclass_fields__),
-            "evidence observation",
+            "coverage observation",
         )
         kwargs = dict(payload)
         kwargs["modality"] = Modality(payload["modality"])
@@ -197,6 +197,8 @@ class EvidenceObservation:
 
 class _CoverageBucket:
     __slots__ = (
+        "cage_bar_occlusion_histogram_ns",
+        "defocus_blur_histogram_ns",
         "dog_crop_histogram_ns",
         "dog_size_available_ns",
         "exposure_failure_ns",
@@ -212,10 +214,8 @@ class _CoverageBucket:
         "motion_blur_histogram_ns",
         "multiple_dogs_ns",
         "no_dog_ns",
-        "occlusion_histogram_ns",
         "observed_ns",
-        "cage_bar_occlusion_histogram_ns",
-        "defocus_blur_histogram_ns",
+        "occlusion_histogram_ns",
         "single_dog_ns",
         "visibility_histogram_ns",
     )
@@ -247,7 +247,7 @@ class _CoverageBucket:
 
     def add(
         self,
-        observation: EvidenceObservation,
+        observation: CoverageObservation,
         duration_ns: int,
         policy: CoveragePolicy,
     ) -> None:
@@ -397,9 +397,9 @@ class CoverageAccumulator:
     """Chronological fixed-memory accumulator."""
 
     __slots__ = (
-        "_aggregate",
         "_active_run_duration_ns",
         "_active_run_key",
+        "_aggregate",
         "_closed",
         "_last_observation",
         "_missing_track_key_duration_ns",
@@ -422,7 +422,7 @@ class CoverageAccumulator:
         self._policy = policy
         self._aggregate = _CoverageBucket()
         self._modalities = {modality: _CoverageBucket() for modality in Modality}
-        self._last_observation: EvidenceObservation | None = None
+        self._last_observation: CoverageObservation | None = None
         self._active_run_key: tuple[str, str, str, Modality] | None = None
         self._active_run_duration_ns = 0
         self._usable_tracklet_count = 0
@@ -432,7 +432,7 @@ class CoverageAccumulator:
         self._timeline_start_ns = timeline_start_ns
         self._closed = False
 
-    def observe(self, observation: EvidenceObservation) -> None:
+    def observe(self, observation: CoverageObservation) -> None:
         if self._closed:
             raise RuntimeError("coverage accumulator is finalized")
         if self._last_observation is None and self._timeline_start_ns is not None:
@@ -507,7 +507,7 @@ class CoverageAccumulator:
             },
         }
 
-    def _add(self, observation: EvidenceObservation, duration_ns: int) -> None:
+    def _add(self, observation: CoverageObservation, duration_ns: int) -> None:
         self._aggregate.add(observation, duration_ns, self._policy)
         self._modalities[observation.modality].add(
             observation,
@@ -541,7 +541,7 @@ class CoverageAccumulator:
 
 
 def _base_quality(
-    observation: EvidenceObservation,
+    observation: CoverageObservation,
     policy: CoveragePolicy,
 ) -> bool | None:
     required = (
@@ -579,7 +579,7 @@ def _base_quality(
 
 
 def _evidence_is_usable(
-    observation: EvidenceObservation,
+    observation: CoverageObservation,
     policy: CoveragePolicy,
 ) -> bool:
     if observation.dog_count != 1 or _base_quality(observation, policy) is not True:
@@ -666,6 +666,3 @@ def _reject_unknown_keys(
         raise ValueError(
             f"{object_name} has unknown fields: {', '.join(sorted(unknown))}"
         )
-        "_missing_track_key_duration_ns",
-        "_usable_tracklet_count",
-        "_usable_tracklet_duration_ns",

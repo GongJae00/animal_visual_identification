@@ -6,13 +6,20 @@ import tempfile
 import unittest
 import uuid
 from pathlib import Path
+from typing import ClassVar
 from unittest.mock import patch
 
 import numpy as np
 from PIL import Image
 
-from canine_identity.engine import IdentityEngine, Match
-from evidence_fusion.base import AbstractEvidencer
+from artifact_contracts.artifact_manifest import (
+    ArtifactLicense,
+    ImagePreprocessing,
+    LandmarkGraphManifest,
+    LandmarkGraphPreprocessing,
+    LandmarkKeypointManifest,
+    UsageLane,
+)
 from artifact_contracts.model_contract import (
     ConvNeXtModelManifest,
     DogFaceNetModelManifest,
@@ -22,19 +29,12 @@ from artifact_contracts.model_contract import (
     OnnxPreprocessingContract,
     PetReIDModelManifest,
 )
-from artifact_contracts.artifact_manifest import (
-    ArtifactLicense,
-    ImagePreprocessing,
-    LandmarkGraphManifest,
-    LandmarkGraphPreprocessing,
-    LandmarkKeypointManifest,
-    UsageLane,
-)
-from evidence_fusion.fuser import LearnedWeightFuser
-from identity_retrieval.index.hierarchical import SpeciesFilteredIndex
+from canine_identity.engine import IdentityEngine, Match
+from evidence_fusion.base import AbstractEvidencer
 from identity_governance.identity_registry import compute_registered_dog_id
-from identity_retrieval.pipeline.enroll import MultiEvidencePipeline
-from identity_retrieval.pipeline.search import IdentitySearchPipeline
+from identity_retrieval.gallery import IdentityGallery
+from identity_retrieval.pipeline.extraction import EvidenceExtractionPipeline
+from identity_retrieval.pipeline.retrieval import IdentityRetrievalPipeline
 
 
 class _FixedEvidencer(AbstractEvidencer):
@@ -51,25 +51,8 @@ class _FixedEvidencer(AbstractEvidencer):
         return np.stack([self._value for _ in images])
 
 
-class _RecordingOpenSet:
-    def __init__(self) -> None:
-        self.result_count = 0
-
-    def reject(self, top_result, all_results, epistemic=None):
-        self.result_count = len(all_results)
-        return False, ""
-
-
-class _QueryPipeline:
-    def __init__(self, embeddings: dict[str, np.ndarray]) -> None:
-        self._embeddings = embeddings
-
-    def extract_with_uncertainty(self, image: Image.Image):
-        return self._embeddings, {}
-
-
 class _ConfiguredOnnxEvidencer(AbstractEvidencer):
-    calls: list[tuple[Path, object, bool]] = []
+    calls: ClassVar[list[tuple[Path, object, bool]]] = []
 
     def __init__(self, model_path: Path, manifest: object, *, use_cuda: bool):
         self.calls.append((model_path, manifest, use_cuda))
@@ -83,9 +66,9 @@ class _ConfiguredOnnxEvidencer(AbstractEvidencer):
 
 
 class _ConfiguredLocalDinov2Evidencer(AbstractEvidencer):
-    calls: list[dict] = []
+    calls: ClassVar[list[dict]] = []
     output_dim = 384
-    gallery_contract_fields = {
+    gallery_contract_fields: ClassVar[dict[str, str]] = {
         "model_sha256": "1" * 64,
         "preprocessor_sha256": "2" * 64,
         "weight_intake_receipt_sha256": "3" * 64,
@@ -103,7 +86,7 @@ class _ConfiguredLocalDinov2Evidencer(AbstractEvidencer):
 
 
 class _ConfiguredLandmarkEvidencer(AbstractEvidencer):
-    calls: list[tuple[Path, object, Path, object, bool]] = []
+    calls: ClassVar[list[tuple[Path, object, Path, object, bool]]] = []
 
     def __init__(
         self,
@@ -221,38 +204,6 @@ def _dog_id(label: str) -> str:
     return compute_registered_dog_id(f"fixture:v1:runtime-contract:{label}")
 
 
-class FusionContractTests(unittest.TestCase):
-    def test_embedding_cosine_matches_fixed_weighted_score(self) -> None:
-        fuser = LearnedWeightFuser(["a", "b"], [0.8, 0.2])
-        pipeline = IdentitySearchPipeline(None, None, fuser)  # type: ignore[arg-type]
-        query = pipeline._fuse_embeddings({
-            "a": np.array([1.0, 0.0]),
-            "b": np.array([1.0, 0.0]),
-        })
-        candidate = pipeline._fuse_embeddings({
-            "a": np.array([1.0, 0.0]),
-            "b": np.array([0.0, 1.0]),
-        })
-        self.assertAlmostEqual(float(np.dot(query, candidate)), 0.8, places=6)
-
-    def test_fuser_rejects_invalid_weights_and_vectors(self) -> None:
-        with self.assertRaises(ValueError):
-            LearnedWeightFuser(["a", "b"], [1.0])
-        with self.assertRaises(ValueError):
-            LearnedWeightFuser(["a"], [float("nan")])
-        with self.assertRaises(ValueError):
-            LearnedWeightFuser(["a"], [-1.0])
-        pipeline = IdentitySearchPipeline(
-            None, None, LearnedWeightFuser(["a"])  # type: ignore[arg-type]
-        )
-        with self.assertRaises(ValueError):
-            pipeline._fuse_embeddings({"a": np.zeros(2, dtype=np.float32)})
-
-    def test_missing_scores_are_renormalized(self) -> None:
-        fuser = LearnedWeightFuser(["a", "b"], [0.9, 0.1])
-        self.assertEqual(fuser.fuse({"b": 0.4}), 0.4)
-
-
 class GalleryContractTests(unittest.TestCase):
     def setUp(self) -> None:
         self.temporary = tempfile.TemporaryDirectory()
@@ -264,12 +215,12 @@ class GalleryContractTests(unittest.TestCase):
     def test_versioned_gallery_round_trip(self) -> None:
         dog_one = compute_registered_dog_id("fixture:v1:dog:1")
         dog_two = compute_registered_dog_id("fixture:v1:dog:2")
-        index = SpeciesFilteredIndex(self.root, dim=2)
+        index = IdentityGallery(self.root, dim=2)
         index.enroll(np.array([1.0, 0.0]), dog_one, {"display_name": "one"})
         index.enroll(np.array([0.0, 1.0]), dog_one)
         index.enroll(np.array([1.0, 1.0]), dog_two)
         index.save()
-        loaded = SpeciesFilteredIndex(self.root, dim=2, read_only=True)
+        loaded = IdentityGallery(self.root, dim=2, read_only=True)
         self.assertEqual(loaded.size, 3)
         result = loaded.search(np.array([1.0, 0.0]), top_k=1)[0]
         self.assertEqual(result[2]["registered_dog_id"], dog_one)
@@ -291,7 +242,7 @@ class GalleryContractTests(unittest.TestCase):
                 tempfile.TemporaryDirectory() as directory,
             ):
                 root = Path(directory)
-                index = SpeciesFilteredIndex(root, dim=2)
+                index = IdentityGallery(root, dim=2)
                 index.enroll(np.array([1.0, 0.0]), valid_id)
                 index.save()
                 index.close()
@@ -319,10 +270,10 @@ class GalleryContractTests(unittest.TestCase):
                 )
 
                 with self.assertRaisesRegex(RuntimeError, "UUIDv5"):
-                    SpeciesFilteredIndex(root, dim=2, read_only=True)
+                    IdentityGallery(root, dim=2, read_only=True)
 
     def test_direct_enrollment_requires_identity_but_metadata_labels_reload(self) -> None:
-        index = SpeciesFilteredIndex(self.root, dim=2)
+        index = IdentityGallery(self.root, dim=2)
         for invalid_id in ("source-label", str(uuid.uuid4()), _dog_id("valid").upper()):
             with self.subTest(invalid_id=invalid_id), self.assertRaisesRegex(
                 ValueError, "UUIDv5"
@@ -341,7 +292,7 @@ class GalleryContractTests(unittest.TestCase):
         index.save()
         index.close()
 
-        loaded = SpeciesFilteredIndex(self.root, dim=2, read_only=True)
+        loaded = IdentityGallery(self.root, dim=2, read_only=True)
         try:
             result = loaded.search(np.array([1.0, 0.0]), top_k=1)[0][2]
             self.assertEqual(result["registered_dog_id"], dog_id)
@@ -353,7 +304,7 @@ class GalleryContractTests(unittest.TestCase):
             loaded.close()
 
     def test_gallery_rejects_bad_vectors_and_accepts_multiple_templates(self) -> None:
-        index = SpeciesFilteredIndex(self.root, dim=2)
+        index = IdentityGallery(self.root, dim=2)
         dog_id = _dog_id("bad-vectors")
         with self.assertRaises(ValueError):
             index.enroll(np.array([0.0, 0.0]), dog_id)
@@ -366,7 +317,7 @@ class GalleryContractTests(unittest.TestCase):
             index.search(np.ones(3, dtype=np.float32))
 
     def test_gallery_enrollment_duplicate_semantics(self) -> None:
-        index = SpeciesFilteredIndex(self.root, dim=2)
+        index = IdentityGallery(self.root, dim=2)
         dog_one = _dog_id("duplicate-one")
         dog_two = _dog_id("duplicate-two")
         with self.assertRaisesRegex(ValueError, "idempotency_key.*bounded"):
@@ -430,7 +381,7 @@ class GalleryContractTests(unittest.TestCase):
         self.assertEqual(len(result[2]["content_sha256"]), 64)
 
     def test_search_aggregates_templates_before_top_k_and_tie_breaks_by_id(self) -> None:
-        index = SpeciesFilteredIndex(self.root, dim=2)
+        index = IdentityGallery(self.root, dim=2)
         dog_c = _dog_id("aggregate-c")
         dog_d = _dog_id("aggregate-d")
         index.enroll(np.array([0.99, 0.1]), dog_c)
@@ -442,7 +393,7 @@ class GalleryContractTests(unittest.TestCase):
         ])
         self.assertEqual(results[0][0], winning_index)
 
-        tied = SpeciesFilteredIndex(self.root / "ties", dim=2)
+        tied = IdentityGallery(self.root / "ties", dim=2)
         tied_ids = [_dog_id("tie-b"), _dog_id("tie-a")]
         tied.enroll(np.array([1.0, 1.0]), tied_ids[0])
         tied.enroll(np.array([1.0, -1.0]), tied_ids[1])
@@ -453,7 +404,7 @@ class GalleryContractTests(unittest.TestCase):
         )
 
     def test_gallery_rejects_corrupted_metadata(self) -> None:
-        index = SpeciesFilteredIndex(self.root, dim=2)
+        index = IdentityGallery(self.root, dim=2)
         index.enroll(np.array([1.0, 0.0]), _dog_id("corrupted-metadata"))
         index.save()
         manifest = json.loads(
@@ -463,7 +414,7 @@ class GalleryContractTests(unittest.TestCase):
         metadata.write_text("{}\n", encoding="utf-8")
         index.close()
         with self.assertRaisesRegex(RuntimeError, "corrupted"):
-            SpeciesFilteredIndex(self.root, dim=2, read_only=True)
+            IdentityGallery(self.root, dim=2, read_only=True)
 
     def test_gallery_manifest_validates_template_and_identity_counts(self) -> None:
         for field, value, message in (
@@ -472,7 +423,7 @@ class GalleryContractTests(unittest.TestCase):
         ):
             with self.subTest(field=field), tempfile.TemporaryDirectory() as directory:
                 root = Path(directory)
-                index = SpeciesFilteredIndex(root, dim=2)
+                index = IdentityGallery(root, dim=2)
                 index.enroll(np.array([1.0, 0.0]), _dog_id(f"count-{field}"))
                 index.save()
                 manifest_path = root / "gallery_manifest.json"
@@ -485,10 +436,10 @@ class GalleryContractTests(unittest.TestCase):
                 )
                 index.close()
                 with self.assertRaisesRegex(RuntimeError, message):
-                    SpeciesFilteredIndex(root, dim=2, read_only=True)
+                    IdentityGallery(root, dim=2, read_only=True)
 
     def test_gallery_resave_preserves_corrupted_generation_file(self) -> None:
-        index = SpeciesFilteredIndex(self.root, dim=2)
+        index = IdentityGallery(self.root, dim=2)
         index.enroll(np.array([1.0, 0.0]), _dog_id("corrupted-generation"))
         index.save()
         manifest_path = self.root / "gallery_manifest.json"
@@ -511,9 +462,9 @@ class GalleryContractTests(unittest.TestCase):
         real_root.mkdir()
         root_link.symlink_to(real_root, target_is_directory=True)
         with self.assertRaisesRegex(RuntimeError, "root.*symbolic link"):
-            SpeciesFilteredIndex(root_link, dim=2)
+            IdentityGallery(root_link, dim=2)
 
-        index = SpeciesFilteredIndex(real_root, dim=2)
+        index = IdentityGallery(real_root, dim=2)
         index.enroll(np.array([1.0, 0.0]), _dog_id("symlink"))
         index.save()
         manifest = json.loads(
@@ -527,7 +478,7 @@ class GalleryContractTests(unittest.TestCase):
         index.close()
 
         with self.assertRaisesRegex(RuntimeError, "without following links"):
-            SpeciesFilteredIndex(real_root, dim=2, read_only=True)
+            IdentityGallery(real_root, dim=2, read_only=True)
 
     def test_gallery_rejects_bounded_manifest_and_cardinality_before_sidecars(
         self,
@@ -535,13 +486,13 @@ class GalleryContractTests(unittest.TestCase):
         manifest_path = self.root / "gallery_manifest.json"
         manifest_path.write_bytes(b" " * 17)
         with (
-            patch("identity_retrieval.index.hierarchical._MAXIMUM_MANIFEST_BYTES", 16),
+            patch("identity_retrieval.gallery._MAXIMUM_MANIFEST_BYTES", 16),
             self.assertRaisesRegex(RuntimeError, "byte limit"),
         ):
-            SpeciesFilteredIndex(self.root, dim=2, read_only=True)
+            IdentityGallery(self.root, dim=2, read_only=True)
 
         manifest_path.unlink()
-        index = SpeciesFilteredIndex(self.root, dim=2)
+        index = IdentityGallery(self.root, dim=2)
         index.enroll(np.array([1.0, 0.0]), _dog_id("cardinality"))
         index.save()
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
@@ -553,23 +504,23 @@ class GalleryContractTests(unittest.TestCase):
         index.close()
 
         with self.assertRaisesRegex(RuntimeError, "count is invalid"):
-            SpeciesFilteredIndex(self.root, dim=2, read_only=True)
+            IdentityGallery(self.root, dim=2, read_only=True)
 
     def test_gallery_rejects_oversized_json_sidecar(self) -> None:
-        index = SpeciesFilteredIndex(self.root, dim=2)
+        index = IdentityGallery(self.root, dim=2)
         index.enroll(np.array([1.0, 0.0]), _dog_id("oversized-sidecar"))
         index.save()
         index.close()
 
         with (
-            patch("identity_retrieval.index.hierarchical._MAXIMUM_SIDECAR_JSON_BYTES", 16),
+            patch("identity_retrieval.gallery._MAXIMUM_SIDECAR_JSON_BYTES", 16),
             self.assertRaisesRegex(RuntimeError, "byte limit"),
         ):
-            SpeciesFilteredIndex(self.root, dim=2, read_only=True)
+            IdentityGallery(self.root, dim=2, read_only=True)
 
     def test_gallery_rejects_oversized_faiss_before_deserialization(self) -> None:
         dog_id = compute_registered_dog_id("fixture:v1:dog:oversized-faiss")
-        index = SpeciesFilteredIndex(self.root, dim=2)
+        index = IdentityGallery(self.root, dim=2)
         index.enroll(np.array([1.0, 0.0]), dog_id)
         index.save()
         manifest = json.loads(
@@ -581,10 +532,10 @@ class GalleryContractTests(unittest.TestCase):
         index.close()
 
         with (
-            patch("identity_retrieval.index.hierarchical.faiss.read_index") as read_index,
+            patch("identity_retrieval.gallery.faiss.read_index") as read_index,
             self.assertRaisesRegex(RuntimeError, "required index.*byte limit"),
         ):
-            SpeciesFilteredIndex(self.root, dim=2, read_only=True)
+            IdentityGallery(self.root, dim=2, read_only=True)
         read_index.assert_not_called()
 
     def test_publication_limits_do_not_mutate_prior_generation(self) -> None:
@@ -596,7 +547,7 @@ class GalleryContractTests(unittest.TestCase):
                 root = self.root / limit_name
                 dog_one = compute_registered_dog_id(f"fixture:v1:{limit_name}:1")
                 dog_two = compute_registered_dog_id(f"fixture:v1:{limit_name}:2")
-                index = SpeciesFilteredIndex(root, dim=2)
+                index = IdentityGallery(root, dim=2)
                 index.enroll(np.array([1.0, 0.0]), dog_one)
                 index.save()
                 snapshot = {
@@ -607,7 +558,7 @@ class GalleryContractTests(unittest.TestCase):
                 index.enroll(np.array([0.0, 1.0]), dog_two)
 
                 with (
-                    patch(f"identity_retrieval.index.hierarchical.{limit_name}", 16),
+                    patch(f"identity_retrieval.gallery.{limit_name}", 16),
                     self.assertRaisesRegex(RuntimeError, message),
                 ):
                     index.save()
@@ -623,7 +574,7 @@ class GalleryContractTests(unittest.TestCase):
                 index.close()
 
     def test_gallery_sidecar_rejects_duplicate_keys(self) -> None:
-        index = SpeciesFilteredIndex(self.root, dim=2)
+        index = IdentityGallery(self.root, dim=2)
         index.enroll(np.array([1.0, 0.0]), _dog_id("duplicate-sidecar"))
         index.save()
         manifest_path = self.root / "gallery_manifest.json"
@@ -638,7 +589,7 @@ class GalleryContractTests(unittest.TestCase):
         index.close()
 
         with self.assertRaisesRegex(RuntimeError, "duplicate JSON object key"):
-            SpeciesFilteredIndex(self.root, dim=2, read_only=True)
+            IdentityGallery(self.root, dim=2, read_only=True)
 
     def test_gallery_rejects_a_different_embedding_contract(self) -> None:
         first_contract = {
@@ -651,14 +602,14 @@ class GalleryContractTests(unittest.TestCase):
             **first_contract,
             "weights": [0.1, 0.9],
         }
-        index = SpeciesFilteredIndex(
+        index = IdentityGallery(
             self.root, dim=2, embedding_contract=first_contract
         )
         index.enroll(np.array([1.0, 0.0]), _dog_id("different-contract"))
         index.save()
         index.close()
         with self.assertRaisesRegex(RuntimeError, "embedding contract"):
-            SpeciesFilteredIndex(
+            IdentityGallery(
                 self.root, dim=2, embedding_contract=second_contract,
                 read_only=True,
             )
@@ -666,19 +617,18 @@ class GalleryContractTests(unittest.TestCase):
     def test_unversioned_gallery_is_rejected(self) -> None:
         (self.root / "metadata.json").write_text("{}", encoding="utf-8")
         with self.assertRaisesRegex(RuntimeError, "unversioned"):
-            SpeciesFilteredIndex(self.root, dim=2)
+            IdentityGallery(self.root, dim=2)
 
 
 class SearchContractTests(unittest.TestCase):
-    def test_evidence_uses_the_fusion_channel_order(self) -> None:
+    def test_evidence_uses_the_qk_channel_order(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
-            index = SpeciesFilteredIndex(
+            index = IdentityGallery(
                 Path(directory), dim=4,
                 embedding_contract=_gallery_contract(
                     [("b", 2), ("a", 2)], [0.5, 0.5]
                 ),
             )
-            fuser = LearnedWeightFuser(["b", "a"], [0.5, 0.5])
             candidate = {
                 "a": np.array([1.0, 0.0]),
                 "b": np.array([0.0, 1.0]),
@@ -687,9 +637,11 @@ class SearchContractTests(unittest.TestCase):
                 "a": np.array([1.0, 0.0]),
                 "b": np.array([1.0, 0.0]),
             }
-            pipeline = IdentitySearchPipeline(
-                _QueryPipeline(query), index, fuser  # type: ignore[arg-type]
-            )
+            extraction = EvidenceExtractionPipeline({
+                name: _FixedEvidencer(embedding)
+                for name, embedding in query.items()
+            })
+            pipeline = IdentityRetrievalPipeline(extraction, index)
             index.enroll(candidate, _dog_id("fusion-order"))
             result = pipeline.search(Image.new("RGB", (4, 4)), top_k=1)[0]
             self.assertAlmostEqual(result.evidence["a"], 1.0)
@@ -698,48 +650,18 @@ class SearchContractTests(unittest.TestCase):
 
     def test_pipeline_content_hash_distinguishes_images_with_same_embedding(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
-            index = SpeciesFilteredIndex(
+            index = IdentityGallery(
                 Path(directory), dim=2,
                 embedding_contract=_gallery_contract([("appearance", 2)]),
             )
-            evidence = MultiEvidencePipeline({
+            evidence = EvidenceExtractionPipeline({
                 "appearance": _FixedEvidencer(np.array([1.0, 0.0]))
             })
-            pipeline = IdentitySearchPipeline(
-                evidence, index, LearnedWeightFuser(["appearance"])
-            )
+            pipeline = IdentityRetrievalPipeline(evidence, index)
             dog_id = _dog_id("same-embedding")
             pipeline.enroll(Image.new("RGB", (2, 2), "black"), dog_id)
             pipeline.enroll(Image.new("RGB", (2, 2), "white"), dog_id)
             self.assertEqual(index.size, 2)
-
-    def test_top_k_one_keeps_second_candidate_for_open_set(self) -> None:
-        with tempfile.TemporaryDirectory() as directory:
-            index = SpeciesFilteredIndex(
-                Path(directory), dim=2,
-                embedding_contract=_gallery_contract([("appearance", 2)]),
-            )
-            index.enroll(
-                {"appearance": np.array([1.0, 0.0])}, _dog_id("open-set-one")
-            )
-            index.enroll(
-                {"appearance": np.array([0.8, 0.2])}, _dog_id("open-set-two")
-            )
-            evidence = MultiEvidencePipeline({
-                "appearance": _FixedEvidencer(np.array([1.0, 0.0]))
-            })
-            open_set = _RecordingOpenSet()
-            pipeline = IdentitySearchPipeline(
-                evidence,
-                index,
-                LearnedWeightFuser(["appearance"]),
-                open_set,  # type: ignore[arg-type]
-            )
-            image = Image.new("RGB", (4, 4))
-            results = pipeline.search(image, top_k=1)
-            self.assertEqual(len(results), 1)
-            self.assertEqual(open_set.result_count, 2)
-
 
 class PublicConfigurationTests(unittest.TestCase):
     @staticmethod
@@ -832,7 +754,7 @@ class PublicConfigurationTests(unittest.TestCase):
                     "device": "cuda",
                 }],
             )
-            contract_channel = runtime._index._embedding_contract["channels"][0]
+            contract_channel = runtime._gallery._embedding_contract["channels"][0]
             self.assertEqual(contract_channel["configuration"], channel)
             for field, digest in (
                 _ConfiguredLocalDinov2Evidencer.gallery_contract_fields.items()
@@ -1102,7 +1024,7 @@ class PublicConfigurationTests(unittest.TestCase):
 
     def test_public_arguments_are_bounded_canonical_and_finite(self) -> None:
         runtime = IdentityEngine.__new__(IdentityEngine)
-        runtime._search = _PublicSearchRecorder()
+        runtime._retrieval = _PublicSearchRecorder()
         image = Image.new("RGB", (2, 2))
         with self.assertRaisesRegex(ValueError, "top_k"):
             runtime.search(image, top_k=1_001)
@@ -1110,7 +1032,7 @@ class PublicConfigurationTests(unittest.TestCase):
             with self.subTest(breed_filter=breed_filter), self.assertRaises(ValueError):
                 runtime.search(image, breed_filter=breed_filter)  # type: ignore[arg-type]
         runtime.search(image, top_k=2, breed_filter=["beagle"])
-        self.assertEqual(runtime._search.search_arguments[2], ["beagle"])
+        self.assertEqual(runtime._retrieval.search_arguments[2], ["beagle"])
 
         dog_id = "877d96de-ba43-542d-9523-5c20213bfc09"
         with self.assertRaisesRegex(ValueError, "finite JSON"):
@@ -1125,7 +1047,7 @@ class PublicConfigurationTests(unittest.TestCase):
         self.assertEqual(runtime.enroll(image, dog_id, metadata=metadata), 7)
         metadata["capture"]["camera"] = "mutated"
         self.assertEqual(
-            runtime._search.enroll_arguments[3],
+            runtime._retrieval.enroll_arguments[3],
             {"capture": {"camera": "front"}},
         )
 

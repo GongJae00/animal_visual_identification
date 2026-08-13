@@ -1,6 +1,7 @@
 """Public API for explicit crop-level closed-set retrieval.
 
-Users never touch internal modules (index, fusion, evidence) directly.
+The supported public API does not require direct use of internal gallery, QKV, or
+evidence-extraction modules.
 All configuration lives in a single JSON/ dict.
 
 Usage:
@@ -38,7 +39,6 @@ from uuid import UUID
 
 import numpy as np
 from PIL import Image
-
 
 _RETRIEVAL_CONFIG_SCHEMA_V1 = "cvi.retrieval_config.v1"
 _RETRIEVAL_CONFIG_SCHEMA_V2 = "cvi.retrieval_config.v2"
@@ -97,7 +97,9 @@ class IdentityEngine:
                     maximum_bytes=_MAXIMUM_CONFIG_BYTES,
                 )
         if not isinstance(config, dict):
-            raise ValueError("IdentityEngine configuration must be a JSON object")
+            raise ValueError(  # noqa: TRY004 - public input-validation contract
+                "IdentityEngine configuration must be a JSON object"
+            )
         config = _canonical_json_object(
             config,
             "IdentityEngine configuration",
@@ -123,7 +125,7 @@ class IdentityEngine:
         if schema_version == _RETRIEVAL_CONFIG_SCHEMA_V1:
             if "optional_channels" in config:
                 raise ValueError(
-                    "legacy retrieval config v1 is an all-required migration format"
+                    "retrieval config v1 is an all-required migration format"
                 )
             optional_channels: list[str] = []
         else:
@@ -149,48 +151,54 @@ class IdentityEngine:
             raise ValueError("an explicit index_dir must be a non-empty JSON string")
         self._config = config
         self._optional_channels = frozenset(optional_channels)
-        self._pipeline = None
+        self._extraction = None
         self._init_pipeline()
 
     def _init_pipeline(self) -> None:
-        from identity_retrieval.pipeline.enroll import MultiEvidencePipeline
-        from identity_retrieval.pipeline.search import IdentitySearchPipeline
-        from identity_retrieval.index.hierarchical import SpeciesFilteredIndex
-        from evidence_fusion.fuser import LearnedWeightFuser
+        from identity_retrieval.gallery import IdentityGallery
+        from identity_retrieval.pipeline.extraction import EvidenceExtractionPipeline
+        from identity_retrieval.pipeline.retrieval import IdentityRetrievalPipeline
+        from identity_retrieval.qkv import (
+            AvailableIntersectionScorer,
+            EvidenceChannelSpec,
+            canonical_channel_weights,
+        )
 
         evidence = self._build_evidence()
         if not self._optional_channels <= set(evidence):
             raise ValueError("optional_channels contains an unknown channel")
         if not set(evidence) - self._optional_channels:
             raise ValueError("at least one configured channel must be required")
-        self._pipeline = MultiEvidencePipeline(evidence, self._optional_channels)
+        self._extraction = EvidenceExtractionPipeline(
+            evidence, self._optional_channels
+        )
 
         index_dir = Path(self._config["index_dir"])
-        computed_dim = self._compute_fused_dim(evidence)
-        dim = self._config.get("fused_dim", computed_dim)
-        if dim != computed_dim:
+        total_dimension = self._compute_total_embedding_dimension(evidence)
+        configured_dimension = self._config.get("fused_dim", total_dimension)
+        if configured_dimension != total_dimension:
             raise ValueError(
-                f"fused_dim must equal active channel dimensions ({computed_dim})"
+                "fused_dim must equal active channel dimensions "
+                f"({total_dimension})"
             )
         channels = list(evidence.keys())
-        weights = self._config.get("fusion_weights", None)
-        self._fuser = LearnedWeightFuser(
-            channels,
-            weights,
-            channel_dimensions={
-                name: int(evidence[name].output_dim) for name in channels
-            },
-            optional_channels=self._optional_channels,
+        weights = canonical_channel_weights(
+            len(channels), self._config.get("fusion_weights")
         )
-        required_indices = [
-            index for index, name in enumerate(channels)
-            if name not in self._optional_channels
-        ]
-        if float(self._fuser.weights[required_indices].sum()) <= 0.0:
-            raise ValueError("required channels must retain positive fusion weight")
+        scoring_policy = AvailableIntersectionScorer(
+            tuple(
+                EvidenceChannelSpec(
+                    name=name,
+                    dimension=int(evidence[name].output_dim),
+                    optional=name in self._optional_channels,
+                    weight=float(weights[index]),
+                )
+                for index, name in enumerate(channels)
+            )
+        )
         embedding_contract = {
             "schema_version": "cvi.gallery_embedding_contract.v1",
-            "dimension": dim,
+            "dimension": total_dimension,
             "channels": [
                 {
                     "name": name,
@@ -211,32 +219,21 @@ class IdentityEngine:
             ],
             "fusion": {
                 "type": "exact_available_intersection_weighted_cosine.v1",
-                "weights": self._fuser.weights.astype(float).tolist(),
+                "weights": weights.astype(float).tolist(),
             },
         }
-        self._index = SpeciesFilteredIndex(
+        self._gallery = IdentityGallery(
             index_dir,
-            dim=dim,
+            dim=total_dimension,
             embedding_contract=embedding_contract,
         )
-
-        self._open_set = None
-
-        self._search = IdentitySearchPipeline(
-            self._pipeline, self._index, self._fuser, self._open_set
+        if self._gallery.scorer_hash != scoring_policy.scorer_hash:
+            raise RuntimeError("gallery QK scorer contract differs from configuration")
+        self._retrieval = IdentityRetrievalPipeline(
+            self._extraction, self._gallery
         )
 
     def _build_evidence(self) -> dict[str, Any]:
-        from identity_methods.backbones.miewid import (
-            MiewIDArtifactManifest,
-            MiewIDReIDExtractor,
-        )
-        from identity_methods.appearance import ReceiptBoundDinov2Small
-        from artifact_contracts.model_contract import (
-            ConvNeXtModelManifest,
-            DogFaceNetModelManifest,
-            PetReIDModelManifest,
-        )
         from artifact_contracts.artifact_manifest import (
             LandmarkGraphManifest,
             LandmarkKeypointManifest,
@@ -244,13 +241,23 @@ class IdentityEngine:
             NoseEmbeddingManifest,
             NoseMaskManifest,
         )
-        from localization.landmark_graph import LandmarkEvidencer
-        from identity_methods.nose.extractor import NosePrintExtractor, NoseRoiPolicy
+        from artifact_contracts.model_contract import (
+            ConvNeXtModelManifest,
+            DogFaceNetModelManifest,
+            PetReIDModelManifest,
+        )
+        from identity_methods.appearance import ReceiptBoundDinov2Small
         from identity_methods.backbones.extractors import (
             ConvNeXtExtractor,
             DogFaceNetExtractor,
             PetReIDExtractor,
         )
+        from identity_methods.backbones.miewid import (
+            MiewIDArtifactManifest,
+            MiewIDReIDExtractor,
+        )
+        from identity_methods.nose.extractor import NosePrintExtractor, NoseRoiPolicy
+        from localization.landmark_graph import LandmarkEvidencer
 
         channels = self._config.get("channels")
         if not isinstance(channels, dict) or not channels:
@@ -260,7 +267,9 @@ class IdentityEngine:
             if not isinstance(name, str) or not name:
                 raise ValueError("channel names must be non-empty strings")
             if not isinstance(spec, dict):
-                raise ValueError(f"channel {name!r} must be an object")
+                raise ValueError(  # noqa: TRY004 - public input-validation contract
+                    f"channel {name!r} must be an object"
+                )
             kind = spec.get("type", "")
             if kind in ("miewid", "miewid_reid", "wildlife_reid"):
                 required_fields = {
@@ -501,7 +510,7 @@ class IdentityEngine:
         return evidence
 
     @staticmethod
-    def _compute_fused_dim(evidence: dict) -> int:
+    def _compute_total_embedding_dimension(evidence: dict) -> int:
         return sum(getattr(ev, "output_dim", 384) for ev in evidence.values())
 
     @staticmethod
@@ -524,7 +533,7 @@ class IdentityEngine:
         canonical_breed = _validate_breed(breed, "breed")
         canonical_metadata = _validate_metadata(metadata)
         canonical_idempotency_key = _validate_idempotency_key(idempotency_key)
-        return self._search.enroll(
+        return self._retrieval.enroll(
             image,
             registered_dog_id,
             canonical_breed,
@@ -541,7 +550,7 @@ class IdentityEngine:
         ):
             raise ValueError(f"top_k must be an integer from 1 to {_MAXIMUM_TOP_K}")
         canonical_filters = _validate_breed_filters(breed_filter)
-        raw = self._search.search(image, top_k, canonical_filters)
+        raw = self._retrieval.search(image, top_k, canonical_filters)
         return [
             Match(
                 r.registered_dog_id,
@@ -557,20 +566,20 @@ class IdentityEngine:
 
     def explain(self, image: Image.Image, dog_id: str) -> dict[str, Any]:
         registered_dog_id = self._validate_registered_dog_id(dog_id)
-        return self._search.explain(image, registered_dog_id)
+        return self._retrieval.explain(image, registered_dog_id)
 
     @property
     def size(self) -> int:
-        return self._index.size
+        return self._gallery.size
 
     def save(self) -> None:
-        self._index.save()
+        self._gallery.save()
 
     def close(self) -> None:
         try:
             self.save()
         finally:
-            self._index.close()
+            self._gallery.close()
 
 
 def _read_strict_json_object(
@@ -629,7 +638,9 @@ def _parse_strict_json_object(
     except json.JSONDecodeError as exc:
         raise ValueError(f"{label} must be strict JSON") from exc
     if not isinstance(parsed, dict):
-        raise ValueError(f"{label} must be a JSON object")
+        raise ValueError(  # noqa: TRY004 - public input-validation contract
+            f"{label} must be a JSON object"
+        )
     return parsed
 
 
@@ -674,7 +685,9 @@ def _canonical_json_object(
         raise ValueError(f"{label} exceeds its JSON size limit")
     canonical = json.loads(encoded.decode("utf-8"))
     if not isinstance(canonical, dict):  # pragma: no cover - input is a dict
-        raise ValueError(f"{label} must be a JSON object")
+        raise ValueError(  # noqa: TRY004 - public input-validation contract
+            f"{label} must be a JSON object"
+        )
     return canonical
 
 
@@ -736,7 +749,9 @@ def _validate_metadata(metadata: dict | None) -> dict[str, Any] | None:
     if metadata is None:
         return None
     if not isinstance(metadata, dict):
-        raise ValueError("metadata must be a JSON object")
+        raise ValueError(  # noqa: TRY004 - public input-validation contract
+            "metadata must be a JSON object"
+        )
     return _canonical_json_object(
         metadata,
         "metadata",

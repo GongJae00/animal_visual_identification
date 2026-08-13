@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Iterator
 from dataclasses import asdict, dataclass
-from typing import Any, Iterator
+from typing import Any
 
 import numpy as np
-
 
 OOF_SIMPLEX_SCHEMA_VERSION = "cvi.oof_simplex_fusion.v1"
 

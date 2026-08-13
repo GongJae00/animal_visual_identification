@@ -267,13 +267,17 @@ class GalleryMigrationSecurityTests(unittest.TestCase):
                     manifest["embedding_contract"]["dimension"] = 2_000
                 _write_manifest(source, manifest)
                 output = root / "v4"
-                with patch.object(
-                    migration.faiss,
-                    "read_index",
-                    side_effect=AssertionError("FAISS must not receive invalid bounds"),
+                with (
+                    patch.object(
+                        migration.faiss,
+                        "read_index",
+                        side_effect=AssertionError(
+                            "FAISS must not receive invalid bounds"
+                        ),
+                    ),
+                    self.assertRaises(ValueError),
                 ):
-                    with self.assertRaises(ValueError):
-                        migration.migrate_gallery(source, output)
+                    migration.migrate_gallery(source, output)
                 self.assertFalse(output.exists())
 
     def test_preexisting_output_is_untouched(self) -> None:
@@ -296,11 +300,13 @@ class GalleryMigrationSecurityTests(unittest.TestCase):
             _write_v3(source)
             before = _snapshot(source)
             output = root / "v4"
-            with patch.object(
-                migration, "_build_gallery", side_effect=RuntimeError("injected")
+            with (
+                patch.object(
+                    migration, "_build_gallery", side_effect=RuntimeError("injected")
+                ),
+                self.assertRaisesRegex(RuntimeError, "injected"),
             ):
-                with self.assertRaisesRegex(RuntimeError, "injected"):
-                    migration.migrate_gallery(source, output)
+                migration.migrate_gallery(source, output)
             self.assertFalse(output.exists())
             self.assertEqual(_snapshot(source), before)
             self.assertEqual(
@@ -321,9 +327,11 @@ class GalleryMigrationSecurityTests(unittest.TestCase):
                 output.mkdir()
                 (output / "marker").write_text("racer", encoding="utf-8")
 
-            with patch.object(migration, "_build_gallery", build_then_race):
-                with self.assertRaisesRegex(ValueError, "new, non-existing"):
-                    migration.migrate_gallery(source, output)
+            with (
+                patch.object(migration, "_build_gallery", build_then_race),
+                self.assertRaisesRegex(ValueError, "new, non-existing"),
+            ):
+                migration.migrate_gallery(source, output)
             self.assertEqual((output / "marker").read_text(encoding="utf-8"), "racer")
             self.assertEqual(
                 [path.name for path in root.iterdir() if ".migrate-" in path.name],

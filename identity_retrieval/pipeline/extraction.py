@@ -3,16 +3,15 @@ from __future__ import annotations
 import numpy as np
 from PIL import Image
 
-from evidence_fusion.base import AbstractEvidencer
 from evidence_fusion.base import (
+    AbstractEvidencer,
     EvidenceObservation,
     RequiredEvidenceUnavailableError,
 )
-from identity_methods.appearance import Dinov2WithUncertainty
 from evidence_fusion.quality import QualityObservation
 
 
-class MultiEvidencePipeline:
+class EvidenceExtractionPipeline:
     def __init__(
         self,
         evidencer_map: dict[str, AbstractEvidencer | None],
@@ -82,39 +81,6 @@ class MultiEvidencePipeline:
             embs[name] = observation.embedding
             quals[name] = ev.estimate_quality(image, channel=name)
         return embs, quals
-
-    def extract_with_uncertainty(
-        self, image: Image.Image
-    ) -> tuple[dict[str, np.ndarray], dict[str, float]]:
-        observations, uncertainties = self.extract_observations_with_uncertainty(image)
-        return {
-            name: observation.embedding
-            for name, observation in observations.items()
-            if observation.is_available and observation.embedding is not None
-        }, uncertainties
-
-    def extract_observations_with_uncertainty(
-        self, image: Image.Image
-    ) -> tuple[dict[str, EvidenceObservation], dict[str, float]]:
-        observations: dict[str, EvidenceObservation] = {}
-        uncertainties: dict[str, float] = {}
-        for name, ev in self._evidencer_map.items():
-            if isinstance(ev, Dinov2WithUncertainty):
-                emb, epi, ale = ev.extract_with_uncertainty(image)
-                observations[name] = EvidenceObservation.available(name, emb)
-                if epi is not None:
-                    uncertainties[name] = epi
-            else:
-                observations[name] = _as_observation(name, ev.extract(image))
-            if (
-                not observations[name].is_available
-                and name not in self._optional_channels
-            ):
-                raise RequiredEvidenceUnavailableError(
-                    f"required evidence channel {name!r} is unavailable: "
-                    f"{observations[name].reason.value}"
-                )
-        return observations, uncertainties
 
     def estimate_quality(
         self,

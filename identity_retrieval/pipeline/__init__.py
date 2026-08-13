@@ -1,7 +1,11 @@
-from identity_retrieval.pipeline.enroll import MultiEvidencePipeline
-from identity_retrieval.pipeline.search import IdentitySearchPipeline, SearchResult
+from identity_retrieval.pipeline.extraction import EvidenceExtractionPipeline
+from identity_retrieval.pipeline.retrieval import (
+    IdentityRetrievalPipeline,
+    RetrievalResult,
+)
 
 __all__ = [
-    "MultiEvidencePipeline",
-    "IdentitySearchPipeline", "SearchResult",
+    "EvidenceExtractionPipeline",
+    "IdentityRetrievalPipeline",
+    "RetrievalResult",
 ]

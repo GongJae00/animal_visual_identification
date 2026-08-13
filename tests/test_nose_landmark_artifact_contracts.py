@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from hashlib import sha256
 import tempfile
 import unittest
+from hashlib import sha256
 from pathlib import Path
 
 import numpy as np
@@ -23,24 +23,21 @@ from artifact_contracts.artifact_manifest import (
     NoseMaskManifest,
     UsageLane,
 )
-from evidence_fusion.base import EvidenceInsufficiency
+from evidence_fusion.base import EvidenceInsufficiency, EvidenceUnavailableReason
+from identity_methods.nose.extractor import (
+    DNPMask,
+    NosePrintExtractor,
+    NoseRoiPolicy,
+    YoloNoseDetector,
+)
 from localization.landmark_graph import (
     LandmarkEvidencer,
     LandmarkGraphEmbedder,
     decode_landmark_heatmaps,
 )
-from identity_methods.nose.extractor import (
-    DNPMask,
-    MagFaceNoseHead,
-    NoseAbstainReason,
-    NosePrintExtractor,
-    NoseRoiPolicy,
-    TinyViTBackbone,
-    YoloNoseDetector,
-)
 
 
-class ExactArtifactScaffoldingTests(unittest.TestCase):
+class ExactArtifactContractsTests(unittest.TestCase):
     def setUp(self) -> None:
         self._temporary_directory = tempfile.TemporaryDirectory()
         self.root = Path(self._temporary_directory.name)
@@ -144,11 +141,7 @@ class ExactArtifactScaffoldingTests(unittest.TestCase):
         with self.assertRaisesRegex(ArtifactContractError, "SHA256"):
             YoloNoseDetector(substituted, self._detector_manifest(expected))
 
-    def test_random_placeholder_components_cannot_be_activated(self) -> None:
-        with self.assertRaisesRegex(RuntimeError, "disabled"):
-            TinyViTBackbone()
-        with self.assertRaisesRegex(RuntimeError, "disabled"):
-            MagFaceNoseHead(8, 2)
+    def test_artifact_components_require_exact_contracts(self) -> None:
         with self.assertRaises(TypeError):
             DNPMask()
         with self.assertRaises(ArtifactContractError):
@@ -253,9 +246,21 @@ class ExactArtifactScaffoldingTests(unittest.TestCase):
         self._write_global_average_model(embedding_path, (1, 3, 8, 8))
         embedding_manifest = self._embedding_manifest(embedding_path, clahe=True)
         cases = (
-            ("missing", [0.1, 0.1, 0.9, 0.9, 0.1], NoseAbstainReason.ROI_MISSING),
-            ("tiny", [0.1, 0.1, 0.105, 0.105, 0.9], NoseAbstainReason.ROI_TOO_SMALL),
-            ("low-resolution", [0.1, 0.1, 0.3, 0.3, 0.9], NoseAbstainReason.ROI_LOW_RESOLUTION),
+            (
+                "missing",
+                [0.1, 0.1, 0.9, 0.9, 0.1],
+                EvidenceUnavailableReason.ROI_MISSING,
+            ),
+            (
+                "tiny",
+                [0.1, 0.1, 0.105, 0.105, 0.9],
+                EvidenceUnavailableReason.ROI_TOO_SMALL,
+            ),
+            (
+                "low-resolution",
+                [0.1, 0.1, 0.3, 0.3, 0.9],
+                EvidenceUnavailableReason.ROI_LOW_RESOLUTION,
+            ),
         )
         image = Image.new("RGB", (100, 100), "gray")
         for name, detection, expected_reason in cases:

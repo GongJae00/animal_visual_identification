@@ -19,8 +19,7 @@ from typing import Any, BinaryIO
 import faiss
 import numpy as np
 
-from identity_retrieval.index.hierarchical import SpeciesFilteredIndex
-
+from identity_retrieval.gallery import IdentityGallery
 
 _MANIFEST_SCHEMA = "cvi.gallery_manifest.v3"
 _TEMPLATE_SCHEMA = "cvi.gallery_template.v1"
@@ -132,7 +131,7 @@ def migrate_gallery(source: Path, output: Path) -> None:
                 target_contract,
                 channel_layout,
             )
-            validated = SpeciesFilteredIndex(
+            validated = IdentityGallery(
                 staging_path,
                 dim=dimension,
                 embedding_contract=target_contract,
@@ -166,7 +165,7 @@ def _build_gallery(
     target_contract: dict[str, Any],
     channel_layout: tuple[tuple[str, int], ...],
 ) -> None:
-    target = SpeciesFilteredIndex(
+    target = IdentityGallery(
         staging_path, dim=dimension, embedding_contract=target_contract
     )
     try:

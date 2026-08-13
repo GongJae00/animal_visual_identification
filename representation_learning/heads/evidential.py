@@ -5,15 +5,15 @@ uncertainty values.  Must be trained with an evidential loss function
 (negative log marginal likelihood + KL regularization) on labeled pairs
 before the epistemic uncertainty output is meaningful.
 
-Without training, EvidentialOpenSet's "high_epistemic_uncertainty" check
-is effectively random — do not use untrained heads for open-set rejection.
+Without training, any uncertainty-based rejection decision is effectively random.
+Do not use untrained heads for identity decisions.
 """
 
 from __future__ import annotations
 
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
+from torch import nn
 
 
 class EvidentialHead(nn.Module):

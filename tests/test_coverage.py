@@ -4,7 +4,11 @@ import json
 import unittest
 
 from artifact_contracts.contracts import Modality
-from evidence_fusion.coverage import CoverageAccumulator, CoveragePolicy, EvidenceObservation
+from evidence_fusion.coverage import (
+    CoverageAccumulator,
+    CoverageObservation,
+    CoveragePolicy,
+)
 
 
 def policy() -> CoveragePolicy:
@@ -33,8 +37,8 @@ def observation(
     dog_count: int = 1,
     motion_blur_score: float | None = 0.1,
     track_id: str | None = None,
-) -> EvidenceObservation:
-    return EvidenceObservation(
+) -> CoverageObservation:
+    return CoverageObservation(
         timestamp_ns=timestamp_ns,
         modality=modality,
         dog_count=dog_count,
