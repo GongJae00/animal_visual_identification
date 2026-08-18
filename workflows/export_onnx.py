@@ -15,7 +15,7 @@ from embedding.learning.train.trainer import (
     ArcFaceModel,
     ConvNeXtEmbedding,
     Dinov2Embedding,
-    TrainConfig,
+    parse_training_checkpoint_config,
 )
 
 
@@ -28,14 +28,7 @@ _BACKBONES = {
 def reconstruct_model(
     payload: object, *, model_directory: Path | None = None
 ) -> ArcFaceModel:
-    if not isinstance(payload, dict) or payload.get("schema_version") != (
-        "cvi.training_checkpoint.v1"
-    ):
-        raise RuntimeError("unsupported or legacy training checkpoint")
-    config_payload = payload.get("config")
-    if not isinstance(config_payload, dict):
-        raise RuntimeError("checkpoint is missing its training configuration")
-    cfg = TrainConfig.from_dict(config_payload)
+    cfg = parse_training_checkpoint_config(payload)
     backbone_factory = _BACKBONES.get(cfg.model_name)
     if backbone_factory is None:
         raise RuntimeError(f"unsupported checkpoint backbone {cfg.model_name!r}")

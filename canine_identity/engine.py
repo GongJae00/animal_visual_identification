@@ -154,7 +154,6 @@ class IdentityEngine:
             raise ValueError("an explicit index_dir must be a non-empty JSON string")
         self._config = config
         self._optional_channels = frozenset(optional_channels)
-        self._extraction = None
         self._init_pipeline()
 
     def _init_pipeline(self) -> None:
@@ -172,9 +171,7 @@ class IdentityEngine:
             raise ValueError("optional_channels contains an unknown channel")
         if not set(evidence) - self._optional_channels:
             raise ValueError("at least one configured channel must be required")
-        self._extraction = EvidenceExtractionPipeline(
-            evidence, self._optional_channels
-        )
+        extraction = EvidenceExtractionPipeline(evidence, self._optional_channels)
 
         index_dir = Path(self._config["index_dir"])
         total_dimension = self._compute_total_embedding_dimension(evidence)
@@ -208,15 +205,7 @@ class IdentityEngine:
                     "dimension": int(evidence[name].output_dim),
                     "optional": name in self._optional_channels,
                     "configuration": self._config["channels"][name],
-                    **getattr(
-                        evidence[name],
-                        "gallery_contract_fields",
-                        {
-                            "model_sha256": getattr(
-                                evidence[name], "model_sha256", None
-                            )
-                        },
-                    ),
+                    **evidence[name].gallery_contract_fields,
                 }
                 for name in channels
             ],
@@ -233,7 +222,7 @@ class IdentityEngine:
         if self._gallery.scorer_hash != scoring_policy.scorer_hash:
             raise RuntimeError("gallery QK scorer contract differs from configuration")
         self._retrieval = IdentityRetrievalPipeline(
-            self._extraction, self._gallery
+            extraction, self._gallery
         )
 
     def _build_evidence(self) -> dict[str, Any]:
@@ -249,281 +238,23 @@ class IdentityEngine:
                     f"channel {name!r} must be an object"
                 )
             kind = spec.get("type", "")
-            if kind in ("miewid", "miewid_reid", "wildlife_reid"):
-                from embedding.methods.backbones.miewid import (
-                    MiewIDArtifactManifest,
-                    MiewIDReIDExtractor,
-                )
-
-                required_fields = {
-                    "type", "model_path", "manifest_path", "parity_receipt_path",
-                }
-                if set(spec) not in (required_fields, required_fields | {"device"}):
-                    raise ValueError(
-                        f"channel {name!r} must use the exact MiewID bundle schema"
-                    )
-                for field_name in (
-                    "model_path", "manifest_path", "parity_receipt_path",
-                ):
-                    if (
-                        not isinstance(spec.get(field_name), str)
-                        or not spec[field_name]
-                    ):
-                        raise ValueError(
-                            f"channel {name!r} requires {field_name}"
-                        )
-                device = spec.get("device", "cpu")
-                if device not in {"cpu", "cuda"}:
-                    raise ValueError(
-                        f"channel {name!r} device must be 'cpu' or 'cuda'"
-                    )
-                manifest_payload = _read_strict_json_object(
-                    Path(spec["manifest_path"]),
-                    label=f"channel {name!r} MiewID manifest",
-                    maximum_bytes=_MAXIMUM_MANIFEST_BYTES,
-                )
-                manifest = MiewIDArtifactManifest.from_dict(manifest_payload)
-                evidence[name] = MiewIDReIDExtractor(
-                    Path(spec["model_path"]),
-                    manifest,
-                    Path(spec["parity_receipt_path"]),
-                    use_cuda=device == "cuda",
-                )
-            elif kind == "landmark":
+            if kind == "landmark":
                 raise ValueError(
                     "legacy landmark configuration is disabled; use the exact "
                     "landmark_onnx artifact bundle"
                 )
-            elif kind == "landmark_onnx":
-                from contracts.artifact_manifest import (
-                    LandmarkGraphManifest,
-                    LandmarkKeypointManifest,
-                )
-                from embedding.methods.landmark import LandmarkEvidencer
-
-                required_fields = {
-                    "type",
-                    "keypoint_model_path",
-                    "keypoint_manifest_path",
-                    "graph_model_path",
-                    "graph_manifest_path",
-                    "device",
-                }
-                if set(spec) != required_fields:
-                    raise ValueError(
-                        f"channel {name!r} must use the exact landmark_onnx "
-                        "channel schema"
-                    )
-                for field_name in required_fields - {"type", "device"}:
-                    if not isinstance(spec[field_name], str) or not spec[field_name]:
-                        raise ValueError(
-                            f"channel {name!r} requires {field_name}"
-                        )
-                device = spec["device"]
-                if device not in {"cpu", "cuda"}:
-                    raise ValueError(
-                        f"channel {name!r} device must be 'cpu' or 'cuda'"
-                    )
-                keypoint_manifest = LandmarkKeypointManifest.from_dict(
-                    _read_strict_json_object(
-                        Path(spec["keypoint_manifest_path"]),
-                        label=f"channel {name!r} keypoint manifest",
-                        maximum_bytes=_MAXIMUM_MANIFEST_BYTES,
-                    )
-                )
-                graph_manifest = LandmarkGraphManifest.from_dict(
-                    _read_strict_json_object(
-                        Path(spec["graph_manifest_path"]),
-                        label=f"channel {name!r} graph manifest",
-                        maximum_bytes=_MAXIMUM_MANIFEST_BYTES,
-                    )
-                )
-                evidence[name] = LandmarkEvidencer(
-                    Path(spec["keypoint_model_path"]),
-                    keypoint_manifest,
-                    Path(spec["graph_model_path"]),
-                    graph_manifest,
-                    use_cuda=device == "cuda",
-                )
-            elif kind == "nose_print_onnx":
-                from contracts.artifact_manifest import (
-                    NoseDetectorManifest,
-                    NoseEmbeddingManifest,
-                    NoseMaskManifest,
-                )
-                from embedding.methods.nose.extractor import (
-                    NosePrintExtractor,
-                    NoseRoiPolicy,
-                )
-
-                required_fields = {
-                    "type",
-                    "detector_model_path",
-                    "detector_manifest_path",
-                    "embedding_model_path",
-                    "embedding_manifest_path",
-                    "roi_policy",
-                    "device",
-                }
-                mask_fields = {"mask_model_path", "mask_manifest_path"}
-                if set(spec) not in (required_fields, required_fields | mask_fields):
-                    raise ValueError(
-                        f"channel {name!r} must use the exact composite "
-                        "nose_print_onnx bundle schema"
-                    )
-                for field_name in required_fields - {"type", "roi_policy", "device"}:
-                    if not isinstance(spec[field_name], str) or not spec[field_name]:
-                        raise ValueError(f"channel {name!r} requires {field_name}")
-                device = spec["device"]
-                if device not in {"cpu", "cuda"}:
-                    raise ValueError(
-                        f"channel {name!r} device must be 'cpu' or 'cuda'"
-                    )
-                roi_payload = spec["roi_policy"]
-                roi_fields = {
-                    "min_box_width", "min_box_height",
-                    "min_resolution_width", "min_resolution_height",
-                }
-                if not isinstance(roi_payload, dict) or set(roi_payload) != roi_fields:
-                    raise ValueError(
-                        f"channel {name!r} roi_policy must use the exact schema"
-                    )
-                roi_policy = NoseRoiPolicy(**roi_payload)
-                detector_manifest = NoseDetectorManifest.from_dict(
-                    _read_strict_json_object(
-                        Path(spec["detector_manifest_path"]),
-                        label=f"channel {name!r} detector manifest",
-                        maximum_bytes=_MAXIMUM_MANIFEST_BYTES,
-                    )
-                )
-                embedding_manifest = NoseEmbeddingManifest.from_dict(
-                    _read_strict_json_object(
-                        Path(spec["embedding_manifest_path"]),
-                        label=f"channel {name!r} embedding manifest",
-                        maximum_bytes=_MAXIMUM_MANIFEST_BYTES,
-                    )
-                )
-                mask_manifest = (
-                    NoseMaskManifest.from_dict(
-                        _read_strict_json_object(
-                            Path(spec["mask_manifest_path"]),
-                            label=f"channel {name!r} mask manifest",
-                            maximum_bytes=_MAXIMUM_MANIFEST_BYTES,
-                        )
-                    )
-                    if mask_fields <= set(spec)
-                    else None
-                )
-                evidence[name] = NosePrintExtractor(
-                    Path(spec["detector_model_path"]),
-                    detector_manifest,
-                    Path(spec["embedding_model_path"]),
-                    embedding_manifest,
-                    roi_policy,
-                    mask_path=(
-                        Path(spec["mask_model_path"])
-                        if mask_manifest is not None else None
-                    ),
-                    mask_manifest=mask_manifest,
-                    use_cuda=device == "cuda",
-                )
-            elif kind == "dinov2_local":
-                from embedding.methods.appearance import ReceiptBoundDinov2Small
-
-                required_fields = {
-                    "type",
-                    "model_dir",
-                    "weight_intake_bundle",
-                    "preprocessor_intake_bundle",
-                    "device",
-                }
-                if set(spec) != required_fields:
-                    raise ValueError(
-                        f"channel {name!r} must use the exact dinov2_local "
-                        "channel schema"
-                    )
-                for field_name in (
-                    "model_dir",
-                    "weight_intake_bundle",
-                    "preprocessor_intake_bundle",
-                ):
-                    if (
-                        not isinstance(spec[field_name], str)
-                        or not spec[field_name]
-                    ):
-                        raise ValueError(
-                            f"channel {name!r} requires {field_name}"
-                        )
-                device = spec["device"]
-                if not isinstance(device, str) or device not in {"cpu", "cuda"}:
-                    raise ValueError(
-                        f"channel {name!r} device must be 'cpu' or 'cuda'"
-                    )
-                evidence[name] = ReceiptBoundDinov2Small(
-                    model_directory=Path(spec["model_dir"]),
-                    weight_intake_bundle=Path(spec["weight_intake_bundle"]),
-                    preprocessor_intake_bundle=Path(
-                        spec["preprocessor_intake_bundle"]
-                    ),
-                    device=device,
-                )
-            elif kind in {
-                "dogfacenet_onnx", "convnext_onnx", "petreid_nose_onnx",
-            }:
-                from contracts.model_contract import (
-                    ConvNeXtModelManifest,
-                    DogFaceNetModelManifest,
-                    PetReIDModelManifest,
-                )
-                from embedding.methods.backbones.extractors import (
-                    ConvNeXtExtractor,
-                    DogFaceNetExtractor,
-                    PetReIDExtractor,
-                )
-
-                required_fields = {"type", "model_path", "manifest_path"}
-                if set(spec) not in (required_fields, required_fields | {"device"}):
-                    raise ValueError(
-                        f"channel {name!r} must use the exact ONNX channel schema"
-                    )
-                model_path = spec.get("model_path")
-                manifest_path = spec.get("manifest_path")
-                if not isinstance(model_path, str) or not model_path:
-                    raise ValueError(f"channel {name!r} requires model_path")
-                if not isinstance(manifest_path, str) or not manifest_path:
-                    raise ValueError(f"channel {name!r} requires manifest_path")
-                device = spec.get("device", "cpu")
-                if device not in {"cpu", "cuda"}:
-                    raise ValueError(
-                        f"channel {name!r} device must be 'cpu' or 'cuda'"
-                    )
-                manifest_payload = _read_strict_json_object(
-                    Path(manifest_path),
-                    label=f"channel {name!r} model manifest",
-                    maximum_bytes=_MAXIMUM_MANIFEST_BYTES,
-                )
-                manifest_type, extractor_type = {
-                    "dogfacenet_onnx": (
-                        DogFaceNetModelManifest, DogFaceNetExtractor,
-                    ),
-                    "convnext_onnx": (ConvNeXtModelManifest, ConvNeXtExtractor),
-                    "petreid_nose_onnx": (
-                        PetReIDModelManifest, PetReIDExtractor,
-                    ),
-                }[kind]
-                manifest = manifest_type.from_dict(manifest_payload)
-                evidence[name] = extractor_type(
-                    Path(model_path), manifest, use_cuda=device == "cuda"
-                )
-            else:
+            try:
+                builder = _CHANNEL_BUILDERS[kind]
+            except KeyError:
                 raise ValueError(
                     f"unsupported channel type {kind!r} for channel {name!r}"
-                )
+                ) from None
+            evidence[name] = builder(name, spec)
         return evidence
 
     @staticmethod
-    def _compute_total_embedding_dimension(evidence: dict) -> int:
-        return sum(getattr(ev, "output_dim", 384) for ev in evidence.values())
+    def _compute_total_embedding_dimension(evidence: dict[str, Any]) -> int:
+        return sum(ev.output_dim for ev in evidence.values())
 
     @staticmethod
     def _validate_registered_dog_id(value: str) -> str:
@@ -592,6 +323,296 @@ class IdentityEngine:
             self.save()
         finally:
             self._gallery.close()
+
+
+def _require_exact_channel_schema(
+    name: str,
+    spec: dict[str, Any],
+    allowed_keys: tuple[frozenset[str], ...],
+    schema_name: str,
+) -> None:
+    if frozenset(spec) not in allowed_keys:
+        raise ValueError(f"channel {name!r} must use the exact {schema_name}")
+
+
+def _require_channel_text_fields(
+    name: str,
+    spec: dict[str, Any],
+    fields: tuple[str, ...],
+) -> None:
+    for field_name in fields:
+        if not isinstance(spec.get(field_name), str) or not spec[field_name]:
+            raise ValueError(f"channel {name!r} requires {field_name}")
+
+
+def _require_channel_device(name: str, device: object) -> str:
+    if device not in {"cpu", "cuda"}:
+        raise ValueError(f"channel {name!r} device must be 'cpu' or 'cuda'")
+    return str(device)
+
+
+def _build_miewid_channel(name: str, spec: dict[str, Any]) -> Any:
+    from embedding.methods.backbones.miewid import (
+        MiewIDArtifactManifest,
+        MiewIDReIDExtractor,
+    )
+
+    required = frozenset(
+        {"type", "model_path", "manifest_path", "parity_receipt_path"}
+    )
+    _require_exact_channel_schema(
+        name,
+        spec,
+        (required, required | {"device"}),
+        "MiewID bundle schema",
+    )
+    _require_channel_text_fields(
+        name,
+        spec,
+        ("model_path", "manifest_path", "parity_receipt_path"),
+    )
+    device = _require_channel_device(name, spec.get("device", "cpu"))
+    manifest = MiewIDArtifactManifest.from_dict(
+        _read_strict_json_object(
+            Path(spec["manifest_path"]),
+            label=f"channel {name!r} MiewID manifest",
+            maximum_bytes=_MAXIMUM_MANIFEST_BYTES,
+        )
+    )
+    return MiewIDReIDExtractor(
+        Path(spec["model_path"]),
+        manifest,
+        Path(spec["parity_receipt_path"]),
+        use_cuda=device == "cuda",
+    )
+
+
+def _build_landmark_channel(name: str, spec: dict[str, Any]) -> Any:
+    from contracts.artifact_manifest import (
+        LandmarkGraphManifest,
+        LandmarkKeypointManifest,
+    )
+    from embedding.methods.landmark import LandmarkEvidencer
+
+    required = frozenset(
+        {
+            "type",
+            "keypoint_model_path",
+            "keypoint_manifest_path",
+            "graph_model_path",
+            "graph_manifest_path",
+            "device",
+        }
+    )
+    _require_exact_channel_schema(
+        name,
+        spec,
+        (required,),
+        "landmark_onnx channel schema",
+    )
+    _require_channel_text_fields(
+        name,
+        spec,
+        (
+            "keypoint_model_path",
+            "keypoint_manifest_path",
+            "graph_model_path",
+            "graph_manifest_path",
+        ),
+    )
+    device = _require_channel_device(name, spec["device"])
+    keypoint_manifest = LandmarkKeypointManifest.from_dict(
+        _read_strict_json_object(
+            Path(spec["keypoint_manifest_path"]),
+            label=f"channel {name!r} keypoint manifest",
+            maximum_bytes=_MAXIMUM_MANIFEST_BYTES,
+        )
+    )
+    graph_manifest = LandmarkGraphManifest.from_dict(
+        _read_strict_json_object(
+            Path(spec["graph_manifest_path"]),
+            label=f"channel {name!r} graph manifest",
+            maximum_bytes=_MAXIMUM_MANIFEST_BYTES,
+        )
+    )
+    return LandmarkEvidencer(
+        Path(spec["keypoint_model_path"]),
+        keypoint_manifest,
+        Path(spec["graph_model_path"]),
+        graph_manifest,
+        use_cuda=device == "cuda",
+    )
+
+
+def _build_nose_channel(name: str, spec: dict[str, Any]) -> Any:
+    from contracts.artifact_manifest import (
+        NoseDetectorManifest,
+        NoseEmbeddingManifest,
+        NoseMaskManifest,
+    )
+    from embedding.methods.nose.extractor import NosePrintExtractor, NoseRoiPolicy
+
+    required = frozenset(
+        {
+            "type",
+            "detector_model_path",
+            "detector_manifest_path",
+            "embedding_model_path",
+            "embedding_manifest_path",
+            "roi_policy",
+            "device",
+        }
+    )
+    mask_fields = frozenset({"mask_model_path", "mask_manifest_path"})
+    _require_exact_channel_schema(
+        name,
+        spec,
+        (required, required | mask_fields),
+        "composite nose_print_onnx bundle schema",
+    )
+    _require_channel_text_fields(
+        name,
+        spec,
+        (
+            "detector_model_path",
+            "detector_manifest_path",
+            "embedding_model_path",
+            "embedding_manifest_path",
+        ),
+    )
+    device = _require_channel_device(name, spec["device"])
+    roi_payload = spec["roi_policy"]
+    roi_fields = {
+        "min_box_width",
+        "min_box_height",
+        "min_resolution_width",
+        "min_resolution_height",
+    }
+    if not isinstance(roi_payload, dict) or set(roi_payload) != roi_fields:
+        raise ValueError(f"channel {name!r} roi_policy must use the exact schema")
+    roi_policy = NoseRoiPolicy(**roi_payload)
+    detector_manifest = NoseDetectorManifest.from_dict(
+        _read_strict_json_object(
+            Path(spec["detector_manifest_path"]),
+            label=f"channel {name!r} detector manifest",
+            maximum_bytes=_MAXIMUM_MANIFEST_BYTES,
+        )
+    )
+    embedding_manifest = NoseEmbeddingManifest.from_dict(
+        _read_strict_json_object(
+            Path(spec["embedding_manifest_path"]),
+            label=f"channel {name!r} embedding manifest",
+            maximum_bytes=_MAXIMUM_MANIFEST_BYTES,
+        )
+    )
+    mask_manifest = (
+        NoseMaskManifest.from_dict(
+            _read_strict_json_object(
+                Path(spec["mask_manifest_path"]),
+                label=f"channel {name!r} mask manifest",
+                maximum_bytes=_MAXIMUM_MANIFEST_BYTES,
+            )
+        )
+        if mask_fields <= set(spec)
+        else None
+    )
+    return NosePrintExtractor(
+        Path(spec["detector_model_path"]),
+        detector_manifest,
+        Path(spec["embedding_model_path"]),
+        embedding_manifest,
+        roi_policy,
+        mask_path=Path(spec["mask_model_path"]) if mask_manifest is not None else None,
+        mask_manifest=mask_manifest,
+        use_cuda=device == "cuda",
+    )
+
+
+def _build_dinov2_channel(name: str, spec: dict[str, Any]) -> Any:
+    from embedding.methods.appearance import ReceiptBoundDinov2Small
+
+    required = frozenset(
+        {
+            "type",
+            "model_dir",
+            "weight_intake_bundle",
+            "preprocessor_intake_bundle",
+            "device",
+        }
+    )
+    _require_exact_channel_schema(
+        name,
+        spec,
+        (required,),
+        "dinov2_local channel schema",
+    )
+    _require_channel_text_fields(
+        name,
+        spec,
+        ("model_dir", "weight_intake_bundle", "preprocessor_intake_bundle"),
+    )
+    device = spec["device"]
+    if not isinstance(device, str):
+        raise ValueError(f"channel {name!r} device must be 'cpu' or 'cuda'")
+    device = _require_channel_device(name, device)
+    return ReceiptBoundDinov2Small(
+        model_directory=Path(spec["model_dir"]),
+        weight_intake_bundle=Path(spec["weight_intake_bundle"]),
+        preprocessor_intake_bundle=Path(spec["preprocessor_intake_bundle"]),
+        device=device,
+    )
+
+
+def _build_onnx_channel(name: str, spec: dict[str, Any]) -> Any:
+    from contracts.model_contract import (
+        ConvNeXtModelManifest,
+        DogFaceNetModelManifest,
+        PetReIDModelManifest,
+    )
+    from embedding.methods.backbones.extractors import (
+        ConvNeXtExtractor,
+        DogFaceNetExtractor,
+        PetReIDExtractor,
+    )
+
+    required = frozenset({"type", "model_path", "manifest_path"})
+    _require_exact_channel_schema(
+        name,
+        spec,
+        (required, required | {"device"}),
+        "ONNX channel schema",
+    )
+    _require_channel_text_fields(name, spec, ("model_path", "manifest_path"))
+    device = _require_channel_device(name, spec.get("device", "cpu"))
+    kind = spec["type"]
+    manifest_type, extractor_type = {
+        "dogfacenet_onnx": (DogFaceNetModelManifest, DogFaceNetExtractor),
+        "convnext_onnx": (ConvNeXtModelManifest, ConvNeXtExtractor),
+        "petreid_nose_onnx": (PetReIDModelManifest, PetReIDExtractor),
+    }[kind]
+    manifest = manifest_type.from_dict(
+        _read_strict_json_object(
+            Path(spec["manifest_path"]),
+            label=f"channel {name!r} model manifest",
+            maximum_bytes=_MAXIMUM_MANIFEST_BYTES,
+        )
+    )
+    return extractor_type(
+        Path(spec["model_path"]), manifest, use_cuda=device == "cuda"
+    )
+
+
+_CHANNEL_BUILDERS = {
+    "miewid": _build_miewid_channel,
+    "miewid_reid": _build_miewid_channel,
+    "wildlife_reid": _build_miewid_channel,
+    "landmark_onnx": _build_landmark_channel,
+    "nose_print_onnx": _build_nose_channel,
+    "dinov2_local": _build_dinov2_channel,
+    "dogfacenet_onnx": _build_onnx_channel,
+    "convnext_onnx": _build_onnx_channel,
+    "petreid_nose_onnx": _build_onnx_channel,
+}
 
 
 def _read_strict_json_object(
@@ -695,12 +716,7 @@ def _canonical_json_object(
         raise ValueError(f"{label} must contain only finite JSON values") from exc
     if len(encoded) > maximum_bytes:
         raise ValueError(f"{label} exceeds its JSON size limit")
-    canonical = json.loads(encoded.decode("utf-8"))
-    if not isinstance(canonical, dict):  # pragma: no cover - input is a dict
-        raise ValueError(  # noqa: TRY004 - public input-validation contract
-            f"{label} must be a JSON object"
-        )
-    return canonical
+    return json.loads(encoded.decode("utf-8"))
 
 
 def _validate_json_value(root: object, label: str) -> None:
@@ -745,13 +761,12 @@ def _validate_breed_filters(values: list[str] | None) -> list[str] | None:
         return None
     if not isinstance(values, list) or len(values) > _MAXIMUM_BREED_FILTERS:
         raise ValueError("breed_filter must be a bounded JSON array")
-    canonical = [
-        _validate_breed(value, f"breed_filter[{index}]")
-        for index, value in enumerate(values)
-    ]
-    if any(value is None for value in canonical):  # pragma: no cover - list type
-        raise ValueError("breed_filter entries must be strings")
-    result = [value for value in canonical if value is not None]
+    result: list[str] = []
+    for index, value in enumerate(values):
+        canonical = _validate_breed(value, f"breed_filter[{index}]")
+        if canonical is None:
+            raise ValueError("breed_filter entries must be strings")
+        result.append(canonical)
     if len(result) != len(set(result)):
         raise ValueError("breed_filter entries must be unique")
     return result

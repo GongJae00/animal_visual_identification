@@ -21,6 +21,7 @@ from foundation.protected_io import (
     read_strict_json_document,
     write_private_json_directory_bundle,
 )
+from foundation.protected_publication import admit_new_external_output
 from foundation.provenance import content_sha256
 from embedding.methods.full_segment.preparation.data import read_full128_crop
 from embedding.methods.full_segment.face_visible import (
@@ -330,14 +331,12 @@ def _sample_binding(sample: Any) -> dict[str, str]:
 
 
 def _new_external_output(path: Path) -> Path:
-    repository = Path(__file__).resolve().parents[1]
-    requested = path.absolute()
-    output = requested.parent.resolve(strict=True) / requested.name
-    if output == repository or output.is_relative_to(repository):
-        raise ValueError("representation trace output must remain outside repository")
-    if requested.is_symlink() or output.exists() or output.is_symlink():
-        raise FileExistsError("refusing to overwrite representation trace output")
-    return output
+    return admit_new_external_output(
+        path,
+        repository_root=Path(__file__).resolve().parents[1],
+        repository_error="representation trace output must remain outside repository",
+        overwrite_error="refusing to overwrite representation trace output",
+    )
 
 
 if __name__ == "__main__":

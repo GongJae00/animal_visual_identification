@@ -16,6 +16,7 @@ from contracts.runtime_library_provenance import (
 from evaluation.controls.control_scoring import ControlScoringInventory, EmbeddingCachePolicy
 from foundation.protected_io import read_strict_json_object, write_private_json_bundle
 from foundation.provenance import content_sha256
+from foundation.retained_file import verify_retained_regular_file_binding
 from systems.inference.embedding_producer import (
     EmbeddingProducerConfig,
     EmbeddingProductionPolicy,
@@ -25,7 +26,6 @@ from systems.workers.embedding_production_runner import (
     EmbeddingProductionPrecommitment,
     EmbeddingWorkerExecutionPolicy,
     _verify_code_source_bindings,
-    _verify_file_binding,
     build_embedding_production_precommitment,
     embedding_artifact_paths_from_dict,
 )
@@ -69,7 +69,11 @@ def main() -> None:
 
     files = request["files"]
     for name, binding in files.items():
-        _verify_file_binding(Path(binding["path"]), binding, name)
+        verify_retained_regular_file_binding(
+            Path(binding["path"]),
+            binding,
+            subject=f"embedding worker {name}",
+        )
     precommitment_payload = read_strict_json_object(
         Path(files["precommitment"]["path"])
     )

@@ -25,7 +25,11 @@ from foundation.provenance import content_sha256
 from identity.admission.training_admission import TrainingAdmissionReceipt
 from embedding.methods.appearance import ReceiptBoundDinov2Small
 from parsing.roi_manifest import read_roi_manifest
-from embedding.learning.train.trainer import ArcFaceModel, Dinov2Embedding, TrainConfig
+from embedding.learning.train.trainer import (
+    ArcFaceModel,
+    Dinov2Embedding,
+    parse_training_checkpoint_config,
+)
 
 _CHANNEL_PATH = {
     "source": "dog_crop_path",
@@ -44,14 +48,7 @@ def _sha256(path: Path) -> str:
 
 
 def _reconstruct_dinov2_model(payload: object, model_directory: Path) -> ArcFaceModel:
-    if not isinstance(payload, dict) or payload.get("schema_version") != (
-        "cvi.training_checkpoint.v1"
-    ):
-        raise RuntimeError("unsupported or legacy training checkpoint")
-    config_payload = payload.get("config")
-    if not isinstance(config_payload, dict):
-        raise RuntimeError("checkpoint is missing its training configuration")
-    config = TrainConfig.from_dict(config_payload)
+    config = parse_training_checkpoint_config(payload)
     if config.model_name != "dinov2-small" or config.embedding_dim != 384:
         raise RuntimeError("ROI ReID checkpoint must use DINOv2-small")
     model = ArcFaceModel(

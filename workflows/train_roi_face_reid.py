@@ -5,29 +5,11 @@ from __future__ import annotations
 import argparse
 import json
 import random
-import subprocess
 from collections import Counter
 from collections.abc import Sequence
 from pathlib import Path
 
-
-def _git_provenance(repository: Path) -> dict[str, object]:
-    commit = subprocess.check_output(
-        ("git", "rev-parse", "HEAD"), text=True, cwd=repository
-    ).strip()
-    status = subprocess.check_output(
-        ("git", "status", "--porcelain=v1", "--untracked-files=normal"),
-        text=True,
-        cwd=repository,
-    )
-    return {
-        "code_commit": commit,
-        "worktree_dirty": bool(status.strip()),
-        "worktree_status_basis": (
-            "git status --porcelain=v1 --untracked-files=normal; includes staged, "
-            "unstaged, and untracked path status, not untracked file contents"
-        ),
-    }
+from foundation.provenance import git_worktree_provenance as _git_provenance
 
 
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:

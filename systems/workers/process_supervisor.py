@@ -421,7 +421,7 @@ def _read_linux_process_rss_bytes(pid: int) -> int | None:
     status = Path("/proc") / str(pid) / "status"
     try:
         lines = status.read_text(encoding="utf-8").splitlines()
-    except (FileNotFoundError, PermissionError, OSError):
+    except OSError:
         return None
     for line in lines:
         if not line.startswith("VmRSS:"):

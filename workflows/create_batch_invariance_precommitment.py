@@ -6,7 +6,6 @@ import argparse
 import json
 import os
 from pathlib import Path
-from typing import Any
 
 from contracts.runtime_library_provenance import RuntimeLibraryPolicy
 from evaluation.integrity.batch_invariance import (
@@ -19,14 +18,6 @@ from foundation.protected_io import read_strict_json_object, write_private_json_
 from systems.workers.batch_invariance_runner import BatchWorkerExecutionPolicy
 from systems.inference.embedding_producer import EmbeddingProducerConfig
 from systems.workers.worker_environment import build_sanitized_worker_environment
-
-
-def _payload(path: Path, name: str) -> dict[str, Any]:
-    payload = read_strict_json_object(path)
-    if not isinstance(payload, dict):
-        raise TypeError(f"{name} must be an object")
-    return payload
-
 
 def main() -> None:
     parser = argparse.ArgumentParser()
@@ -48,10 +39,10 @@ def main() -> None:
     args = parser.parse_args()
 
     runtime_policy = RuntimeLibraryPolicy.from_dict(
-        _payload(args.runtime_library_policy, "runtime library policy")
+        read_strict_json_object(args.runtime_library_policy)
     )
     execution_policy = BatchWorkerExecutionPolicy.from_dict(
-        _payload(args.worker_execution_policy, "batch worker execution policy")
+        read_strict_json_object(args.worker_execution_policy)
     )
     _, worker_environment = build_sanitized_worker_environment(
         os.environ,
@@ -59,13 +50,13 @@ def main() -> None:
     )
     precommitment = build_batch_invariance_precommitment(
         inventory=ControlScoringInventory.from_dict(
-            _payload(args.inventory, "scoring inventory")
+            read_strict_json_object(args.inventory)
         ),
         artifact_paths=batch_artifact_paths_from_dict(
-            _payload(args.artifact_paths, "batch artifact paths")
+            read_strict_json_object(args.artifact_paths)
         ),
         producer_config=EmbeddingProducerConfig.from_dict(
-            _payload(args.producer_config, "embedding producer config")
+            read_strict_json_object(args.producer_config)
         ),
         provenance_paths={
             "model": args.model,
@@ -74,7 +65,7 @@ def main() -> None:
             "dependency_lock": args.dependency_lock,
         },
         policy=BatchInvariancePolicy.from_dict(
-            _payload(args.policy, "batch policy")
+            read_strict_json_object(args.policy)
         ),
         runtime_library_policy_sha256=runtime_policy.policy_sha256,
         worker_execution_policy_sha256=execution_policy.policy_sha256,

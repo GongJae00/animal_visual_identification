@@ -9,8 +9,61 @@ from pathlib import Path
 import pytest
 
 from embedding.methods.face import checkpoint as faceid_checkpoint
+from foundation import provenance
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+@pytest.mark.parametrize(
+    ("status", "dirty"), [("", False), (" M tracked\n?? new\n", True)]
+)
+def test_git_worktree_provenance_uses_exact_commands_and_dirty_semantics(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    status: str,
+    dirty: bool,
+) -> None:
+    calls: list[tuple[tuple[str, ...], bool, Path]] = []
+    outputs = iter(("abc123\n", status))
+
+    def check_output(command: tuple[str, ...], *, text: bool, cwd: Path) -> str:
+        calls.append((command, text, cwd))
+        return next(outputs)
+
+    monkeypatch.setattr(provenance.subprocess, "check_output", check_output)
+
+    assert provenance.git_worktree_provenance(tmp_path) == {
+        "code_commit": "abc123",
+        "worktree_dirty": dirty,
+        "worktree_status_basis": (
+            "git status --porcelain=v1 --untracked-files=normal; includes staged, "
+            "unstaged, and untracked path status, not untracked file contents"
+        ),
+    }
+    assert calls == [
+        (("git", "rev-parse", "HEAD"), True, tmp_path),
+        (
+            ("git", "status", "--porcelain=v1", "--untracked-files=normal"),
+            True,
+            tmp_path,
+        ),
+    ]
+
+
+def test_git_worktree_provenance_propagates_git_errors(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    error = subprocess.CalledProcessError(128, ("git", "rev-parse", "HEAD"))
+
+    def check_output(*args: object, **kwargs: object) -> str:
+        raise error
+
+    monkeypatch.setattr(provenance.subprocess, "check_output", check_output)
+
+    with pytest.raises(subprocess.CalledProcessError) as raised:
+        provenance.git_worktree_provenance(tmp_path)
+
+    assert raised.value is error
 
 
 def _dino_contract() -> dict[str, str]:

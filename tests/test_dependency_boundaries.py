@@ -5,7 +5,6 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 INTERNAL_PACKAGES = {
-    "apps",
     "contracts",
     "canine_identity",
     "data",
@@ -59,7 +58,6 @@ def test_dependency_direction() -> None:
                 forbidden = roots - {"contracts", "foundation"}
             elif package == "canine_identity":
                 forbidden = roots & {
-                    "apps",
                     "evaluation",
                     "experiments",
                     "systems",

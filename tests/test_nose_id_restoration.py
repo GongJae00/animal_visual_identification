@@ -6,8 +6,16 @@ import cv2
 import numpy as np
 import torch
 
-from embedding.methods.nose.signal.alignment import register_residual_translation
-from embedding.methods.nose.signal.frequency import classical_texture_descriptors
+from embedding.methods.nose.signal.alignment import (
+    AlignmentError,
+    CANONICAL_KEYPOINTS,
+    estimate_similarity_transform,
+    register_residual_translation,
+)
+from embedding.methods.nose.signal.frequency import (
+    FixedFrequencyBank,
+    classical_texture_descriptors,
+)
 from embedding.methods.nose.signal.photometric import glare_saturation_invalid_mask
 from embedding.methods.nose.signal.restoration import (
     RestorationConfig,
@@ -23,6 +31,50 @@ def _texture(size: int = 96) -> np.ndarray:
     texture = cv2.GaussianBlur(noise, (0, 0), 1.0)
     texture = 0.15 + 0.60 * (texture - texture.min()) / (texture.max() - texture.min())
     return np.repeat(texture[..., None], 3, axis=2).astype(np.float32)
+
+
+class NoseIDAlignmentTests(unittest.TestCase):
+    def test_recovers_known_similarity_transform(self) -> None:
+        target = CANONICAL_KEYPOINTS * 447.0
+        angle = np.deg2rad(12.0)
+        rotation = np.asarray(
+            ((np.cos(angle), -np.sin(angle)), (np.sin(angle), np.cos(angle)))
+        )
+        source = ((target - np.asarray((21.0, -13.0))) @ rotation) / 1.2
+        matrix, residual = estimate_similarity_transform(
+            np.concatenate([source, np.ones((6, 1))], axis=1)
+        )
+        recovered = np.concatenate([source, np.ones((6, 1))], axis=1) @ matrix.T
+        np.testing.assert_allclose(recovered, target, atol=1e-3)
+        self.assertLess(residual, 1e-5)
+
+    def test_reflection_is_not_admitted(self) -> None:
+        target = CANONICAL_KEYPOINTS * 447.0
+        reflected = target.copy()
+        reflected[:, 0] = 447.0 - reflected[:, 0]
+        with self.assertRaises(AlignmentError):
+            estimate_similarity_transform(
+                np.concatenate([reflected, np.ones((6, 1))], axis=1)
+            )
+
+
+class NoseIDFrequencyTests(unittest.TestCase):
+    def test_constant_image_is_finite_with_fixed_channel_count(self) -> None:
+        bank = FixedFrequencyBank()
+        image = torch.full((1, 3, 448, 448), 0.5)
+        mask = torch.ones((1, 1, 448, 448))
+        result = bank(image, mask)
+        self.assertEqual(result.shape, (1, 11, 448, 448))
+        self.assertTrue(torch.isfinite(result).all())
+
+    def test_masked_pixels_are_excluded(self) -> None:
+        bank = FixedFrequencyBank()
+        image = torch.rand((1, 3, 448, 448))
+        mask = torch.zeros((1, 1, 448, 448))
+        mask[:, :, 96:352, 96:352] = 1.0
+        result = bank(image, mask)
+        self.assertTrue(torch.equal(result[:, :10, :80, :80], torch.zeros_like(result[:, :10, :80, :80])))
+        self.assertTrue(torch.equal(result[:, 10:11], mask))
 
 
 class NoseRestorationTests(unittest.TestCase):

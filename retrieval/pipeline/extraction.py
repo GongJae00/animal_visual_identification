@@ -16,9 +16,11 @@ class EvidenceExtractionPipeline:
         self,
         evidencer_map: dict[str, AbstractEvidencer | None],
         optional_channels: set[str] | frozenset[str] | None = None,
-    ):
+    ) -> None:
         self._evidencer_map = {
-            k: v for k, v in evidencer_map.items() if v is not None
+            name: evidencer
+            for name, evidencer in evidencer_map.items()
+            if evidencer is not None
         }
         self._optional_channels = frozenset(optional_channels or ())
         if not self._optional_channels <= set(self._evidencer_map):
@@ -26,58 +28,23 @@ class EvidenceExtractionPipeline:
         if not set(self._evidencer_map) - self._optional_channels:
             raise ValueError("at least one evidence channel must be required")
 
-    @property
-    def active_channels(self) -> list[str]:
-        return list(self._evidencer_map.keys())
-
-    @property
-    def optional_channels(self) -> frozenset[str]:
-        return self._optional_channels
-
-    @property
-    def required_channels(self) -> frozenset[str]:
-        return frozenset(self._evidencer_map) - self._optional_channels
-
     def extract_observations(
         self, image: Image.Image
     ) -> dict[str, EvidenceObservation]:
-        observations: dict[str, EvidenceObservation] = {}
-        for name, evidencer in self._evidencer_map.items():
-            value = evidencer.extract(image)
-            observation = _as_observation(name, value)
-            if not observation.is_available and name not in self._optional_channels:
-                raise RequiredEvidenceUnavailableError(
-                    f"required evidence channel {name!r} is unavailable: "
-                    f"{observation.reason.value}"
-                )
-            observations[name] = observation
-        return observations
-
-    def extract_all(self, image: Image.Image
-                    ) -> dict[str, np.ndarray]:
         return {
-            name: observation.embedding
-            for name, observation in self.extract_observations(image).items()
-            if observation.is_available and observation.embedding is not None
+            name: self._extract_observation(name, evidencer, image)
+            for name, evidencer in self._evidencer_map.items()
         }
 
-    def extract_with_quality(self, image: Image.Image
-                             ) -> tuple[
-                                 dict[str, np.ndarray],
-                                 dict[str, QualityObservation],
-                             ]:
+    def extract_with_quality(
+        self, image: Image.Image
+    ) -> tuple[dict[str, np.ndarray], dict[str, QualityObservation]]:
         embs: dict[str, np.ndarray] = {}
         quals: dict[str, QualityObservation] = {}
         for name, ev in self._evidencer_map.items():
-            observation = _as_observation(name, ev.extract(image))
+            observation = self._extract_observation(name, ev, image)
             if not observation.is_available:
-                if name not in self._optional_channels:
-                    raise RequiredEvidenceUnavailableError(
-                        f"required evidence channel {name!r} is unavailable: "
-                        f"{observation.reason.value}"
-                    )
                 continue
-            assert observation.embedding is not None
             embs[name] = observation.embedding
             quals[name] = ev.estimate_quality(image, channel=name)
         return embs, quals
@@ -90,6 +57,20 @@ class EvidenceExtractionPipeline:
             name: ev.estimate_quality(image, channel=name)
             for name, ev in self._evidencer_map.items()
         }
+
+    def _extract_observation(
+        self,
+        name: str,
+        evidencer: AbstractEvidencer,
+        image: Image.Image,
+    ) -> EvidenceObservation:
+        observation = _as_observation(name, evidencer.extract(image))
+        if not observation.is_available and name not in self._optional_channels:
+            raise RequiredEvidenceUnavailableError(
+                f"required evidence channel {name!r} is unavailable: "
+                f"{observation.reason.value}"
+            )
+        return observation
 
 
 def _as_observation(

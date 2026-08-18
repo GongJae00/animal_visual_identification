@@ -8,6 +8,24 @@ import os
 from pathlib import Path
 
 
+def admit_new_external_output(
+    path: Path,
+    *,
+    repository_root: Path,
+    repository_error: str,
+    overwrite_error: str | Path,
+) -> Path:
+    requested = path.absolute()
+    parent = requested.parent.resolve(strict=True)
+    output = parent / requested.name
+    repository = repository_root.resolve(strict=True)
+    if output == repository or output.is_relative_to(repository):
+        raise ValueError(repository_error)
+    if requested.is_symlink() or output.exists() or output.is_symlink():
+        raise FileExistsError(overwrite_error)
+    return output
+
+
 def fsync_directory(path: Path) -> None:
     descriptor = os.open(path, os.O_RDONLY | os.O_DIRECTORY)
     try:

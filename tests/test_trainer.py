@@ -53,6 +53,7 @@ from embedding.learning.train.trainer import (
     _warmup_cosine_schedule,
     compute_embeddings,
     evaluate_pretrained_development,
+    parse_training_checkpoint_config,
     train_model,
 )
 
@@ -829,6 +830,40 @@ class TrainingArtifactTests(unittest.TestCase):
         self.assertEqual(loaded["schema_version"], "cvi.training_checkpoint.v1")
         self.assertEqual(loaded["architecture"]["model_name"], "test-vector")
         self.assertEqual(loaded["label_to_index"], {"dog-a": 0, "dog-b": 1})
+
+    def test_checkpoint_config_parser_rejects_missing_contract_fields(self) -> None:
+        cases = (
+            ({}, "unsupported or legacy training checkpoint"),
+            (
+                {"schema_version": "cvi.training_checkpoint.v1"},
+                "checkpoint is missing its training configuration",
+            ),
+        )
+        for payload, message in cases:
+            with self.subTest(message=message):
+                with self.assertRaisesRegex(RuntimeError, message):
+                    parse_training_checkpoint_config(payload)
+
+    def test_checkpoint_reconstructors_preserve_backbone_error_precedence(self) -> None:
+        from workflows import evaluate_roi_reid, export_onnx
+
+        export_payload = {
+            "schema_version": "cvi.training_checkpoint.v1",
+            "config": TrainConfig(model_name="unknown").to_dict(),
+        }
+        with self.assertRaisesRegex(RuntimeError, "unsupported checkpoint backbone"):
+            export_onnx.reconstruct_model(export_payload)
+
+        roi_payload = {
+            "schema_version": "cvi.training_checkpoint.v1",
+            "config": TrainConfig(model_name="convnext-base").to_dict(),
+        }
+        with self.assertRaisesRegex(
+            RuntimeError, "ROI ReID checkpoint must use DINOv2-small"
+        ):
+            evaluate_roi_reid._reconstruct_dinov2_model(
+                roi_payload, Path("unused")
+            )
 
     def test_default_checkpoint_reconstructs_with_matching_backbone(self) -> None:
         from workflows import export_onnx

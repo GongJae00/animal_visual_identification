@@ -870,7 +870,8 @@ class BatchInvarianceTests(unittest.TestCase):
             completed = subprocess.run(
                 [
                     sys.executable,
-                    "workflows/freeze_batch_runtime_library_policy.py",
+                    "workflows/freeze_runtime_library_policy.py",
+                    "batch",
                     "--discovery-policy", str(discovery_policy_path),
                     "--discovery-manifest", str(discovery_paths[0]),
                     "--discovery-manifest", str(discovery_paths[1]),

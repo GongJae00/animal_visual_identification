@@ -5,6 +5,7 @@ import json
 import tempfile
 import unittest
 import uuid
+from copy import deepcopy
 from pathlib import Path
 from typing import ClassVar
 from unittest.mock import patch
@@ -57,6 +58,9 @@ class _ConfiguredOnnxEvidencer(AbstractEvidencer):
     def __init__(self, model_path: Path, manifest: object, *, use_cuda: bool):
         self.calls.append((model_path, manifest, use_cuda))
         self.output_dim = manifest.output_dim  # type: ignore[attr-defined]
+        self.gallery_contract_fields = {
+            "model_sha256": manifest.model_sha256,  # type: ignore[attr-defined]
+        }
 
     def extract(self, image: Image.Image) -> np.ndarray:
         return np.ones(self.output_dim, dtype=np.float32)
@@ -101,6 +105,9 @@ class _ConfiguredLandmarkEvidencer(AbstractEvidencer):
             (keypoint_path, keypoint_manifest, graph_path, graph_manifest, use_cuda)
         )
         self.output_dim = graph_manifest.output_shape[1]  # type: ignore[attr-defined]
+        self.gallery_contract_fields = {
+            "model_sha256": graph_manifest.artifact_sha256,  # type: ignore[attr-defined]
+        }
 
     def extract(self, image: Image.Image) -> np.ndarray:
         return np.ones(self.output_dim, dtype=np.float32)
@@ -621,6 +628,50 @@ class GalleryContractTests(unittest.TestCase):
 
 
 class SearchContractTests(unittest.TestCase):
+    def test_pipeline_search_does_not_mutate_gallery_metadata(self) -> None:
+        metadata = {
+            "registered_dog_id": _dog_id("non-mutating-result"),
+            "template_id": "1" * 64,
+            "content_sha256": "2" * 64,
+            "idempotency_key": "request-1",
+            "template_schema": "cvi.gallery_template.v1",
+            "metadata": {"capture": {"view": "front"}},
+            "_evidence": {"appearance": 0.75},
+            "_evidence_availability": {"appearance": True},
+            "_query_availability": {"appearance": True},
+            "_template_availability": {"appearance": True},
+            "_scorer_hash": "3" * 64,
+            "_exact": True,
+            "_identity_evidence_kind": "REGISTERED",
+            "_enrollment_rank": None,
+            "_enrollment_view": None,
+            "_duplicate_group_ids": [],
+            "_winning_template_row": 0,
+        }
+        original = deepcopy(metadata)
+
+        class StaticGallery:
+            @staticmethod
+            def prepare_query(vectors, availability, exclusions):
+                return object()
+
+            @staticmethod
+            def search(query, top_k):
+                return [(0, 0.75, metadata)]
+
+        pipeline = IdentityRetrievalPipeline(
+            EvidenceExtractionPipeline(
+                {"appearance": _FixedEvidencer(np.array([1.0, 0.0]))}
+            ),
+            StaticGallery(),
+        )
+
+        result = pipeline.search(Image.new("RGB", (2, 2)), top_k=1)[0]
+
+        self.assertEqual(metadata, original)
+        self.assertEqual(result.evidence, {"appearance": 0.75})
+        self.assertEqual(result.metadata["capture"], {"view": "front"})
+
     def test_evidence_uses_the_qk_channel_order(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             index = IdentityGallery(

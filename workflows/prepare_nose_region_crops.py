@@ -698,125 +698,6 @@ def _decode_image(payload: bytes):
     return image
 
 
-def _canonical_sha256(payload: object) -> str:
-    return hashlib.sha256(
-        json.dumps(
-            payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True
-        ).encode("ascii")
-    ).hexdigest()
-
-
-def _load_localizer(checkpoint_bytes: bytes, device_name: str):
-    import timm
-    import torch
-
-    from parsing.nose_region.localizer import (
-        INPUT_SIZE,
-        KEYPOINT_ORDER,
-        MOBILENETV4_MODEL_NAME,
-        MobileNetV4NoseLocalizer,
-        mobilenetv4_feature_dim,
-    )
-
-    checkpoint = torch.load(
-        io.BytesIO(checkpoint_bytes), map_location="cpu", weights_only=True
-    )
-    if not isinstance(checkpoint, dict) or set(checkpoint) != {
-        "schema_version",
-        "bindings",
-        "selected_epoch",
-        "model_state_dict",
-    }:
-        raise ValueError("nose localizer checkpoint schema differs")
-    if checkpoint["schema_version"] != "cvi.nose_localizer.checkpoint.v1":
-        raise ValueError("unsupported nose localizer checkpoint")
-    if (
-        isinstance(checkpoint["selected_epoch"], bool)
-        or not isinstance(checkpoint["selected_epoch"], int)
-        or checkpoint["selected_epoch"] <= 0
-    ):
-        raise ValueError("nose localizer selected epoch differs")
-    bindings = checkpoint["bindings"]
-    if not isinstance(bindings, dict) or set(bindings) != {
-        "schema_version",
-        "sources",
-        "split_counts",
-        "training_config",
-        "license",
-        "content_sha256",
-    }:
-        raise ValueError("nose localizer checkpoint bindings schema differs")
-    if bindings["schema_version"] != "cvi.nose_localizer.bindings.v1" or (
-        bindings["content_sha256"]
-        != _canonical_sha256({
-            key: value for key, value in bindings.items() if key != "content_sha256"
-        })
-    ):
-        raise ValueError("nose localizer checkpoint bindings digest differs")
-    license_payload = bindings["license"]
-    if (
-        not isinstance(license_payload, dict)
-        or set(license_payload) != {"license_id", "usage_lane", "reason"}
-        or license_payload["license_id"] != "CC-BY-NC-4.0-derived"
-        or license_payload["usage_lane"] != "RESEARCH_ONLY"
-        or not isinstance(license_payload["reason"], str)
-        or not license_payload["reason"]
-    ):
-        raise ValueError("nose localizer checkpoint license lane differs")
-    training = bindings["training_config"]
-    training_fields = {
-        "model_name",
-        "input_size",
-        "keypoint_order",
-        "epochs",
-        "batch_size",
-        "learning_rate",
-        "weight_decay",
-        "seed",
-        "publisher_split_policy",
-    }
-    if not isinstance(training, dict) or set(training) != training_fields or (
-        training.get("model_name") != MOBILENETV4_MODEL_NAME
-        or training.get("input_size") != INPUT_SIZE
-        or training.get("keypoint_order") != list(KEYPOINT_ORDER)
-    ):
-        raise ValueError("nose localizer checkpoint training contract differs")
-    split_counts = bindings["split_counts"]
-    if not isinstance(split_counts, dict) or set(split_counts) != {"ap10k", "dogflw"}:
-        raise ValueError("nose localizer checkpoint split counts differ")
-    expected_splits = {"ap10k": {"train", "val", "test"}, "dogflw": {"train", "test"}}
-    for dataset, expected in expected_splits.items():
-        values = split_counts[dataset]
-        if (
-            not isinstance(values, dict)
-            or set(values) != expected
-            or any(
-                isinstance(count, bool) or not isinstance(count, int) or count <= 0
-                for count in values.values()
-            )
-        ):
-            raise ValueError("nose localizer checkpoint split counts differ")
-    sources = bindings["sources"]
-    if not isinstance(sources, dict) or set(sources) != {
-        "ap10k_zip_sha256",
-        "dogflw_zip_sha256",
-        "backbone_safetensors_sha256",
-    }:
-        raise ValueError("nose localizer checkpoint source bindings differ")
-    for name, digest in sources.items():
-        _require_sha256(digest, f"localizer source {name}")
-    state = checkpoint["model_state_dict"]
-    if not isinstance(state, dict) or not state:
-        raise ValueError("nose localizer checkpoint state is empty")
-    backbone = timm.create_model(MOBILENETV4_MODEL_NAME, pretrained=False)
-    model = MobileNetV4NoseLocalizer(backbone, mobilenetv4_feature_dim(backbone))
-    model.load_state_dict(state, strict=True)
-    device = torch.device(device_name)
-    if device.type == "cuda" and not torch.cuda.is_available():
-        raise RuntimeError("CUDA was explicitly requested but is unavailable")
-    return model.to(device).eval(), device, bindings
-
-
 def _detect(model: Any, device: Any, image: Any) -> tuple[list[float], float, float] | None:
     import torch
     from PIL import Image
@@ -919,6 +800,8 @@ def _increment_rejection(
 
 
 def run(args: argparse.Namespace) -> dict[str, Any]:
+    from parsing.nose_region.native_yt import load_localizer_checkpoint
+
     expected_receipt_sha256 = _require_sha256(
         args.expected_split_receipt_sha256, "expected split receipt SHA-256"
     )
@@ -927,7 +810,6 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     output_parent = args.output_dir.parent.resolve(strict=True)
     if not output_parent.is_dir():
         raise NotADirectoryError(output_parent)
-    _require_regular_file(args.localizer_checkpoint, "localizer checkpoint")
     checkpoint_bytes = _read_regular_bytes(
         args.localizer_checkpoint, "localizer checkpoint"
     )
@@ -978,7 +860,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     ):
         raise ValueError("candidate source location coverage differs")
 
-    model, device, localizer_bindings = _load_localizer(
+    model, device, localizer_bindings = load_localizer_checkpoint(
         checkpoint_bytes, args.device
     )
     input_hashes["localizer_bindings_sha256"] = localizer_bindings[

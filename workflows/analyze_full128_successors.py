@@ -12,6 +12,7 @@ from evaluation.full_segment.full128_analysis import (
     sanitize_representation_trace_manifest,
 )
 from foundation.protected_io import read_strict_json_document, write_private_json_bundle
+from foundation.protected_publication import admit_new_external_output
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -43,16 +44,12 @@ def main(argv: Sequence[str] | None = None) -> int:
 
 
 def _new_external_output(path: Path) -> Path:
-    repository = Path(__file__).resolve().parents[1]
-    requested = path.absolute()
-    output = requested.parent.resolve(strict=True) / requested.name
-    if output == repository or output.is_relative_to(repository):
-        raise ValueError(
-            "representation analysis output must remain outside repository"
-        )
-    if requested.is_symlink() or output.exists() or output.is_symlink():
-        raise FileExistsError("refusing to overwrite representation analysis output")
-    return output
+    return admit_new_external_output(
+        path,
+        repository_root=Path(__file__).resolve().parents[1],
+        repository_error="representation analysis output must remain outside repository",
+        overwrite_error="refusing to overwrite representation analysis output",
+    )
 
 
 if __name__ == "__main__":

@@ -1,1 +1,0 @@
-"""Face identity research modules."""

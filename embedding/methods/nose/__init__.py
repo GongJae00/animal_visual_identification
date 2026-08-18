@@ -1,1 +1,0 @@
-"""Nose identity research modules."""

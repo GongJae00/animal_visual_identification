@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 from pathlib import Path
 
@@ -13,6 +12,7 @@ from contracts.prompt_segmentation_model import (
     prompt_segmentation_model_bundle,
 )
 from foundation.protected_io import write_private_json_bundle
+from foundation.retained_file import read_retained_regular_file
 
 
 def main() -> int:
@@ -57,13 +57,10 @@ def main() -> int:
 def _binding(path: Path, root: Path) -> FoundationFileBinding:
     if path.is_symlink() or not path.is_file():
         raise ValueError(f"prompt model input is not a regular file: {path}")
-    digest = hashlib.sha256()
-    size = 0
-    with path.open("rb") as stream:
-        for chunk in iter(lambda: stream.read(4 * 1024 * 1024), b""):
-            digest.update(chunk)
-            size += len(chunk)
-    return FoundationFileBinding(path.relative_to(root).as_posix(), size, digest.hexdigest())
+    retained = read_retained_regular_file(path, subject="prompt model input")
+    return FoundationFileBinding(
+        path.relative_to(root).as_posix(), retained.byte_count, retained.sha256
+    )
 
 
 if __name__ == "__main__":

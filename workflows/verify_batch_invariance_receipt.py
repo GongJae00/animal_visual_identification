@@ -7,7 +7,7 @@ import json
 from pathlib import Path
 
 from systems.workers.batch_invariance_runner import BatchFreshWorkerReceipt
-from foundation.protected_io import read_strict_json_object
+from foundation.protected_io import read_content_hashed_json_bundle
 
 
 def main() -> None:
@@ -17,14 +17,14 @@ def main() -> None:
     parser.add_argument("--expected-receipt-sha256", required=True)
     args = parser.parse_args()
 
-    payload = read_strict_json_object(args.receipt)
-    if set(payload) != {"schema_version", "receipt_sha256", "receipt"} or payload[
-        "schema_version"
-    ] != "cvi.batch_invariance_bundle.v4":
-        raise ValueError("batch receipt bundle schema differs")
-    receipt = BatchFreshWorkerReceipt.from_dict(payload["receipt"])
-    if receipt.receipt_sha256 != payload["receipt_sha256"]:
-        raise ValueError("batch receipt bundle hash differs")
+    receipt = BatchFreshWorkerReceipt.from_dict(
+        read_content_hashed_json_bundle(
+            args.receipt,
+            schema_version="cvi.batch_invariance_bundle.v4",
+            payload_field="receipt",
+            sha256_field="receipt_sha256",
+        )
+    )
     if receipt.receipt_sha256 != args.expected_receipt_sha256:
         raise ValueError("batch receipt differs from external final anchor")
     if receipt.batch_receipt.precommitment_sha256 != (

@@ -50,7 +50,7 @@ an admission receipt. Then freeze a candidate policy from the supervised
 discovery bundles:
 
 ```bash
-uv run python workflows/freeze_batch_runtime_library_policy.py \
+uv run python workflows/freeze_runtime_library_policy.py batch \
   --discovery-policy RUNTIME_DISCOVERY_POLICY.json \
   --discovery-manifest BATCH_RUNTIME_DISCOVERY_1.json \
   --discovery-manifest BATCH_RUNTIME_DISCOVERY_2.json \

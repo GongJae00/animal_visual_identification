@@ -9,7 +9,8 @@ from __future__ import annotations
 import hashlib
 import json
 import math
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
+from copy import deepcopy
 from dataclasses import dataclass, field
 from enum import Enum
 from types import MappingProxyType
@@ -162,6 +163,7 @@ class GalleryValue:
                 raise ValueError(f"gallery value {name} must be non-empty text")
         if not isinstance(self.metadata, dict):
             raise TypeError("gallery value metadata must be an object")
+        object.__setattr__(self, "metadata", deepcopy(self.metadata))
         if not isinstance(self.identity_evidence_kind, IdentityEvidenceKind):
             raise TypeError("gallery value identity evidence kind is invalid")
         if self.enrollment_rank is not None and not isinstance(
@@ -191,6 +193,14 @@ class QueryKeyScore:
     evidence: dict[str, float]
     evidence_availability: dict[str, bool]
 
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "evidence", dict(self.evidence))
+        object.__setattr__(
+            self,
+            "evidence_availability",
+            dict(self.evidence_availability),
+        )
+
 
 @dataclass(frozen=True, slots=True)
 class ScoredGalleryValue:
@@ -198,38 +208,22 @@ class ScoredGalleryValue:
     query_key_score: QueryKeyScore
     template_availability: dict[str, bool]
 
-
-class IdentityMatchAccumulator:
-    """Retain only the best template value observed for each identity."""
-
-    def __init__(self) -> None:
-        self._best_by_identity: dict[str, ScoredGalleryValue] = {}
-
-    def add(self, candidate: ScoredGalleryValue) -> None:
-        if not isinstance(candidate, ScoredGalleryValue):
-            raise TypeError("identity match candidate must be a scored gallery value")
-        identity_id = candidate.value.registered_identity_id
-        current = self._best_by_identity.get(identity_id)
-        if current is None or _is_better_template(candidate, current):
-            self._best_by_identity[identity_id] = candidate
-
-    def ranked(self, *, top_k: int) -> list[ScoredGalleryValue]:
-        if isinstance(top_k, bool) or not isinstance(top_k, int) or top_k <= 0:
-            raise ValueError("top_k must be a positive integer")
-        return sorted(
-            self._best_by_identity.values(),
-            key=lambda item: (
-                -item.query_key_score.similarity,
-                item.value.registered_identity_id,
-            ),
-        )[:top_k]
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self,
+            "template_availability",
+            dict(self.template_availability),
+        )
 
 
 class AvailableIntersectionScorer:
     """Exact weighted cosine over channels available in both Q and K."""
 
-    def __init__(self, channels: tuple[EvidenceChannelSpec, ...]) -> None:
-        if not channels or any(not isinstance(item, EvidenceChannelSpec) for item in channels):
+    def __init__(self, channels: Sequence[EvidenceChannelSpec]) -> None:
+        channels = tuple(channels)
+        if not channels or any(
+            not isinstance(item, EvidenceChannelSpec) for item in channels
+        ):
             raise ValueError("QK scorer requires evidence channel specifications")
         if len({item.name for item in channels}) != len(channels):
             raise ValueError("QK scorer channel names must be unique")
@@ -324,26 +318,6 @@ def canonical_channel_weights(
     return (weights / total).astype(np.float32)
 
 
-def aggregate_identity_matches(
-    candidates: list[ScoredGalleryValue], *, top_k: int
-) -> list[ScoredGalleryValue]:
-    accumulator = IdentityMatchAccumulator()
-    for candidate in candidates:
-        accumulator.add(candidate)
-    return accumulator.ranked(top_k=top_k)
-
-
-def _is_better_template(
-    candidate: ScoredGalleryValue, current: ScoredGalleryValue
-) -> bool:
-    candidate_score = candidate.query_key_score.similarity
-    current_score = current.query_key_score.similarity
-    return candidate_score > current_score or (
-        candidate_score == current_score
-        and candidate.value.template_id < current.value.template_id
-    )
-
-
 def _validate_vector_set(
     vectors: Mapping[str, np.ndarray],
     availability: Mapping[str, bool],
@@ -426,11 +400,9 @@ __all__ = [
     "GalleryKey",
     "GalleryValue",
     "IdentityEvidenceKind",
-    "IdentityMatchAccumulator",
     "QueryExclusions",
     "QueryKeyScore",
     "RetrievalQuery",
     "ScoredGalleryValue",
-    "aggregate_identity_matches",
     "canonical_channel_weights",
 ]

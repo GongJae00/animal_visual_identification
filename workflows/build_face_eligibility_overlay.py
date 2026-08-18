@@ -20,6 +20,7 @@ from foundation.protected_io import (
     read_strict_json_document,
     write_private_json_bundle,
 )
+from foundation.protected_publication import admit_new_external_output
 from identity.face.face_eligibility import (
     DogFaceSplitEvidence,
     build_face_eligibility_overlay,
@@ -150,14 +151,12 @@ def _regular_file(path: Path, subject: str) -> Path:
 
 
 def _new_external_output(path: Path) -> Path:
-    repository = Path(__file__).resolve().parents[1]
-    requested = path.absolute()
-    output = requested.parent.resolve(strict=True) / requested.name
-    if output == repository or output.is_relative_to(repository):
-        raise ValueError("face-eligibility output must remain outside the repository")
-    if requested.is_symlink() or output.exists() or output.is_symlink():
-        raise FileExistsError("refusing to overwrite face-eligibility output")
-    return output
+    return admit_new_external_output(
+        path,
+        repository_root=Path(__file__).resolve().parents[1],
+        repository_error="face-eligibility output must remain outside the repository",
+        overwrite_error="refusing to overwrite face-eligibility output",
+    )
 
 
 if __name__ == "__main__":

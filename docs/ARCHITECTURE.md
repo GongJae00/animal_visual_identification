@@ -77,14 +77,14 @@ The dataset-stratified identity and localization K-fold manifests are exposed re
 4. `identity` does not import embedding, evaluation, systems, or workflows.
 5. Algorithm packages do not import `evaluation` or `systems`.
    Parsing additionally does not import embedding or retrieval.
-6. `canine_identity` does not import learning, evaluation, systems, experiments, workflows, or apps.
+6. `canine_identity` does not import learning, evaluation, systems, experiments, or workflows.
 7. `evaluation` may consume all algorithm packages.
 8. `systems` may wrap algorithms and evaluation, but algorithms do not import it.
 9. The complete top-level internal package graph must remain acyclic.
 
 ## Versioned Compatibility
 
-Source provenance v3 binds a logical component, entry points, parent package initializers, and the recursive closure of repository-local Python imports. Physical path moves therefore produce explicit new provenance instead of pretending old file hashes still describe current code. Complete v1/v2 inventories remain readable where their persisted readers require them.
+Source provenance v3 binds a logical component, entry points, existing parent package initializers, and the recursive closure of repository-local Python imports. Physical path moves therefore produce explicit new provenance instead of pretending old file hashes still describe current code. Complete v1/v2 inventories remain readable where their persisted readers require them.
 
 Compatibility is narrow:
 

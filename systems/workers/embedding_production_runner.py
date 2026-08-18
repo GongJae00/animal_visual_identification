@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import ctypes
-import errno
 import hashlib
 import json
 import os
@@ -23,8 +21,20 @@ from evaluation.controls.control_scoring import (
     EmbeddingCachePolicy,
     verify_embedding_cache_files,
 )
-from foundation.protected_io import read_strict_json_object
+from foundation.protected_io import (
+    read_content_hashed_json_bundle,
+    read_strict_json_document,
+    read_strict_json_object,
+)
+from foundation.protected_publication import (
+    fsync_directory as _fsync_directory,
+    rename_directory_noreplace as _rename_directory_noreplace,
+)
 from foundation.provenance import content_sha256
+from foundation.retained_file import (
+    retained_regular_file_binding,
+    verify_retained_regular_file_binding,
+)
 from systems.inference.embedding_producer import (
     EmbeddingProducerConfig,
     EmbeddingProductionPolicy,
@@ -77,7 +87,7 @@ LEGACY_EMBEDDING_WORKER_BOOTSTRAP = (
     "runpy.run_module('operations.embedding_production_worker',"
     "run_name='__main__',alter_sys=True)"
 )
-EMBEDDING_WORKER_BOOTSTRAP = (
+MIGRATED_EMBEDDING_WORKER_BOOTSTRAP = (
     "import json,os,runpy,sys;"
     "code_root=sys.argv.pop(1);"
     "request_path=sys.argv[2];"
@@ -89,14 +99,32 @@ EMBEDDING_WORKER_BOOTSTRAP = (
     "runpy.run_module('systems.workers.embedding_production_worker',"
     "run_name='__main__',alter_sys=True)"
 )
+EMBEDDING_WORKER_BOOTSTRAP = (
+    "import json,os,runpy,sys\n"
+    "code_root=sys.argv.pop(1)\n"
+    "request_path=sys.argv[2]\n"
+    "request=json.load(open(request_path,encoding='utf-8'))\n"
+    "expected=dict(request['worker_environment_identity']['environment_entries'])\n"
+    "if dict(os.environ)!=expected:\n"
+    "    raise RuntimeError('protected worker initial environment differs from allowlist')\n"
+    "sys.path.insert(0,code_root)\n"
+    "runpy.run_module('systems.workers.embedding_production_worker',"
+    "run_name='__main__',alter_sys=True)\n"
+)
 EMBEDDING_WORKER_BOOTSTRAP_SHA256 = content_sha256(
     EMBEDDING_WORKER_BOOTSTRAP
 )
 LEGACY_EMBEDDING_WORKER_BOOTSTRAP_SHA256 = content_sha256(
     LEGACY_EMBEDDING_WORKER_BOOTSTRAP
 )
+MIGRATED_EMBEDDING_WORKER_BOOTSTRAP_SHA256 = content_sha256(
+    MIGRATED_EMBEDDING_WORKER_BOOTSTRAP
+)
 _EMBEDDING_WORKER_BOOTSTRAPS = {
     LEGACY_EMBEDDING_WORKER_BOOTSTRAP_SHA256: LEGACY_EMBEDDING_WORKER_BOOTSTRAP,
+    MIGRATED_EMBEDDING_WORKER_BOOTSTRAP_SHA256: (
+        MIGRATED_EMBEDDING_WORKER_BOOTSTRAP
+    ),
     EMBEDDING_WORKER_BOOTSTRAP_SHA256: EMBEDDING_WORKER_BOOTSTRAP,
 }
 
@@ -337,22 +365,8 @@ class EmbeddingFreshWorkerReceipt:
         if self.schema_version != "cvi.embedding_fresh_worker_receipt.v2":
             raise ValueError("unsupported embedding fresh-worker receipt")
         _validate_outer_common(self)
-        if self.production_receipt.receipt_sha256 != (
-            self.production_receipt_sha256
-        ):
-            raise ValueError("embedded production receipt hash differs")
         if self.runtime_library_manifest.decision != "PASS":
             raise ValueError("embedding runtime manifest did not pass")
-        if self.production_receipt.scoring_inventory_sha256 != (
-            self.precommitment.scoring_inventory_sha256
-        ) or self.production_receipt.producer_config_sha256 != (
-            self.precommitment.producer_config_sha256
-        ) or self.production_receipt.production_policy_sha256 != (
-            self.precommitment.production_policy_sha256
-        ) or self.production_receipt.cache_policy_sha256 != (
-            self.precommitment.cache_policy_sha256
-        ):
-            raise ValueError("production receipt differs from precommitment")
         if self.interpretation != (
             "FRESH_WORKER_EMBEDDING_PRODUCTION_NOT_OPTIMIZATION_PROMOTION"
         ):
@@ -457,15 +471,14 @@ def read_embedding_production_outer_bundle(
         expected_completed_attempt_ledger_head_sha256,
         "expected embedding completed-attempt ledger head",
     )
-    payload = read_strict_json_object(path)
-    expected_keys = {"schema_version", "receipt_sha256", "receipt"}
-    if set(payload) != expected_keys or payload["schema_version"] != (
-        "cvi.embedding_production_bundle.v2"
-    ) or not isinstance(payload["receipt"], dict):
-        raise ValueError("protected embedding production bundle differs")
-    receipt = EmbeddingFreshWorkerReceipt.from_dict(payload["receipt"])
-    if receipt.receipt_sha256 != payload["receipt_sha256"]:
-        raise ValueError("embedding production bundle hash differs")
+    receipt = EmbeddingFreshWorkerReceipt.from_dict(
+        read_content_hashed_json_bundle(
+            path,
+            schema_version="cvi.embedding_production_bundle.v2",
+            payload_field="receipt",
+            sha256_field="receipt_sha256",
+        )
+    )
     if receipt.receipt_sha256 != expected_receipt_sha256:
         raise ValueError("external embedding production receipt anchor differs")
     if receipt.completed_attempt_ledger_head_sha256 != (
@@ -588,7 +601,10 @@ def run_embedding_production_fresh_worker(
     if set(files) != required:
         raise ValueError("embedding worker input file names differ")
     bindings = {
-        name: _file_binding(path, name) for name, path in sorted(files.items())
+        name: retained_regular_file_binding(
+            path, subject=f"embedding worker {name}"
+        )
+        for name, path in sorted(files.items())
     }
     child_environment, environment_identity = build_sanitized_worker_environment(
         os.environ,
@@ -690,28 +706,26 @@ def run_embedding_production_fresh_worker(
                 "embedding fresh worker failed: "
                 f"{supervised.status.value} rc={supervised.return_code}"
             )
-        result = _read_worker_result(
+        result = read_strict_json_document(
             result_path,
             maximum_bytes=execution_policy.maximum_worker_result_bytes,
-        )
-        _validate_worker_result(
+        ).payload
+        production_receipt, manifest = _validate_worker_result(
             result,
             request_sha256=request_sha256,
             environment_identity=environment_identity,
             backend=backend,
         )
         for name, binding in bindings.items():
-            _verify_file_binding(Path(binding["path"]), binding, name)
+            verify_retained_regular_file_binding(
+                Path(binding["path"]),
+                binding,
+                subject=f"embedding worker {name}",
+            )
         _verify_code_source_bindings(precommitment.code_source_sha256)
         _verify_code_source_snapshot(
             code_root,
             precommitment.code_source_sha256,
-        )
-        production_receipt = EmbeddingProductionReceipt.from_dict(
-            result["production_receipt"]
-        )
-        manifest = RuntimeLibraryManifest.from_dict(
-            result["runtime_library_manifest"]
         )
         common = {
             "precommitment_sha256": precommitment.precommitment_sha256,
@@ -1065,7 +1079,10 @@ def _validate_inventory_artifacts(
         raise ValueError("embedding artifact tokens differ from inventory")
     bindings: list[tuple[str, str, int]] = []
     for item in inventory.entries:
-        binding = _file_binding(paths[item.artifact_token], item.artifact_token)
+        binding = retained_regular_file_binding(
+            paths[item.artifact_token],
+            subject=f"embedding worker {item.artifact_token}",
+        )
         if binding["byte_size"] != item.byte_size or binding[
             "content_sha256"
         ] != item.content_sha256:
@@ -1080,15 +1097,15 @@ def _validate_provenance(
 ) -> tuple[tuple[str, str, int], ...]:
     if set(paths) != set(_PROVENANCE_NAMES):
         raise ValueError("embedding provenance path names differ")
-    observed = tuple(
-        (
-            name,
-            binding["content_sha256"],
-            binding["byte_size"],
+    observed_items = []
+    for name in _PROVENANCE_NAMES:
+        binding = retained_regular_file_binding(
+            paths[name], subject=f"embedding worker {name}"
         )
-        for name in _PROVENANCE_NAMES
-        for binding in (_file_binding(paths[name], name),)
-    )
+        observed_items.append(
+            (name, binding["content_sha256"], binding["byte_size"])
+        )
+    observed = tuple(observed_items)
     expected = {
         "model": config.model_sha256,
         "model_lineage": config.model_lineage_sha256,
@@ -1109,14 +1126,11 @@ def _code_source_bindings_at(
     root: Path,
 ) -> tuple[tuple[str, str, int], ...]:
     top_levels = {name.split("/", 1)[0] for name in _CODE_SOURCE_NAMES}
-    if all("/" not in name for name in _CODE_SOURCE_NAMES):
-        observed_paths = root.rglob("*.py")
-    else:
-        observed_paths = (
-            path
-            for top_level in top_levels
-            for path in (root / top_level).rglob("*.py")
-        )
+    observed_paths = (
+        path
+        for top_level in top_levels
+        for path in (root / top_level).rglob("*.py")
+    )
     observed_names = tuple(sorted(
         path.relative_to(root).as_posix() for path in observed_paths
     ))
@@ -1125,7 +1139,10 @@ def _code_source_bindings_at(
     result: list[tuple[str, str, int]] = []
     for name in _CODE_SOURCE_NAMES:
         path = root / name
-        binding = _file_binding(path, f"code source {name}")
+        binding = retained_regular_file_binding(
+            path,
+            subject=f"embedding worker code source {name}",
+        )
         result.append((name, binding["content_sha256"], binding["byte_size"]))
     return tuple(result)
 
@@ -1208,50 +1225,13 @@ def _verify_code_source_snapshot(
         raise RuntimeError("embedding immutable code snapshot changed")
 
 
-def _file_binding(path: Path, name: str) -> dict[str, Any]:
-    if path.is_symlink():
-        raise ValueError(f"embedding worker {name} must not be a symlink")
-    resolved = path.resolve(strict=True)
-    before = resolved.stat()
-    if not resolved.is_file() or before.st_size <= 0:
-        raise ValueError(f"embedding worker {name} must be a nonempty file")
-    digest = sha256_file(resolved)
-    after = resolved.stat()
-    if _stat_identity(before) != _stat_identity(after):
-        raise RuntimeError(f"embedding worker {name} changed while hashing")
-    return {
-        "path": str(resolved),
-        "byte_size": before.st_size,
-        "content_sha256": digest,
-    }
-
-
-def _verify_file_binding(
-    path: Path,
-    binding: Mapping[str, Any],
-    name: str,
-) -> None:
-    if _file_binding(path, name) != dict(binding):
-        raise RuntimeError(f"embedding worker {name} changed across execution")
-
-
-def _read_worker_result(path: Path, *, maximum_bytes: int) -> dict[str, Any]:
-    if path.is_symlink():
-        raise ValueError("embedding worker result must not be a symlink")
-    resolved = path.resolve(strict=True)
-    payload = resolved.read_bytes()
-    if not payload or len(payload) > maximum_bytes:
-        raise ValueError("embedding worker result byte size differs")
-    return json.loads(payload, object_pairs_hook=_reject_duplicate_keys)
-
-
 def _validate_worker_result(
     payload: dict[str, Any],
     *,
     request_sha256: str,
     environment_identity: WorkerEnvironmentIdentity,
     backend: str,
-) -> None:
+) -> tuple[EmbeddingProductionReceipt, RuntimeLibraryManifest]:
     expected = {
         "schema_version", "request_sha256", "backend",
         "worker_environment_identity", "worker_environment_identity_sha256",
@@ -1286,6 +1266,7 @@ def _validate_worker_result(
     if not isinstance(payload["actual_providers"], list):
         raise TypeError("embedding actual providers must be a list")
     _sha256(payload["actual_provider_options_sha256"], "provider options")
+    return receipt, manifest
 
 
 def _unpublished_output_path(path: Path) -> tuple[Path, Path]:
@@ -1325,96 +1306,11 @@ def _remove_exact_published_cache(
     _fsync_directory(root.parent)
 
 
-def _fsync_directory(path: Path) -> None:
-    descriptor = os.open(path, os.O_RDONLY | os.O_DIRECTORY)
-    try:
-        os.fsync(descriptor)
-    finally:
-        os.close(descriptor)
-
-
-def _rename_directory_noreplace(source: Path, target: Path) -> str:
-    """Atomically publish without replacing a cooperatively owned target."""
-
-    if os.name != "posix":
-        if target.exists() or target.is_symlink():
-            raise FileExistsError(target)
-        os.rename(source, target)
-        return "PLATFORM_NOREPLACE_RENAME"
-    libc = ctypes.CDLL(None, use_errno=True)
-    renameat2 = getattr(libc, "renameat2", None)
-    if renameat2 is None:
-        raise RuntimeError(
-            "protected embedding publication requires renameat2(RENAME_NOREPLACE)"
-        )
-    renameat2.argtypes = (
-        ctypes.c_int,
-        ctypes.c_char_p,
-        ctypes.c_int,
-        ctypes.c_char_p,
-        ctypes.c_uint,
-    )
-    renameat2.restype = ctypes.c_int
-    at_fdcwd = -100
-    rename_noreplace = 1
-    result = renameat2(
-        at_fdcwd,
-        os.fsencode(source),
-        at_fdcwd,
-        os.fsencode(target),
-        rename_noreplace,
-    )
-    if result == 0:
-        return "RENAMEAT2_NOREPLACE"
-    error_number = ctypes.get_errno()
-    if error_number == errno.EEXIST:
-        raise FileExistsError(error_number, os.strerror(error_number), target)
-    if error_number in {errno.ENOSYS, errno.EINVAL, errno.EOPNOTSUPP}:
-        return _reserved_empty_directory_rename(source, target)
-    raise OSError(error_number, os.strerror(error_number), target)
-
-
-def _reserved_empty_directory_rename(source: Path, target: Path) -> str:
-    """DrvFS-safe fallback using atomic mkdir as the cooperative reservation."""
-
-    if target.exists() or target.is_symlink():
-        raise FileExistsError(target)
-    target.mkdir(mode=0o700)
-    reserved = target.stat()
-    try:
-        if source.stat().st_dev != reserved.st_dev:
-            raise OSError(errno.EXDEV, os.strerror(errno.EXDEV), target)
-        observed = target.stat()
-        if _stat_identity(observed) != _stat_identity(reserved) or any(
-            target.iterdir()
-        ):
-            raise RuntimeError("embedding publication reservation changed")
-        os.rename(source, target)
-    except BaseException:
-        if target.exists() and not target.is_symlink():
-            observed = target.stat()
-            if _stat_identity(observed) == _stat_identity(reserved) and not any(
-                target.iterdir()
-            ):
-                target.rmdir()
-        raise
-    return "RESERVED_EMPTY_DIRECTORY_RENAME"
-
-
 def _stat_identity(value: os.stat_result) -> tuple[int, int, int, int, int]:
     return (
         value.st_dev, value.st_ino, value.st_size,
         value.st_mtime_ns, value.st_ctime_ns,
     )
-
-
-def _reject_duplicate_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
-    result: dict[str, Any] = {}
-    for key, value in pairs:
-        if key in result:
-            raise ValueError("duplicate JSON key in embedding worker result")
-        result[key] = value
-    return result
 
 
 def _positive_int(value: Any, name: str) -> None:

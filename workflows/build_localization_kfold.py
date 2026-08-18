@@ -4,20 +4,53 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
+from collections.abc import Sequence
 from pathlib import Path
 
 from data.adapters import ADAPTERS
 from data.source_lock import get_record
-from foundation.protected_io import read_strict_json_document, write_private_json_bundle
-from identity.research.research_cycle_admission import ResearchSourceAdmissions
 from evaluation.localization_kfold import (
     LocalizationKFoldPolicy,
     build_localization_kfold_manifest,
+    build_localization_source_manifest,
     localization_kfold_bundle,
 )
+from foundation.protected_io import read_strict_json_document, write_private_json_bundle
+from foundation.provenance import content_sha256
+from identity.research.research_cycle_admission import ResearchSourceAdmissions
+
+
+def _build_source_manifest(argv: Sequence[str]) -> int:
+    parser = argparse.ArgumentParser(
+        description="Build an admission-bindable AP-10K or DogFLW source projection."
+    )
+    parser.add_argument("--dataset", choices=("ap10k-dog", "dogflw"), required=True)
+    parser.add_argument("--output", type=Path, required=True)
+    args = parser.parse_args(argv)
+    if args.output.exists() or args.output.is_symlink():
+        raise FileExistsError("refusing to overwrite localization source manifest")
+    samples = ADAPTERS[args.dataset](Path(get_record(args.dataset).data_root))
+    manifest = build_localization_source_manifest(samples, dataset=args.dataset)
+    write_private_json_bundle(((args.output, manifest),))
+    print(
+        json.dumps(
+            {
+                "status": "CREATED_LOCALIZATION_SOURCE_MANIFEST",
+                "dataset_name": args.dataset,
+                "manifest_sha256": content_sha256(manifest),
+                "sample_count": len(manifest["records"]),
+                "output": str(args.output),
+            },
+            sort_keys=True,
+        )
+    )
+    return 0
 
 
 def main() -> int:
+    if len(sys.argv) > 1 and sys.argv[1] == "source-manifest":
+        return _build_source_manifest(sys.argv[2:])
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--protocol-name", required=True)
     parser.add_argument("--source-admissions", type=Path, required=True)

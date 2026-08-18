@@ -8,8 +8,6 @@ from dataclasses import replace
 import pytest
 
 from data.types import UnifiedCanidSample
-from foundation.provenance import content_sha256
-from identity.registry.identity_registry import compute_sample_token
 from evaluation.localization_kfold import (
     LocalizationKFoldManifest,
     LocalizationKFoldPolicy,
@@ -19,6 +17,9 @@ from evaluation.localization_kfold import (
     materialize_localization_fold,
     read_localization_kfold,
 )
+from foundation.provenance import content_sha256
+from identity.registry.identity_registry import compute_sample_token
+from workflows import build_localization_kfold as localization_kfold_workflow
 
 
 def _sha(value: str) -> str:
@@ -208,3 +209,76 @@ def test_persisted_bundle_count_types_and_duplicate_bindings_fail_closed(
                 ("dogflw", _sha("three")),
             ),
         )
+
+
+def test_cli_dispatches_only_explicit_source_manifest_route(
+    monkeypatch, capsys
+) -> None:
+    monkeypatch.setattr(
+        localization_kfold_workflow.sys,
+        "argv",
+        ["build_localization_kfold.py", "--help"],
+    )
+    with pytest.raises(SystemExit) as kfold_exit:
+        localization_kfold_workflow.main()
+    assert kfold_exit.value.code == 0
+    kfold_help = capsys.readouterr().out
+    assert "--protocol-name" in kfold_help
+    assert "--fold-count" in kfold_help
+    assert "--dataset" not in kfold_help
+
+    monkeypatch.setattr(
+        localization_kfold_workflow.sys,
+        "argv",
+        ["build_localization_kfold.py", "source-manifest", "--help"],
+    )
+    with pytest.raises(SystemExit) as source_exit:
+        localization_kfold_workflow.main()
+    assert source_exit.value.code == 0
+    source_help = capsys.readouterr().out
+    assert "--dataset {ap10k-dog,dogflw}" in source_help
+    assert "--output OUTPUT" in source_help
+    assert "--protocol-name" not in source_help
+
+
+def test_source_manifest_route_matches_projection_and_refuses_overwrite(
+    tmp_path, monkeypatch, capsys
+) -> None:
+    samples = tuple(
+        sample for sample in _samples() if sample.dataset_name == "dogflw"
+    )
+    expected = build_localization_source_manifest(samples, dataset="dogflw")
+    monkeypatch.setitem(
+        localization_kfold_workflow.ADAPTERS,
+        "dogflw",
+        lambda _root: samples,
+    )
+    output = tmp_path / "dogflw-source-manifest.json"
+    monkeypatch.setattr(
+        localization_kfold_workflow.sys,
+        "argv",
+        [
+            "build_localization_kfold.py",
+            "source-manifest",
+            "--dataset",
+            "dogflw",
+            "--output",
+            str(output),
+        ],
+    )
+
+    assert localization_kfold_workflow.main() == 0
+    assert json.loads(output.read_text(encoding="utf-8")) == expected
+    assert json.loads(capsys.readouterr().out) == {
+        "status": "CREATED_LOCALIZATION_SOURCE_MANIFEST",
+        "dataset_name": "dogflw",
+        "manifest_sha256": content_sha256(expected),
+        "sample_count": len(expected["records"]),
+        "output": str(output),
+    }
+
+    with pytest.raises(
+        FileExistsError,
+        match="refusing to overwrite localization source manifest",
+    ):
+        localization_kfold_workflow.main()

@@ -154,6 +154,17 @@ def test_output_must_remain_outside_repository(tmp_path) -> None:
     ) == outside / "result"
 
 
+def test_existing_output_error_precedes_repository_error(tmp_path) -> None:
+    repository = tmp_path / "repo"
+    output = repository / "artifacts"
+    output.mkdir(parents=True)
+
+    with pytest.raises(FileExistsError) as raised:
+        _require_external_output(output, repository_root=repository)
+
+    assert raised.value.args == (output,)
+
+
 def test_source_image_must_match_admitted_archive_member(tmp_path) -> None:
     root = tmp_path / "dataset"
     image_path = root / "YT-BB-dog" / "YT-BB-Dog" / "train" / "a" / "a_0.jpg"

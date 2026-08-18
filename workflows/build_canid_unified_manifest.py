@@ -4,13 +4,20 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from pathlib import Path
 
 from data.adapters import ADAPTERS
+from data.duplicates import (
+    find_cross_dataset_duplicates,
+    find_exact_duplicates,
+    summarize_duplicates,
+)
+from data.report import compute_dataset_statistics
 from data.source_lock import admitted_records
 
 
-def parse_args() -> argparse.Namespace:
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--dataset-root",
@@ -25,7 +32,7 @@ def parse_args() -> argparse.Namespace:
         required=True,
         help="External directory for private JSONL manifests",
     )
-    return parser.parse_args()
+    return parser.parse_args(argv)
 
 
 def _dataset_roots(values: list[str]) -> dict[str, Path]:
@@ -44,8 +51,8 @@ def _dataset_roots(values: list[str]) -> dict[str, Path]:
     return roots
 
 
-def main() -> None:
-    args = parse_args()
+def _build_manifest(argv: list[str]) -> None:
+    args = parse_args(argv)
     explicit_datasets = _dataset_roots(args.dataset_root)
     args.output_dir.mkdir(parents=True, exist_ok=True)
     for record in admitted_records():
@@ -99,6 +106,77 @@ def main() -> None:
                 {"dataset": name, "samples": len(samples), "output": str(output)}
             )
         )
+
+
+def _inspect_datasets() -> None:
+    output: dict[str, dict] = {}
+    for record in admitted_records():
+        name = record.canonical_name
+        adapter = ADAPTERS.get(name)
+        if adapter is None:
+            output[name] = {"error": "no adapter", "admission": record.admission.value}
+            continue
+        root = Path(record.data_root)
+        if not root.is_dir():
+            output[name] = {
+                "error": "data root not found",
+                "root": record.data_root,
+                "admission": record.admission.value,
+            }
+            continue
+        samples = adapter(root)
+        stats = compute_dataset_statistics(samples)
+        dup_summary = summarize_duplicates(samples, root)
+        output[name] = {
+            "admission": record.admission.value,
+            "capture_kind": record.capture_group_kind.value,
+            "license": record.license_id,
+            "statistics": stats,
+            "duplicates": dup_summary,
+        }
+
+    print(json.dumps(output, sort_keys=True, indent=2))
+
+
+def _audit_duplicates() -> None:
+    samples_by_dataset: dict[str, tuple] = {}
+    roots: dict[str, Path] = {}
+    for record in admitted_records():
+        adapter = ADAPTERS.get(record.canonical_name)
+        if adapter is None:
+            continue
+        root = Path(record.data_root)
+        if not root.is_dir():
+            continue
+        samples_by_dataset[record.canonical_name] = adapter(root)
+        roots[record.canonical_name] = root
+
+    report: dict = {"within_dataset": {}, "cross_dataset": {}}
+    for name, samples in samples_by_dataset.items():
+        duplicates = find_exact_duplicates(samples, roots[name])
+        report["within_dataset"][name] = {
+            "groups": len(duplicates),
+            "total_duplicate_samples": sum(len(g) for g in duplicates.values()),
+        }
+
+    cross = find_cross_dataset_duplicates(samples_by_dataset, roots)
+    report["cross_dataset"] = {
+        "groups": len(cross),
+        "datasets_involved": sorted(
+            {entry[0] for entries in cross.values() for entry in entries}
+        ),
+    }
+    print(json.dumps(report, sort_keys=True, indent=2))
+
+
+def main(argv: list[str] | None = None) -> None:
+    arguments = sys.argv[1:] if argv is None else argv
+    if arguments and arguments[0] == "inspect":
+        _inspect_datasets()
+    elif arguments and arguments[0] == "duplicates":
+        _audit_duplicates()
+    else:
+        _build_manifest(arguments)
 
 
 if __name__ == "__main__":

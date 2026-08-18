@@ -14,9 +14,9 @@ from visualization.adapters import adapt_master_results_table
 from visualization.contracts import FigureContractError, FigureData, SourceBinding
 from visualization.privacy import PublicationScope
 from visualization.publishing.publication import publish
-from visualization.rendering.recipes import validate_recipe
-from visualization.registry import FIGURE_REGISTRY
 from visualization.publishing.static_index import build_static_index
+from visualization.registry import FIGURE_REGISTRY
+from visualization.rendering.recipes import validate_recipe
 
 
 def _binding() -> SourceBinding:
@@ -326,6 +326,38 @@ def test_scope_selection_fails_closed(tmp_path: Path) -> None:
     paper = _figure(figure_id, "census", payload, scope=PublicationScope.PAPER)
     with pytest.raises(PermissionError, match="exceeds publication scope"):
         publish((paper,), tmp_path / "public", target_scope=PublicationScope.PUBLIC)
+
+
+@pytest.mark.parametrize(
+    ("figure_ids", "message"),
+    [
+        (
+            ("02_census_availability", "02_census_availability"),
+            "requested figure IDs must be unique",
+        ),
+        (("unknown",), "unregistered requested figures: ['unknown']"),
+        (
+            ("02_census_availability", "03_role_dependency_closure"),
+            "requested figure inputs are missing: ['03_role_dependency_closure']",
+        ),
+        ((), "at least one figure must be selected"),
+    ],
+)
+def test_publication_rejects_invalid_selections(
+    tmp_path: Path,
+    figure_ids: tuple[str, ...],
+    message: str,
+) -> None:
+    figure_id, payload = _payloads()["census"]
+    figure = _figure(figure_id, "census", payload)
+    with pytest.raises(FigureContractError) as error:
+        publish(
+            (figure,),
+            tmp_path / "publication",
+            target_scope=PublicationScope.PUBLIC,
+            figure_ids=figure_ids,
+        )
+    assert str(error.value) == message
 
 
 def test_static_index_escapes_text_and_has_no_remote_assets() -> None:

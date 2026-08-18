@@ -388,8 +388,6 @@ def _preflight_optional_vectors_npz(
                     raise RuntimeError(
                         "gallery sparse optional vector row counts are inconsistent"
                     )
-    except RuntimeError:
-        raise
     except (
         EOFError,
         NotImplementedError,
@@ -2057,10 +2055,7 @@ def _canonical_metadata(metadata: dict | None) -> dict[str, Any]:
         raise ValueError("metadata must be finite JSON") from exc
     if len(encoded) > _MAXIMUM_METADATA_BYTES:
         raise ValueError("metadata exceeds its JSON size limit")
-    canonical = json.loads(encoded.decode("utf-8"))
-    if not isinstance(canonical, dict):
-        raise TypeError("metadata must be an object")
-    return canonical
+    return json.loads(encoded.decode("utf-8"))
 
 
 def _is_bounded_utf8_text(

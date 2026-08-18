@@ -108,33 +108,40 @@ def _input_files(root: Path, runtime_policy: RuntimeLibraryPolicy) -> dict[str, 
 class EmbeddingProductionRunnerAdversarialTests(unittest.TestCase):
     def test_historical_bootstrap_parses_but_cannot_execute(self) -> None:
         policy = _execution_policy()
-        historical = replace(
-            _precommitment(
-                execution_policy_sha256=policy.policy_sha256,
-                environment_sha256=HASH_A,
-            ),
-            worker_bootstrap_sha256=(
-                runner.LEGACY_EMBEDDING_WORKER_BOOTSTRAP_SHA256
-            ),
-        )
-
-        parsed = EmbeddingProductionPrecommitment.from_dict(historical.to_dict())
-        self.assertEqual(parsed, historical)
-        with (
-            patch.object(runner, "run_supervised_process") as launch,
-            self.assertRaisesRegex(RuntimeError, "historical embedding bootstrap"),
+        for bootstrap_sha256 in (
+            runner.LEGACY_EMBEDDING_WORKER_BOOTSTRAP_SHA256,
+            runner.MIGRATED_EMBEDDING_WORKER_BOOTSTRAP_SHA256,
         ):
-            run_embedding_production_fresh_worker(
-                backend="cpu",
-                files={},
-                precommitment=parsed,
-                expected_precommitment_sha256=parsed.precommitment_sha256,
-                python_executable=Path(sys.executable),
-                execution_policy=policy,
-                output_directory=Path("unreachable"),
-                discovery=True,
-            )
-        launch.assert_not_called()
+            with self.subTest(bootstrap_sha256=bootstrap_sha256):
+                historical = replace(
+                    _precommitment(
+                        execution_policy_sha256=policy.policy_sha256,
+                        environment_sha256=HASH_A,
+                    ),
+                    worker_bootstrap_sha256=bootstrap_sha256,
+                )
+
+                parsed = EmbeddingProductionPrecommitment.from_dict(
+                    historical.to_dict()
+                )
+                self.assertEqual(parsed, historical)
+                with (
+                    patch.object(runner, "run_supervised_process") as launch,
+                    self.assertRaisesRegex(
+                        RuntimeError, "historical embedding bootstrap"
+                    ),
+                ):
+                    run_embedding_production_fresh_worker(
+                        backend="cpu",
+                        files={},
+                        precommitment=parsed,
+                        expected_precommitment_sha256=parsed.precommitment_sha256,
+                        python_executable=Path(sys.executable),
+                        execution_policy=policy,
+                        output_directory=Path("unreachable"),
+                        discovery=True,
+                    )
+                launch.assert_not_called()
 
     def test_historical_source_inventory_parses_but_cannot_execute(self) -> None:
         policy = _execution_policy()
@@ -207,11 +214,13 @@ class EmbeddingProductionRunnerAdversarialTests(unittest.TestCase):
             source.mkdir()
             destination.mkdir()
             sources = {
-                "__init__.py": b"BOUND = 'initial'\n",
-                "worker.py": b"VALUE = 1\n",
+                "fixture/__init__.py": b"BOUND = 'initial'\n",
+                "fixture/worker.py": b"VALUE = 1\n",
             }
             for name, payload in sources.items():
-                (source / name).write_bytes(payload)
+                path = source / name
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(payload)
             expected = tuple(
                 (name, hashlib.sha256(payload).hexdigest(), len(payload))
                 for name, payload in sorted(sources.items())
@@ -232,13 +241,13 @@ class EmbeddingProductionRunnerAdversarialTests(unittest.TestCase):
                 )
                 self.assertEqual(files, 2)
                 self.assertEqual(byte_size, sum(map(len, sources.values())))
-                (source / "worker.py").write_bytes(b"VALUE = 999\n")
+                (source / "fixture/worker.py").write_bytes(b"VALUE = 999\n")
                 runner._verify_code_source_snapshot(destination, expected)
                 self.assertEqual(
-                    (destination / "worker.py").read_bytes(),
-                    sources["worker.py"],
+                    (destination / "fixture/worker.py").read_bytes(),
+                    sources["fixture/worker.py"],
                 )
-                (source / "omitted.py").write_text("SURPRISE = True\n")
+                (source / "fixture/omitted.py").write_text("SURPRISE = True\n")
                 with self.assertRaisesRegex(RuntimeError, "inventory"):
                     runner._code_source_bindings_at(source)
 
@@ -362,7 +371,7 @@ class EmbeddingProductionRunnerAdversarialTests(unittest.TestCase):
                 runner.EmbeddingFreshWorkerReceipt,
                 "from_dict",
             ) as parser:
-                with self.assertRaisesRegex(ValueError, "bundle differs"):
+                with self.assertRaisesRegex(ValueError, "bundle schema differs"):
                     read_embedding_production_outer_bundle(
                         bundle_path,
                         expected_receipt_sha256=HASH_A,
@@ -370,14 +379,16 @@ class EmbeddingProductionRunnerAdversarialTests(unittest.TestCase):
                     )
                 parser.assert_not_called()
 
+            receipt_payload = {"synthetic": "payload"}
+            receipt_sha256 = runner.content_sha256(receipt_payload)
             current = {
                 "schema_version": "cvi.embedding_production_bundle.v2",
-                "receipt_sha256": HASH_A,
-                "receipt": {"synthetic": "payload"},
+                "receipt_sha256": receipt_sha256,
+                "receipt": receipt_payload,
             }
             bundle_path.write_text(json.dumps(current), encoding="utf-8")
             parsed = SimpleNamespace(
-                receipt_sha256=HASH_A,
+                receipt_sha256=receipt_sha256,
                 completed_attempt_ledger_head_sha256=HASH_B,
             )
             with patch.object(
@@ -394,53 +405,17 @@ class EmbeddingProductionRunnerAdversarialTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "attempt anchor"):
                     read_embedding_production_outer_bundle(
                         bundle_path,
-                        expected_receipt_sha256=HASH_A,
+                        expected_receipt_sha256=receipt_sha256,
                         expected_completed_attempt_ledger_head_sha256=HASH_C,
                     )
                 self.assertIs(
                     read_embedding_production_outer_bundle(
                         bundle_path,
-                        expected_receipt_sha256=HASH_A,
+                        expected_receipt_sha256=receipt_sha256,
                         expected_completed_attempt_ledger_head_sha256=HASH_B,
                     ),
                     parsed,
                 )
-
-    def test_atomic_publication_never_replaces_existing_target(self) -> None:
-        with TemporaryDirectory() as temporary:
-            root = Path(temporary)
-            source = root / "source"
-            target = root / "target"
-            source.mkdir()
-            target.mkdir()
-            (source / "new.bin").write_bytes(b"new")
-            (target / "owned.bin").write_bytes(b"existing")
-
-            with self.assertRaises(FileExistsError):
-                runner._rename_directory_noreplace(source, target)
-
-            self.assertEqual((target / "owned.bin").read_bytes(), b"existing")
-            self.assertEqual((source / "new.bin").read_bytes(), b"new")
-            self.assertEqual(
-                {path.name for path in target.iterdir()},
-                {"owned.bin"},
-            )
-
-            fallback_source = root / "fallback-source"
-            fallback_target = root / "fallback-target"
-            fallback_source.mkdir()
-            (fallback_source / "vector.bin").write_bytes(b"fallback")
-            strategy = runner._reserved_empty_directory_rename(
-                fallback_source,
-                fallback_target,
-            )
-            self.assertEqual(strategy, "RESERVED_EMPTY_DIRECTORY_RENAME")
-            self.assertFalse(fallback_source.exists())
-            self.assertEqual(
-                (fallback_target / "vector.bin").read_bytes(),
-                b"fallback",
-            )
-
 
 if __name__ == "__main__":
     unittest.main()

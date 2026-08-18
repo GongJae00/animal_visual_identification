@@ -10,12 +10,16 @@ from tempfile import TemporaryDirectory
 from typing import Any, Mapping
 
 from contracts.runtime_library_provenance import RuntimeLibraryManifest
-from data.acquisition import sha256_file
 from evaluation.integrity.batch_invariance import (
     BatchInvariancePrecommitment,
     BatchInvarianceReceipt,
 )
+from foundation.protected_io import read_strict_json_document
 from foundation.provenance import content_sha256
+from foundation.retained_file import (
+    retained_regular_file_binding,
+    verify_retained_regular_file_binding,
+)
 from systems.workers.process_supervisor import (
     ProcessSupervisorPolicy,
     SupervisedProcessResult,
@@ -360,7 +364,8 @@ def run_batch_invariance_fresh_worker(
     if set(files) != required_files:
         raise ValueError("batch worker input file names differ")
     bindings = {
-        name: _file_binding(path, name) for name, path in sorted(files.items())
+        name: retained_regular_file_binding(path, subject=f"batch worker {name}")
+        for name, path in sorted(files.items())
     }
     child_environment, environment_identity = build_sanitized_worker_environment(
         os.environ,
@@ -374,22 +379,23 @@ def run_batch_invariance_fresh_worker(
         environment_identity.identity_sha256
     ):
         raise ValueError("batch worker environment differs from precommitment")
-    request = {
-        "schema_version": "cvi.batch_fresh_worker_request.v1",
-        "backend": backend,
-        "files": bindings,
-        "expected_precommitment_sha256": expected_precommitment_sha256,
-        "worker_environment_identity": environment_identity.to_dict(),
-        "worker_environment_identity_sha256": environment_identity.identity_sha256,
-        "execution_policy_sha256": execution_policy.policy_sha256,
-        "discovery": discovery,
-        "scratch_path": "PENDING_PRIVATE_SCRATCH",
-    }
     with TemporaryDirectory(prefix="cvi-batch-worker-") as temporary:
         root = Path(temporary)
         scratch = root / "scratch"
         scratch.mkdir(mode=0o700)
-        request["scratch_path"] = str(scratch)
+        request = {
+            "schema_version": "cvi.batch_fresh_worker_request.v1",
+            "backend": backend,
+            "files": bindings,
+            "expected_precommitment_sha256": expected_precommitment_sha256,
+            "worker_environment_identity": environment_identity.to_dict(),
+            "worker_environment_identity_sha256": (
+                environment_identity.identity_sha256
+            ),
+            "execution_policy_sha256": execution_policy.policy_sha256,
+            "discovery": discovery,
+            "scratch_path": str(scratch),
+        }
         request_sha256 = content_sha256(request)
         request_path = root / "request.json"
         result_path = root / "result.json"
@@ -421,10 +427,10 @@ def run_batch_invariance_fresh_worker(
                 "batch fresh worker failed: "
                 f"{supervised.status.value} rc={supervised.return_code}"
             )
-        result = _read_worker_result(
+        result = read_strict_json_document(
             result_path,
             maximum_bytes=execution_policy.maximum_worker_result_bytes,
-        )
+        ).payload
     _validate_common_worker_result(
         result,
         request_sha256=request_sha256,
@@ -433,7 +439,11 @@ def run_batch_invariance_fresh_worker(
         discovery=discovery,
     )
     for name, binding in bindings.items():
-        _verify_file_binding(Path(binding["path"]), binding, name)
+        verify_retained_regular_file_binding(
+            Path(binding["path"]),
+            binding,
+            subject=f"batch worker {name}",
+        )
     common = {
         "worker_request_sha256": request_sha256,
         "worker_environment_identity_sha256": environment_identity.identity_sha256,
@@ -451,6 +461,10 @@ def run_batch_invariance_fresh_worker(
         manifest = RuntimeLibraryManifest.from_dict(
             result["runtime_library_manifest"]
         )
+        if manifest.manifest_sha256 != result[
+            "runtime_library_manifest_sha256"
+        ]:
+            raise ValueError("batch worker discovery manifest hash differs")
         return BatchFreshWorkerDiscovery(
             precommitment_sha256=precommitment.precommitment_sha256,
             runtime_library_manifest_sha256=manifest.manifest_sha256,
@@ -458,51 +472,13 @@ def run_batch_invariance_fresh_worker(
             **common,
         )
     batch_receipt = BatchInvarianceReceipt.from_dict(result["batch_receipt"])
+    if batch_receipt.receipt_sha256 != result["batch_receipt_sha256"]:
+        raise ValueError("batch worker receipt hash differs")
     return BatchFreshWorkerReceipt(
         batch_receipt_sha256=batch_receipt.receipt_sha256,
         batch_receipt=batch_receipt,
         **common,
     )
-
-
-def _file_binding(path: Path, name: str) -> dict[str, Any]:
-    if path.is_symlink():
-        raise ValueError(f"batch worker {name} must not be a symlink")
-    resolved = path.resolve(strict=True)
-    before = resolved.stat()
-    if not resolved.is_file() or before.st_size <= 0:
-        raise ValueError(f"batch worker {name} must be a nonempty file")
-    digest = sha256_file(resolved)
-    after = resolved.stat()
-    if _stat_identity(before) != _stat_identity(after):
-        raise RuntimeError(f"batch worker {name} changed while hashing")
-    return {
-        "path": str(resolved),
-        "byte_size": before.st_size,
-        "content_sha256": digest,
-    }
-
-
-def _verify_file_binding(
-    path: Path,
-    binding: Mapping[str, Any],
-    name: str,
-) -> None:
-    if set(binding) != {"path", "byte_size", "content_sha256"}:
-        raise ValueError(f"batch worker {name} binding keys differ")
-    observed = _file_binding(path, name)
-    if observed != dict(binding):
-        raise RuntimeError(f"batch worker {name} changed across execution")
-
-
-def _read_worker_result(path: Path, *, maximum_bytes: int) -> dict[str, Any]:
-    if path.is_symlink():
-        raise ValueError("batch worker result must not be a symlink")
-    resolved = path.resolve(strict=True)
-    payload = resolved.read_bytes()
-    if not payload or len(payload) > maximum_bytes:
-        raise ValueError("batch worker result byte size differs")
-    return json.loads(payload, object_pairs_hook=_reject_duplicate_keys)
 
 
 def _validate_common_worker_result(
@@ -541,36 +517,6 @@ def _validate_common_worker_result(
     expected_kind = "DISCOVERY" if discovery else "RECEIPT"
     if payload["kind"] != expected_kind:
         raise ValueError("batch worker result kind differs")
-    if discovery:
-        manifest = RuntimeLibraryManifest.from_dict(
-            payload["runtime_library_manifest"]
-        )
-        if manifest.manifest_sha256 != payload[
-            "runtime_library_manifest_sha256"
-        ]:
-            raise ValueError("batch worker discovery manifest hash differs")
-    else:
-        receipt = BatchInvarianceReceipt.from_dict(payload["batch_receipt"])
-        if receipt.receipt_sha256 != payload["batch_receipt_sha256"]:
-            raise ValueError("batch worker receipt hash differs")
-
-
-def _stat_identity(value: os.stat_result) -> tuple[int, int, int, int, int]:
-    return (
-        value.st_dev, value.st_ino, value.st_size,
-        value.st_mtime_ns, value.st_ctime_ns,
-    )
-
-
-def _reject_duplicate_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
-    result: dict[str, Any] = {}
-    for key, value in pairs:
-        if key in result:
-            raise ValueError("duplicate JSON key in batch worker result")
-        result[key] = value
-    return result
-
-
 def _sha256(value: Any, name: str) -> None:
     if not isinstance(value, str) or len(value) != 64 or any(
         character not in "0123456789abcdef" for character in value

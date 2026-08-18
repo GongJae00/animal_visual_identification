@@ -4,10 +4,14 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from pathlib import Path
 from typing import Any
 
-from evaluation.common_reporting import evaluate_cached_protocol
+from evaluation.common_reporting import (
+    build_master_results_table,
+    evaluate_cached_protocol,
+)
 from foundation.protected_io import read_strict_json_object, write_private_json_bundle
 from foundation.provenance import content_sha256
 
@@ -16,7 +20,37 @@ def _protocol_key(report: dict[str, Any]) -> str:
     return f"{report['dataset']}:{report['protocol_id']}"
 
 
+def _build_table(args: list[str]) -> None:
+    parser = argparse.ArgumentParser(
+        description="Generate a deterministic long-form master table only from sealed reports."
+    )
+    parser.add_argument("--report", action="append", required=True, type=Path)
+    parser.add_argument("--output", required=True, type=Path)
+    parsed = parser.parse_args(args)
+
+    table = build_master_results_table(
+        [read_strict_json_object(path) for path in parsed.report]
+    )
+    write_private_json_bundle(((parsed.output, table),))
+    print(
+        json.dumps(
+            {
+                "event": "master_results_table_built",
+                "output": str(parsed.output),
+                "report_count": len(table["source_report_sha256s"]),
+                "row_count": len(table["rows"]),
+                "table_sha256": table["table_sha256"],
+            },
+            sort_keys=True,
+        )
+    )
+
+
 def main() -> None:
+    if sys.argv[1:2] == ["table"]:
+        _build_table(sys.argv[2:])
+        return
+
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--protocol-input",

@@ -8,6 +8,7 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from foundation.protected_io import read_strict_json_document, write_private_json_bundle
+from foundation.protected_publication import admit_new_external_output
 from embedding.methods.full_segment.face_visible import (
     build_face_visible_successor_inventory,
     build_face_visible_successor_inventory_v2,
@@ -119,14 +120,12 @@ def main(argv: Sequence[str] | None = None) -> int:
 
 
 def _new_external_output(path: Path, label: str) -> Path:
-    repository = Path(__file__).resolve().parents[1]
-    requested = path.absolute()
-    output = requested.parent.resolve(strict=True) / requested.name
-    if output == repository or output.is_relative_to(repository):
-        raise ValueError(f"{label} output must remain outside the repository")
-    if requested.is_symlink() or output.exists() or output.is_symlink():
-        raise FileExistsError(f"refusing to overwrite {label} output")
-    return output
+    return admit_new_external_output(
+        path,
+        repository_root=Path(__file__).resolve().parents[1],
+        repository_error=f"{label} output must remain outside the repository",
+        overwrite_error=f"refusing to overwrite {label} output",
+    )
 
 
 def _positive_int(value: str) -> int:

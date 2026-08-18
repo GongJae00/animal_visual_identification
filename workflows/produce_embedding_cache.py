@@ -14,21 +14,11 @@ from systems.workers.embedding_production_runner import (
     cleanup_published_embedding_cache,
     run_embedding_production_fresh_worker,
 )
-from foundation.protected_io import read_strict_json_object, write_private_json_bundle
-
-
-def _precommitment(path: Path) -> EmbeddingProductionPrecommitment:
-    payload = read_strict_json_object(path)
-    if set(payload) != {
-        "schema_version", "precommitment_sha256", "precommitment"
-    } or payload["schema_version"] != (
-        "cvi.embedding_production_precommitment_bundle.v1"
-    ):
-        raise ValueError("embedding precommitment bundle differs")
-    value = EmbeddingProductionPrecommitment.from_dict(payload["precommitment"])
-    if value.precommitment_sha256 != payload["precommitment_sha256"]:
-        raise ValueError("embedding precommitment bundle hash differs")
-    return value
+from foundation.protected_io import (
+    read_content_hashed_json_bundle,
+    read_strict_json_object,
+    write_private_json_bundle,
+)
 
 
 def main() -> None:
@@ -55,7 +45,14 @@ def main() -> None:
     output_group.add_argument("--runtime-discovery-output", type=Path)
     args = parser.parse_args()
 
-    precommitment = _precommitment(args.precommitment)
+    precommitment = EmbeddingProductionPrecommitment.from_dict(
+        read_content_hashed_json_bundle(
+            args.precommitment,
+            schema_version="cvi.embedding_production_precommitment_bundle.v1",
+            payload_field="precommitment",
+            sha256_field="precommitment_sha256",
+        )
+    )
     execution_policy = EmbeddingWorkerExecutionPolicy.from_dict(
         read_strict_json_object(args.worker_execution_policy)
     )

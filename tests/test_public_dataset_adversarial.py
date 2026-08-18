@@ -448,6 +448,84 @@ class PublicDatasetExtractionAdversarialTests(unittest.TestCase):
 
 
 class ProtectedPublicationAdversarialTests(unittest.TestCase):
+    def test_external_output_admission_resolves_parent(self) -> None:
+        with TemporaryDirectory() as temporary:
+            base = Path(temporary)
+            repository = base / "repository"
+            external = base / "external"
+            repository.mkdir()
+            external.mkdir()
+            alias = base / "external-alias"
+            alias.symlink_to(external, target_is_directory=True)
+
+            output = protected_publication.admit_new_external_output(
+                alias / "result.json",
+                repository_root=repository,
+                repository_error="repository output",
+                overwrite_error="existing output",
+            )
+
+            self.assertEqual(output, external / "result.json")
+
+    def test_external_output_admission_preserves_repository_error(self) -> None:
+        with TemporaryDirectory() as temporary:
+            repository = Path(temporary) / "repository"
+            repository.mkdir()
+
+            for output in (repository, repository / "result.json"):
+                with self.subTest(output=output):
+                    with self.assertRaises(ValueError) as raised:
+                        protected_publication.admit_new_external_output(
+                            output,
+                            repository_root=repository,
+                            repository_error="caller repository error",
+                            overwrite_error="caller overwrite error",
+                        )
+
+                    self.assertEqual(
+                        raised.exception.args,
+                        ("caller repository error",),
+                    )
+
+    def test_external_output_admission_preserves_overwrite_error(self) -> None:
+        with TemporaryDirectory() as temporary:
+            base = Path(temporary)
+            repository = base / "repository"
+            external = base / "external"
+            repository.mkdir()
+            external.mkdir()
+            output = external / "result.json"
+            output.write_bytes(b"existing")
+            overwrite_error = Path("caller-output")
+
+            with self.assertRaises(FileExistsError) as raised:
+                protected_publication.admit_new_external_output(
+                    output,
+                    repository_root=repository,
+                    repository_error="caller repository error",
+                    overwrite_error=overwrite_error,
+                )
+
+            self.assertEqual(raised.exception.args, (overwrite_error,))
+
+    def test_external_output_admission_rejects_terminal_symlink(self) -> None:
+        with TemporaryDirectory() as temporary:
+            base = Path(temporary)
+            repository = base / "repository"
+            external = base / "external"
+            repository.mkdir()
+            external.mkdir()
+            output = external / "result.json"
+            output.symlink_to(external / "missing.json")
+
+            with self.assertRaisesRegex(FileExistsError, "caller overwrite error"):
+                protected_publication.admit_new_external_output(
+                    output,
+                    repository_root=repository,
+                    repository_error="caller repository error",
+                    overwrite_error="caller overwrite error",
+                )
+
     def test_existing_target_is_preserved_without_touching_source(self) -> None:
         with TemporaryDirectory() as temporary:
             base = Path(temporary)

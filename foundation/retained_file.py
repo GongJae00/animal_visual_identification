@@ -5,9 +5,10 @@ from __future__ import annotations
 import hashlib
 import os
 import stat
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from pathlib import Path
+from typing import TypedDict
 
 
 @dataclass(frozen=True, slots=True)
@@ -15,6 +16,38 @@ class RetainedFileRead:
     sha256: str
     byte_count: int
     payload: bytes | None
+
+
+class RetainedFileBinding(TypedDict):
+    path: str
+    byte_size: int
+    content_sha256: str
+
+
+def retained_regular_file_binding(
+    path: Path, *, subject: str
+) -> RetainedFileBinding:
+    if path.is_symlink():
+        raise ValueError(f"{subject} must not be a symlink")
+    absolute = Path(os.path.abspath(os.fspath(path)))
+    retained = read_retained_regular_file(absolute, subject=subject)
+    if retained.byte_count <= 0:
+        raise ValueError(f"{subject} must be a nonempty file")
+    return {
+        "path": str(absolute),
+        "byte_size": retained.byte_count,
+        "content_sha256": retained.sha256,
+    }
+
+
+def verify_retained_regular_file_binding(
+    path: Path,
+    binding: Mapping[str, object],
+    *,
+    subject: str,
+) -> None:
+    if retained_regular_file_binding(path, subject=subject) != dict(binding):
+        raise RuntimeError(f"{subject} changed across execution")
 
 
 def read_retained_regular_file(

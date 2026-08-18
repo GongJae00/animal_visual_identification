@@ -5,7 +5,6 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
-from typing import Any
 
 from evaluation.integrity.batch_invariance import BatchInvariancePrecommitment
 from systems.workers.batch_invariance_runner import (
@@ -14,30 +13,11 @@ from systems.workers.batch_invariance_runner import (
     BatchWorkerExecutionPolicy,
     run_batch_invariance_fresh_worker,
 )
-from foundation.protected_io import read_strict_json_object, write_private_json_bundle
-
-
-def _payload(path: Path, name: str) -> dict[str, Any]:
-    payload = read_strict_json_object(path)
-    if not isinstance(payload, dict):
-        raise TypeError(f"{name} must be an object")
-    return payload
-
-
-def _precommitment(path: Path) -> BatchInvariancePrecommitment:
-    payload = _payload(path, "batch precommitment bundle")
-    if set(payload) != {
-        "schema_version", "precommitment_sha256", "precommitment"
-    } or payload["schema_version"] != (
-        "cvi.batch_invariance_precommitment_bundle.v1"
-    ):
-        raise ValueError("batch precommitment bundle schema differs")
-    precommitment = BatchInvariancePrecommitment.from_dict(
-        payload["precommitment"]
-    )
-    if precommitment.precommitment_sha256 != payload["precommitment_sha256"]:
-        raise ValueError("batch precommitment bundle hash differs")
-    return precommitment
+from foundation.protected_io import (
+    read_content_hashed_json_bundle,
+    read_strict_json_object,
+    write_private_json_bundle,
+)
 
 
 def main() -> None:
@@ -62,9 +42,16 @@ def main() -> None:
     output_group.add_argument("--runtime-discovery-output", type=Path)
     args = parser.parse_args()
 
-    precommitment = _precommitment(args.precommitment)
+    precommitment = BatchInvariancePrecommitment.from_dict(
+        read_content_hashed_json_bundle(
+            args.precommitment,
+            schema_version="cvi.batch_invariance_precommitment_bundle.v1",
+            payload_field="precommitment",
+            sha256_field="precommitment_sha256",
+        )
+    )
     execution_policy = BatchWorkerExecutionPolicy.from_dict(
-        _payload(args.worker_execution_policy, "batch worker execution policy")
+        read_strict_json_object(args.worker_execution_policy)
     )
     discovery = args.runtime_discovery_output is not None
     result = run_batch_invariance_fresh_worker(

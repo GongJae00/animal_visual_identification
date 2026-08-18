@@ -187,6 +187,13 @@ class FaceIDSamplerTests(unittest.TestCase):
         self.assertEqual(len(batch), 64)
         batch_ids = [ids[i] for i in batch]
         self.assertEqual(len(set(batch_ids)), 16)
+        with self.assertRaises(ValueError):
+            FaceReIDSampler(
+                ids,
+                sessions,
+                identities_per_batch=8,
+                samples_per_identity=8,
+            )
 
 
 if __name__ == "__main__":

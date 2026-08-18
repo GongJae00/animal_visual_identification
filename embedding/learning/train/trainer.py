@@ -497,6 +497,19 @@ def _unwrap_model(model: nn.Module) -> ArcFaceModel:
     return candidate
 
 
+def parse_training_checkpoint_config(payload: object) -> TrainConfig:
+    """Return the training configuration from a versioned checkpoint."""
+
+    if not isinstance(payload, dict) or payload.get("schema_version") != (
+        "cvi.training_checkpoint.v1"
+    ):
+        raise RuntimeError("unsupported or legacy training checkpoint")
+    config_payload = payload.get("config")
+    if not isinstance(config_payload, dict):
+        raise RuntimeError("checkpoint is missing its training configuration")
+    return TrainConfig.from_dict(config_payload)
+
+
 def _checkpoint_payload(
     *,
     model: nn.Module,

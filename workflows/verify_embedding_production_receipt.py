@@ -6,8 +6,9 @@ import argparse
 import json
 from pathlib import Path
 
-from systems.workers.embedding_production_runner import EmbeddingFreshWorkerReceipt
-from foundation.protected_io import read_strict_json_object
+from systems.workers.embedding_production_runner import (
+    read_embedding_production_outer_bundle,
+)
 
 
 def main() -> None:
@@ -20,22 +21,15 @@ def main() -> None:
         required=True,
     )
     args = parser.parse_args()
-    payload = read_strict_json_object(args.receipt)
-    if set(payload) != {"schema_version", "receipt_sha256", "receipt"} or (
-        payload["schema_version"] != "cvi.embedding_production_bundle.v2"
-    ):
-        raise ValueError("embedding production receipt bundle differs")
-    receipt = EmbeddingFreshWorkerReceipt.from_dict(payload["receipt"])
-    if receipt.receipt_sha256 != payload["receipt_sha256"] or (
-        receipt.receipt_sha256 != args.expected_receipt_sha256
-    ):
-        raise ValueError("embedding receipt differs from external final anchor")
+    receipt = read_embedding_production_outer_bundle(
+        args.receipt,
+        expected_receipt_sha256=args.expected_receipt_sha256,
+        expected_completed_attempt_ledger_head_sha256=(
+            args.expected_completed_attempt_ledger_head_sha256
+        ),
+    )
     if receipt.precommitment_sha256 != args.expected_precommitment_sha256:
         raise ValueError("embedding receipt differs from external precommitment")
-    if receipt.completed_attempt_ledger_head_sha256 != (
-        args.expected_completed_attempt_ledger_head_sha256
-    ):
-        raise ValueError("embedding completed attempt ledger head differs")
     print(json.dumps({
         "status": "VERIFIED",
         "precommitment_sha256": receipt.precommitment_sha256,

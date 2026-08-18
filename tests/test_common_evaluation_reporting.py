@@ -357,7 +357,8 @@ def test_workflows_publish_complete_suite_then_report_only_master_table(
         [
             sys.executable,
             "-m",
-            "workflows.build_master_results_table",
+            "workflows.evaluate_cached_embedding_family",
+            "table",
             *report_arguments,
             "--output",
             str(table_path),

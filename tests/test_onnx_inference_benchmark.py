@@ -753,7 +753,8 @@ class OnnxInferenceBenchmarkIntegrationTests(unittest.TestCase):
             freeze_receipt_path = root / "embedding-freeze-receipt.json"
             freeze_command = [
                 sys.executable,
-                "workflows/freeze_embedding_runtime_library_policy.py",
+                "workflows/freeze_runtime_library_policy.py",
+                "embedding",
                 "--discovery-policy",
                 str(paths["runtime_policy"]),
             ]
@@ -785,7 +786,8 @@ class OnnxInferenceBenchmarkIntegrationTests(unittest.TestCase):
             duplicate_receipt = root / "duplicate-freeze-receipt.json"
             duplicate_command = [
                 sys.executable,
-                "workflows/freeze_embedding_runtime_library_policy.py",
+                "workflows/freeze_runtime_library_policy.py",
+                "embedding",
                 "--discovery-policy", str(paths["runtime_policy"]),
                 "--discovery-receipt", str(discovery_receipts[0]),
                 "--discovery-receipt", str(discovery_receipts[0]),

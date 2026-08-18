@@ -44,6 +44,7 @@ from foundation.protected_io import (
     write_private_json_bundle,
 )
 from foundation.protected_publication import (
+    admit_new_external_output,
     fsync_directory,
     rename_directory_noreplace,
 )
@@ -260,11 +261,12 @@ def _load_parsing_contract(
 def _require_external_output(output_directory: Path, *, repository_root: Path) -> Path:
     if output_directory.exists() or output_directory.is_symlink():
         raise FileExistsError(output_directory)
-    output_parent = output_directory.parent.resolve(strict=True)
-    repository = repository_root.resolve(strict=True)
-    if output_parent == repository or output_parent.is_relative_to(repository):
-        raise ValueError("parsed-body artifacts must remain outside Git")
-    return output_parent / output_directory.name
+    return admit_new_external_output(
+        output_directory,
+        repository_root=repository_root,
+        repository_error="parsed-body artifacts must remain outside Git",
+        overwrite_error=output_directory,
+    )
 
 
 def _validate_archive_topology(

@@ -28,7 +28,6 @@ from retrieval.qkv import (
     QueryKeyScore,
     RetrievalQuery,
     ScoredGalleryValue,
-    aggregate_identity_matches,
     canonical_channel_weights,
 )
 
@@ -197,48 +196,39 @@ def test_scorer_hash_preserves_historical_v4_gallery_contract() -> None:
     )
 
 
-def _candidate(
-    *, identity_suffix: int, template_digit: str, score: float, template_row: int
-) -> ScoredGalleryValue:
-    identity_id = f"00000000-0000-5000-8000-{identity_suffix:012d}"
-    return ScoredGalleryValue(
-        value=GalleryValue(
-            template_row=template_row,
-            registered_identity_id=identity_id,
-            template_id=template_digit * 64,
-            content_sha256=f"{template_row + 1:064x}",
-            idempotency_key=f"cvi.test.qkv.idempotency.{template_row:04d}",
-            template_schema="cvi.test.gallery_template.v1",
-            breed="test-breed",
-            metadata={"fixture": "retrieval-qkv"},
-        ),
-        query_key_score=QueryKeyScore(
-            similarity=score,
-            evidence={"shape": score},
-            evidence_availability={"shape": True},
-        ),
-        template_availability={"shape": True},
+def test_qkv_values_snapshot_mutable_inputs() -> None:
+    metadata = {"capture": {"view": "front"}}
+    evidence = {"shape": 0.75}
+    evidence_availability = {"shape": True}
+    template_availability = {"shape": True}
+    channels = [
+        EvidenceChannelSpec("shape", dimension=2, optional=False, weight=1.0)
+    ]
+    value = GalleryValue(
+        template_row=0,
+        registered_identity_id="00000000-0000-5000-8000-000000000001",
+        template_id="1" * 64,
+        content_sha256="2" * 64,
+        idempotency_key="request-1",
+        template_schema="cvi.gallery_template.v1",
+        breed="test-breed",
+        metadata=metadata,
     )
+    score = QueryKeyScore(0.75, evidence, evidence_availability)
+    candidate = ScoredGalleryValue(value, score, template_availability)
+    scorer = AvailableIntersectionScorer(channels)
 
+    metadata["capture"]["view"] = "rear"
+    evidence["shape"] = 0.0
+    evidence_availability["shape"] = False
+    template_availability["shape"] = False
+    channels.clear()
 
-def test_aggregate_identity_matches_selects_templates_and_orders_identities() -> None:
-    candidates = [
-        _candidate(identity_suffix=2, template_digit="c", score=0.8, template_row=0),
-        _candidate(identity_suffix=2, template_digit="b", score=0.9, template_row=1),
-        _candidate(identity_suffix=1, template_digit="d", score=0.9, template_row=2),
-        _candidate(identity_suffix=3, template_digit="e", score=0.95, template_row=3),
-        _candidate(identity_suffix=2, template_digit="a", score=0.9, template_row=4),
-        _candidate(identity_suffix=4, template_digit="f", score=0.7, template_row=5),
-    ]
-
-    matches = aggregate_identity_matches(candidates, top_k=3)
-
-    assert [match.value.registered_identity_id for match in matches] == [
-        "00000000-0000-5000-8000-000000000003",
-        "00000000-0000-5000-8000-000000000001",
-        "00000000-0000-5000-8000-000000000002",
-    ]
-    assert matches[2].value.template_id == "a" * 64
+    assert value.metadata == {"capture": {"view": "front"}}
+    assert score.evidence == {"shape": 0.75}
+    assert score.evidence_availability == {"shape": True}
+    assert candidate.template_availability == {"shape": True}
+    assert len(scorer.channels) == 1
 
 
 def _full128_contract() -> dict[str, object]:

@@ -11,6 +11,7 @@ from foundation.protected_io import (
     read_strict_json_document,
     write_private_json_bundle,
 )
+from foundation.protected_publication import admit_new_external_output
 from identity.face.face_identity_protocol_v2 import (
     build_face_identity_protocol_v2,
 )
@@ -71,14 +72,12 @@ def main(argv: Sequence[str] | None = None) -> int:
 
 
 def _new_external_output(path: Path) -> Path:
-    repository = Path(__file__).resolve().parents[1]
-    requested = path.absolute()
-    output = requested.parent.resolve(strict=True) / requested.name
-    if output == repository or output.is_relative_to(repository):
-        raise ValueError("face identity protocol v2 output must remain external")
-    if requested.is_symlink() or output.exists() or output.is_symlink():
-        raise FileExistsError("refusing to overwrite face identity protocol v2")
-    return output
+    return admit_new_external_output(
+        path,
+        repository_root=Path(__file__).resolve().parents[1],
+        repository_error="face identity protocol v2 output must remain external",
+        overwrite_error="refusing to overwrite face identity protocol v2",
+    )
 
 
 if __name__ == "__main__":

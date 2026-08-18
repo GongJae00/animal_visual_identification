@@ -91,12 +91,10 @@ jobs:
           assert "parsing/benchmark.py" not in names
           assert "parsing/fold_protocol.py" not in names
           assert not any(name.startswith("localization/") for name in names)
-          assert "embedding/methods/__init__.py" in names
           assert "embedding/methods/landmark.py" in names
           assert "embedding/methods/full_segment/preparation/route_plan.py" not in names
           assert "embedding/methods/nose/data/embedding_views.py" in names
           assert "embedding/methods/nose/training/embedding_consistency_training.py" in names
-          assert "embedding/learning/__init__.py" in names
           assert "embedding/evidence/__init__.py" in names
           assert not any(name.startswith("identity_methods/") for name in names)
           assert not any(name.startswith("representation_learning/") for name in names)

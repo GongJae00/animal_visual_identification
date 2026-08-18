@@ -31,6 +31,7 @@ from workflows.migrate_gallery_v3_to_v4 import migrate_gallery
 
 class _FixedEvidence(AbstractEvidencer):
     output_dim = 2
+    gallery_contract_fields = {"model_sha256": "f" * 64}
 
     def __init__(self, value: np.ndarray | EvidenceObservation) -> None:
         self._value = value
@@ -123,15 +124,20 @@ class ObservationBoundaryTests(unittest.TestCase):
         observations = pipeline.extract_observations(Image.new("RGB", (2, 2)))
         self.assertTrue(observations["required"].is_available)
         self.assertFalse(observations["optional"].is_available)
-        self.assertEqual(set(pipeline.extract_all(Image.new("RGB", (2, 2)))), {
-            "required"
-        })
+        self.assertEqual(
+            {
+                name
+                for name, observation in observations.items()
+                if observation.is_available
+            },
+            {"required"},
+        )
 
         required = EvidenceExtractionPipeline(
             {"optional": _FixedEvidence(unavailable)}
         )
         with self.assertRaises(RequiredEvidenceUnavailableError):
-            required.extract_all(Image.new("RGB", (2, 2)))
+            required.extract_observations(Image.new("RGB", (2, 2)))
 
     def test_operational_errors_are_not_converted_to_unavailable(self) -> None:
         pipeline = EvidenceExtractionPipeline(

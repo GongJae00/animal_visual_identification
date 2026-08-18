@@ -5,7 +5,6 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
-from typing import Any
 
 from evaluation.controls.control_scoring import (
     ControlScoringInventory,
@@ -28,13 +27,6 @@ from evaluation.integrity.score_drift_admission import (
     ScoreDriftAdmissionPlan,
     compare_score_rank_threshold_drift,
 )
-
-
-def _payload(path: Path, name: str) -> dict[str, Any]:
-    payload = read_strict_json_object(path)
-    if not isinstance(payload, dict):
-        raise TypeError(f"{name} must be an object")
-    return payload
 
 
 def _numerical_receipt(path: Path) -> NumericalAdmissionReceipt:
@@ -96,30 +88,24 @@ def main() -> None:
 
     receipt = compare_score_rank_threshold_drift(
         workload=RetrievalScoreWorkload.from_dict(
-            _payload(args.workload, "retrieval workload")
+            read_strict_json_object(args.workload)
         ),
         inventory=ControlScoringInventory.from_dict(
-            _payload(args.inventory, "scoring inventory")
+            read_strict_json_object(args.inventory)
         ),
         reference_root=args.reference_cache_directory,
         candidate_root=args.candidate_cache_directory,
         reference_manifest=EmbeddingCacheManifest.from_dict(
-            _payload(args.reference_cache_manifest, "reference cache manifest")
+            read_strict_json_object(args.reference_cache_manifest)
         ),
         candidate_manifest=EmbeddingCacheManifest.from_dict(
-            _payload(args.candidate_cache_manifest, "candidate cache manifest")
+            read_strict_json_object(args.candidate_cache_manifest)
         ),
         reference_verification=EmbeddingCacheVerification.from_dict(
-            _payload(
-                args.reference_cache_verification,
-                "reference cache verification",
-            )
+            read_strict_json_object(args.reference_cache_verification)
         ),
         candidate_verification=EmbeddingCacheVerification.from_dict(
-            _payload(
-                args.candidate_cache_verification,
-                "candidate cache verification",
-            )
+            read_strict_json_object(args.candidate_cache_verification)
         ),
         reference_production=read_embedding_production_outer_bundle(
             args.reference_production,
@@ -140,23 +126,23 @@ def main() -> None:
             ),
         ).production_receipt,
         reference_config=EmbeddingProducerConfig.from_dict(
-            _payload(args.reference_producer_config, "reference producer config")
+            read_strict_json_object(args.reference_producer_config)
         ),
         candidate_config=EmbeddingProducerConfig.from_dict(
-            _payload(args.candidate_producer_config, "candidate producer config")
+            read_strict_json_object(args.candidate_producer_config)
         ),
         numerical_admission=_numerical_receipt(args.numerical_admission),
         numerical_policy=NumericalDriftPolicy.from_dict(
-            _payload(args.numerical_policy, "numerical drift policy")
+            read_strict_json_object(args.numerical_policy)
         ),
         boundary=FrozenScoreMarginBoundary.from_dict(
-            _payload(args.frozen_boundary, "frozen score-margin boundary")
+            read_strict_json_object(args.frozen_boundary)
         ),
         policy=ScoreDriftPolicy.from_dict(
-            _payload(args.score_drift_policy, "score drift policy")
+            read_strict_json_object(args.score_drift_policy)
         ),
         cache_policy=EmbeddingCachePolicy.from_dict(
-            _payload(args.cache_policy, "embedding cache policy")
+            read_strict_json_object(args.cache_policy)
         ),
         admission_plan=_admission_plan(args.admission_plan),
         expected_precommitment_sha256=(

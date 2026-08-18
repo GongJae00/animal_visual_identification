@@ -3,10 +3,12 @@ from __future__ import annotations
 import os
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from data.source_lock import SOURCE_REGISTRY, admitted_records, get_record
 from data.types import DatasetAdmission, UnifiedCanidSample
 from identity.registry.generated_identity_registry import create_provisional_identity
+from workflows import build_canid_unified_manifest
 
 
 class CanidRegistryTests(unittest.TestCase):
@@ -69,7 +71,11 @@ class CanidRegistryTests(unittest.TestCase):
         )
 
     def test_acquired_dataset_paths_use_flat_content_directories(self) -> None:
-        data_root = Path(os.environ.get("CANINE_IDENTITY_DATA_DIR", Path.home() / "canine_identity_data"))
+        data_root = Path(
+            os.environ.get(
+                "CANINE_IDENTITY_DATA_DIR", Path.home() / "canine_identity_data"
+            )
+        )
         expected = {
             "ap10k-dog": "ap10k",
             "dogflw": "dogflw",
@@ -85,6 +91,34 @@ class CanidRegistryTests(unittest.TestCase):
                     Path(get_record(name).data_root),
                     data_root / "datasets" / directory,
                 )
+
+
+class CanidWorkflowRoutingTests(unittest.TestCase):
+    def test_only_explicit_first_argument_selects_a_report_route(self) -> None:
+        with (
+            patch.object(build_canid_unified_manifest, "_build_manifest") as manifest,
+            patch.object(build_canid_unified_manifest, "_inspect_datasets") as inspect,
+            patch.object(
+                build_canid_unified_manifest, "_audit_duplicates"
+            ) as duplicates,
+        ):
+            build_canid_unified_manifest.main(["inspect", "ignored"])
+            inspect.assert_called_once_with()
+            manifest.assert_not_called()
+            duplicates.assert_not_called()
+
+        with (
+            patch.object(build_canid_unified_manifest, "_build_manifest") as manifest,
+            patch.object(build_canid_unified_manifest, "_inspect_datasets") as inspect,
+            patch.object(
+                build_canid_unified_manifest, "_audit_duplicates"
+            ) as duplicates,
+        ):
+            arguments = ["--output-dir", "/tmp/manifests", "duplicates"]
+            build_canid_unified_manifest.main(arguments)
+            manifest.assert_called_once_with(arguments)
+            inspect.assert_not_called()
+            duplicates.assert_not_called()
 
 
 class UnifiedCanidSampleTests(unittest.TestCase):

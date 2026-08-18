@@ -5,7 +5,6 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
-from typing import Any
 
 from evaluation.controls.control_scoring import ControlScoringInventory, EmbeddingCachePolicy
 from systems.inference.embedding_producer import EmbeddingProducerConfig
@@ -21,13 +20,6 @@ from evaluation.integrity.score_drift_admission import (
     ScoreDriftPolicy,
     build_score_drift_precommitment,
 )
-
-
-def _payload(path: Path, name: str) -> dict[str, Any]:
-    payload = read_strict_json_object(path)
-    if not isinstance(payload, dict):
-        raise TypeError(f"{name} must be an object")
-    return payload
 
 
 def main() -> None:
@@ -63,29 +55,29 @@ def main() -> None:
     ).production_receipt
     precommitment = build_score_drift_precommitment(
         workload=RetrievalScoreWorkload.from_dict(
-            _payload(args.workload, "retrieval workload")
+            read_strict_json_object(args.workload)
         ),
         inventory=ControlScoringInventory.from_dict(
-            _payload(args.inventory, "scoring inventory")
+            read_strict_json_object(args.inventory)
         ),
         reference_production=reference_receipt,
         reference_config=EmbeddingProducerConfig.from_dict(
-            _payload(args.reference_producer_config, "reference producer config")
+            read_strict_json_object(args.reference_producer_config)
         ),
         candidate_config=EmbeddingProducerConfig.from_dict(
-            _payload(args.candidate_producer_config, "candidate producer config")
+            read_strict_json_object(args.candidate_producer_config)
         ),
         numerical_policy=NumericalDriftPolicy.from_dict(
-            _payload(args.numerical_policy, "numerical drift policy")
+            read_strict_json_object(args.numerical_policy)
         ),
         boundary=FrozenScoreMarginBoundary.from_dict(
-            _payload(args.frozen_boundary, "frozen score-margin boundary")
+            read_strict_json_object(args.frozen_boundary)
         ),
         policy=ScoreDriftPolicy.from_dict(
-            _payload(args.score_drift_policy, "score drift policy")
+            read_strict_json_object(args.score_drift_policy)
         ),
         cache_policy=EmbeddingCachePolicy.from_dict(
-            _payload(args.cache_policy, "embedding cache policy")
+            read_strict_json_object(args.cache_policy)
         ),
         prior_attempt_ledger_sha256=args.prior_attempt_ledger_sha256,
         candidate_attempt_token=args.candidate_attempt_token,
