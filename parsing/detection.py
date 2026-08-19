@@ -255,22 +255,6 @@ class DogDetector:
             is_dark=mean_brightness < 0.1,
         )
 
-    def detect_and_crop(self, image: Image.Image,
-                        quality_filter: bool = True
-                        ) -> list[tuple[Detection, Image.Image, QualityMetrics]]:
-        dogs = self.detect_dogs(image)
-        results: list[tuple[Detection, Image.Image, QualityMetrics]] = []
-        for d in dogs:
-            q = self.compute_quality(image, d)
-            if quality_filter and not q.acceptable(
-                min_sharpness=self._cfg.min_sharpness,
-                min_coverage=self._cfg.min_face_coverage,
-            ):
-                continue
-            crop = self.crop_face(image, d)
-            results.append((d, crop, q))
-        return results
-
     def close(self) -> None:
         del self._model
         self._model_staging.cleanup()

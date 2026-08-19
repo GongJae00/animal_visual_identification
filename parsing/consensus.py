@@ -20,16 +20,6 @@ from parsing.types import (
 
 
 @dataclass(frozen=True, slots=True)
-class FailureVector:
-    image_id: str
-    model_name: str
-    missed_dog: bool = False
-    wrong_instance: bool = False
-    bbox_truncation: bool = False
-    low_confidence: bool = False
-
-
-@dataclass(frozen=True, slots=True)
 class ConsensusDogInstance:
     """One fused instance; ``support_models`` contains teacher artifact SHA256s."""
 
@@ -316,7 +306,6 @@ def _teacher_identity(result: LocalizationResult) -> str:
 
 
 __all__ = [
-    "FailureVector",
     "ConsensusDogInstance",
     "compute_error_correlation",
     "consensus_admission",

@@ -200,17 +200,7 @@ def write_private_json_bundle(
             staged: list[tuple[Path, Path]] = []
             for index, (target, payload) in enumerate(resolved):
                 temporary = temp_root / f"{index}.json"
-                temporary.write_text(
-                    json.dumps(
-                        payload,
-                        ensure_ascii=False,
-                        sort_keys=True,
-                        indent=2,
-                        allow_nan=False,
-                    )
-                    + "\n",
-                    encoding="utf-8",
-                )
+                temporary.write_bytes(json_document_bytes(payload))
                 os.chmod(temporary, 0o600)
                 staged.append((temporary, target))
             for temporary, target in staged:

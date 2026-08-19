@@ -329,31 +329,6 @@ def estimate_blur(image: Image.Image) -> float:
     return float(np.clip(estimate_sharpness(image) / 100.0, 0.0, 1.0))
 
 
-def estimate_brightness(image: Image.Image) -> float:
-    return _quality_diagnostics(image).brightness / 255.0
-
-
-def estimate_contrast(image: Image.Image) -> float:
-    return _quality_diagnostics(image).contrast / 128.0
-
-
-def estimate_occlusion(
-    image: Image.Image,
-    face_box: RoiBox | None = None,
-) -> float:
-    if face_box is None:
-        return 0.0
-    dimension_reason = _validate_dimensions(image.size, DEFAULT_QUALITY_LIMITS)
-    if dimension_reason is not None:
-        raise ValueError(dimension_reason.value)
-    validated, roi_reason = validate_roi_box(face_box, image.size)
-    if roi_reason is not None or validated is None:
-        raise ValueError((roi_reason or QualityReason.INVALID_ROI).value)
-    face = np.asarray(image.crop(validated).convert("L"), dtype=np.float32)
-    dark_ratio = float(np.mean(face < 30))
-    return min(dark_ratio * 5.0, 1.0)
-
-
 def overall_quality(image: Image.Image) -> float:
     diagnostics = _quality_diagnostics(image)
     sharpness = float(np.clip(diagnostics.sharpness / 100.0, 0.0, 1.0))

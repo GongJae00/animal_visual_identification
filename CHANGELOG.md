@@ -74,6 +74,10 @@ contracts remain readable.
   loaded by `IdentityEngine` or tests. Retrieval config v2 remains a
   caller-supplied object. Deduplicated `foundation` file-stat identity
   used by protected I/O.
+- Removed leftover unused live helpers after CLI reduction: unused
+  data-root aliases, unused timestamp/PDQ/quality/telemetry wrappers,
+  unused parsing types, and unused face-binding verification. Foundation
+  JSON writers now share `json_document_bytes`.
 
 ### Architecture
 

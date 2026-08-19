@@ -632,59 +632,6 @@ def audit_timestamp_lines(
     return audit.snapshot()
 
 
-def audit_video_timestamps(
-    path: Path,
-    *,
-    expected_fps: float,
-    level: str = "frame",
-) -> TimestampAudit:
-    """Stream packet PTS or decoded-frame timestamps from ffprobe."""
-
-    if not path.is_file():
-        raise FileNotFoundError(path)
-    _optional_positive_float("expected_fps", expected_fps)
-    if level == "frame":
-        show_option = "-show_frames"
-        entry = "frame=best_effort_timestamp_time"
-    elif level == "packet":
-        show_option = "-show_packets"
-        entry = "packet=dts_time"
-    else:
-        raise ValueError("level must be 'frame' or 'packet'")
-    command = (
-        "ffprobe",
-        "-v",
-        "error",
-        "-select_streams",
-        "v:0",
-        show_option,
-        "-show_entries",
-        entry,
-        "-of",
-        "csv=p=0",
-        str(path),
-    )
-    process = subprocess.Popen(
-        command,
-        stdout=subprocess.PIPE,
-        text=True,
-    )
-    if process.stdout is None:
-        process.kill()
-        process.wait()
-        raise RuntimeError("ffprobe stdout pipe was not created")
-    try:
-        result = audit_timestamp_lines(process.stdout, expected_fps=expected_fps)
-    except BaseException:
-        process.kill()
-        process.wait()
-        raise
-    return_code = process.wait()
-    if return_code != 0:
-        raise subprocess.CalledProcessError(return_code, command)
-    return result
-
-
 def parse_ffprobe(payload: dict[str, Any]) -> VideoProbeSummary:
     """Parse the JSON emitted by the local ffprobe stream/format query."""
 

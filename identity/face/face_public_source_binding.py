@@ -209,26 +209,6 @@ def validate_face_public_source_binding_bundle(value: object) -> dict[str, Any]:
     return bundle
 
 
-def verify_face_public_source_binding_inputs(
-    binding_bundle: object,
-    route_plan_bundle: object,
-    face_overlay_bundle: object,
-    public_source_bundle: object,
-    image_content_receipts: object,
-) -> None:
-    """Rebuild the bridge to authenticate every source binding."""
-
-    validated = validate_face_public_source_binding_bundle(binding_bundle)
-    rebuilt = build_face_public_source_binding(
-        route_plan_bundle,
-        face_overlay_bundle,
-        public_source_bundle,
-        image_content_receipts,
-    )
-    if validated != rebuilt:
-        raise ValueError("face public source binding differs from bound inputs")
-
-
 def _source_bundle(value: object) -> PublicSplitSourceBundle:
     if not isinstance(value, dict):
         raise TypeError("public source bundle must be an object")
@@ -388,5 +368,4 @@ def _require_sha256(value: object, name: str) -> None:
 __all__ = [
     "build_face_public_source_binding",
     "validate_face_public_source_binding_bundle",
-    "verify_face_public_source_binding_inputs",
 ]

@@ -2,9 +2,6 @@
 
 from __future__ import annotations
 
-import os
-import zipfile
-from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Mapping, Sequence
@@ -14,32 +11,8 @@ from foundation.protected_io import read_strict_json_object, write_private_json_
 from foundation.provenance import content_sha256
 from embedding.methods.classical.pdq.contracts import PDQFingerprint, PDQSearchPolicy
 from embedding.methods.classical.pdq.mih import find_pdq_near_duplicate_candidates
-from embedding.methods.classical.pdq.native import (
-    MAXIMUM_BATCH_BYTES,
-    MAXIMUM_BATCH_REQUESTS,
-    CanonicalRGBRequest,
-    PdqNativeBuildReceipt,
-    hash_rgb_batch,
-    verify_native_pdq_build,
-)
-from embedding.methods.classical.phash_mih import opaque_sample_id
-from embedding.methods.classical.public_canine_phash_audit import (
-    PublicCaninePHashPolicy,
-    PublicCaninePHashSource,
-    _authenticate_source,
-    _AuthenticatedSource,
-    _bound_container_info,
-    _bound_member_info,
-    _canonical_rgb_member,
-    _open_bound_archive,
-    _pillow,
-    _sha256_stream,
-    _source_spec_sha256,
-    _stage_nested_container,
-    _unique_info_index,
-    _validate_source_set,
-    _verify_archive_stability,
-)
+from embedding.methods.classical.pdq.native import PdqNativeBuildReceipt
+from embedding.methods.classical.public_canine_phash_audit import _AuthenticatedSource
 
 MAXIMUM_FINGERPRINT_CHUNK_SAMPLES = 10_000
 _PASS = "PASS_BOUNDED_LABEL_BLIND_PDQ_CANDIDATE_GENERATION"
@@ -139,116 +112,6 @@ class _AuditContext:
     native_binary_path: Path
     official_regression_receipt_sha256: str
     corpus_sample_ids_sha256: str
-
-
-def prepare_pdq_audit_context(
-    *,
-    sources: tuple[PublicCaninePHashSource, ...],
-    decode_policy: PublicCaninePHashPolicy,
-    native_worker_directory: Path,
-    official_regression_receipt_path: Path,
-) -> _AuditContext:
-    """Authenticate all fixed inputs and freeze the corpus-wide opaque order."""
-
-    _validate_source_set(sources)
-    authenticated = tuple(_authenticate_source(item, decode_policy) for item in sources)
-    items = tuple(sorted(
-        (
-            _CorpusItem(item, record, opaque_sample_id(record.source_sample_id))
-            for item in authenticated
-            for manifest in item.manifests
-            for record in manifest.records
-        ),
-        key=lambda item: item.opaque_id,
-    ))
-    ids = tuple(item.opaque_id for item in items)
-    if len(ids) != len(set(ids)):
-        raise ValueError("PDQ corpus contains an opaque sample ID collision")
-    if len(items) > decode_policy.maximum_fingerprints:
-        raise ValueError("PDQ corpus exceeds fingerprint cap")
-    source_rows = tuple(sorted(
-        (
-            {
-                "archive_receipt_sha256": item.archive_receipt_sha256,
-                "semantic_receipt_sha256": item.semantic_receipt_sha256,
-                "image_receipt_sha256": item.image_receipt_sha256,
-                "image_policy_sha256": item.image_policy_sha256,
-            }
-            for item in authenticated
-        ),
-        key=lambda row: tuple(row.values()),
-    ))
-    build_payload = read_strict_json_object(native_worker_directory / "build-receipt.json")
-    build = PdqNativeBuildReceipt.from_dict(build_payload)
-    verify_native_pdq_build(native_worker_directory, build)
-    official_bundle = read_strict_json_object(official_regression_receipt_path)
-    official_sha256 = _validate_official_regression(official_bundle, build)
-    return _AuditContext(
-        items=items,
-        source_spec_sha256=_source_spec_sha256(sources),
-        source_receipt_bindings=source_rows,
-        source_receipt_bindings_sha256=content_sha256(source_rows),
-        native_build_receipt=build,
-        native_build_receipt_sha256=build.receipt_sha256,
-        native_binary_path=native_worker_directory / build.binary_filename,
-        official_regression_receipt_sha256=official_sha256,
-        corpus_sample_ids_sha256=content_sha256(list(ids)),
-    )
-
-
-def run_resumable_fingerprint_chunks(
-    *,
-    context: _AuditContext,
-    decode_policy: PublicCaninePHashPolicy,
-    output_directory: Path,
-    chunk_size: int,
-    tool_provenance: Mapping[str, Any],
-    maximum_new_chunks: int | None = None,
-) -> tuple[int, int]:
-    """Create missing deterministic chunks and validate any existing chunks."""
-
-    _positive_int(chunk_size, "chunk_size")
-    if chunk_size > MAXIMUM_FINGERPRINT_CHUNK_SAMPLES:
-        raise ValueError("PDQ fingerprint chunk size exceeds fixed cap")
-    if maximum_new_chunks is not None:
-        _positive_int(maximum_new_chunks, "maximum_new_chunks")
-    if output_directory.is_symlink() or not output_directory.is_dir():
-        raise ValueError("PDQ chunk output must be an existing real directory")
-    created = 0
-    reused = 0
-    for start in range(0, len(context.items), chunk_size):
-        end = min(len(context.items), start + chunk_size)
-        path = output_directory / f"pdq-fingerprints-{start:05d}-{end:05d}.json"
-        if path.exists():
-            observed = read_pdq_fingerprint_chunk(path)
-            _validate_chunk_lineage(observed, context, start, end)
-            expected_ids = tuple(item.opaque_id for item in context.items[start:end])
-            if tuple(item.opaque_sample_id for item in observed.fingerprints) != expected_ids:
-                raise ValueError("existing PDQ chunk sample coverage differs")
-            reused += 1
-            continue
-        if maximum_new_chunks is not None and created >= maximum_new_chunks:
-            break
-        fingerprints = _fingerprint_items(
-            context.items[start:end], context=context, policy=decode_policy
-        )
-        chunk = PDQFingerprintChunk(
-            source_spec_sha256=context.source_spec_sha256,
-            source_receipt_bindings_sha256=context.source_receipt_bindings_sha256,
-            native_build_receipt_sha256=context.native_build_receipt_sha256,
-            native_binary_sha256=context.native_build_receipt.binary_sha256,
-            official_regression_receipt_sha256=(
-                context.official_regression_receipt_sha256
-            ),
-            corpus_sample_ids_sha256=context.corpus_sample_ids_sha256,
-            corpus_sample_count=len(context.items),
-            start_index=start,
-            end_index=end,
-            fingerprints=fingerprints,
-        )
-        publish_pdq_fingerprint_chunk(path, chunk, tool_provenance=tool_provenance)
-        created += 1
-    return created, reused
 
 
 def merge_pdq_fingerprint_chunks(
@@ -356,21 +219,6 @@ def publish_pdq_fingerprint_chunk(
     return bundle["bundle_sha256"]
 
 
-def publish_pdq_fingerprint_manifest(
-    path: Path, manifest: Mapping[str, Any], *, tool_provenance: Mapping[str, Any]
-) -> str:
-    _validate_fingerprint_manifest(manifest)
-    bundle = _bundle(
-        "cvi.public_canine_pdq_fingerprint_manifest_bundle.v1",
-        "manifest",
-        dict(manifest),
-        "manifest_sha256",
-        tool_provenance,
-    )
-    write_private_json_bundle(((path, bundle),))
-    return bundle["bundle_sha256"]
-
-
 def publish_pdq_evidence_bundle(path: Path, bundle: Mapping[str, Any]) -> str:
     _validate_pdq_evidence_bundle(bundle)
     write_private_json_bundle(((path, dict(bundle)),))
@@ -385,183 +233,6 @@ def read_pdq_fingerprint_chunk(path: Path) -> PDQFingerprintChunk:
         "chunk_sha256",
     )
     return PDQFingerprintChunk.from_dict(payload)
-
-
-def read_pdq_fingerprint_manifest(path: Path) -> dict[str, Any]:
-    payload = dict(_read_bundle(
-        path,
-        "cvi.public_canine_pdq_fingerprint_manifest_bundle.v1",
-        "manifest",
-        "manifest_sha256",
-    ))
-    _validate_fingerprint_manifest(payload)
-    return payload
-
-
-def _fingerprint_items(
-    items: Sequence[_CorpusItem],
-    *,
-    context: _AuditContext,
-    policy: PublicCaninePHashPolicy,
-) -> tuple[PDQFingerprint, ...]:
-    by_source: dict[PublicCaninePHashSource, list[_CorpusItem]] = defaultdict(list)
-    for item in items:
-        by_source[item.authenticated.source].append(item)
-    output: dict[str, PDQFingerprint] = {}
-    for source in sorted(by_source, key=lambda item: item.dataset_name):
-        selected = by_source[source]
-        authenticated = selected[0].authenticated
-        _fingerprint_source_items(
-            authenticated,
-            selected,
-            context=context,
-            policy=policy,
-            output=output,
-        )
-    expected = tuple(item.opaque_id for item in items)
-    if set(output) != set(expected):
-        raise RuntimeError("PDQ chunk fingerprint coverage differs")
-    return tuple(output[value] for value in expected)
-
-
-def _fingerprint_source_items(
-    authenticated: _AuthenticatedSource,
-    selected: Sequence[_CorpusItem],
-    *,
-    context: _AuditContext,
-    policy: PublicCaninePHashPolicy,
-    output: dict[str, PDQFingerprint],
-) -> None:
-    PIL, Image, ImageFile, ImageOps, UnidentifiedImageError = _pillow()
-    if authenticated.image_decoder_name != "Pillow" or authenticated.image_decoder_version != PIL.__version__:
-        raise ValueError("current Pillow differs from protected image receipt")
-    if ImageFile.LOAD_TRUNCATED_IMAGES:
-        raise RuntimeError("Pillow truncated-image decoding must be disabled")
-    descriptor, initial_stat = _open_bound_archive(
-        authenticated.source.archive_path, policy.maximum_archive_bytes
-    )
-    pending: list[CanonicalRGBRequest] = []
-    pending_bytes = 0
-
-    def flush() -> None:
-        nonlocal pending_bytes
-        if not pending:
-            return
-        results = hash_rgb_batch(
-            tuple(pending),
-            binary_path=context.native_binary_path,
-            expected_binary_sha256=context.native_build_receipt.binary_sha256,
-        )
-        for result in results:
-            if result.request_token in output:
-                raise ValueError("duplicate PDQ fingerprint output")
-            output[result.request_token] = PDQFingerprint(
-                result.request_token, result.d4_hashes, result.quality
-            )
-        pending.clear()
-        pending_bytes = 0
-
-    def append(item: _CorpusItem, archive: zipfile.ZipFile, info: zipfile.ZipInfo) -> None:
-        nonlocal pending_bytes
-        protected = authenticated.image_records[item.record.source_sample_id]
-        rgb, width, height, _ = _canonical_rgb_member(
-            archive,
-            info,
-            protected,
-            policy,
-            Image,
-            ImageOps,
-            UnidentifiedImageError,
-        )
-        if pending and (
-            len(pending) >= MAXIMUM_BATCH_REQUESTS
-            or pending_bytes + len(rgb) > MAXIMUM_BATCH_BYTES
-        ):
-            flush()
-        pending.append(CanonicalRGBRequest(
-            width=width,
-            height=height,
-            rgb=rgb,
-            request_sequence=item_index[item.opaque_id],
-            request_token=item.opaque_id,
-        ))
-        pending_bytes += len(rgb)
-
-    item_index = {item.opaque_id: index for index, item in enumerate(context.items)}
-    try:
-        with os.fdopen(descriptor, "rb", closefd=True) as stream:
-            digest = _sha256_stream(stream, policy.read_chunk_bytes)
-            expected_sha = selected[0].record.source_archive_sha256
-            if digest != expected_sha:
-                raise ValueError("archive bytes differ from authenticated source")
-            stream.seek(0)
-            with zipfile.ZipFile(stream) as outer:
-                outer_index = _unique_info_index(outer)
-                direct = sorted(
-                    (item for item in selected if item.record.container_member_path is None),
-                    key=lambda item: item.record.source_sample_id,
-                )
-                for item in direct:
-                    append(
-                        item,
-                        outer,
-                        _bound_member_info(outer_index, item.record, policy),
-                    )
-                nested: dict[str, list[_CorpusItem]] = defaultdict(list)
-                for item in selected:
-                    if item.record.container_member_path is not None:
-                        nested[item.record.container_member_path].append(item)
-                for container_path in sorted(nested):
-                    group = tuple(value.record for value in nested[container_path])
-                    info = _bound_container_info(outer_index, group, policy)
-                    with _stage_nested_container(outer, info, policy) as nested_stream:
-                        with zipfile.ZipFile(nested_stream) as inner:
-                            inner_index = _unique_info_index(inner)
-                            for item in sorted(
-                                nested[container_path],
-                                key=lambda value: value.record.source_sample_id,
-                            ):
-                                append(
-                                    item,
-                                    inner,
-                                    _bound_member_info(inner_index, item.record, policy),
-                                )
-            flush()
-            _verify_archive_stability(
-                authenticated.source.archive_path, stream.fileno(), initial_stat
-            )
-    except Exception:
-        try:
-            os.close(descriptor)
-        except OSError:
-            pass
-        raise
-
-
-def _validate_official_regression(
-    bundle: Mapping[str, Any], build: PdqNativeBuildReceipt
-) -> str:
-    expected = {
-        "schema_version",
-        "receipt",
-        "receipt_sha256",
-        "tool_provenance",
-        "tool_provenance_sha256",
-    }
-    _exact(bundle, expected, "official PDQ regression bundle")
-    receipt = bundle["receipt"]
-    if (
-        bundle["schema_version"] != "cvi.pdq_official_regression_bundle.v1"
-        or not isinstance(receipt, Mapping)
-        or content_sha256(receipt) != bundle["receipt_sha256"]
-        or content_sha256(bundle["tool_provenance"])
-        != bundle["tool_provenance_sha256"]
-        or receipt.get("decision") != "PASS_EXACT_FIXED_COMMIT_OFFICIAL_REGRESSION"
-        or receipt.get("native_binary_sha256") != build.binary_sha256
-        or receipt.get("native_build_receipt_sha256") != build.receipt_sha256
-    ):
-        raise ValueError("official PDQ regression receipt binding differs")
-    return content_sha256(bundle)
 
 
 def _validate_chunk_lineage(

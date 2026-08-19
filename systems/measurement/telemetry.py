@@ -330,28 +330,6 @@ def parse_nvidia_smi_csv(
     )
 
 
-def sample_nvidia_gpu(device_index: int = 0) -> GpuTelemetrySample:
-    if isinstance(device_index, bool) or not isinstance(device_index, int):
-        raise TypeError("device_index must be an integer")
-    command = (
-        "nvidia-smi",
-        f"--id={device_index}",
-        f"--query-gpu={','.join(_QUERY_FIELDS)}",
-        "--format=csv,noheader,nounits",
-    )
-    completed = subprocess.run(
-        command,
-        check=True,
-        capture_output=True,
-        text=True,
-        timeout=5.0,
-    )
-    lines = tuple(line for line in completed.stdout.splitlines() if line.strip())
-    if len(lines) != 1:
-        raise ValueError("nvidia-smi did not return exactly one GPU row")
-    return parse_nvidia_smi_csv(lines[0], timestamp_ns=monotonic_ns())
-
-
 def monitor_operation(
     operation: Callable[[], T],
     *,

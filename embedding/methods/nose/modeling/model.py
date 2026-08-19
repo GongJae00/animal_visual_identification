@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 import math
-from types import SimpleNamespace
 
 import torch
 from torch import nn
@@ -412,12 +411,6 @@ class NoseIDModel(nn.Module):
             "invalid_probability": effective_invalid,
             "source_valid_probability": source_valid_probability,
         }
-
-
-def dummy_dino_output(batch: int, *, device: torch.device | None = None) -> SimpleNamespace:
-    """Small deterministic interface fixture; not a biometric model."""
-    hidden = tuple(torch.zeros(batch, 577, 384, device=device) for _ in range(13))
-    return SimpleNamespace(hidden_states=hidden)
 
 
 __all__ = ["NoseIDModel", "RGBLocalSemanticStream", "ShapeStream", "TextureConvNeXtS"]

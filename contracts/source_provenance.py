@@ -63,50 +63,6 @@ def build_source_provenance(
     }
 
 
-def build_legacy_offline_tool_provenance_v1(
-    tool_path: Path,
-    *,
-    additional_paths: Iterable[Path] = (),
-) -> dict[str, Any]:
-    """Build the historical flat manifest required by existing PDQ artifacts."""
-
-    package_root = Path(__file__).resolve().parent
-    repository_root = _repository_root(Path(__file__).resolve())
-    resolved_tool = tool_path.resolve(strict=True)
-    requested = (
-        *sorted(package_root.glob("*.py")),
-        resolved_tool,
-        *(path.resolve(strict=True) for path in additional_paths),
-    )
-    sources = tuple(dict.fromkeys(requested))
-    rows: list[dict[str, str | int]] = []
-    for path in sources:
-        resolved = path.resolve(strict=True)
-        try:
-            label = resolved.relative_to(repository_root).as_posix()
-        except ValueError as error:
-            raise ValueError("offline tool source is outside repository") from error
-        if path.is_symlink() or not resolved.is_file():
-            raise ValueError("offline tool source must be a real regular file")
-        digest, observed = _hash_regular_file_same_read(resolved)
-        rows.append(
-            {
-                "relative_path": label,
-                "content_sha256": digest,
-                "byte_size": observed,
-            }
-        )
-    rows.sort(key=lambda item: str(item["relative_path"]))
-    runtime = _runtime_provenance()
-    return {
-        "schema_version": "cvi.offline_tool_provenance.v1",
-        "code_source_manifest_sha256": content_sha256(rows),
-        "code_source_files": rows,
-        "runtime": runtime,
-        "runtime_sha256": content_sha256(runtime),
-    }
-
-
 def _repository_root(source: Path) -> Path:
     for parent in source.parents:
         if (parent / "pyproject.toml").is_file():

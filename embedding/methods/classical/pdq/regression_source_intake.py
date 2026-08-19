@@ -2,16 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
-from pathlib import Path
-from typing import Any
-
-from embedding.methods.classical.pdq.source_intake import (
-    PdqSourceAuditResult,
-    PdqSourceContract,
-    audit_pdq_source_archive,
-    publish_pdq_source_bundle,
-)
+from embedding.methods.classical.pdq.source_intake import PdqSourceContract
 
 
 PDQ_REGRESSION_COMMIT_SHA = "baefb4ed67b6cdc1d4c82dbaef858d50866ac424"
@@ -57,37 +48,3 @@ def validate_pdq_regression_source_contract(source: PdqSourceContract) -> None:
             "PDQ regression selected member profile differs; "
             f"missing={missing}; unexpected={unexpected}"
         )
-
-
-def audit_pdq_regression_source_archive(
-    *,
-    archive_path: Path,
-    commit_api_snapshot_path: Path,
-    tree_api_snapshot_path: Path,
-    source: PdqSourceContract,
-    audit_phase_callback: Callable[[str], None] | None = None,
-) -> PdqSourceAuditResult:
-    validate_pdq_regression_source_contract(source)
-    return audit_pdq_source_archive(
-        archive_path=archive_path,
-        commit_api_snapshot_path=commit_api_snapshot_path,
-        tree_api_snapshot_path=tree_api_snapshot_path,
-        source=source,
-        audit_phase_callback=audit_phase_callback,
-    )
-
-
-def publish_pdq_regression_source_bundle(
-    *,
-    audit: PdqSourceAuditResult,
-    source: PdqSourceContract,
-    output_directory: Path,
-    tool_provenance: dict[str, Any],
-) -> str:
-    validate_pdq_regression_source_contract(source)
-    return publish_pdq_source_bundle(
-        audit=audit,
-        source=source,
-        output_directory=output_directory,
-        tool_provenance=tool_provenance,
-    )

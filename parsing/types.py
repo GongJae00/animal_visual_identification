@@ -131,17 +131,6 @@ class LocalizationResult:
             raise ValueError("inference time must be non-negative")
 
 
-@dataclass(frozen=True, slots=True)
-class LocalizationBenchmarkEntry:
-    image_id: str
-    ground_truth: LocalizationResult
-    predictions: tuple[LocalizationResult, ...]
-
-    def __post_init__(self) -> None:
-        if not self.predictions:
-            raise ValueError("benchmark must have at least one prediction")
-
-
 __all__ = [
     "DetectionBox",
     "AP10K_BODY_17_EDGES",
@@ -149,6 +138,5 @@ __all__ = [
     "AP10K_BODY_17_SCHEMA",
     "Keypoint",
     "KeypointSet",
-    "LocalizationBenchmarkEntry",
     "LocalizationResult",
 ]

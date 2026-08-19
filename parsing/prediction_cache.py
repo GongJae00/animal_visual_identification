@@ -9,10 +9,7 @@ from typing import Any
 import numpy as np
 
 from data.types import UnifiedCanidSample
-from foundation.protected_io import (
-    read_content_hashed_json_bundle,
-    write_private_json_bundle,
-)
+from foundation.protected_io import write_private_json_bundle
 from foundation.provenance import content_sha256
 from parsing.types import DetectionBox, LocalizationResult
 
@@ -249,17 +246,6 @@ def write_prediction_cache(path: Path, bundle: dict[str, Any]) -> None:
     write_private_json_bundle(((path, bundle),))
 
 
-def read_prediction_cache(path: Path) -> dict[str, Any]:
-    cache = read_content_hashed_json_bundle(
-        path,
-        schema_version=_BUNDLE_SCHEMA,
-        payload_field="cache",
-        sha256_field="cache_sha256",
-    )
-    validate_prediction_cache(cache)
-    return cache
-
-
 def cache_record_to_result(
     record: Mapping[str, Any], model: Mapping[str, Any]
 ) -> LocalizationResult:
@@ -354,7 +340,6 @@ def _is_finite_number(value: Any) -> bool:
 __all__ = [
     "build_prediction_cache",
     "cache_record_to_result",
-    "read_prediction_cache",
     "validate_prediction_cache",
     "write_prediction_cache",
 ]

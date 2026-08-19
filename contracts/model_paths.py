@@ -17,14 +17,6 @@ DATASETS_DIR = DATA_DIR / "datasets"
 CHECKPOINTS_DIR = DATA_DIR / "checkpoints"
 CACHE_DIR = DATA_DIR / "cache"
 RECEIPTS_DIR = DATA_DIR / "receipts"
-EXPERIMENTS_DIR = DATA_DIR / "experiments"
-DOWNLOADS_DIR = DATA_DIR / "downloads"
-MANIFESTS_DIR = DATA_DIR / "manifests"
-
-# Optional legacy data-layout directories
-DATA_RAW_DIR = DATA_DIR / "raw"
-DATA_PROCESSED_DIR = DATA_DIR / "processed"
-DATA_REGISTRY_DIR = DATA_DIR / "registry"
 
 # Model cache root
 MODELS_DIR = Path(
@@ -80,10 +72,6 @@ def dataset_path(name: str) -> Path:
             f"Unknown dataset: {name}. Supported: {list(SUPPORTED_DATASETS)}"
         )
     return DATASETS_DIR / SUPPORTED_DATASETS[name]["dir"]
-
-
-def processed_path(name: str) -> Path:
-    return DATA_PROCESSED_DIR / SUPPORTED_DATASETS.get(name, {"dir": name})["dir"]
 
 
 # Registry cache paths
