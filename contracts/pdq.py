@@ -42,8 +42,7 @@ PDQ_ELIGIBLE_SEARCHED = "PDQ_ELIGIBLE_SEARCHED"
 PDQ_INELIGIBLE_LOW_QUALITY = "PDQ_INELIGIBLE_LOW_QUALITY"
 PDQ_NOT_IN_AUDIT = "PDQ_NOT_IN_AUDIT"
 
-_OPAQUE_ID = re.compile(r"[0-9a-f]{64}\Z")
-_PDQ_HEX = re.compile(r"[0-9a-f]{64}\Z")
+_HEX64 = re.compile(r"[0-9a-f]{64}\Z")
 
 
 @dataclass(frozen=True, slots=True)
@@ -64,7 +63,7 @@ class PDQFingerprint:
         if len(self.d4_hashes) != PDQ_ORIENTATION_COUNT:
             raise ValueError("PDQ requires exactly eight ordered D4 hashes")
         for hash_value in self.d4_hashes:
-            if not isinstance(hash_value, str) or not _PDQ_HEX.fullmatch(hash_value):
+            if not isinstance(hash_value, str) or not _HEX64.fullmatch(hash_value):
                 raise ValueError(
                     "each PDQ hash must be exactly 256 bits as 64 lowercase hex digits"
                 )
@@ -482,7 +481,7 @@ def _require_quality(value: int, name: str) -> None:
 
 
 def _require_opaque_id(value: str, name: str) -> None:
-    if not isinstance(value, str) or not _OPAQUE_ID.fullmatch(value):
+    if not isinstance(value, str) or not _HEX64.fullmatch(value):
         raise ValueError(f"{name} must be a lowercase SHA-256 token")
 
 

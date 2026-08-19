@@ -26,8 +26,8 @@ from embedding.learning.full_segment.full128_successor_production import (
     run_successor_production,
     validate_production_config,
 )
-from workflows.generate_full128_representation_traces import _new_external_output
-from workflows.run_full128_successors import main as successor_workflow
+from legacy.version.full128.workflows.generate_full128_representation_traces import _new_external_output
+from legacy.version.full128.workflows.run_full128_successors import main as successor_workflow
 
 
 class _PatchBackbone(nn.Module):

@@ -30,12 +30,11 @@ from embedding.methods.nose.data.annotation import (
     build_admission_receipt,
     canonical_jsonl_bytes,
     load_acquisition_jsonl,
-    load_annotation_jsonl,
     validate_acquisition_records,
     validate_annotation_records,
 )
 from embedding.methods.nose.types import NOSE_KEYPOINTS
-from workflows.prepare_nose_annotation_batch import (
+from legacy.version.nose.workflows.prepare_nose_annotation_batch import (
     create_review_batch,
     validate_completed_batch,
 )

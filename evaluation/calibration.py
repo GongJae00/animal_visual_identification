@@ -2,7 +2,10 @@ from __future__ import annotations
 
 import numpy as np
 from sklearn.metrics import brier_score_loss
-from embedding.evidence.calibrator import CalibrationError, fit_isotonic_calibration
+from embedding.evidence.calibrator import CalibrationError
+from embedding.evidence.calibrator import (
+    fit_isotonic_calibration as fit_isotonic_calibration,
+)
 
 
 class InvalidProbabilityError(CalibrationError):

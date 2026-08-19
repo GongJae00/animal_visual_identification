@@ -942,7 +942,7 @@ def train_and_export(
             "training_code": {
                 "embedding_training_sha256": _sha256_file(Path(__file__)),
                 "tool_sha256": _sha256_file(
-                    Path(__file__).parents[4] / "workflows/train_nose_region_embedding.py"
+                    Path(__file__).parents[4] / "legacy/version/nose/workflows/train_nose_region_embedding.py"
                 ),
             },
             "crop_manifest": {

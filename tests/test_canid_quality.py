@@ -3,9 +3,6 @@ from __future__ import annotations
 import unittest
 
 from parsing.quality import (
-    DogQuality,
-    FaceQuality,
-    NoseQuality,
     score_dog_quality,
     score_face_quality,
     score_nose_quality,

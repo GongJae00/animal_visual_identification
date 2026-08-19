@@ -207,7 +207,7 @@ class ProtectedPublicSplitTests(unittest.TestCase):
         )
         self.assertIn("--create-secret", completed.stdout)
         path = Path(
-            "experiments/configs/contracts/"
+            "legacy/version/common/configs/contracts/"
             "public_canine_protected_split_policy.example.json"
         )
         policy = ProtectedPublicSplitPolicy.from_dict(json.loads(path.read_text()))

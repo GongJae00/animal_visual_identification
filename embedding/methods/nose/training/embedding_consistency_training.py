@@ -87,7 +87,7 @@ _CODE_PATHS = (
     "embedding/methods/nose/training/embedding_training.py",
     "embedding/methods/nose/data/embedding_views.py",
     "parsing/nose_region/native_yt.py",
-    "workflows/train_nose_region_consistency.py",
+    "legacy/version/nose/workflows/train_nose_region_consistency.py",
 )
 _PRE_EMBEDDING_CODE_PATHS = tuple(
     path.replace(
@@ -519,7 +519,6 @@ def select_epoch(history: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
         old_map = _metric(dev["old_mpdd_raw"], "mAP")
         raw_map = _metric(dev["native_raw_k5"], "mAP")
         masked_map = _metric(dev["native_masked_k5"], "mAP")
-        masked_rank1 = _metric(dev["native_masked_k5"], "Rank-1")
         raw_improvement = raw_map - raw_baseline
         masked_improvement = masked_map - masked_baseline
         admissible = (

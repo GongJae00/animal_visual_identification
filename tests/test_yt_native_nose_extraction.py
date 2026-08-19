@@ -26,7 +26,7 @@ from parsing.nose_region.native_yt import (
 )
 from foundation.provenance import content_sha256
 from identity.splits.protected_public_split import PublicSplitSample, PublicSplitSourceBundle
-from workflows.extract_yt_native_nose_regions import (
+from legacy.version.nose.workflows.extract_yt_native_nose_regions import (
     _teacher_source_record,
     _validate_split_inputs,
 )

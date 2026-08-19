@@ -16,7 +16,7 @@ from contracts.artifact_manifest import (
     NoseEmbeddingManifest,
     UsageLane,
 )
-from experiments.nose_restoration import (
+from legacy.version.nose.experiments.nose_restoration import (
     INTERPRETATION,
     METHODS,
     evaluate_raw_vs_restored,

@@ -409,7 +409,7 @@ def verify_packed_embedding_cache_files(
                 raise ValueError("packed embedding storage must be a regular file")
             if initial_pack.st_size != manifest.storage.byte_size:
                 raise ValueError("packed embedding storage byte size mismatch")
-            _require_path_matches_fd(directory_fd, pack_fd, initial_pack)
+            _require_path_matches_fd(directory_fd, initial_pack)
             if verification_phase_callback is not None:
                 verification_phase_callback("PACK_OPENED")
 
@@ -438,7 +438,7 @@ def verify_packed_embedding_cache_files(
             final_pack = os.fstat(pack_fd)
             if _stat_identity(initial_pack) != _stat_identity(final_pack):
                 raise RuntimeError("packed embedding storage changed during verification")
-            _require_path_matches_fd(directory_fd, pack_fd, final_pack)
+            _require_path_matches_fd(directory_fd, final_pack)
         finally:
             os.close(pack_fd)
 
@@ -513,10 +513,8 @@ def _require_closed_directory(directory_fd: int) -> None:
 
 def _require_path_matches_fd(
     directory_fd: int,
-    pack_fd: int,
     expected: os.stat_result,
 ) -> None:
-    del pack_fd
     observed = os.stat(
         PACKED_VECTOR_FILE_NAME,
         dir_fd=directory_fd,

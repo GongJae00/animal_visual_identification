@@ -10,11 +10,11 @@ from pathlib import Path
 import pytest
 from PIL import Image
 
-from experiments.nose_observability import (
+from legacy.version.nose.experiments.nose_observability import (
     REPORT_BUNDLE_SCHEMA,
     audit_nose_observability,
 )
-from experiments.sibetan_evidence import (
+from legacy.version.common.experiments.sibetan_evidence import (
     build_evidence_bundle,
     build_evidence_bundle_v2,
 )
@@ -26,7 +26,7 @@ from parsing.nose_region.native_yt import (
     build_manifest_bundle,
     process_native_sample,
 )
-from workflows.audit_nose_observability import run
+from legacy.version.nose.workflows.audit_nose_observability import run
 
 
 def _sha(label: str) -> str:
@@ -361,10 +361,10 @@ def test_cli_binds_file_and_code_writes_canonical_json_and_refuses_overwrite(
     )
     assert output.read_bytes() == json_document_bytes(result)
     assert {
-        "experiments/nose_observability.py",
-        "experiments/sibetan_evidence.py",
+        "legacy/version/nose/experiments/nose_observability.py",
+        "legacy/version/common/experiments/sibetan_evidence.py",
         "parsing/nose_region/native_yt.py",
-        "workflows/audit_nose_observability.py",
+        "legacy/version/nose/workflows/audit_nose_observability.py",
     }.issubset(result["report"]["tool_provenance"]["code_sha256s"])
     with pytest.raises(FileExistsError, match="refusing to overwrite"):
         run(args)

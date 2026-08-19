@@ -15,7 +15,7 @@ from evaluation.full_segment.full128_successors import (
     validate_public_successor_evaluation_report,
 )
 from foundation.provenance import content_sha256
-from workflows.decide_full128_successor_multiseed import main as decision_workflow
+from legacy.version.full128.workflows.decide_full128_successor_multiseed import main as decision_workflow
 
 
 def _sha(label: str) -> str:

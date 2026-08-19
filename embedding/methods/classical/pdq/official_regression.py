@@ -9,7 +9,6 @@ or duplicate decisions.
 
 from __future__ import annotations
 
-import hashlib
 import io
 import json
 import re
@@ -19,10 +18,8 @@ from typing import Any
 
 from embedding.methods.classical.pdq.contracts import PDQ_D4_ORIENTATIONS
 from embedding.methods.classical.pdq.native import (
-    CANONICAL_BINARY_SHA256,
     CanonicalRGBRequest,
     PdqNativeBuildReceipt,
-    hash_rgb,
     hash_rgb_batch,
     verify_native_pdq_build,
 )

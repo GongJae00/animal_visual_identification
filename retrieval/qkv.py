@@ -97,13 +97,7 @@ class RetrievalQuery:
     def __post_init__(self) -> None:
         if not isinstance(self.exclusions, QueryExclusions):
             raise TypeError("query exclusions must be a QueryExclusions value")
-        vectors, availability = _snapshot_vector_set(self.vectors, self.availability)
-        _validate_vector_set(
-            vectors, availability, role="query", require_unit=False
-        )
-        _freeze_vector_set(
-            self, vectors, availability, normalize=True
-        )
+        _bind_vector_set(self, role="query", require_unit=False, normalize=True)
 
 
 @dataclass(frozen=True, slots=True)
@@ -119,13 +113,7 @@ class GalleryKey:
             or self.template_row < 0
         ):
             raise ValueError("gallery key template row must be non-negative")
-        vectors, availability = _snapshot_vector_set(self.vectors, self.availability)
-        _validate_vector_set(
-            vectors, availability, role="gallery key", require_unit=True
-        )
-        _freeze_vector_set(
-            self, vectors, availability, normalize=False
-        )
+        _bind_vector_set(self, role="gallery key", require_unit=True, normalize=False)
 
 
 @dataclass(frozen=True, slots=True)
@@ -318,23 +306,33 @@ def canonical_channel_weights(
     return (weights / total).astype(np.float32)
 
 
-def _validate_vector_set(
-    vectors: Mapping[str, np.ndarray],
-    availability: Mapping[str, bool],
+def _bind_vector_set(
+    target: RetrievalQuery | GalleryKey,
     *,
     role: str,
     require_unit: bool,
+    normalize: bool,
 ) -> None:
+    vectors = target.vectors
+    availability = target.availability
     if not isinstance(vectors, Mapping) or not isinstance(availability, Mapping):
-        raise TypeError(f"{role} vectors and availability must be objects")
-    if any(not isinstance(name, str) or not name for name in availability):
+        raise TypeError("vectors and availability must be objects")
+    vector_snapshot = {
+        name: value.copy() if isinstance(value, np.ndarray) else value
+        for name, value in vectors.items()
+    }
+    availability_snapshot = dict(availability)
+    if any(not isinstance(name, str) or not name for name in availability_snapshot):
         raise ValueError(f"{role} availability channel names differ")
-    if any(not isinstance(value, bool) for value in availability.values()):
+    if any(not isinstance(value, bool) for value in availability_snapshot.values()):
         raise TypeError(f"{role} availability values must be boolean")
-    available_names = {name for name, available in availability.items() if available}
-    if set(vectors) != available_names:
+    available_names = {
+        name for name, available in availability_snapshot.items() if available
+    }
+    if set(vector_snapshot) != available_names:
         raise ValueError(f"{role} vectors must exactly match available channels")
-    for name, vector in vectors.items():
+    frozen_vectors: dict[str, np.ndarray] = {}
+    for name, vector in vector_snapshot.items():
         if (
             not isinstance(vector, np.ndarray)
             or vector.dtype != np.float32
@@ -347,6 +345,15 @@ def _validate_vector_set(
             raise ValueError(f"{role} channel {name!r} must have non-zero finite norm")
         if require_unit and not np.isclose(norm, 1.0, atol=1e-5):
             raise ValueError(f"{role} channel {name!r} must be a unit float32 vector")
+        value = np.asarray(vector / norm, dtype=np.float32) if normalize else vector
+        payload = value.tobytes(order="C")
+        frozen_vectors[name] = np.frombuffer(payload, dtype=np.float32).reshape(
+            value.shape
+        )
+    object.__setattr__(target, "vectors", MappingProxyType(frozen_vectors))
+    object.__setattr__(
+        target, "availability", MappingProxyType(availability_snapshot)
+    )
 
 
 def _is_sha256(value: str) -> bool:
@@ -357,38 +364,6 @@ def _is_sha256(value: str) -> bool:
     except ValueError:
         return False
     return True
-
-
-def _snapshot_vector_set(
-    vectors: Mapping[str, np.ndarray], availability: Mapping[str, bool]
-) -> tuple[dict[str, np.ndarray], dict[str, bool]]:
-    if not isinstance(vectors, Mapping) or not isinstance(availability, Mapping):
-        raise TypeError("vectors and availability must be objects")
-    vector_snapshot = {
-        name: value.copy() if isinstance(value, np.ndarray) else value
-        for name, value in vectors.items()
-    }
-    return vector_snapshot, dict(availability)
-
-
-def _freeze_vector_set(
-    target: RetrievalQuery | GalleryKey,
-    vectors: Mapping[str, np.ndarray],
-    availability: Mapping[str, bool],
-    *,
-    normalize: bool,
-) -> None:
-    frozen_vectors: dict[str, np.ndarray] = {}
-    for name, vector in vectors.items():
-        value = (
-            np.asarray(vector / float(np.linalg.norm(vector)), dtype=np.float32)
-            if normalize
-            else vector
-        )
-        payload = value.tobytes(order="C")
-        frozen_vectors[name] = np.frombuffer(payload, dtype=np.float32).reshape(value.shape)
-    object.__setattr__(target, "vectors", MappingProxyType(frozen_vectors))
-    object.__setattr__(target, "availability", MappingProxyType(dict(availability)))
 
 
 __all__ = [

@@ -197,7 +197,7 @@ class ProtectedEvaluationTests(unittest.TestCase):
                 read_strict_json_document(path)
 
     def test_exact_key_dataclasses_reject_unknown_fields(self) -> None:
-        payload = json.loads(Path("experiments/configs/contracts/protected_evaluation_policy.example.json").read_text())
+        payload = json.loads(Path("legacy/version/common/configs/contracts/protected_evaluation_policy.example.json").read_text())
         payload["unknown"] = True
         with self.assertRaisesRegex(ValueError, "keys differ"):
             ProtectedEvaluationPolicy.from_dict(payload)

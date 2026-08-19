@@ -7,10 +7,86 @@ contracts remain readable.
 
 ## Unreleased
 
+### Compactness
+
+- Moved environment bootstrap from `scripts/check_env.sh` to
+  `setup/check_env.sh`. `setup/` owns first-user environment and release
+  guidance; `pyproject.toml` and `uv.lock` remain at the repository root.
+- Documented the research pipeline (Parsing, Identification, GenID, ReID,
+  Evaluation) as a reading order over the existing packages. Import paths are
+  unchanged.
+- Added `workflows/README.md` as the stage index. Command paths remain
+  `workflows/<command>.py`.
+- Removed untested checkout CLIs that were not on the Parsing → Appearance →
+  GenID/ReID path and had no test, document, or receipt command:
+  `run_foundation_a_panel`, `generate_dinov2_region_candidates`,
+  `render_dinov2_region_qa`, `calibrate_yt_masked_multievidence`,
+  `summarize_yt_masked_multievidence`, `evaluate_noseid_oracle`,
+  `mine_nose_hard_negatives`, `train_masked_afn_kfold`,
+  `evaluate_canid_roi_manifest`, `export_canid_roi_manifest`,
+  `intake_threatexchange_pdq_regression`, `audit_yt_nose_signal_quality`,
+  and the v1 `build_face_identity_protocol` wrapper. Package APIs and
+  versioned schemas remain. Removed unlinked `docs/FEASIBILITY_GATES.md`;
+  admission gates stay in `docs/ROADMAP.md`.
+- Moved completed ablation experiments, their CLIs, and historical protocol
+  notes to `legacy/version/`. Functional checkout commands remain
+  `workflows/<command>.py`. Ablation outcomes are tabulated in
+  `docs/RESEARCH_PROGRESS.md`. Ablation code is grouped by set under
+  `legacy/version/{full128,afn,n4,nose,face}` with one README each.
+  Transplanted protocol essays under `legacy/version/docs/` were removed.
+- `workflows/evaluate_multichannel.py` now fails closed on git and input-file
+  hashing instead of writing `__GIT_FAILED__` / `UNVERIFIED` placeholders.
+- Reduced live checkout CLIs from 84 to 54. Deleted untested wrappers
+  (`prepare_ap10k_dog_yolo_pose`, `summarize_evidence_coverage`,
+  `audit_timestamps`, `evaluate_capacity`, `convert_to_evidence_observations`,
+  `audit_public_dataset_archive`, `audit_nested_public_dataset_archive`,
+  `audit_public_canine_pdq`). Absorbed sibling CLIs into tested filenames:
+  segmentation manifests → `build_animal_parsing_runtime_manifest`;
+  embedding precommit/verify → `produce_embedding_cache`;
+  batch-invariance evaluate → `create_batch_invariance_precommitment`;
+  acquisition/check/camera → `download_datasets`;
+  bind/check-split → `build_identity_registry`;
+  source-admissions → `build_research_cycle_manifest`;
+  score-drift precommit/plan/verify → `compare_score_drift`;
+  visual plan/execute/score → `evaluate_visual_controls`;
+  parser summarize/render → `compare_parser_materializations`.
+  Package APIs remain. Protected prepare/verify stay separate because
+  `evaluate_multichannel protected` is not the same `--help` contract.
+- Removed unpinned legacy CLIs:
+  `analyze_full128_successors`, `build_full128_successor_evaluation_panel`,
+  `build_full128_successor_inventory`, `materialize_sibetan_multievidence`,
+  `prepare_nose_region_crops`, `train_nose_identity`. Receipt-bound and
+  test-imported set CLIs remain.
+- Deleted unused nose helpers `embedding/methods/nose/training/config.py`
+  and `hard_negative.py`. Live Face/Nose/Full128 libraries were not moved.
+- Classified remaining `except Exception` / `except BaseException` sites.
+  Cleanup-and-re-raise, typed wrap, quality fail-closed, and destructor
+  swallows stay. One remask in public ZIP extraction now chains the cause.
+- `data/public/public_dataset_extraction.py` now chains the original
+  `_validate_portable_component` error when a relative path is Windows-ambiguous
+  instead of replacing it with an unchained `ValueError`.
+- Destaphettied live packages in place (no file moves): unused private
+  helpers and same-file duplicates in `parsing`, `embedding`, `evaluation`,
+  `identity`, `data`, `systems`, `contracts`, `retrieval`, and
+  `visualization`. `legacy/` and one-off checkout CLIs were left out.
+  Public exports, schemas, and `cvi.*` identifiers are unchanged.
+- Removed unused `runtime/configs/` example JSON that was not
+  loaded by `IdentityEngine` or tests. Retrieval config v2 remains a
+  caller-supplied object. Deduplicated `foundation` file-stat identity
+  used by protected I/O.
+
 ### Architecture
 
+- Renamed the public runtime package from `canine_identity` to `runtime`.
+  Import `runtime.IdentityEngine`. Persisted `canine_identity.*` schema
+  identifiers, `CANINE_IDENTITY_DATA_DIR`, and gallery contracts are
+  unchanged.
+- Renamed the distribution and repository to
+  `animal-visual-identification` / `animal_visual_identification`.
+  Historical GitHub path `canine_video_identity` remains readable as a
+  redirect if the remote is renamed.
 - Renamed the internal research-figure package from `vis` to `visualization`.
-  The supported public runtime remains `canine_identity.IdentityEngine`; persisted
+  The supported public runtime remains `runtime.IdentityEngine`; persisted
   `cvi.vis.*` renderer and style identifiers remain unchanged.
 - Renamed the internal artifact-schema package from `artifact_contracts` to
   `contracts`. Persisted `cvi.*` identifiers and artifact-contract field names
@@ -124,7 +200,7 @@ contracts remain readable.
 ### Breaking
 
 - Replaced the `cvi.CVI` import surface with
-  `canine_identity.IdentityEngine`; `Match` remains the public result type.
+  `runtime.IdentityEngine`; `Match` remains the public result type.
 - Reorganized the former `src/cvi` tree into functional top-level packages for
   data, identity governance, localization, identity methods, learning, fusion,
   retrieval, evaluation, runtime, and operations.

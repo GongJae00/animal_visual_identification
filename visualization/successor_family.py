@@ -112,7 +112,7 @@ def adapt_successor_family(
         _evidence_ladder(public, bindings),
         _source_atlas(inventory, bindings),
         _census_availability(protocol, panel, inventory, bindings),
-        _role_dependency_closure(protocol, panel, bindings),
+        _role_dependency_closure(protocol, bindings),
         _sample_formation_flow(inventory, bindings),
         _mask_qa_availability(inventory, bindings),
         _model_dataflow(public, bindings, cache_count=len(cache_descriptors)),
@@ -134,7 +134,7 @@ def adapt_successor_family(
         figures.append(_embedding_evidence_status(bindings))
     figures.extend(
         (
-            _gallery_composition(public, aliases, selected_id, bindings),
+            _gallery_composition(public, selected_id, bindings),
             _rank_distributions(public, aliases, selected_id, bindings),
         )
     )
@@ -171,9 +171,6 @@ def adapt_successor_family(
             _runtime_device_assessment(bindings),
             _evidence_release_ledger(
                 public,
-                protocol,
-                panel,
-                inventory,
                 bindings,
                 cache_count=len(cache_descriptors),
                 private_included=private_report is not None,
@@ -505,22 +502,15 @@ def _census_availability(
             }
         )
     coverage = inventory["inventory"]["coverage"]
-    for index, key in enumerate(
-        (
-            "successor_sample_count",
-            "identity_free_auxiliary_sample_count",
-            "terminal_exclusion_count",
-        ),
-        start=6,
-    ):
-        coverage_labels = {
-            "successor_sample_count": "Successor samples",
-            "identity_free_auxiliary_sample_count": "Identity-free auxiliary samples",
-            "terminal_exclusion_count": "Terminal exclusions",
-        }
+    coverage_labels = (
+        ("successor_sample_count", "Successor samples"),
+        ("identity_free_auxiliary_sample_count", "Identity-free auxiliary samples"),
+        ("terminal_exclusion_count", "Terminal exclusions"),
+    )
+    for index, (key, label) in enumerate(coverage_labels, start=6):
         rows.append(
             {
-                "label": coverage_labels[key],
+                "label": label,
                 "count": coverage[key],
                 "group_index": index,
             }
@@ -548,7 +538,6 @@ def _census_availability(
 
 def _role_dependency_closure(
     protocol: Mapping[str, Any],
-    panel: Mapping[str, Any],
     bindings: tuple[SourceBinding, ...],
 ) -> FigureData:
     counts = protocol["census"]["identity_role_counts"]
@@ -666,11 +655,7 @@ def _representation_pipeline(
         {"label": "128D projection", "layer": 3, "group_index": 1},
         {"label": "Finite float32 + L2", "layer": 4, "group_index": 2},
     ]
-    reported = [
-        alias
-        for alias in sorted(aliases, key=_alias_sort_key)
-        if alias in _DESCRIPTION_BY_ALIAS
-    ]
+    recognized = sum(1 for alias in aliases if alias in _DESCRIPTION_BY_ALIAS)
     return _figure(
         "07_evaluation_protocol",
         "architecture",
@@ -684,7 +669,7 @@ def _representation_pipeline(
             "nodes": [
                 *nodes,
                 {
-                    "label": f"Report candidates\n{len(reported)} recognized",
+                    "label": f"Report candidates\n{recognized} recognized",
                     "layer": 5,
                     "group_index": 5,
                 },
@@ -902,7 +887,6 @@ def _embedding_diagnostics(
 
 def _gallery_composition(
     public: Mapping[str, Any],
-    aliases: Mapping[str, str],
     selected_id: str,
     bindings: tuple[SourceBinding, ...],
 ) -> FigureData:
@@ -1445,9 +1429,6 @@ def _runtime_device_assessment(
 
 def _evidence_release_ledger(
     public: Mapping[str, Any],
-    protocol: Mapping[str, Any],
-    panel: Mapping[str, Any],
-    inventory: Mapping[str, Any],
     bindings: tuple[SourceBinding, ...],
     *,
     cache_count: int,
@@ -1660,17 +1641,12 @@ def _exact_object(value: Any, expected: set[str], name: str) -> dict[str, Any]:
     return dict(value)
 
 
-def _array(value: Any, name: str) -> list[Any]:
+def _nonempty_array(value: Any, name: str) -> list[Any]:
     if not isinstance(value, list):
         raise FigureContractError(f"{name} must be an array")
-    return value
-
-
-def _nonempty_array(value: Any, name: str) -> list[Any]:
-    result = _array(value, name)
-    if not result:
+    if not value:
         raise FigureContractError(f"{name} must not be empty")
-    return result
+    return value
 
 
 def _text(value: Any, name: str, *, maximum: int = 160) -> str:

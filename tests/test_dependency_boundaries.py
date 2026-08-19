@@ -6,12 +6,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 INTERNAL_PACKAGES = {
     "contracts",
-    "canine_identity",
+    "runtime",
     "data",
     "embedding",
     "evaluation",
-    "experiments",
     "foundation",
+    "legacy",
     "identity",
     "retrieval",
     "parsing",
@@ -56,10 +56,10 @@ def test_dependency_direction() -> None:
                 forbidden = roots - {"foundation"}
             elif package == "contracts":
                 forbidden = roots - {"contracts", "foundation"}
-            elif package == "canine_identity":
+            elif package == "runtime":
                 forbidden = roots & {
                     "evaluation",
-                    "experiments",
+                    "legacy",
                     "systems",
                     "workflows",
                 }
@@ -72,15 +72,22 @@ def test_dependency_direction() -> None:
                     "identity",
                     "parsing",
                     "retrieval",
+                    "legacy",
                     "systems",
                     "workflows",
                 }
             elif package == "identity":
-                forbidden = roots & {"embedding", "evaluation", "systems", "workflows"}
+                forbidden = roots & {
+                    "embedding",
+                    "evaluation",
+                    "legacy",
+                    "systems",
+                    "workflows",
+                }
             elif package == "evaluation":
                 forbidden = roots & {"systems"}
             elif package in ALGORITHM_PACKAGES:
-                forbidden = roots & {"evaluation", "systems", "workflows"}
+                forbidden = roots & {"evaluation", "legacy", "systems", "workflows"}
                 relative = path.relative_to(ROOT).parts
                 if package == "parsing" and roots & {"embedding", "retrieval"}:
                     forbidden.update(roots & {"embedding", "retrieval"})

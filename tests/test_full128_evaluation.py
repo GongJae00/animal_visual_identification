@@ -56,7 +56,7 @@ from embedding.methods.full_segment.training.manifests import (
     build_preprocessing_manifest,
 )
 from retrieval.gallery import IdentityGallery, IdentityRegistryPolicy
-from workflows.evaluate_full128_family import main as evaluate_workflow
+from legacy.version.full128.workflows.evaluate_full128_family import main as evaluate_workflow
 
 
 def _sha(value: str) -> str:
@@ -911,7 +911,7 @@ def test_training_family_discovery_and_workflow_contract(
         return value
 
     monkeypatch.setattr(
-        "workflows.evaluate_full128_family.validate_full128_experiment_inventory_bundle",
+        "legacy.version.full128.workflows.evaluate_full128_family.validate_full128_experiment_inventory_bundle",
         validate_inventory,
     )
     output = tmp_path / "evaluation"

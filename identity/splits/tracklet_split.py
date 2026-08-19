@@ -436,14 +436,7 @@ class SplitManifest:
         blockers: list[str],
         stage: EvaluationStage,
     ) -> None:
-        if stage is EvaluationStage.CALIBRATION:
-            gallery_role = SplitRole.CALIBRATION_GALLERY
-            known_role = SplitRole.CALIBRATION_KNOWN_QUERY
-            unknown_role = SplitRole.CALIBRATION_UNKNOWN_QUERY
-        else:
-            gallery_role = SplitRole.TEST_GALLERY
-            known_role = SplitRole.TEST_KNOWN_QUERY
-            unknown_role = SplitRole.TEST_UNKNOWN_QUERY
+        gallery_role, known_role, unknown_role = _stage_roles(stage)
         identities = {
             role: {
                 record.registered_dog_id

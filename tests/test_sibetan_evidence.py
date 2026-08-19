@@ -4,7 +4,7 @@ import copy
 
 import pytest
 
-from experiments.sibetan_evidence import (
+from legacy.version.common.experiments.sibetan_evidence import (
     build_evidence_bundle,
     build_evidence_bundle_v2,
     validate_evidence_bundle,

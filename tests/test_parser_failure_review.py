@@ -7,7 +7,7 @@ import numpy as np
 import pytest
 from PIL import Image
 
-from workflows import render_parser_failure_review as review
+from workflows import compare_parser_materializations as review
 
 
 def _row(dataset: str, token: str, source: str) -> dict[str, str]:

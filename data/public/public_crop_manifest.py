@@ -217,7 +217,7 @@ def verify_public_crop_manifest(
     if not isinstance(verify_decoded_rgb_pixels, bool):
         raise TypeError("verify_decoded_rgb_pixels must be boolean")
     _require_verification_policy(policy)
-    _require_manifest_within_policy(manifest, policy)
+    _require_artifacts_within_policy(manifest.artifacts, policy)
 
     verified_bytes = 0
     directory_fd = _open_crop_root(root)
@@ -411,12 +411,6 @@ def _verify_decoded_image(
 def _require_verification_policy(policy: object) -> None:
     if not isinstance(policy, PublicCropVerificationPolicy):
         raise TypeError("policy must be PublicCropVerificationPolicy")
-
-
-def _require_manifest_within_policy(
-    manifest: PublicCropManifest, policy: PublicCropVerificationPolicy
-) -> None:
-    _require_artifacts_within_policy(manifest.artifacts, policy)
 
 
 def _require_artifacts_within_policy(

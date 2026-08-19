@@ -250,7 +250,7 @@ def test_student_masked_rgb_matches_architecture_pixels(
     ).astype(np.uint8)
     assert np.array_equal(student_masked_rgb(crop, support), expected)
 
-    import experiments.nose_architecture as architecture
+    import legacy.version.nose.experiments.nose_architecture as architecture
 
     called = 0
     shared_helper = student_masked_rgb
@@ -400,7 +400,7 @@ def test_historical_code_paths_are_readable_but_not_currently_executable(
 
 def test_prepare_cli_help() -> None:
     completed = subprocess.run(
-        [sys.executable, "workflows/prepare_nose_embedding_views.py", "--help"],
+        [sys.executable, "legacy/version/nose/workflows/prepare_nose_embedding_views.py", "--help"],
         check=True,
         capture_output=True,
         text=True,

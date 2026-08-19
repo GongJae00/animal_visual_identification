@@ -10,7 +10,6 @@ from __future__ import annotations
 import hashlib
 import io
 import math
-import os
 import re
 import subprocess
 import sys

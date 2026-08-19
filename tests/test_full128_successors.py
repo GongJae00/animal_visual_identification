@@ -633,18 +633,18 @@ def test_governance_v2_is_authoritative_maps_tokens_and_excludes_unsafe(
 
 def test_successor_workflow_help_exposes_v2_governance_inputs() -> None:
     root = Path(__file__).parents[1]
-    for workflow in (
-        "build_full128_successor_inventory.py",
-        "evaluate_full128_successors.py",
-    ):
-        completed = subprocess.run(
-            [sys.executable, str(root / "workflows" / workflow), "--help"],
-            check=True,
-            capture_output=True,
-            text=True,
-        )
-        assert "--face-protocol-v2" in completed.stdout
-        assert "--gallery-query-panel" in completed.stdout
+    completed = subprocess.run(
+        [
+            sys.executable,
+            str(root / "legacy/version/full128/workflows/evaluate_full128_successors.py"),
+            "--help",
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    assert "--face-protocol-v2" in completed.stdout
+    assert "--gallery-query-panel" in completed.stdout
 
 
 def _cache(

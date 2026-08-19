@@ -14,7 +14,7 @@ import faiss
 import numpy as np
 from PIL import Image
 
-from canine_identity.engine import IdentityEngine, Match
+from runtime.engine import IdentityEngine, Match
 from embedding.evidence.base import (
     AbstractEvidencer,
     EvidenceObservation,

@@ -749,7 +749,7 @@ def test_phase_1_workflow_help_exposes_exact_required_inputs() -> None:
     }
     for workflow, option in expected.items():
         completed = subprocess.run(
-            [sys.executable, str(ROOT / "workflows" / workflow), "--help"],
+            [sys.executable, str(ROOT / "legacy/version/face/workflows" / workflow), "--help"],
             check=True,
             capture_output=True,
             text=True,

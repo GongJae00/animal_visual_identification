@@ -1,12 +1,57 @@
-# Setup And Release Guidance
+# Setup
 
-`pyproject.toml` and `uv.lock` remain at the repository root because `uv` requires them there. This directory owns setup and release guidance; it does not duplicate those tooling files.
+`setup/` is the first-user entry. `pyproject.toml` and `uv.lock` stay at the
+repository root because `uv` requires them there.
 
-Use one environment and one ONNX Runtime lane:
+## Environment
+
+Linux, Python 3.12, and [`uv`](https://docs.astral.sh/uv/). Choose one ONNX
+Runtime lane; never install `cpu` and `cuda` together.
+
+```bash
+./setup/check_env.sh cpu
+# CUDA host: ./setup/check_env.sh cuda
+```
+
+Equivalent manual sync:
 
 ```bash
 uv sync --locked --extra cpu --extra data --extra models --extra training --group dev
-# Replace --extra cpu with --extra cuda for the CUDA lane.
 ```
 
-Release verification is defined in `.github/workflows/release-ci.yml`. A local release check should run the full tests, build a wheel outside the source tree, inspect all declared top-level packages and schema resources, and import `canine_identity` in a clean environment. Do not place downloaded data, weights, caches, or build output in this directory.
+The checker imports the declared extras, verifies the selected lane, and records
+that SuperAnimal remains disabled. It does not download datasets or weights.
+
+## Data And Models
+
+Raw datasets, weights, galleries, caches, and run outputs stay outside Git.
+This repository ships adapters and contracts only.
+
+Resolve local roots through environment variables, then lock them in manifests.
+Do not hard-code host paths into the checkout.
+
+```bash
+export CANINE_IDENTITY_DATA_DIR=/path/to/canine-identity-data
+export CANINE_IDENTITY_MODELS_DIR=/path/to/canine-identity-model-cache
+uv run python workflows/download_datasets.py --list
+uv run python workflows/download_models.py --list
+```
+
+See [Data and Models](../docs/DATA_AND_MODELS.md).
+
+## After Setup
+
+- Public API shape: [README](../README.md)
+- Package map: [Architecture](../docs/ARCHITECTURE.md)
+- Stage commands: [Workflows](../workflows/README.md)
+
+```bash
+uv run python workflows/<command>.py --help
+uv run pytest tests/test_public_runtime_contracts.py
+```
+
+## Release Check
+
+Release CI is `.github/workflows/release-ci.yml`. A local release check runs the
+full tests, builds a wheel outside the source tree, inspects declared packages
+and schema resources, and imports `runtime` in a clean environment.

@@ -448,7 +448,7 @@ def test_actual_static_onnx_runtime_manifest_and_cpu_ort_parity(tmp_path: Path) 
 
 
 def test_cli_help_avoids_heavy_imports() -> None:
-    tool = Path(__file__).parents[1] / "workflows" / "train_nose_segmentation_student.py"
+    tool = Path(__file__).parents[1] / "legacy/version/nose/workflows" / "train_nose_segmentation_student.py"
     command = (
         "import runpy,sys; tool=sys.argv[1]; sys.argv=[tool,'--help']; "
         "\ntry: runpy.run_path(tool,run_name='__main__')"

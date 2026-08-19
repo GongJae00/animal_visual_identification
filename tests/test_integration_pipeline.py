@@ -5,13 +5,11 @@ Uses synthetic data to exercise every layer without real archives or GPU.
 
 from __future__ import annotations
 
-import json
 import sqlite3
 import tempfile
 import unittest
 from pathlib import Path
 
-import numpy as np
 
 from identity.registry.identity_registry import (
     REGISTERED_DOG_NAMESPACE,

@@ -171,13 +171,7 @@ def _evaluate_on_test(
     test_query_ids: np.ndarray,
     test_gallery_ids: np.ndarray,
     per_target: dict[str, dict],
-) -> tuple[
-    dict[str, dict],
-    np.ndarray,
-    np.ndarray,
-    np.ndarray,
-    np.ndarray,
-]:
+) -> tuple[dict[str, dict], np.ndarray, np.ndarray]:
     q = _normalize_rows(test_query_embs)
     g = _normalize_rows(test_gallery_embs)
     scores, unique_gallery_ids = _distinct_identity_scores(q, g, test_gallery_ids)
@@ -191,7 +185,7 @@ def _evaluate_on_test(
         top1_gallery_ids[i] == test_query_ids[i] if is_known[i] else False
         for i in range(len(test_query_ids))
     ], dtype=bool)
-    for target_key, info in per_target.items():
+    for info in per_target.values():
         t = info["selected_threshold"]
         correct_accept = 0
         misid = 0
@@ -224,7 +218,7 @@ def _evaluate_on_test(
             "DIR": test_dir,
             "FPIR": test_fpir,
         }
-    return per_target, max_scores, is_known, top1_is_correct, top1_gallery_ids
+    return per_target, max_scores, is_known
 
 
 def evaluate_open_set(
@@ -280,7 +274,7 @@ def evaluate_open_set(
         calibration_gallery_ids,
         fpir_targets,
     )
-    per_target, max_scores, is_known, top1_is_correct, top1_gallery_ids = _evaluate_on_test(
+    per_target, max_scores, is_known = _evaluate_on_test(
         query_embs, gallery_embs, query_ids, gallery_ids,
         per_target,
     )

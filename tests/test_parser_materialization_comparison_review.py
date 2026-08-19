@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from workflows import render_parser_materialization_comparison as review
+from workflows import compare_parser_materializations as review
 
 
 def test_balanced_tokens_is_deterministic_across_datasets() -> None:

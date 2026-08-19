@@ -42,7 +42,7 @@ from evaluation.controls.scoring import (
     PairArtifactVerification,
 )
 from foundation.provenance import content_sha256
-from workflows.plan_visual_shortcut_controls import main
+from workflows.evaluate_visual_controls import main
 
 HASH_A = "a" * 64
 HASH_B = "b" * 64
@@ -272,7 +272,8 @@ class VisualControlToolTests(unittest.TestCase):
                 )
             )
             argv = (
-                "plan_visual_shortcut_controls.py",
+                "evaluate_visual_controls.py",
+                "plan",
                 "--scoring-requests",
                 str(pair_paths["scoring"]),
                 "--artifact-bindings",

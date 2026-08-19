@@ -832,7 +832,7 @@ def test_successor_family_workflow_help_exposes_named_artifacts() -> None:
     result = subprocess.run(
         [
             sys.executable,
-            str(root / "workflows/render_research_visualizations.py"),
+            str(root / "legacy/version/common/workflows/render_research_visualizations.py"),
             "--help",
         ],
         check=True,

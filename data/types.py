@@ -91,8 +91,6 @@ class UnifiedCanidSample:
     def __post_init__(self) -> None:
         if not self.sample_id or not self.dataset_name:
             raise ValueError("sample_id and dataset_name must be non-empty")
-        if self.image_path:
-            pass
         for name in (
             "dog_boxes_xyxy",
             "face_box_xyxy",

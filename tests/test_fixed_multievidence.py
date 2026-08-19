@@ -9,7 +9,7 @@ import numpy as np
 import pytest
 from PIL import Image
 
-from experiments.fixed_multievidence import (
+from legacy.version.afn.experiments.fixed_multievidence import (
     ALL_METHODS,
     METHODS,
     build_fixed_panel,
@@ -23,7 +23,7 @@ from experiments.fixed_multievidence import (
     select_fixed_panel_population,
     validate_panel_exposure,
 )
-from experiments.identity_topology import (
+from legacy.version.common.experiments.identity_topology import (
     audit_identity_topology,
     validate_identity_topology_manifest,
 )
@@ -365,7 +365,7 @@ def test_panel_builder_refuses_overwrite_before_reading_inputs(tmp_path: Path) -
     ),
 )
 def test_cli_help(script: str, expected: str) -> None:
-    tool = Path(__file__).resolve().parents[1] / "workflows" / script
+    tool = Path(__file__).resolve().parents[1] / "legacy/version/afn/workflows" / script
     completed = subprocess.run(
         [sys.executable, str(tool), "--help"],
         check=False,

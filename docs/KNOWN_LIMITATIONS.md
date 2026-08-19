@@ -39,7 +39,7 @@ artifact hashes, internal receipts, or claims of final biometric performance.
 - The Full128 successor family is an offline retrospective comparison. B5-SPATIAL
   had a positive DEV point difference from B3 in three seeds, but the
   precommitted paired-interval promotion gate returned `NO_GO`. Neither candidate
-  is connected to `IdentityEngine`.
+  is connected to `IdentityEngine`. Comparison code is under `legacy/version/`.
 
 ## Calibration And Evaluation
 

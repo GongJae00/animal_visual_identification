@@ -9,6 +9,9 @@ Usage:
     uv run python workflows/download_datasets.py --dataset dogfacenet
     uv run python workflows/download_datasets.py --dataset yt-bb-dog
     uv run python workflows/download_datasets.py --list
+    uv run python workflows/download_datasets.py create-manifest ...
+    uv run python workflows/download_datasets.py check MANIFEST
+    uv run python workflows/download_datasets.py camera-spec ...
 
 Data root resolution:
     1. ``--data-root``
@@ -19,9 +22,17 @@ Data root resolution:
 from __future__ import annotations
 
 import argparse
+import json
+import sys
 from pathlib import Path
 
 from contracts.model_paths import DATA_DIR, SUPPORTED_DATASETS
+from data.acquisition import (
+    AcquisitionManifest,
+    CameraSpecification,
+    IRMechanism,
+    RawVideoRecord,
+)
 
 
 class ManualAcquisitionRequired(RuntimeError):
@@ -120,7 +131,7 @@ def download_dataset(name: str, data_root: Path) -> None:
     )
 
 
-def main() -> None:
+def _run_download(argv: list[str]) -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dataset", default="all", choices=[*_DATASETS, "all"])
     parser.add_argument(
@@ -133,7 +144,7 @@ def main() -> None:
         action="store_true",
         help="Show supported operations and local status",
     )
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     data_root = _resolve_data_root(args.data_root)
     if args.list:
@@ -151,6 +162,143 @@ def main() -> None:
         download_dataset(args.dataset, data_root)
     except ManualAcquisitionRequired as exc:
         parser.exit(2, f"error: {exc}\n")
+
+
+def _run_create_manifest(argv: list[str]) -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--camera-spec", required=True, type=Path, action="append")
+    parser.add_argument("--raw-video-record", required=True, type=Path, action="append")
+    parser.add_argument("--output", required=True, type=Path)
+    args = parser.parse_args(argv)
+
+    cameras = []
+    for spec_path in args.camera_spec:
+        payload = json.loads(spec_path.resolve(strict=True).read_text(encoding="utf-8"))
+        cameras.append(CameraSpecification.from_dict(payload))
+
+    videos = []
+    for record_path in args.raw_video_record:
+        payload = json.loads(record_path.resolve(strict=True).read_text(encoding="utf-8"))
+        videos.append(RawVideoRecord.from_dict(payload))
+
+    manifest = AcquisitionManifest(
+        cameras=tuple(cameras),
+        videos=tuple(videos),
+    )
+
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    args.output.write_text(
+        json.dumps(manifest.to_dict(), ensure_ascii=False, sort_keys=True, indent=2),
+        encoding="utf-8",
+    )
+
+
+def _run_check(argv: list[str]) -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("manifest", type=Path)
+    args = parser.parse_args(argv)
+
+    payload = json.loads(
+        args.manifest.resolve(strict=True).read_text(encoding="utf-8")
+    )
+    manifest = AcquisitionManifest.from_dict(payload)
+    blockers = manifest.gate_blockers()
+    result = {
+        "schema_version": manifest.schema_version,
+        "manifest_sha256": manifest.manifest_sha256,
+        "camera_versions": len(manifest.cameras),
+        "source_videos": len(manifest.videos),
+        "gate_status": "PASS" if not blockers else "BLOCKED",
+        "blockers": list(blockers),
+    }
+    print(json.dumps(result, ensure_ascii=False, sort_keys=True, indent=2))
+    if blockers:
+        raise SystemExit(2)
+
+
+def _run_camera_spec(argv: list[str]) -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--camera-id", required=True)
+    parser.add_argument("--camera-setting-version", required=True)
+    parser.add_argument("--sensor-model", required=False)
+    parser.add_argument(
+        "--ir-mechanism",
+        choices=[m.value for m in IRMechanism],
+        default=IRMechanism.UNKNOWN.value,
+    )
+    parser.add_argument("--ir-spectral-band", required=False)
+    parser.add_argument("--width", required=False, type=int)
+    parser.add_argument("--height", required=False, type=int)
+    parser.add_argument("--stored-fps", required=False, type=float)
+    parser.add_argument("--shutter", required=False)
+    parser.add_argument("--gain-mode", required=False)
+    parser.add_argument("--exposure-mode", required=False)
+    parser.add_argument("--white-balance-mode", required=False)
+    parser.add_argument("--wdr-enabled", required=False, type=lambda x: x.lower() == "true")
+    parser.add_argument("--ir-cut-behavior", required=False)
+    parser.add_argument("--codec", required=False)
+    parser.add_argument("--target-bitrate-mbps", required=False, type=float)
+    parser.add_argument("--gop-length", required=False, type=int)
+    parser.add_argument("--focus-mode", required=False)
+    parser.add_argument("--focal-length-mm", required=False, type=float)
+    parser.add_argument("--horizontal-fov-deg", required=False, type=float)
+    parser.add_argument("--installation-height-m", required=False, type=float)
+    parser.add_argument("--cage-center-distance-m", required=False, type=float)
+    parser.add_argument("--pan-deg", required=False, type=float)
+    parser.add_argument("--tilt-deg", required=False, type=float)
+    parser.add_argument("--timestamp-accuracy-ms", required=False, type=float)
+    parser.add_argument("--measured-frame-drop-rate", required=False, type=float)
+    parser.add_argument("--output", required=True, type=Path)
+    args = parser.parse_args(argv)
+
+    spec = CameraSpecification(
+        camera_id=args.camera_id,
+        camera_setting_version=args.camera_setting_version,
+        sensor_model=args.sensor_model,
+        ir_mechanism=IRMechanism(args.ir_mechanism),
+        ir_spectral_band=args.ir_spectral_band,
+        width=args.width,
+        height=args.height,
+        stored_fps=args.stored_fps,
+        shutter=args.shutter,
+        gain_mode=args.gain_mode,
+        exposure_mode=args.exposure_mode,
+        white_balance_mode=args.white_balance_mode,
+        wdr_enabled=args.wdr_enabled,
+        ir_cut_behavior=args.ir_cut_behavior,
+        codec=args.codec,
+        target_bitrate_mbps=args.target_bitrate_mbps,
+        gop_length=args.gop_length,
+        focus_mode=args.focus_mode,
+        focal_length_mm=args.focal_length_mm,
+        horizontal_fov_deg=args.horizontal_fov_deg,
+        installation_height_m=args.installation_height_m,
+        cage_center_distance_m=args.cage_center_distance_m,
+        pan_deg=args.pan_deg,
+        tilt_deg=args.tilt_deg,
+        timestamp_accuracy_ms=args.timestamp_accuracy_ms,
+        measured_frame_drop_rate=args.measured_frame_drop_rate,
+    )
+
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    args.output.write_text(
+        json.dumps(spec.to_dict(), ensure_ascii=False, sort_keys=True, indent=2),
+        encoding="utf-8",
+    )
+
+
+def main(argv: list[str] | None = None) -> None:
+    argv = list(sys.argv[1:] if argv is None else argv)
+    command = "download"
+    if argv and argv[0] in {"download", "create-manifest", "check", "camera-spec"}:
+        command = argv[0]
+        argv = argv[1:]
+    {
+        "download": _run_download,
+        "create-manifest": _run_create_manifest,
+        "check": _run_check,
+        "camera-spec": _run_camera_spec,
+    }[command](argv)
 
 
 if __name__ == "__main__":

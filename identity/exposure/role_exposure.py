@@ -105,7 +105,7 @@ class RoleExposureDeclaration:
             for record in self.records
         ):
             raise TypeError("declaration records must be RoleExposureDeclarationRecord")
-        if tuple(sorted(self.records, key=_declaration_record_key)) != self.records:
+        if tuple(sorted(self.records, key=_entity_key)) != self.records:
             raise ValueError("declaration records must be canonically sorted")
         _require_unique(
             tuple(record.sample_token for record in self.records),
@@ -241,7 +241,7 @@ class RoleExposureLedger:
             raise ValueError("role exposure ledger records must not be empty")
         if any(not isinstance(record, RoleExposureRecord) for record in self.records):
             raise TypeError("ledger records must be RoleExposureRecord")
-        if tuple(sorted(self.records, key=_record_key)) != self.records:
+        if tuple(sorted(self.records, key=_entity_key)) != self.records:
             raise ValueError("ledger records must be canonically sorted")
         _require_unique(
             tuple(record.sample_token for record in self.records),
@@ -414,7 +414,7 @@ class CandidateRoleAssignment:
             raise ValueError("candidate role assignment records must not be empty")
         if any(not isinstance(record, CandidateRoleRecord) for record in self.records):
             raise TypeError("candidate records must be CandidateRoleRecord")
-        if tuple(sorted(self.records, key=_candidate_record_key)) != self.records:
+        if tuple(sorted(self.records, key=_entity_key)) != self.records:
             raise ValueError("candidate records must be canonically sorted")
         _require_unique(
             tuple(record.sample_token for record in self.records),
@@ -669,17 +669,9 @@ def _require_exact_keys(payload: object, expected: set[str], context: str) -> No
         )
 
 
-def _declaration_record_key(
-    record: RoleExposureDeclarationRecord,
+def _entity_key(
+    record: RoleExposureDeclarationRecord | RoleExposureRecord | CandidateRoleRecord,
 ) -> tuple[str, str, str]:
-    return record.sample_token, record.identity_token, record.public_subject_token
-
-
-def _record_key(record: RoleExposureRecord) -> tuple[str, str, str]:
-    return record.sample_token, record.identity_token, record.public_subject_token
-
-
-def _candidate_record_key(record: CandidateRoleRecord) -> tuple[str, str, str]:
     return record.sample_token, record.identity_token, record.public_subject_token
 
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from experiments.sibetan_multievidence import (
+from legacy.version.afn.experiments.sibetan_multievidence import (
     BRANCHES,
     evaluate_effective_k_panel,
     evaluate_fixed_panel,
@@ -12,7 +12,7 @@ from experiments.sibetan_multievidence import (
     fit_effective_k_weights,
     nose_reliability,
 )
-from workflows.evaluate_sibetan_multievidence import (
+from legacy.version.afn.workflows.evaluate_sibetan_multievidence import (
     _adapt_nose_embeddings,
     _validate_n4_runtime_bindings,
 )

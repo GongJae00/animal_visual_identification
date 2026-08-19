@@ -249,23 +249,6 @@ class AnimalInstanceSegmentationRuntime:
             )
         return tuple(results)
 
-    def _infer(
-        self, rgb: Image.Image, *, class_ids: tuple[int, ...]
-    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-        width, height = rgb.size
-        inputs = {
-            name: value.to(self._device)
-            for name, value in self._processor(images=rgb, return_tensors="pt").items()
-        }
-        with self._torch.inference_mode():
-            outputs = self._model(**inputs)
-        return self._postprocess_output(
-            outputs.logits[0],
-            outputs.pred_masks[0],
-            class_ids=class_ids,
-            source_size=(width, height),
-        )
-
     def _postprocess_output(
         self,
         logits: object,

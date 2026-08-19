@@ -845,7 +845,8 @@ class TrainingArtifactTests(unittest.TestCase):
                     parse_training_checkpoint_config(payload)
 
     def test_checkpoint_reconstructors_preserve_backbone_error_precedence(self) -> None:
-        from workflows import evaluate_roi_reid, export_onnx
+        from legacy.version.common.workflows import evaluate_roi_reid
+        from workflows import export_onnx
 
         export_payload = {
             "schema_version": "cvi.training_checkpoint.v1",

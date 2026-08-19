@@ -346,12 +346,12 @@ class RuntimeLibraryTracker:
         try:
             for observed in self._observed.values():
                 before = os.fstat(observed.fd)
-                frozen_fields = (
+                identity_fields = (
                     "st_dev", "st_ino", "st_size", "st_mtime_ns", "st_ctime_ns"
                 )
                 if any(
                     getattr(observed.initial_stat, name) != getattr(before, name)
-                    for name in frozen_fields
+                    for name in identity_fields
                 ):
                     raise RuntimeError("runtime binary changed after first observation")
                 if before.st_size <= 0 or before.st_size > self.policy.maximum_individual_binary_bytes:
@@ -365,8 +365,7 @@ class RuntimeLibraryTracker:
                     digest.update(chunk)
                 after = os.fstat(observed.fd)
                 named = observed.path.stat()
-                stable_fields = ("st_dev", "st_ino", "st_size", "st_mtime_ns", "st_ctime_ns")
-                if any(getattr(before, name) != getattr(after, name) for name in stable_fields) or (
+                if any(getattr(before, name) != getattr(after, name) for name in identity_fields) or (
                     named.st_dev != after.st_dev or named.st_ino != after.st_ino
                 ):
                     raise RuntimeError("runtime binary changed while hashing")

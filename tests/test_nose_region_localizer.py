@@ -370,7 +370,7 @@ def test_metrics_report_nme_and_coverage() -> None:
 
 
 def test_training_cli_help_does_not_require_training_execution() -> None:
-    tool = Path(__file__).resolve().parents[1] / "workflows" / "train_nose_localizer.py"
+    tool = Path(__file__).resolve().parents[1] / "legacy/version/nose/workflows" / "train_nose_localizer.py"
     completed = subprocess.run(
         [sys.executable, str(tool), "--help"],
         check=False,

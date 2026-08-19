@@ -14,7 +14,7 @@ import numpy as np
 import onnx
 from PIL import Image
 
-from canine_identity.engine import IdentityEngine
+from runtime.engine import IdentityEngine
 from contracts.artifact_manifest import (
     ArtifactContractError,
     ArtifactLicense,
@@ -694,11 +694,11 @@ class EvidenceModelContractTests(unittest.TestCase):
         self.assertNotIn("Traceback", completed.stderr)
 
         script = (
-            Path(__file__).resolve().parents[1] / "scripts" / "check_env.sh"
+            Path(__file__).resolve().parents[1] / "setup" / "check_env.sh"
         ).read_text()
         self.assertIn("SuperAnimal runtime: DISABLED", script)
         self.assertNotIn("--model superanimal", script)
-        self.assertIn('"canine_identity",', script)
+        self.assertIn('"runtime",', script)
         self.assertNotIn('"cvi",', script)
         downloader = (
             Path(__file__).resolve().parents[1] / "workflows" / "download_models.py"

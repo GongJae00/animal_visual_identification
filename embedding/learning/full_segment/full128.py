@@ -84,9 +84,9 @@ def run_full128_training(
     ):
         raise ValueError("B2 requires its canonical checkpoint and intake bundle")
     repository = Path(__file__).resolve().parents[3]
-    workflow = repository / "workflows" / "run_full128_training.py"
+    workflow = repository / "legacy/version/full128/workflows" / "run_full128_training.py"
     source_closure = build_offline_tool_provenance(
-        workflow, logical_component="workflows.run_full128_training"
+        workflow, logical_component="legacy.version.full128.workflows.run_full128_training"
     )
     run_manifest = _build_run_manifest(
         inventory=inventory,

@@ -9,7 +9,7 @@ from unittest.mock import patch
 
 import numpy as np
 
-from experiments.identity_topology import (
+from legacy.version.common.experiments.identity_topology import (
     IDENTITY_TOPOLOGY_MANIFEST_SCHEMA_VERSION,
     IDENTITY_TOPOLOGY_REPORT_SCHEMA_VERSION,
     IdentityTopologyConfig,
@@ -17,7 +17,7 @@ from experiments.identity_topology import (
     audit_identity_topology,
 )
 from foundation.provenance import content_sha256
-from workflows.audit_identity_topology import REPORT_BUNDLE_SCHEMA_VERSION, main
+from legacy.version.common.workflows.audit_identity_topology import REPORT_BUNDLE_SCHEMA_VERSION, main
 
 
 def _record(
@@ -310,8 +310,8 @@ class IdentityTopologyCliTests(unittest.TestCase):
             self.assertEqual(len(provenance["config_sha256"]), 64)
             self.assertTrue(
                 {
-                    "experiments/identity_topology.py",
-                    "workflows/audit_identity_topology.py",
+                    "legacy/version/common/experiments/identity_topology.py",
+                    "legacy/version/common/workflows/audit_identity_topology.py",
                 }.issubset(provenance["code_sha256s"]),
             )
             self.assertTrue(raw.endswith("\n"))

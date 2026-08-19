@@ -31,13 +31,7 @@ from identity.admission.training_admission import (
     verify_training_admission_receipt,
 )
 from embedding.learning.train.augment import RandAugment
-from embedding.learning.train.config import (
-    TrainConfig,  # noqa: F401 — canonical, backward compat
-)
-
-# ---------------------------------------------------------------------------
-# Image cache — preload all crops into RAM
-# ---------------------------------------------------------------------------
+from embedding.learning.train.config import TrainConfig
 
 
 class ImageCache:
@@ -85,11 +79,6 @@ class ImageCache:
         if std is None:
             std = torch.tensor(ImageCache._NORM_STD, device=images.device).view(1, 3, 1, 1)
         return images.float().div_(255.0).sub_(mean).div_(std)
-
-
-# ---------------------------------------------------------------------------
-# Crop dataset
-# ---------------------------------------------------------------------------
 
 
 class AdmittedCropDataset(Dataset):
@@ -156,11 +145,6 @@ class AdmittedCropDataset(Dataset):
         return tensor, label
 
 
-# ---------------------------------------------------------------------------
-# Balanced sampler
-# ---------------------------------------------------------------------------
-
-
 class IdentityBalancedSampler(Sampler):
     """Yield balanced batches: one sample per identity per batch step.
 
@@ -222,11 +206,6 @@ class IdentityBalancedSampler(Sampler):
         total = sum(len(indices) for indices in self._label_to_indices.values())
         largest_identity = max(len(indices) for indices in self._label_to_indices.values())
         return max(largest_identity, math.ceil(total / self._batch_size))
-
-
-# ---------------------------------------------------------------------------
-# Model
-# ---------------------------------------------------------------------------
 
 
 class Dinov2Embedding(nn.Module):
@@ -445,11 +424,6 @@ class Dinov2ArcFaceModel(ArcFaceModel):
         super().__init__(config, backbone_factory=Dinov2Embedding)
 
 
-# ---------------------------------------------------------------------------
-# FLOPs / throughput estimation
-# ---------------------------------------------------------------------------
-
-
 _FLOPS_BY_MODEL: dict[str, int] = {
     "dinov2-small": 4_600_000_000,
     "convnext-base": 15_000_000_000,
@@ -472,11 +446,6 @@ def estimate_flops(config: TrainConfig, num_samples: int) -> dict[str, Any]:
         "total_flops_estimate": total_flops,
         "note": "FLOPs are approximate; real throughput depends on data I/O, driver, and GPU load.",
     }
-
-
-# ---------------------------------------------------------------------------
-# Training helpers
-# ---------------------------------------------------------------------------
 
 
 def _count_parameters(model: nn.Module) -> dict[str, int]:
@@ -624,11 +593,6 @@ def _evaluate_development_retrieval(
         "queries": float(count),
         "identities": float(unique.numel()),
     }
-
-
-# ---------------------------------------------------------------------------
-# Training loop
-# ---------------------------------------------------------------------------
 
 
 def _warmup_cosine_schedule(
@@ -1083,7 +1047,7 @@ def train_model(
         epoch_consistency_loss = 0.0
         epoch_anchor_loss = 0.0
         epoch_steps = 0
-        for batch_idx, (images, labels) in enumerate(train_loader):
+        for images, labels in train_loader:
             images = images.to(device, non_blocking=True)
             labels = labels.to(device, non_blocking=True)
             challenged_images = None
@@ -1312,11 +1276,6 @@ def train_model(
         json.dumps(summary, ensure_ascii=False, sort_keys=True, indent=2) + "\n"
     )
     return summary
-
-
-# ---------------------------------------------------------------------------
-# Inference-time embedding extraction
-# ---------------------------------------------------------------------------
 
 
 @torch.no_grad()

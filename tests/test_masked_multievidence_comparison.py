@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from experiments.masked_comparison import compare_methods_to_appearance
-from experiments.sibetan_multievidence import BRANCHES
+from legacy.version.afn.experiments.masked_comparison import compare_methods_to_appearance
+from legacy.version.afn.experiments.sibetan_multievidence import BRANCHES
 
 
 def _row(token: str, identity: str, hit: float):

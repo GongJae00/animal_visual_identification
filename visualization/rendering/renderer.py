@@ -31,7 +31,8 @@ def render_static_figure(
 
     output_root.mkdir(parents=True, exist_ok=True)
     relative_paths: list[str] = []
-    with matplotlib.rc_context(matplotlib_rc()):
+    rc = matplotlib_rc()
+    with matplotlib.rc_context(rc):
         figure = plt.figure(figsize=FIGURE_SIZE, constrained_layout=False)
         try:
             figure.suptitle(
@@ -65,7 +66,7 @@ def render_static_figure(
                     target,
                     format=extension,
                     metadata=_metadata(extension),
-                    dpi=matplotlib_rc()["savefig.dpi"],
+                    dpi=rc["savefig.dpi"],
                 )
                 relative_paths.append(relative)
         finally:

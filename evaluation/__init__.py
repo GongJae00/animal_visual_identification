@@ -1,3 +1,5 @@
+"""Evaluation stage: identity-disjoint metrics and research protocols."""
+
 from evaluation.protected_verification import (
     ClusterBootstrapConfig,
     ClusterUnit,

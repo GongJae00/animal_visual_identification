@@ -115,7 +115,7 @@ class OpenSetTest(unittest.TestCase):
         for info in result.per_target.values():
             self.assertIn("calibration", info)
             self.assertIn("test", info)
-            cal_thresh = info["selected_threshold"]
+            self.assertIn("selected_threshold", info)
 
     def test_calibration_threshold_frozen(self):
         cal_g = np.array([[1, 0], [0, 1]], dtype=np.float64)

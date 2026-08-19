@@ -50,12 +50,6 @@ def file_sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
-def _require_sha256(value: str, name: str) -> str:
-    if len(value) != 64 or any(character not in "0123456789abcdef" for character in value):
-        raise ValueError(f"{name} must be a lowercase SHA-256 digest")
-    return value
-
-
 class AreaMaskedGlobalAveragePool(nn.Module):
     """Pool feature channels using area-downsampled foreground occupancy."""
 

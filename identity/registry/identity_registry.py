@@ -16,7 +16,6 @@ evaluator code.
 
 from __future__ import annotations
 
-import json
 import sqlite3
 import uuid
 from dataclasses import dataclass
@@ -27,10 +26,10 @@ from typing import Any
 from contracts.identity_ids import (
     REGISTERED_DOG_NAMESPACE,
     compute_identity_token,
-    compute_public_subject_token,
+    compute_public_subject_token as compute_public_subject_token,
     compute_registered_dog_id,
-    compute_sample_token,
-    compute_sequence_token,
+    compute_sample_token as compute_sample_token,
+    compute_sequence_token as compute_sequence_token,
     extract_dataset_name,
 )
 
@@ -64,13 +63,14 @@ _SCHEMA_VERSION = "cvi.identity_registry.v1"
 _MAXIMUM_REGISTRATIONS = 1_000_000
 _MAXIMUM_IMAGE_COUNT = 2**63 - 1
 _MAXIMUM_GENERATED_AT_BYTES = 64
-_RECORD_FIELDS = {
+_RECORD_FIELDS_IN_ROW = (
     "identity_token",
     "dataset_identity_id",
     "registered_dog_id",
     "dataset_name",
     "image_count",
-}
+)
+_RECORD_FIELDS = set(_RECORD_FIELDS_IN_ROW)
 
 
 @dataclass(frozen=True, slots=True)
@@ -163,11 +163,6 @@ class IdentityRegistry:
         )
         _validate_records(records, require_canonical_order=True)
         return cls(records=records, schema_version=payload["schema_version"])
-
-
-# ---------------------------------------------------------------------------
-# SQLite persistence
-# ---------------------------------------------------------------------------
 
 
 def create_registry_database(db_path: Path) -> None:
@@ -285,11 +280,6 @@ def lookup_by_identity_token(
         conn.close()
 
 
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-
 def _require_sha256(value: str, name: str, *, allow_uuid: bool = False) -> None:
     if allow_uuid and _is_canonical_uuid5(value):
         return
@@ -379,15 +369,6 @@ def _record_from_row(row: tuple[Any, ...]) -> IdentityRegistryRecord:
     record = IdentityRegistryRecord.from_dict(dict(zip(_RECORD_FIELDS_IN_ROW, row)))
     _validate_record(record)
     return record
-
-
-_RECORD_FIELDS_IN_ROW = (
-    "identity_token",
-    "dataset_identity_id",
-    "registered_dog_id",
-    "dataset_name",
-    "image_count",
-)
 
 
 def _lookup_validated_record(

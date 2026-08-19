@@ -213,7 +213,6 @@ SOURCE_REGISTRY: tuple[CanidDatasetRecord, ...] = (
         "no-redistribution README. Source receipt and publisher-bound archive "
         "checksums are absent, so this is intake-only and not admitted.",
     ),
-    # --- NOT YET ACQUIRED ---
     CanidDatasetRecord(
         canonical_name="dog-pose",
         official_name="Dog-Pose (Stanley et al.)",

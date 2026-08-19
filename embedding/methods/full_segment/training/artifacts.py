@@ -515,40 +515,6 @@ def _validated_embedding_matrix(
     return matrix
 
 
-def _read_regular_file(path: Path, *, maximum_bytes: int) -> bytes:
-    if path.is_symlink():
-        raise ValueError("Full128 artifact must not be a symlink")
-    flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_CLOEXEC", 0)
-    descriptor = os.open(path, flags)
-    chunks: list[bytes] = []
-    observed = 0
-    try:
-        before = os.fstat(descriptor)
-        if not stat.S_ISREG(before.st_mode) or not 0 < before.st_size <= maximum_bytes:
-            raise ValueError("Full128 artifact size or file type differs")
-        while chunk := os.read(
-            descriptor, min(1_048_576, maximum_bytes + 1 - observed)
-        ):
-            observed += len(chunk)
-            if observed > maximum_bytes:
-                raise ValueError("Full128 artifact exceeds byte limit")
-            chunks.append(chunk)
-        after = os.fstat(descriptor)
-        named = os.stat(path, follow_symlinks=False)
-    finally:
-        os.close(descriptor)
-    identity = lambda item: (
-        item.st_dev,
-        item.st_ino,
-        item.st_size,
-        item.st_mtime_ns,
-        item.st_ctime_ns,
-    )
-    if identity(before) != identity(after) or identity(before) != identity(named):
-        raise RuntimeError("Full128 artifact changed while being read")
-    return b"".join(chunks)
-
-
 def _hash_regular_file(path: Path) -> tuple[str, int]:
     if path.is_symlink():
         raise ValueError("Full128 artifact must not be a symlink")

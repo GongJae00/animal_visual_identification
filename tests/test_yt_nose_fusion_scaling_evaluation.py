@@ -17,7 +17,7 @@ from contracts.artifact_manifest import (
     NoseEmbeddingManifest,
     UsageLane,
 )
-from experiments.nose_fusion_scaling import (
+from legacy.version.nose.experiments.nose_fusion_scaling import (
     INTERPRETATION,
     METHODS,
     evaluate_fusion_scaling,
@@ -313,9 +313,9 @@ def test_real_onnx_fixed_population_exact_fusion_pairing_metrics_and_bootstrap(
         fixture["onnx_path"].read_bytes()
     ).hexdigest()
     assert set(report["code_sha256s"]) >= {
-        "experiments/nose_fusion_scaling.py",
+        "legacy/version/nose/experiments/nose_fusion_scaling.py",
         "embedding/methods/nose/signal/temporal.py",
-        "workflows/evaluate_yt_nose_fusion_scaling.py",
+        "legacy/version/nose/workflows/evaluate_yt_nose_fusion_scaling.py",
     }
 
     second = _evaluate(fixture, tmp_path / "fusion-scaling-second.json")

@@ -33,12 +33,12 @@ from parsing.nose_region.sam2_teacher import (
 from parsing.nose_region.sam2_teacher import _sam2_runtime_config_name
 from foundation.protected_io import json_document_bytes
 from foundation.provenance import content_sha256
-from workflows.extract_yt_native_nose_regions import (
+from legacy.version.nose.workflows.extract_yt_native_nose_regions import (
     _load_teacher,
     _teacher_records,
     _teacher_uncertainty,
 )
-from workflows.produce_yt_native_nose_teacher_masks import run as run_tool
+from legacy.version.nose.workflows.produce_yt_native_nose_teacher_masks import run as run_tool
 
 
 def _sha(value: str) -> str:
@@ -480,7 +480,7 @@ def test_runtime_config_name_is_relative_to_official_sam2_package(
 
 
 def test_tool_help_does_not_import_sam2() -> None:
-    tool = Path(__file__).parents[1] / "workflows" / "produce_yt_native_nose_teacher_masks.py"
+    tool = Path(__file__).parents[1] / "legacy/version/nose/workflows" / "produce_yt_native_nose_teacher_masks.py"
     command = (
         "import runpy,sys; runpy.run_path(sys.argv[1], run_name='not_main'); "
         "assert not any(name == 'sam2' or name.startswith('sam2.') for name in sys.modules)"

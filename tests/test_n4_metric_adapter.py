@@ -12,7 +12,7 @@ import numpy as np
 import pytest
 import torch
 
-from experiments.fixed_multievidence import (
+from legacy.version.afn.experiments.fixed_multievidence import (
     DEV_FRACTION,
     FRAMES_PER_WINDOW,
     MINIMUM_DEV_IDENTITIES,
@@ -22,8 +22,8 @@ from experiments.fixed_multievidence import (
     SPLIT_COMMITMENT,
     partition_identities,
 )
-from experiments.identity_topology import FIXED_PANEL_TOPOLOGY_MANIFEST_SCHEMA_VERSION
-from experiments.n4_metric_adapter import (
+from legacy.version.common.experiments.identity_topology import FIXED_PANEL_TOPOLOGY_MANIFEST_SCHEMA_VERSION
+from legacy.version.n4.experiments.n4_metric_adapter import (
     CACHE_BUNDLE_SCHEMA_VERSION,
     CACHE_SCHEMA_VERSION,
     N3_BRANCH,
@@ -56,12 +56,12 @@ _PANEL_LIMITATIONS = [
     "NO_BIOMETRIC_OR_OPEN_SET_CLAIM",
 ]
 _PANEL_CODE_PATHS = (
-    "experiments/fixed_multievidence.py",
+    "legacy/version/afn/experiments/fixed_multievidence.py",
     "embedding/methods/face/checkpoint.py",
     "parsing/roi_manifest.py",
     "embedding/methods/nose/training/embedding_consistency_training.py",
-    "workflows/train_roi_face_reid.py",
-    "workflows/build_fixed_multievidence_panel.py",
+    "legacy/version/face/workflows/train_roi_face_reid.py",
+    "legacy/version/afn/workflows/build_fixed_multievidence_panel.py",
 )
 _HASH = "0" * 64
 
@@ -744,7 +744,7 @@ def test_publisher_panel_overlap_fails_closed(
     ),
 )
 def test_workflow_help_exposes_external_pins(workflow: str) -> None:
-    tool = Path(__file__).resolve().parents[1] / "workflows" / workflow
+    tool = Path(__file__).resolve().parents[1] / "legacy/version/n4/workflows" / workflow
     completed = subprocess.run(
         [sys.executable, str(tool), "--help"],
         check=False,

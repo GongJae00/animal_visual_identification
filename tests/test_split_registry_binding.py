@@ -227,7 +227,6 @@ class BuildBindingTests(unittest.TestCase):
         db = self._db()
         did = "yt-bb-dog:v1:video-track:1"
         _make_registry(db, [did])
-        token = "a" * 64
 
         assignment = _make_assignment([
             {

@@ -63,7 +63,7 @@ class FaceRegionalEncoder(nn.Module):
                 zip(self.hidden_indices, self.hidden_norms, strict=True)
             )
         )
-        b, n, d = tokens.shape
+        b, _, d = tokens.shape
         features = tokens.transpose(1, 2).reshape(b, d, 16, 16)
 
         regions = self._region_masks(

@@ -13,7 +13,7 @@ from unittest.mock import patch
 import numpy as np
 from PIL import Image
 
-from canine_identity.engine import IdentityEngine, Match
+from runtime.engine import IdentityEngine, Match
 from contracts.artifact_manifest import (
     ArtifactLicense,
     ImagePreprocessing,

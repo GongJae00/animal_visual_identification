@@ -488,7 +488,7 @@ def test_workflow_renders_figure_data_bundle(tmp_path: Path) -> None:
     result = subprocess.run(
         [
             sys.executable,
-            str(root / "workflows" / "render_research_visualizations.py"),
+            str(root / "legacy/version/common/workflows" / "render_research_visualizations.py"),
             "--input",
             str(input_path),
             "--output",

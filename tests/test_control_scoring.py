@@ -21,7 +21,6 @@ from evaluation.controls.control_scoring import (
     EmbeddingCacheEntry,
     EmbeddingCacheManifest,
     EmbeddingCachePolicy,
-    ScoringArtifactEntry,
     build_control_scoring_inventory,
     embedding_cache_key,
     score_control_requests_from_cache,
@@ -40,7 +39,7 @@ from evaluation.controls.scoring import (
     verify_pair_artifact_files,
 )
 from foundation.provenance import content_sha256
-from workflows.score_visual_controls import main
+from workflows.evaluate_visual_controls import main
 
 HASH_A = "a" * 64
 HASH_B = "b" * 64
@@ -504,7 +503,8 @@ class ControlScoringTests(unittest.TestCase):
                 )
             )
             argv = [
-                "score_visual_controls.py",
+                "evaluate_visual_controls.py",
+                "score",
                 "--scoring-requests",
                 str(paths["requests"]),
                 "--crop-export-receipt",

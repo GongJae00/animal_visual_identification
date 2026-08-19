@@ -10,7 +10,7 @@
 2. 현재 CVI와 가장 가까운 직접 비교 대상은 BIFOR의 `YT-BB-Dog -> Sibetan` 영상 ReID다. BIFOR는 다른 날짜와 카메라가 포함된 Sibetan에서 Rank-1 82.7%, mAP 69.8%를 보고했다. 현재 CVI의 post-hoc CAL/EVAL-separated 결과는 Rank-1 75.78%, mAP 81.96%지만 같은 YT-BB video track 안의 앞 5장과 뒤 5장을 비교한 결과다. CVI Rank-1은 수치상 6.92%p 낮고 mAP는 12.16%p 높지만, BIFOR는 여러 positive sequence를 갖는 cross-day/camera 문제이고 CVI는 identity당 gallery가 하나인 same-track 문제여서 우열을 주장할 수 없다.
 3. 대규모 얼굴 기준인 PetFace는 dog seen-ID Top-1 77.86%, unseen-ID verification AUC 99.45%를 보고했다. 최근 CVI Nose subarchitecture의 fused Rank-1 75.78%와 수치상 2.08%p 차이지만, PetFace의 얼굴 이미지 분류와 CVI의 native nose-region track 검색은 서로 다른 과제다. 이 75.78%는 Appearance+Face+Nose 전체 architecture의 최종 성능이 아니다.
 4. 고해상도 코무늬 연구는 매우 높은 수치를 보고한다. Bae et al.은 수동 crop한 302마리 스마트폰 코무늬에서 Rank-1 98.972%를 보고했다. CVI보다 수치상 23.20%p 높지만, fold의 identity 분리 여부가 명확하지 않고 입력 해상도·촬영 통제·평가 방식이 다르다.
-5. 전체 연구 목표는 Appearance(전체 crop/전신 외형), Face, Nose를 함께 사용하고 quality, missing evidence, temporal aggregation, calibrated fusion으로 결합하는 multi-evidence canine video ReID다. 최근 실험은 이 중 Nose evidence를 깊게 구현·검증한 단계다. 단일 새 backbone보다 여러 evidence를 감사 가능하게 결합하는 architecture가 핵심 후보이며, 이 offline research workflow 전체가 public `canine_identity.IdentityEngine` runtime에 연결된 제품 capability는 아니다.
+5. 전체 연구 목표는 Appearance(전체 crop/전신 외형), Face, Nose를 함께 사용하고 quality, missing evidence, temporal aggregation, calibrated fusion으로 결합하는 multi-evidence canine video ReID다. 최근 실험은 이 중 Nose evidence를 깊게 구현·검증한 단계다. 단일 새 backbone보다 여러 evidence를 감사 가능하게 결합하는 architecture가 핵심 후보이며, 이 offline research workflow 전체가 public `runtime.IdentityEngine` runtime에 연결된 제품 capability는 아니다.
 6. 현재 결과만으로도 workshop, applied computer vision, reproducibility/system 논문 초안은 가능하다. 그러나 강한 biometric 또는 일반화 ReID 논문을 위해서는 새로운 cross-session/camera cohort, 외부 benchmark, open-set unknown rejection, 동일 protocol의 강한 baseline 비교가 필요하다.
 7. 현재 project artifact metadata는 DogFLW를 사용한 localizer와 downstream artifact를 `CC-BY-NC-4.0-derived`, `RESEARCH_ONLY`로 분류한다. 이는 상업 사용을 자동 허용한다는 결론을 피하기 위한 보수적 내부 정책이다. trained model의 법적 파생물 지위에 대한 확정적 법률 의견은 아니다.
 
@@ -133,7 +133,7 @@ CVPR 2022 Biometrics Workshop의 Pet Biometric Challenge는 1:1 nose-print verif
 
 ### 6.1 Public runtime 경계
 
-`canine_identity.IdentityEngine`은 사용자가 제공한 crop을 enrollment하고 closed-set 후보를 반환한다. video decoding, detection, tracking, frame selection, temporal aggregation, unknown rejection은 canonical public capability가 아니다. 자세한 경계는 `README.md`, `AGENTS.md`, `docs/KNOWN_LIMITATIONS.md`에 기록되어 있다.
+`runtime.IdentityEngine`은 사용자가 제공한 crop을 enrollment하고 closed-set 후보를 반환한다. video decoding, detection, tracking, frame selection, temporal aggregation, unknown rejection은 canonical public capability가 아니다. 자세한 경계는 `README.md`, `AGENTS.md`, `docs/KNOWN_LIMITATIONS.md`에 기록되어 있다.
 
 ### 6.2 전체 multi-evidence research architecture
 

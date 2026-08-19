@@ -10,7 +10,6 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 try:
-    import PIL
     from PIL import Image
 except ModuleNotFoundError:
     PILLOW_AVAILABLE = False

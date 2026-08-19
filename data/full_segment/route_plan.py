@@ -215,7 +215,8 @@ def build_full128_route_plan(
             )
 
     plan_records.sort(key=lambda item: item["sample_token"])
-    _verify_retained_bindings(context.bindings.values())
+    for binding in context.bindings.values():
+        _verify_retained_binding_identity(binding)
     selection = {
         "mode": (
             "COMPLETE_DATASETS"
@@ -765,11 +766,6 @@ def _read_regular_file(
         file_identity=_file_identity(initial),
     )
     return b"".join(chunks), binding
-
-
-def _verify_retained_bindings(bindings: Any) -> None:
-    for binding in bindings:
-        _verify_retained_binding_identity(binding)
 
 
 def _verify_retained_binding_identity(binding: _ArtifactBinding) -> None:

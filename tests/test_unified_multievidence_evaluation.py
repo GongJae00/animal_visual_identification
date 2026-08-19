@@ -9,7 +9,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from experiments.unified_multievidence import (
+from legacy.version.afn.experiments.unified_multievidence import (
     _CODE_PATHS,
     _LEGACY_CODE_PATHS,
     _PRE_EMBEDDING_CODE_PATHS,
@@ -350,7 +350,7 @@ def test_report_bundle_reads_only_complete_legacy_code_path_set() -> None:
 
 
 def test_cli_help() -> None:
-    tool = Path(__file__).resolve().parents[1] / "workflows" / "evaluate_yt_unified_multievidence.py"
+    tool = Path(__file__).resolve().parents[1] / "legacy/version/afn/workflows" / "evaluate_yt_unified_multievidence.py"
     completed = subprocess.run(
         [sys.executable, str(tool), "--help"],
         check=False,

@@ -41,12 +41,13 @@ class EvidenceExtractionPipeline:
     ) -> tuple[dict[str, np.ndarray], dict[str, QualityObservation]]:
         embs: dict[str, np.ndarray] = {}
         quals: dict[str, QualityObservation] = {}
-        for name, ev in self._evidencer_map.items():
-            observation = self._extract_observation(name, ev, image)
+        for name, observation in self.extract_observations(image).items():
             if not observation.is_available:
                 continue
             embs[name] = observation.embedding
-            quals[name] = ev.estimate_quality(image, channel=name)
+            quals[name] = self._evidencer_map[name].estimate_quality(
+                image, channel=name
+            )
         return embs, quals
 
     def estimate_quality(

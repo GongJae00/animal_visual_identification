@@ -3,6 +3,8 @@
 Reads a PublicSplitSourceBundle, computes registered_dog_id (UUIDv5) for
 each unique dataset_identity_id, and writes both an SQLite database and
 a JSON manifest for downstream training and evaluation pipelines.
+
+Commands: build (default), bind, check.
 """
 
 from __future__ import annotations
@@ -10,6 +12,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import sys
 import time
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -17,21 +20,23 @@ from tempfile import TemporaryDirectory
 from contracts.source_provenance import build_offline_tool_provenance
 from foundation.protected_io import read_strict_json_object, write_private_json_bundle
 from foundation.provenance import content_sha256
+from identity.audit.leakage import association_audit
 from identity.registry.identity_registry import (
-    IdentityRegistryRecord,
     create_registry_database,
     load_registry_manifest,
     register_records,
 )
 from identity.splits.protected_public_split import PublicSplitSourceBundle
+from identity.splits.split_registry_binding import build_binding
+from identity.splits.tracklet_split import SplitManifest
 
 
-def main() -> None:
+def _run_build(argv: list[str]) -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source-bundle", required=True, type=Path)
     parser.add_argument("--db-output", required=True, type=Path)
     parser.add_argument("--manifest-output", required=True, type=Path)
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     args.db_output.parent.mkdir(parents=True, exist_ok=True)
     args.manifest_output.parent.mkdir(parents=True, exist_ok=True)
@@ -137,6 +142,103 @@ def main() -> None:
         ),
         flush=True,
     )
+
+
+def _run_bind(argv: list[str]) -> None:
+    parser = argparse.ArgumentParser(
+        description="Bind a protected split assignment to the identity registry."
+    )
+    parser.add_argument("--assignment", required=True, type=Path)
+    parser.add_argument("--split-receipt", required=True, type=Path)
+    parser.add_argument("--registry-db", required=True, type=Path)
+    parser.add_argument("--registry-manifest", required=True, type=Path)
+    parser.add_argument("--expected-split-receipt-sha256", required=True)
+    parser.add_argument("--output", required=True, type=Path)
+    args = parser.parse_args(argv)
+
+    t0 = time.time()
+
+    assignment = read_strict_json_object(args.assignment)
+    split_receipt = read_strict_json_object(args.split_receipt)
+    registry_manifest = read_strict_json_object(args.registry_manifest)
+
+    binding = build_binding(
+        assignment,
+        args.registry_db,
+        split_receipt,
+        registry_manifest,
+        args.expected_split_receipt_sha256,
+    )
+
+    manifest = binding.to_dict()
+    manifest["assignment_sha256"] = split_receipt["assignment_sha256"]
+    manifest["split_receipt_sha256"] = split_receipt["receipt_sha256"]
+    manifest["tool_provenance"] = build_offline_tool_provenance(Path(__file__))
+    manifest["manifest_sha256"] = content_sha256(
+        {k: v for k, v in manifest.items() if k != "manifest_sha256"}
+    )
+
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    write_private_json_bundle(((args.output, manifest),))
+
+    elapsed = time.time() - t0
+    status = "VALID" if binding.is_valid else "INVALID"
+    print(
+        json.dumps(
+            {
+                "status": status,
+                "elapsed_seconds": round(elapsed, 2),
+                "total_identities": binding.total_identities,
+                "total_samples": binding.total_samples,
+                "unregistered_count": len(binding.unregistered_tokens),
+                "output": str(args.output),
+                "manifest_sha256": manifest["manifest_sha256"],
+            },
+            sort_keys=True,
+        ),
+        flush=True,
+    )
+
+    if not binding.is_valid:
+        raise SystemExit(2)
+
+
+def _run_check(argv: list[str]) -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("manifest", type=Path)
+    args = parser.parse_args(argv)
+
+    payload = json.loads(
+        args.manifest.resolve(strict=True).read_text(encoding="utf-8")
+    )
+    manifest = SplitManifest.from_dict(payload)
+    blockers = manifest.gate_blockers()
+    result = {
+        "schema_version": manifest.schema_version,
+        "manifest_sha256": manifest.manifest_sha256,
+        "policy": manifest.policy.name,
+        "tracklets": len(manifest.records),
+        "gate_status": "PASS" if not blockers else "BLOCKED",
+        "blockers": list(blockers),
+        "association_audits": {
+            key: association_audit(manifest.records, key).to_dict()
+            for key in ("camera_id", "cage_id", "site_id")
+        }
+        if manifest.records
+        else {},
+    }
+    print(json.dumps(result, ensure_ascii=False, sort_keys=True, indent=2))
+    if blockers:
+        raise SystemExit(2)
+
+
+def main(argv: list[str] | None = None) -> None:
+    argv = list(sys.argv[1:] if argv is None else argv)
+    command = "build"
+    if argv and argv[0] in {"build", "bind", "check"}:
+        command = argv[0]
+        argv = argv[1:]
+    {"build": _run_build, "bind": _run_bind, "check": _run_check}[command](argv)
 
 
 if __name__ == "__main__":

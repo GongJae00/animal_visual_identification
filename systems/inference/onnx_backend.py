@@ -727,7 +727,11 @@ class OnnxRuntimeCpuBackend:
             raise RuntimeError(
                 "actual ONNX provider options differ from frozen options"
             )
-        self._validate_model_metadata(config, preprocessing)
+        _validate_model_metadata(
+            self._session,
+            config,
+            preprocessing,
+        )
         self._np = np
         self._config = config
         self._preprocessing = preprocessing
@@ -804,39 +808,6 @@ class OnnxRuntimeCpuBackend:
 
     def runtime_resources(self) -> EmbeddingRuntimeResources:
         return EmbeddingRuntimeResources.unavailable()
-
-    def _validate_model_metadata(
-        self,
-        config: OnnxRuntimeBackendConfig,
-        preprocessing: ImagePreprocessingConfig,
-    ) -> None:
-        inputs = self._session.get_inputs()
-        outputs = self._session.get_outputs()
-        if len(inputs) != 1 or len(outputs) != 1:
-            raise ValueError(
-                "initial ONNX backend requires one input and one output"
-            )
-        model_input = inputs[0]
-        model_output = outputs[0]
-        if model_input.name != config.input_name:
-            raise ValueError("ONNX model input name mismatch")
-        if model_output.name != config.output_name:
-            raise ValueError("ONNX model output name mismatch")
-        if model_input.type != config.input_tensor_type:
-            raise ValueError("ONNX model input dtype mismatch")
-        if model_output.type != config.output_tensor_type:
-            raise ValueError("ONNX model output dtype mismatch")
-        input_shape = _expected_input_shape(preprocessing)
-        _validate_dynamic_batch_shape(
-            model_input.shape,
-            input_shape,
-            "input",
-        )
-        _validate_dynamic_batch_shape(
-            model_output.shape,
-            (config.vector_dimension,),
-            "output",
-        )
 
 
 class OnnxRuntimeCudaBackend:

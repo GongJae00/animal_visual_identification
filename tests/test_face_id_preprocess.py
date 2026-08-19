@@ -5,7 +5,6 @@ import unittest
 import numpy as np
 import torch
 
-from data.types import CaptureGroupKind, UnifiedCanidSample
 from embedding.methods.face.dataset import FaceReIDDataset, align_face_rgb
 
 

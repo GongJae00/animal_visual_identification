@@ -77,7 +77,7 @@ def _request(images: list[object], *, d4: tuple[str, ...] = ("ORIGINAL",)) -> Ge
 class GeometricVerifierContractTests(unittest.TestCase):
     def test_policy_config_round_trip_and_initialization_warning(self) -> None:
         path = Path(
-            "experiments/configs/contracts/"
+            "legacy/version/common/configs/contracts/"
             "public_canine_geometric_verifier_policy.example.json"
         )
         policy = GeometricVerifierPolicy.from_dict(json.loads(path.read_text()))
@@ -121,7 +121,6 @@ class GeometricVerifierContractTests(unittest.TestCase):
             )
 
     def test_backend_absence_is_unresolved_without_loading_pixels(self) -> None:
-        fake = [type("Image", (), {"shape": (64, 64, 3)})(), type("Image", (), {"shape": (64, 64, 3)})()]
         # Binding digests need not be materialized because unavailable backends
         # deliberately avoid decoding any source evidence.
         request = GeometricVerifierRequest(

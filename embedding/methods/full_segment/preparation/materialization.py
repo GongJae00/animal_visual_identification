@@ -3259,11 +3259,6 @@ def _image_from_bytes(payload: bytes, label: str) -> Image.Image:
         raise ValueError(f"{label} is not a bounded supported image") from exc
 
 
-def _image_size(payload: bytes, label: str) -> tuple[int, int]:
-    with _image_from_bytes(payload, label) as image:
-        return image.size
-
-
 def _sha256_path(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as stream:

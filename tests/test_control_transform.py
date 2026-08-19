@@ -39,8 +39,7 @@ from evaluation.controls.scoring import (
     PairArtifactManifest,
     verify_pair_artifact_files,
 )
-from foundation.provenance import content_sha256
-from workflows.execute_visual_control_transforms import main
+from workflows.evaluate_visual_controls import main
 
 HASH_A = "a" * 64
 HASH_B = "b" * 64
@@ -674,7 +673,8 @@ class ControlTransformTests(unittest.TestCase):
             output.mkdir()
             receipt_path = root / "receipt.json"
             argv = [
-                "execute_visual_control_transforms.py",
+                "evaluate_visual_controls.py",
+                "execute",
                 "--transform-tasks",
                 str(paths["tasks"]),
                 "--crop-export-receipt",

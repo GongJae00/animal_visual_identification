@@ -10,7 +10,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from identity.splits.protected_public_split import PublicSplitSample, PublicSplitSourceBundle
-from workflows import evaluate_external_appearance as tool
+from legacy.version.common.workflows import evaluate_external_appearance as tool
 
 
 def _token(value: str) -> str:
@@ -319,7 +319,7 @@ class ExternalAppearanceToolTests(unittest.TestCase):
     def test_cli_help_has_no_filesystem_side_effects(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            script = Path("workflows/evaluate_external_appearance.py").resolve()
+            script = Path("legacy/version/common/workflows/evaluate_external_appearance.py").resolve()
             completed = subprocess.run(
                 [sys.executable, script, "--help"],
                 check=True,

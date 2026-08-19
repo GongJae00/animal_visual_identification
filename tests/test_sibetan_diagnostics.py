@@ -7,14 +7,14 @@ from pathlib import Path
 import pytest
 
 from evaluation.retrieval import identity_clustered_bootstrap_ci
-from experiments.sibetan_diagnostics import (
+from legacy.version.afn.experiments.sibetan_diagnostics import (
     DIAGNOSTIC_BUNDLE_SCHEMA,
     build_sibetan_diagnostic,
     bundle_sibetan_diagnostic,
 )
-from experiments.sibetan_multievidence import BRANCHES, METHOD_BRANCHES
+from legacy.version.afn.experiments.sibetan_multievidence import BRANCHES, METHOD_BRANCHES
 from foundation.provenance import content_sha256
-from workflows.audit_sibetan_diagnostics import main
+from legacy.version.afn.workflows.audit_sibetan_diagnostics import main
 
 
 _SHA = "a" * 64

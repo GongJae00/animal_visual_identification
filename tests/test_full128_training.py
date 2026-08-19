@@ -45,7 +45,7 @@ from embedding.learning.full_segment.full128 import (
     _reset_training_seed,
     _validate_variant_training_contract,
 )
-from workflows.run_full128_training import main as training_workflow
+from legacy.version.full128.workflows.run_full128_training import main as training_workflow
 
 
 def _sha(character: str) -> str:
@@ -520,10 +520,10 @@ def test_training_workflow_uses_run_config_workers_for_assembly_validation(
         return {"family_complete": False}
 
     monkeypatch.setattr(
-        "workflows.run_full128_training.load_full128_assembly", fake_load
+        "legacy.version.full128.workflows.run_full128_training.load_full128_assembly", fake_load
     )
     monkeypatch.setattr(
-        "workflows.run_full128_training.run_full128_training", fake_train
+        "legacy.version.full128.workflows.run_full128_training.run_full128_training", fake_train
     )
 
     assert (

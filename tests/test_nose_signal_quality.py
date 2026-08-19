@@ -5,7 +5,7 @@ from copy import deepcopy
 import numpy as np
 import pytest
 
-from experiments.nose_signal_quality import (
+from legacy.version.nose.experiments.nose_signal_quality import (
     analyze_native_nose_signal,
     mask_topology,
 )

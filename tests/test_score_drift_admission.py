@@ -36,11 +36,9 @@ from evaluation.integrity.score_drift_admission import (
     FrozenScoreMarginBoundary,
     RetrievalScoreRequest,
     RetrievalScoreWorkload,
-    ScoreDriftAdmissionPlan,
     ScoreDriftAdmissionReceipt,
     ScoreDriftDecision,
     ScoreDriftPolicy,
-    ScoreDriftPrecommitment,
     build_score_drift_admission_plan,
     build_score_drift_precommitment,
     compare_score_rank_threshold_drift,
@@ -1226,7 +1224,8 @@ class ScoreDriftAdmissionTests(unittest.TestCase):
             generated_precommitment = root / "generated-precommitment.json"
             precommitment_command = [
                 sys.executable,
-                "workflows/create_score_drift_precommitment.py",
+                "workflows/compare_score_drift.py",
+                "precommit",
             ]
             for name in (
                 "workload",
@@ -1324,7 +1323,8 @@ class ScoreDriftAdmissionTests(unittest.TestCase):
             generated_plan = root / "generated-plan.json"
             plan_command = [
                 sys.executable,
-                "workflows/create_score_drift_plan.py",
+                "workflows/compare_score_drift.py",
+                "plan",
             ]
             for name in (
                 "workload",
@@ -1437,7 +1437,8 @@ class ScoreDriftAdmissionTests(unittest.TestCase):
             self.assertEqual(os.stat(output).st_mode & 0o777, 0o600)
             verify_command = [
                 sys.executable,
-                "workflows/verify_score_drift_receipt.py",
+                "workflows/compare_score_drift.py",
+                "verify",
                 "--receipt",
                 str(output),
                 "--expected-precommitment-sha256",

@@ -333,7 +333,7 @@ def test_workflows_publish_complete_suite_then_report_only_master_table(
         [
             sys.executable,
             "-m",
-            "workflows.evaluate_cached_embedding_family",
+            "legacy.version.common.workflows.evaluate_cached_embedding_family",
             *inputs,
             *expected,
             "--output-directory",
@@ -357,7 +357,7 @@ def test_workflows_publish_complete_suite_then_report_only_master_table(
         [
             sys.executable,
             "-m",
-            "workflows.evaluate_cached_embedding_family",
+            "legacy.version.common.workflows.evaluate_cached_embedding_family",
             "table",
             *report_arguments,
             "--output",

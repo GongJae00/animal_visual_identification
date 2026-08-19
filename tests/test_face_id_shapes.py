@@ -13,7 +13,7 @@ from embedding.methods.face.losses import (
 )
 from embedding.methods.face.model import FaceIDModel
 from embedding.methods.face.residual_model import FaceIDResidualModel
-from experiments.face_evaluation import paired_face_retrieval_comparison
+from legacy.version.face.experiments.face_evaluation import paired_face_retrieval_comparison
 
 
 class _DummyDino(nn.Module):

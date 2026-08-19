@@ -18,7 +18,7 @@ from identity.exposure.role_exposure import (
     RoleExposureDeclarationRecord,
     merge_role_exposure_declarations,
 )
-from workflows import evaluate_dogface_holdout_fusion as tool
+from legacy.version.face.workflows import evaluate_dogface_holdout_fusion as tool
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -353,7 +353,7 @@ def test_overwrite_refusal_and_parser_subcommands(tmp_path: Path) -> None:
     assert evaluate.command == "evaluate"
 
     completed = subprocess.run(
-        [sys.executable, ROOT / "workflows/evaluate_dogface_holdout_fusion.py", "--help"],
+        [sys.executable, ROOT / "legacy/version/face/workflows/evaluate_dogface_holdout_fusion.py", "--help"],
         cwd=tmp_path,
         check=True,
         capture_output=True,

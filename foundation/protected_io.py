@@ -13,7 +13,11 @@ from tempfile import TemporaryDirectory
 from typing import Any
 
 from foundation.provenance import content_sha256
-from foundation.protected_publication import fsync_directory, rename_directory_noreplace
+from foundation.protected_publication import (
+    _stat_identity,
+    fsync_directory,
+    rename_directory_noreplace,
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -330,13 +334,3 @@ def _validate_json_string(value: str, maximum: int) -> None:
         raise ValueError("JSON string exceeds limit")
     if any(0xD800 <= ord(character) <= 0xDFFF for character in value):
         raise ValueError("JSON contains an unpaired surrogate")
-
-
-def _stat_identity(value: os.stat_result) -> tuple[int, int, int, int, int]:
-    return (
-        value.st_dev,
-        value.st_ino,
-        value.st_size,
-        value.st_mtime_ns,
-        value.st_ctime_ns,
-    )

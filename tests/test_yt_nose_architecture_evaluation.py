@@ -20,7 +20,7 @@ from contracts.artifact_manifest import (
     NoseMaskManifest,
     UsageLane,
 )
-from experiments.nose_architecture import (
+from legacy.version.nose.experiments.nose_architecture import (
     INTERPRETATION,
     METHODS,
     _filter_consistency_eval_population,
@@ -660,7 +660,7 @@ def test_consistency_eval_population_filter_is_canonical_exact_and_at_least_20()
 
 
 def test_cli_help() -> None:
-    tool = Path(__file__).resolve().parents[1] / "workflows" / "evaluate_yt_nose_architecture.py"
+    tool = Path(__file__).resolve().parents[1] / "legacy/version/nose/workflows" / "evaluate_yt_nose_architecture.py"
     completed = subprocess.run(
         [sys.executable, str(tool), "--help"],
         check=False,

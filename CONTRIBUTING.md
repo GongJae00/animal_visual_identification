@@ -1,7 +1,7 @@
 # Contributing
 
 Contributions that improve correctness, portability, documentation, tests, or
-reproducible evaluation are welcome. Canine Video Identity is research software, so changes must
+reproducible evaluation are welcome. Animal Visual Identification is research software, so changes must
 distinguish implemented behavior from proposed capability.
 
 ## Before Opening A Change
@@ -16,11 +16,11 @@ distinguish implemented behavior from proposed capability.
 ## Development Setup
 
 Development is supported on Linux with Python 3.12 and `uv`.
-Choose one runtime lane:
+Follow [setup/README.md](setup/README.md) and choose one runtime lane:
 
 ```bash
-uv sync --extra cpu --extra data --extra models --extra training --group dev
-# For CUDA work, replace --extra cpu with --extra cuda.
+./setup/check_env.sh cpu
+# For CUDA work, use ./setup/check_env.sh cuda.
 ```
 
 Do not combine `cpu` and `cuda`; they install different ONNX Runtime packages.

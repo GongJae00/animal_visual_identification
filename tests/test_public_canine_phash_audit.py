@@ -132,7 +132,9 @@ class PublicCaninePHashConfigTests(unittest.TestCase):
         self.assertIn("--binding-output", completed.stdout)
         policy = read_public_canine_phash_policy(
             Path(__file__).parents[1]
-            / "experiments"
+            / "legacy"
+            / "version"
+            / "common"
             / "configs"
             / "contracts"
             / "public_canine_phash_policy.example.json"

@@ -4,8 +4,6 @@ import copy
 import hashlib
 import json
 import os
-import shutil
-import struct
 import subprocess
 import unittest
 from pathlib import Path

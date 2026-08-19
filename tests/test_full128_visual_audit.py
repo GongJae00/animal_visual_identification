@@ -17,7 +17,7 @@ from visualization.full128_visual_audit import (
     render_png_audit,
     select_occupancy_quantiles,
 )
-from workflows import render_full128_visual_audit as workflow
+from legacy.version.full128.workflows import render_full128_visual_audit as workflow
 
 
 def _sha(value: str) -> str:

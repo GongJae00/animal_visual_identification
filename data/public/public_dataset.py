@@ -600,18 +600,8 @@ def _canonical_zip_path(
 
 
 def _hash_file(path: Path, chunk_bytes: int) -> tuple[str, str, int]:
-    sha256 = hashlib.sha256()
-    md5 = hashlib.md5(usedforsecurity=False)
-    observed = 0
     with path.open("rb") as stream:
-        while True:
-            chunk = stream.read(chunk_bytes)
-            if not chunk:
-                break
-            sha256.update(chunk)
-            md5.update(chunk)
-            observed += len(chunk)
-    return sha256.hexdigest(), md5.hexdigest(), observed
+        return _hash_descriptor(stream.fileno(), chunk_bytes)
 
 
 def _hash_descriptor(descriptor: int, chunk_bytes: int) -> tuple[str, str, int]:

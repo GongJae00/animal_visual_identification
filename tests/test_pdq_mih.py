@@ -141,7 +141,9 @@ class PDQContractTests(unittest.TestCase):
 
         path = (
             Path(__file__).parents[1]
-            / "experiments"
+            / "legacy"
+            / "version"
+            / "common"
             / "configs"
             / "contracts"
             / "public_canine_pdq_policy.example.json"

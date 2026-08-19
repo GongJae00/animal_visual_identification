@@ -209,7 +209,7 @@ def _draw_gallery_composition(ax: Any, payload: dict[str, Any]) -> None:
 
 def _draw_embedding_diagnostics(figure: Any, payload: dict[str, Any]) -> None:
     spectrum_ax, cumulative_ax = figure.subplots(1, 2)
-    for index, series in enumerate(payload["series"]):
+    for series in payload["series"]:
         color = SERIES_COLORS[series["style_index"] % len(SERIES_COLORS)]
         components = np.arange(1, len(series["explained_variance"]) + 1)
         spectrum_ax.plot(
@@ -371,6 +371,7 @@ def _draw_successor_results(figure: Any, payload: dict[str, Any]) -> None:
     absolute_ax.legend(handles=handles, loc="upper left", fontsize=6.2, ncol=2)
 
     delta_rows = payload["delta_rows"]
+    limit = payload["delta_limit"]
     if delta_rows:
         y = np.arange(len(delta_rows))
         estimates = np.asarray([row["estimate"] for row in delta_rows])
@@ -394,7 +395,6 @@ def _draw_successor_results(figure: Any, payload: dict[str, Any]) -> None:
                 capsize=2.5,
             )
         delta_ax.set_yticks([])
-        limit = payload["delta_limit"]
         for index, row in enumerate(delta_rows):
             delta_ax.text(
                 -limit * 0.96,
@@ -418,7 +418,6 @@ def _draw_successor_results(figure: Any, payload: dict[str, Any]) -> None:
             fontsize=7,
         )
         delta_ax.set_yticks([])
-    limit = payload["delta_limit"]
     delta_ax.axvline(0, color=COLORS["ink"], linestyle="--", linewidth=1)
     delta_ax.set_xlim(-limit, limit)
     delta_ax.set_xlabel("Paired DEV difference (95% interval)")

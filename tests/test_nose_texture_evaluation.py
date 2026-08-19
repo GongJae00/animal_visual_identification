@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 from PIL import Image
 
-from experiments.nose_texture import (
+from legacy.version.nose.experiments.nose_texture import (
     _apply_whitener,
     _fit_weight,
     _fit_whitener,

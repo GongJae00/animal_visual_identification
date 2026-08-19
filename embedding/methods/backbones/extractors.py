@@ -21,10 +21,6 @@ from contracts.model_contracts import (
 from foundation.provenance import content_sha256
 from embedding.evidence.base import AbstractEvidencer
 
-# ---------------------------------------------------------------------------
-# Abstract interface
-# ---------------------------------------------------------------------------
-
 
 class EvidenceExtractor(AbstractEvidencer):
     @property
@@ -39,11 +35,6 @@ class EvidenceExtractor(AbstractEvidencer):
 
     def close(self) -> None:
         pass
-
-
-# ---------------------------------------------------------------------------
-# ONNX-based extractor (generic)
-# ---------------------------------------------------------------------------
 
 
 class OnnxExtractor(EvidenceExtractor):
@@ -253,11 +244,6 @@ class OnnxExtractor(EvidenceExtractor):
         )
 
 
-# ---------------------------------------------------------------------------
-# DogFaceNet adapter (visual channel)
-# ---------------------------------------------------------------------------
-
-
 class DogFaceNetExtractor(EvidenceExtractor):
     def __init__(
         self,
@@ -285,11 +271,6 @@ class DogFaceNetExtractor(EvidenceExtractor):
 
     def extract_batch(self, images: list[Image.Image]) -> np.ndarray:
         return self._onnx.extract_batch(images)
-
-
-# ---------------------------------------------------------------------------
-# ConvNeXt adapter (texture channel)
-# ---------------------------------------------------------------------------
 
 
 class ConvNeXtExtractor(EvidenceExtractor):
@@ -321,11 +302,6 @@ class ConvNeXtExtractor(EvidenceExtractor):
         return self._onnx.extract_batch(images)
 
 
-# ---------------------------------------------------------------------------
-# SuperAnimal adapter (structural / landmarks)
-# ---------------------------------------------------------------------------
-
-
 class SuperAnimalExtractor(EvidenceExtractor):
     _DISABLED_REASON = (
         "SuperAnimal evidence is disabled. IdentityEngine has no verified HRNet-W32 "
@@ -351,11 +327,6 @@ class SuperAnimalExtractor(EvidenceExtractor):
 
     def extract_batch(self, images: list[Image.Image]) -> np.ndarray:
         raise RuntimeError(self._DISABLED_REASON)
-
-
-# ---------------------------------------------------------------------------
-# Pet-ReID adapter (nose print)
-# ---------------------------------------------------------------------------
 
 
 class PetReIDExtractor(EvidenceExtractor):
@@ -385,11 +356,6 @@ class PetReIDExtractor(EvidenceExtractor):
 
     def extract_batch(self, images: list[Image.Image]) -> np.ndarray:
         return self._onnx.extract_batch(images)
-
-
-# ---------------------------------------------------------------------------
-# Registry
-# ---------------------------------------------------------------------------
 
 
 class EvidenceExtractorRegistry:

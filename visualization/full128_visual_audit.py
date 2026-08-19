@@ -218,15 +218,14 @@ def _render_input_plate(
     )
     quantiles = ("low occupancy", "median occupancy", "high occupancy")
     for row, (dataset, selected) in enumerate(datasets):
-        for quantile, sample_group in enumerate(
-            selected[index : index + 1] for index in range(3)
-        ):
+        for quantile in range(3):
             axis_group = axes[row, quantile * 3 : quantile * 3 + 3]
-            if not sample_group:
+            if quantile >= len(selected):
                 _unavailable(axis_group, f"{dataset}\nunavailable")
                 continue
-            sample = sample_group[0]
-            _sample_triplet(axis_group, sample, f"{dataset}\n{quantiles[quantile]}")
+            _sample_triplet(
+                axis_group, selected[quantile], f"{dataset}\n{quantiles[quantile]}"
+            )
     figure.suptitle(
         f"Full128 {title}: raw RGB, route-specific mask, neutral RGB", fontsize=14
     )
@@ -351,7 +350,6 @@ def _render_embedding_plate(
     )
     tokens = tuple(sorted(set(all_queries) | set(all_gallery)))
     figure, axes = pyplot.subplots(1, 2, figsize=(14, 6))
-    selected = {name: row for name, row in outcomes.items()}
     for axis, vectors, label in zip(
         axes, (b3_vectors, b5_vectors), ("B3", "B5-SPATIAL"), strict=True
     ):
@@ -369,7 +367,7 @@ def _render_embedding_plate(
             c="#d68a4a",
             label="query",
         )
-        for name, outcome in selected.items():
+        for name, outcome in outcomes.items():
             winner = outcome.b5_ranked[0].token
             source, destination = position[outcome.token], position[winner]
             axis.plot(

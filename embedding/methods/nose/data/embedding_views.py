@@ -41,7 +41,7 @@ _SHA256_PATHS = (
     "foundation/protected_io.py",
     "foundation/protected_publication.py",
     "foundation/provenance.py",
-    "workflows/prepare_nose_embedding_views.py",
+    "legacy/version/nose/workflows/prepare_nose_embedding_views.py",
 )
 _PRE_EMBEDDING_SHA256_PATHS = tuple(
     "parsing/nose_region/embedding_views.py"

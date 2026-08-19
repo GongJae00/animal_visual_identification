@@ -40,7 +40,7 @@ from embedding.learning.full_segment.full128_successors import (
     write_dinov2_token_cache,
     write_successor_checkpoint,
 )
-from workflows.run_full128_successors import main as successor_workflow
+from legacy.version.full128.workflows.run_full128_successors import main as successor_workflow
 
 
 class _PatchBackbone(nn.Module):

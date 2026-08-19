@@ -40,10 +40,10 @@ from embedding.methods.full_segment.preparation.inventory import (
 )
 from embedding.methods.full_segment.preparation.materialization import ASSEMBLY_SCHEMA
 from parsing.full_segment.full_segment_contracts import FullSegmentObservation
-from workflows.build_full128_experiment_inventory import (
+from legacy.version.full128.workflows.build_full128_experiment_inventory import (
     REQUEST_SCHEMA,
 )
-from workflows.build_full128_experiment_inventory import (
+from legacy.version.full128.workflows.build_full128_experiment_inventory import (
     main as inventory_main,
 )
 from workflows.materialize_full_segment import (

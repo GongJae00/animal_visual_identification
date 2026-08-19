@@ -8,7 +8,6 @@ from unittest.mock import patch
 
 from systems.inference.onnx_backend import onnxruntime_distribution_identity
 from systems.workers.worker_environment import (
-    SANITIZED_WORKER_ENVIRONMENT_NAMES,
     WorkerEnvironmentIdentity,
     build_sanitized_worker_environment,
     validate_current_worker_environment,

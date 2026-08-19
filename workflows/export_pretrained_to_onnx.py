@@ -5,7 +5,6 @@ from __future__ import annotations
 import argparse
 import json
 import os
-import sys
 from hashlib import sha256
 from pathlib import Path
 from tempfile import TemporaryDirectory

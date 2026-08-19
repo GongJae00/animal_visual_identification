@@ -15,7 +15,6 @@ import json
 import platform
 import subprocess
 import sys
-import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -26,7 +25,6 @@ from PIL import Image
 
 from contracts.source_provenance import build_offline_tool_provenance
 from evaluation.calibration import (
-    CalibrationError,
     compute_probability_calibration_metrics,
     fit_isotonic_calibration,
 )
@@ -51,8 +49,6 @@ from evaluation.retrieval import (
     identity_clustered_bootstrap_ci,
 )
 from evaluation.verification import (
-    EvaluationError,
-    compute_verification_curve,
     compute_verification_metrics,
     evaluate_at_threshold,
     select_threshold_at_far,
@@ -61,7 +57,6 @@ from embedding.evidence.base import AbstractEvidencer
 from foundation.protected_io import write_private_json_bundle
 from foundation.provenance import content_sha256
 from embedding.methods.appearance import ReceiptBoundDinov2Small
-from embedding.methods.landmark import LandmarkEvidencer
 
 SCHEMA_VERSION = "cvi.evaluation.report.v2"
 SCHEMA_PATH = (
@@ -71,91 +66,46 @@ SCHEMA_PATH = (
     / "cvi.evaluation.report.v2.schema.json"
 )
 
-
-# ---------------------------------------------------------------------------
-# Provenance helpers
-# ---------------------------------------------------------------------------
-
-def _git_commit() -> str:
+def _git_text(*args: str) -> str:
     try:
-        return subprocess.run(
-            ["git", "rev-parse", "HEAD"], capture_output=True, text=True, timeout=5,
-        ).stdout.strip()
-    except Exception as exc:
-        print(json.dumps({"warning": f"git commit failed: {exc}"}), file=sys.stderr)
-        return "__GIT_FAILED__"
-
-
-def _git_branch() -> str:
-    try:
-        return subprocess.run(
-            ["git", "rev-parse", "--abbrev-ref", "HEAD"], capture_output=True, text=True, timeout=5,
-        ).stdout.strip()
-    except Exception as exc:
-        print(json.dumps({"warning": f"git branch failed: {exc}"}), file=sys.stderr)
-        return "__GIT_FAILED__"
-
-
-def _git_dirty() -> bool | str:
-    try:
-        result = subprocess.run(
-            ["git", "status", "--porcelain"], capture_output=True, text=True, timeout=5,
+        completed = subprocess.run(
+            ["git", *args],
+            capture_output=True,
+            text=True,
+            timeout=5,
+            check=True,
         )
-        return len(result.stdout.strip()) > 0
-    except Exception as exc:
-        print(json.dumps({"warning": f"git dirty check failed: {exc}"}), file=sys.stderr)
-        return "__GIT_FAILED__"
+    except (OSError, subprocess.SubprocessError) as exc:
+        raise RuntimeError(f"git {' '.join(args)} failed") from exc
+    return completed.stdout.strip()
 
+def _file_sha256(path: Path) -> dict[str, str]:
+    digest = hashlib.sha256(path.read_bytes()).hexdigest()
+    return {"path": str(path), "sha256": digest, "status": "VERIFIED"}
 
-def _file_sha256(path: Path) -> dict:
-    r: dict = {"path": str(path)}
-    try:
-        r["sha256"] = hashlib.sha256(path.read_bytes()).hexdigest()
-        r["status"] = "VERIFIED"
-    except Exception as exc:
-        r["sha256"] = None
-        r["status"] = "UNVERIFIED"
-        r["reason"] = str(exc)
-    return r
+def _provenance(start: str | None = None) -> dict[str, Any]:
+    import jsonschema
+    import sklearn
 
-
-def _provenance(start: str | None = None) -> dict:
-    p = {
+    return {
         "schema_version": SCHEMA_VERSION,
-        "git_commit": _git_commit(),
-        "git_branch": _git_branch(),
-        "dirty_state": _git_dirty(),
+        "git_commit": _git_text("rev-parse", "HEAD"),
+        "git_branch": _git_text("rev-parse", "--abbrev-ref", "HEAD"),
+        "dirty_state": bool(_git_text("status", "--porcelain")),
+        "start_timestamp": start or datetime.now(timezone.utc).isoformat(),
+        "python_version": sys.version.split()[0],
+        "numpy_version": np.__version__,
+        "scikit_learn_version": sklearn.__version__,
+        "jsonschema_version": jsonschema.__version__,
+        "platform": platform.platform(),
+        "machine": platform.machine(),
+        "processor": platform.processor() or platform.machine(),
+        "python_argv": " ".join(sys.argv),
+        "cwd": str(Path.cwd()),
     }
-    p["start_timestamp"] = start or datetime.now(timezone.utc).isoformat()
-    p["python_version"] = sys.version.split()[0]
-    p["numpy_version"] = np.__version__
-    p["scikit_learn_version"] = __import__("sklearn").__version__
-    try:
-        p["jsonschema_version"] = __import__("jsonschema").__version__
-    except Exception:
-        p["jsonschema_version"] = "N/A"
-    p["platform"] = platform.platform()
-    p["machine"] = platform.machine()
-    p["processor"] = platform.processor() or platform.machine()
-    try:
-        p["python_argv"] = " ".join(sys.argv)
-    except Exception:
-        p["python_argv"] = "N/A"
-    try:
-        p["cwd"] = str(Path.cwd())
-    except Exception:
-        p["cwd"] = "N/A"
-    p["baseline_commit"] = "96c25780509404b507feed7e9483ef3c27291b42"
-    return p
-
-
-# ---------------------------------------------------------------------------
-# Schema validation
-# ---------------------------------------------------------------------------
 
 class ReportSchemaValidationError(ValueError):
     pass
-
 
 def _validate_report(report: dict) -> None:
     if not SCHEMA_PATH.exists():
@@ -168,11 +118,9 @@ def _validate_report(report: dict) -> None:
         lines = ["; ".join(e.message for e in errors)]
         raise ReportSchemaValidationError("schema validation failed: " + "; ".join(lines))
 
-
 def _write_report(path: Path, report: dict[str, Any]) -> None:
     _validate_report(report)
     write_private_json_bundle(((path, report),))
-
 
 def _wilson_ci(events: int, trials: int, level: float = 0.95) -> dict:
     if trials == 0:
@@ -186,10 +134,7 @@ def _wilson_ci(events: int, trials: int, level: float = 0.95) -> dict:
         "confidence_level": level,
     }
 
-
-# ---------------------------------------------------------------------------
 # Data loading
-# ---------------------------------------------------------------------------
 
 def load_pairs(path: Path) -> list[dict]:
     if not path.exists():
@@ -201,14 +146,12 @@ def load_pairs(path: Path) -> list[dict]:
         raise ValueError("empty pairs list")
     return data
 
-
 def load_embedding_manifest(path: Path) -> dict:
     data = json.loads(path.read_text())
     for k in ("embeddings", "identities"):
         if k not in data:
             raise ValueError(f"manifest missing '{k}'")
     return data
-
 
 def _template_ids(manifest: dict, name: str) -> tuple[np.ndarray | None, str | None]:
     template_ids = manifest.get("template_ids")
@@ -225,10 +168,7 @@ def _template_ids(manifest: dict, name: str) -> tuple[np.ndarray | None, str | N
         return np.asarray(sample_ids), "sample_ids"
     return None, None
 
-
-# ---------------------------------------------------------------------------
 # Split validation
-# ---------------------------------------------------------------------------
 
 def validate_split_disjoint(
     cal: list[dict],
@@ -282,7 +222,6 @@ def validate_split_disjoint(
             warnings.append(f"reversed pair leakage: ({a}, {b}) across splits")
     return warnings
 
-
 def enforce_split_disjoint(
     cal: list[dict],
     test: list[dict],
@@ -292,7 +231,6 @@ def enforce_split_disjoint(
         return "VERIFIED"
     return "INVALID"
 
-
 def relaxed_status_from_warnings(warnings: list[str], relaxed: bool) -> str:
     if not warnings:
         return "VERIFIED"
@@ -300,10 +238,7 @@ def relaxed_status_from_warnings(warnings: list[str], relaxed: bool) -> str:
         return "RELAXED_UNSAFE"
     return "INVALID"
 
-
-# ---------------------------------------------------------------------------
 # Similarity helpers
-# ---------------------------------------------------------------------------
 
 def compute_similarity(emb_a: np.ndarray, emb_b: np.ndarray) -> float:
     na = np.linalg.norm(emb_a)
@@ -311,7 +246,6 @@ def compute_similarity(emb_a: np.ndarray, emb_b: np.ndarray) -> float:
     if na < 1e-8 or nb < 1e-8:
         return 0.0
     return float(np.dot(emb_a, emb_b) / (na * nb))
-
 
 def _extract_sims(ev: AbstractEvidencer, pairs: list[dict]) -> tuple[list[float], list[int]]:
     sims: list[float] = []
@@ -323,10 +257,7 @@ def _extract_sims(ev: AbstractEvidencer, pairs: list[dict]) -> tuple[list[float]
         labels.append(p["label"])
     return sims, labels
 
-
-# ---------------------------------------------------------------------------
 # Verification protocol
-# ---------------------------------------------------------------------------
 
 def cmd_verification(args: argparse.Namespace) -> None:
     start_ts = datetime.now(timezone.utc).isoformat()
@@ -382,7 +313,7 @@ def cmd_verification(args: argparse.Namespace) -> None:
         raise SystemExit(1)
 
     prov = _provenance(start_ts)
-    schema_hash = _file_sha256(SCHEMA_PATH) if SCHEMA_PATH.exists() else {"status": "NOT_FOUND"}
+    schema_hash = _file_sha256(SCHEMA_PATH)
     report: dict[str, Any] = {
         "protocol": "verification",
         "protocol_status": "UNVERIFIED" if split_status == "VERIFIED" else split_status,
@@ -458,10 +389,7 @@ def cmd_verification(args: argparse.Namespace) -> None:
     _write_report(args.output, report)
     print(json.dumps({"event": "verification_done", "output": str(args.output)}))
 
-
-# ---------------------------------------------------------------------------
 # Retrieval protocol
-# ---------------------------------------------------------------------------
 
 def cmd_retrieval(args: argparse.Namespace) -> None:
     start_ts = datetime.now(timezone.utc).isoformat()
@@ -526,7 +454,7 @@ def cmd_retrieval(args: argparse.Namespace) -> None:
         "provenance": prov,
         "gallery": _file_sha256(args.gallery),
         "queries": _file_sha256(args.queries),
-        "schema": _file_sha256(SCHEMA_PATH) if SCHEMA_PATH.exists() else {"status": "NOT_FOUND"},
+        "schema": _file_sha256(SCHEMA_PATH),
         "evaluation_variant": evaluation_variant,
         "self_match_policy": args.self_match_policy,
         "self_match_excluded": args.self_match_policy == "exclude",
@@ -561,10 +489,7 @@ def cmd_retrieval(args: argparse.Namespace) -> None:
     _write_report(args.output, report)
     print(json.dumps({"event": "retrieval_done", "output": str(args.output)}))
 
-
-# ---------------------------------------------------------------------------
 # Open-set protocol
-# ---------------------------------------------------------------------------
 
 def cmd_open_set(args: argparse.Namespace) -> None:
     start_ts = datetime.now(timezone.utc).isoformat()
@@ -602,7 +527,7 @@ def cmd_open_set(args: argparse.Namespace) -> None:
         "calibration_gallery": _file_sha256(args.calibration_gallery),
         "calibration_queries": _file_sha256(args.calibration_queries),
         "test_queries": _file_sha256(args.test_queries),
-        "schema": _file_sha256(SCHEMA_PATH) if SCHEMA_PATH.exists() else {"status": "NOT_FOUND"},
+        "schema": _file_sha256(SCHEMA_PATH),
         "known_detection_AUROC": result.known_detection_auroc,
         "known_detection_AUPR": result.known_detection_aupr,
         "DIR_at_FPIR": dict(result.dir_at_fpir),
@@ -631,10 +556,7 @@ def cmd_open_set(args: argparse.Namespace) -> None:
     _write_report(args.output, report)
     print(json.dumps({"event": "open_set_done", "output": str(args.output)}))
 
-
-# ---------------------------------------------------------------------------
 # Receipt-bound protected retrieval protocol
-# ---------------------------------------------------------------------------
 
 def cmd_protected(args: argparse.Namespace) -> None:
     provenance = build_offline_tool_provenance(
@@ -771,10 +693,7 @@ def cmd_protected(args: argparse.Namespace) -> None:
         "output_receipt_sha256": receipt.receipt_sha256,
     }, sort_keys=True))
 
-
-# ---------------------------------------------------------------------------
 # CLI entry
-# ---------------------------------------------------------------------------
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
@@ -835,7 +754,6 @@ def main() -> None:
 
     args = parser.parse_args()
     args.func(args)
-
 
 if __name__ == "__main__":
     main()

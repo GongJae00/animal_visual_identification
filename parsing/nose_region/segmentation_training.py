@@ -43,7 +43,6 @@ from parsing.nose_region.localizer import (
 )
 from parsing.nose_region.native_yt import validate_manifest_bundle
 from parsing.nose_region.sam2_teacher import (
-    TeacherSource,
     validate_source_image_manifest,
     validate_teacher_manifest,
 )

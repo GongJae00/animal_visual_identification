@@ -1,7 +1,7 @@
 [project]
-name = "canine-video-identity"
+name = "animal-visual-identification"
 version = "0.5.0"
-description = "Research infrastructure for contract-bound canine visual identity retrieval"
+description = "Research infrastructure for contract-bound animal visual identification"
 readme = "README.md"
 authors = [
     { name = "GongJae", email = "gongjae00@gmail.com" },
@@ -61,9 +61,9 @@ visualization = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/GongJae00/canine_video_identity"
-Repository = "https://github.com/GongJae00/canine_video_identity.git"
-Issues = "https://github.com/GongJae00/canine_video_identity/issues"
+Homepage = "https://github.com/GongJae00/animal_visual_identification"
+Repository = "https://github.com/GongJae00/animal_visual_identification.git"
+Issues = "https://github.com/GongJae00/animal_visual_identification/issues"
 
 [dependency-groups]
 dev = [
@@ -106,7 +106,7 @@ conflicts = [
 [tool.uv.build-backend]
 module-name = [
     "contracts",
-    "canine_identity",
+    "runtime",
     "data",
     "evaluation",
     "embedding",
@@ -124,9 +124,8 @@ source-include = [
     "SECURITY.md",
     "THIRD_PARTY_LICENSES.md",
     "docs/**",
-    "experiments/**",
+    "legacy/**",
     "paper/**",
-    "scripts/**",
     "setup/**",
     "tests/**",
     "workflows/**",

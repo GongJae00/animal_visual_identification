@@ -658,7 +658,7 @@ def validate_annotation_records(
             raise ValueError("annotation does not bind an acquisition sample")
         if annotation.acquisition_sha256 != acquisition.record_sha256:
             raise ValueError("annotation acquisition_sha256 differs")
-        x0, y0, x1, y1 = annotation.nose_bbox_xyxy
+        _, _, x1, y1 = annotation.nose_bbox_xyxy
         if x1 > acquisition.original_image.width or y1 > acquisition.original_image.height:
             raise ValueError("nose bbox exceeds original image")
         for x, y in annotation.keypoints_xy:

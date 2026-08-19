@@ -40,7 +40,7 @@ from parsing.full_segment.full_segment_cache import (
     LEGACY_CACHE_BUNDLE_SCHEMA,
     LEGACY_CACHE_SCHEMA,
 )
-from workflows.materialize_full128_route_plan import main as materialization_main
+from legacy.version.full128.workflows.materialize_full128_route_plan import main as materialization_main
 
 _RUNTIME_SHA = hashlib.sha256(b"full128-fake-parser-runtime").hexdigest()
 _POLICY_SHA = hashlib.sha256(b"full128-fake-parser-policy").hexdigest()

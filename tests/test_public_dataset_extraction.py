@@ -16,6 +16,7 @@ from data.public.public_dataset import (
 )
 from data.public.public_dataset_extraction import (
     PublicDatasetExtractionReceipt,
+    _validate_manifest_relative_path,
     extract_audited_public_dataset_zip,
 )
 
@@ -84,6 +85,12 @@ class PublicDatasetExtractionTests(unittest.TestCase):
                 PublicDatasetExtractionReceipt.from_dict(receipt.to_dict()),
                 receipt,
             )
+
+    def test_windows_reserved_component_fails_closed_and_preserves_cause(self) -> None:
+        with self.assertRaisesRegex(ValueError, "Windows-ambiguous") as ctx:
+            _validate_manifest_relative_path("dogs/CON.jpg")
+        self.assertIsInstance(ctx.exception.__cause__, ValueError)
+        self.assertIn("Windows reserved name", str(ctx.exception.__cause__))
 
     def test_existing_output_and_symlink_boundaries_fail_before_publish(self) -> None:
         with TemporaryDirectory() as temporary:

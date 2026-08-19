@@ -4,4 +4,5 @@
 - Keep fitting, threshold selection, and policy selection separate from evaluation identities.
 - Preserve identity/session/source disjointness, pairing rules, deterministic ordering, metric definitions, and uncertainty semantics.
 - Label synthetic and same-track diagnostics accurately. Do not turn them into biometric, cross-session, open-set, or deployment claims.
+- `open_set` and `open_set_calibration` are research-only protocols, not product capabilities.
 - Version and content-bind reports, policies, caches, and receipts; reject incompatible inputs rather than silently adapting them.

@@ -710,7 +710,7 @@ def test_consistency_tiny_static_onnx_ort_parity_and_runtime_id(tmp_path: Path) 
 
 def test_consistency_cli_help() -> None:
     completed = subprocess.run(
-        [sys.executable, "workflows/train_nose_region_consistency.py", "--help"],
+        [sys.executable, "legacy/version/nose/workflows/train_nose_region_consistency.py", "--help"],
         check=True,
         capture_output=True,
         text=True,

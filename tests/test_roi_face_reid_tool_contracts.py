@@ -262,8 +262,8 @@ def test_partition_rejects_same_manifest_identity_overlap_and_role_mismatch() ->
 @pytest.mark.parametrize(
     "script, expected_help",
     [
-        ("workflows/train_roi_face_reid.py", "{cpu,cuda}"),
-        ("workflows/evaluate_trained_face_reid.py", "--expected-split-role"),
+        ("legacy/version/face/workflows/train_roi_face_reid.py", "{cpu,cuda}"),
+        ("legacy/version/face/workflows/evaluate_trained_face_reid.py", "--expected-split-role"),
     ],
 )
 def test_help_does_not_import_model_runtime_or_create_outputs(

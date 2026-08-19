@@ -684,24 +684,18 @@ class IdentityGallery:
             path = self._base_dir / name
             resolved[kind] = path
 
-        metadata = _read_strict_json_object(
-            resolved["metadata"],
-            "gallery metadata sidecar",
-            maximum_bytes=_MAXIMUM_SIDECAR_JSON_BYTES,
-            expected_sha256=files["metadata"]["sha256"],
-        )
-        breeds = _read_strict_json_object(
-            resolved["breeds"],
-            "gallery breeds sidecar",
-            maximum_bytes=_MAXIMUM_SIDECAR_JSON_BYTES,
-            expected_sha256=files["breeds"]["sha256"],
-        )
-        availability = _read_strict_json_object(
-            resolved["availability"],
-            "gallery availability sidecar",
-            maximum_bytes=_MAXIMUM_SIDECAR_JSON_BYTES,
-            expected_sha256=files["availability"]["sha256"],
-        )
+        sidecars = {
+            kind: _read_strict_json_object(
+                resolved[kind],
+                f"gallery {kind} sidecar",
+                maximum_bytes=_MAXIMUM_SIDECAR_JSON_BYTES,
+                expected_sha256=files[kind]["sha256"],
+            )
+            for kind in ("metadata", "breeds", "availability")
+        }
+        metadata = sidecars["metadata"]
+        breeds = sidecars["breeds"]
+        availability = sidecars["availability"]
         template_count = manifest["template_count"]
         if any(
             len(sidecar) != template_count
@@ -1589,14 +1583,14 @@ class IdentityGallery:
             for row, breed in self._breed_index.items():
                 if breed not in breed_set:
                     eligible[row] = False
-        for template_id in exclusions.template_ids:
-            row = self._template_id_index.get(template_id)
-            if row is not None:
-                eligible[row] = False
-        for content_sha256 in exclusions.content_sha256s:
-            row = self._content_sha256_index.get(content_sha256)
-            if row is not None:
-                eligible[row] = False
+        for values, index in (
+            (exclusions.template_ids, self._template_id_index),
+            (exclusions.content_sha256s, self._content_sha256_index),
+        ):
+            for value in values:
+                row = index.get(value)
+                if row is not None:
+                    eligible[row] = False
         for duplicate_group_id in exclusions.duplicate_group_ids:
             rows = self._duplicate_group_index.get(duplicate_group_id)
             if rows:
@@ -1651,10 +1645,9 @@ class IdentityGallery:
             required_weight if denominator is None else denominator,
             out=numerator,
         )
-        scores = numerator
         if eligible is not None:
-            scores[~eligible] = -np.inf
-        return scores
+            numerator[~eligible] = -np.inf
+        return numerator
 
     def _ranked_candidates(
         self, query: RetrievalQuery, scores: np.ndarray, top_k: int
@@ -1810,24 +1803,17 @@ class IdentityGallery:
                 np.savez_compressed(stream, **sparse)
                 stream.flush()
                 os.fsync(stream.fileno())
-            _write_json_file(
-                temporary["availability"],
-                self._availability,
-                "gallery availability sidecar",
-                maximum_bytes=_MAXIMUM_SIDECAR_JSON_BYTES,
-            )
-            _write_json_file(
-                temporary["metadata"],
-                serialized_metadata,
-                "gallery metadata sidecar",
-                maximum_bytes=_MAXIMUM_SIDECAR_JSON_BYTES,
-            )
-            _write_json_file(
-                temporary["breeds"],
-                self._breed_index,
-                "gallery breeds sidecar",
-                maximum_bytes=_MAXIMUM_SIDECAR_JSON_BYTES,
-            )
+            for kind, payload, label in (
+                ("availability", self._availability, "gallery availability sidecar"),
+                ("metadata", serialized_metadata, "gallery metadata sidecar"),
+                ("breeds", self._breed_index, "gallery breeds sidecar"),
+            ):
+                _write_json_file(
+                    temporary[kind],
+                    payload,
+                    label,
+                    maximum_bytes=_MAXIMUM_SIDECAR_JSON_BYTES,
+                )
             file_limits = {
                 **binary_limits,
                 "availability": _MAXIMUM_SIDECAR_JSON_BYTES,

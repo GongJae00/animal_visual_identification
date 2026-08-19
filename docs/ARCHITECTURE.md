@@ -4,7 +4,7 @@ This document is the authority for repository ownership and dependency direction
 
 ## Public Runtime
 
-`canine_identity.IdentityEngine` is the only public runtime. It accepts caller-provided `PIL.Image` crops and performs strict closed-set enrollment and retrieval. It does not decode video or invoke detection, tracking, temporal aggregation, open-set rejection, or a serving facade.
+`runtime.IdentityEngine` is the only public runtime. It accepts caller-provided `PIL.Image` crops and performs strict closed-set enrollment and retrieval. It does not decode video or invoke detection, tracking, temporal aggregation, open-set rejection, or a serving facade.
 
 ```text
 explicit config v2
@@ -18,7 +18,21 @@ explicit config v2
     -> ordered Match values
 ```
 
-The supported public Python export surface is `IdentityEngine` and `Match`, implemented by `canine_identity/__init__.py` and `engine.py`. Gallery bytes, scorer ordering, identity aggregation, and UUID rules remain versioned contracts.
+The supported public Python export surface is `IdentityEngine` and `Match`, implemented by `runtime/__init__.py` and `engine.py`. Gallery bytes, scorer ordering, identity aggregation, and UUID rules remain versioned contracts.
+
+## Research Pipeline
+
+Stage names used in discussion map onto these packages. Import paths stay as listed.
+
+| Stage | Package | Runtime meaning |
+|---|---|---|
+| Parsing | `parsing/` | Frozen detection/segmentation that materializes crops and masks. Not invoked by `IdentityEngine`. |
+| Identification | `embedding/` | Encoders that emit per-channel embeddings and explicit evidence state. |
+| GenID | `retrieval/` enroll, `identity/` | Persist GalleryKey / GalleryValue rows for a registry UUIDv5. |
+| ReID | `retrieval/` search | Score a RetrievalQuery against stored keys with exact cosine, then aggregate by identity. |
+| Evaluation | `evaluation/` | Identity-disjoint protocols and metrics. Algorithm packages must not import it. |
+
+Checkout commands that orchestrate these packages live under `workflows/` and are indexed in `workflows/README.md`. First-user environment setup lives under `setup/`.
 
 ## Retrieval Roles
 
@@ -55,17 +69,15 @@ same representation path has run for query or enrollment input.
 | `embedding/` | Embedding methods, representation learning, and evidence contracts under `methods/`, `learning/`, and `evidence/`; nose training and derived embedding views remain embedding-owned |
 | `retrieval/` | QKV retrieval contracts, K/V gallery persistence, exact QK scoring, identity aggregation, and crop enrollment/search pipelines |
 | `evaluation/` | Verification, retrieval, calibration, robustness, protected evaluation, localization protocols and metrics, controls, integrity, and Full128 evaluation |
-| `canine_identity/` | Public crop-level runtime only |
+| `runtime/` | Public crop-level runtime only |
 | `systems/` | Offline inference, isolated workers, runtime discovery, supervision, decode/capacity measurement, and telemetry |
-| `workflows/` | Source-checkout commands that orchestrate owned packages |
-| `experiments/` | Research-only branch comparisons and major experiment configs |
+| `workflows/` | Functional checkout commands for the current Parsing → Appearance → GenID/ReID path |
+| `legacy/version/` | Frozen ablation sets (`full128`, `afn`, `n4`, `nose`, `face`) plus `common` helpers |
 | `visualization/` | Contract-bound research figures with separated rendering and publication; generated reports remain outside Git |
 | `setup/` | Environment, bootstrap, and release guidance |
 | `tests/` | Behavioral, contract, security, numerical, packaging, and dependency-boundary tests |
 
-`Visualization/` is an ignored local-output directory. `paper/` contains guidance only until a manuscript and evidence scope are explicitly approved.
-
-The dataset-stratified identity and localization K-fold manifests are exposed retrospective research protocols, not independent final tests. The three-region A/F/N artifact manifest distinguishes verified semantic masks from model candidates, geometric proxies, and crop source-validity masks; incomplete evidence remains explicit and does not imply segmentation capability.
+`Visualization/` is an ignored local-output directory. `paper/` is guidance only.
 
 ## Dependency Direction
 
@@ -77,7 +89,7 @@ The dataset-stratified identity and localization K-fold manifests are exposed re
 4. `identity` does not import embedding, evaluation, systems, or workflows.
 5. Algorithm packages do not import `evaluation` or `systems`.
    Parsing additionally does not import embedding or retrieval.
-6. `canine_identity` does not import learning, evaluation, systems, experiments, or workflows.
+6. `runtime` does not import learning, evaluation, systems, experiments, or workflows.
 7. `evaluation` may consume all algorithm packages.
 8. `systems` may wrap algorithms and evaluation, but algorithms do not import it.
 9. The complete top-level internal package graph must remain acyclic.

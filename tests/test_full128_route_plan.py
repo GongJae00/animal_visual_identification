@@ -23,7 +23,7 @@ from data.full_segment.route_plan import (
     build_parser_cache_key,
     validate_full128_route_plan_bundle,
 )
-from workflows import build_full128_route_plan as route_workflow
+from legacy.version.full128.workflows import build_full128_route_plan as route_workflow
 
 _RUNTIME_SHA = hashlib.sha256(b"parser-runtime").hexdigest()
 _POLICY_SHA = hashlib.sha256(b"parser-policy").hexdigest()

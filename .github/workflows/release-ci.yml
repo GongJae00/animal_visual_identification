@@ -53,8 +53,8 @@ jobs:
         run: |
           git diff --check
           uv run --no-sync python -m compileall -q \
-            canine_identity contracts data evaluation \
-            embedding experiments foundation identity \
+            runtime contracts data evaluation \
+            embedding foundation identity legacy \
             parsing retrieval systems visualization workflows
 
       - name: Build distributions
@@ -118,13 +118,13 @@ jobs:
           UV_PROJECT_ENVIRONMENT=.wheel-venv \
             uv sync --locked --extra cpu --no-dev
           uv pip uninstall \
-            --python .wheel-venv/bin/python canine-video-identity
+            --python .wheel-venv/bin/python animal-visual-identification
           uv pip install \
             --python .wheel-venv/bin/python --no-deps "$wheel_path"
           .wheel-venv/bin/python -I - <<'PY'
           from importlib import resources, util
 
-          import canine_identity
+          import runtime
           import contracts.intake
           import data
           import embedding
@@ -153,6 +153,7 @@ jobs:
           assert util.find_spec("data.decode") is None
           assert util.find_spec("parsing.landmark_graph") is None
           for old_package in (
+              "canine_identity",
               "evidence_fusion",
               "identity_governance",
               "identity_methods",
@@ -161,7 +162,7 @@ jobs:
               "representation_learning",
           ):
               assert util.find_spec(old_package) is None
-          assert canine_identity.__all__ == ["IdentityEngine", "Match"]
-          assert canine_identity.IdentityEngine.__module__ == "canine_identity.engine"
+          assert runtime.__all__ == ["IdentityEngine", "Match"]
+          assert runtime.IdentityEngine.__module__ == "runtime.engine"
           assert torch.version.cuda is None
           PY

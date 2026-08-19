@@ -11,7 +11,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from experiments.fixed_multievidence import (
+from legacy.version.afn.experiments.fixed_multievidence import (
     DEV_FRACTION,
     FRAMES_PER_WINDOW,
     METHODS,
@@ -26,8 +26,8 @@ from experiments.fixed_multievidence import (
     validate_fixed_topology_bindings,
     validate_panel_bundle,
 )
-from experiments.identity_topology import FIXED_PANEL_TOPOLOGY_MANIFEST_SCHEMA_VERSION
-from experiments.n4_robust_nose import (
+from legacy.version.common.experiments.identity_topology import FIXED_PANEL_TOPOLOGY_MANIFEST_SCHEMA_VERSION
+from legacy.version.n4.experiments.n4_robust_nose import (
     CANDIDATES,
     N3_BRANCH,
     REPORT_BUNDLE_SCHEMA_VERSION,
@@ -55,12 +55,12 @@ _PANEL_LIMITATIONS = [
     "NO_BIOMETRIC_OR_OPEN_SET_CLAIM",
 ]
 _PANEL_CODE_PATHS = (
-    "experiments/fixed_multievidence.py",
+    "legacy/version/afn/experiments/fixed_multievidence.py",
     "embedding/methods/face/checkpoint.py",
     "parsing/roi_manifest.py",
     "embedding/methods/nose/training/embedding_consistency_training.py",
-    "workflows/train_roi_face_reid.py",
-    "workflows/build_fixed_multievidence_panel.py",
+    "legacy/version/face/workflows/train_roi_face_reid.py",
+    "legacy/version/afn/workflows/build_fixed_multievidence_panel.py",
 )
 
 
@@ -506,7 +506,7 @@ def test_external_pins_canonical_output_and_no_overwrite(
 
 def test_cli_help_exposes_both_required_canonical_pins() -> None:
     tool = (
-        Path(__file__).resolve().parents[1] / "workflows" / "evaluate_n4_robust_nose.py"
+        Path(__file__).resolve().parents[1] / "legacy/version/n4/workflows" / "evaluate_n4_robust_nose.py"
     )
     completed = subprocess.run(
         [sys.executable, str(tool), "--help"],

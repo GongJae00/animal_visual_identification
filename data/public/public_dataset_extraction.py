@@ -482,4 +482,4 @@ def _validate_manifest_relative_path(value: str) -> None:
         try:
             _validate_portable_component(part, "extracted relative_path")
         except ValueError as error:
-            raise ValueError("extracted relative_path is Windows-ambiguous")
+            raise ValueError("extracted relative_path is Windows-ambiguous") from error
