@@ -1618,10 +1618,9 @@ def _alias_sort_key(alias: str) -> tuple[int, str]:
 
 
 def _central_style_index(alias: str) -> int:
-    try:
+    if alias in _CENTRAL_SPECTRUM_ALIASES:
         return _CENTRAL_SPECTRUM_ALIASES.index(alias)
-    except ValueError:
-        return _ALIAS_ORDER.get(alias, 0)
+    return _ALIAS_ORDER.get(alias, 0)
 
 
 def _short_scope(scope: str) -> str:

@@ -407,28 +407,22 @@ class EmbeddingRuntimeResources:
 
 class EmbeddingBatchBackend(Protocol):
     @property
-    def identity(self) -> EmbeddingBackendIdentity:
-        """Return the immutable backend identity used for this run."""
+    def identity(self) -> EmbeddingBackendIdentity: ...
 
     @property
-    def preprocessing_semantics_sha256(self) -> str:
-        """Return the exact structured preprocessing-semantics hash."""
+    def preprocessing_semantics_sha256(self) -> str: ...
 
     @property
-    def model_sha256(self) -> str:
-        """Return the digest of the exact model bytes loaded by the backend."""
+    def model_sha256(self) -> str: ...
 
     def infer_batch(
         self,
         artifact_paths: tuple[Path, ...],
-    ) -> Sequence[Sequence[float]]:
-        """Return one raw embedding vector per input path in input order."""
+    ) -> Sequence[Sequence[float]]: ...
 
-    def synchronize(self) -> None:
-        """Block until all backend work submitted so far is complete."""
+    def synchronize(self) -> None: ...
 
-    def runtime_resources(self) -> EmbeddingRuntimeResources:
-        """Return measured resources or explicit UNAVAILABLE values."""
+    def runtime_resources(self) -> EmbeddingRuntimeResources: ...
 
 
 @dataclass(frozen=True, slots=True)
@@ -773,8 +767,6 @@ def produce_embedding_cache(
     output_directory: Path,
     runtime_phase_callback: Callable[[str], None] | None = None,
 ) -> EmbeddingProductionReceipt:
-    """Produce a content-deduplicated, verified embedding cache atomically."""
-
     if backend.identity != config.backend:
         raise ValueError("runtime backend identity differs from frozen config")
     if (

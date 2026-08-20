@@ -8,6 +8,7 @@ from unittest.mock import patch
 
 from enrollment.registry.identity_registry import (
     REGISTERED_DOG_NAMESPACE,
+    compute_identity_token,
     create_registry_database,
     load_registry_manifest,
     register_records,
@@ -247,7 +248,6 @@ class BuildBindingTests(unittest.TestCase):
         did3 = "dogfacenet224:v1:web-folder:231"
         _make_registry(db, [did1, did2, did3])
 
-        from enrollment.registry.identity_registry import compute_identity_token
         t1 = compute_identity_token(did1)
         t2 = compute_identity_token(did2)
         t3 = compute_identity_token(did3)
@@ -288,7 +288,6 @@ class BuildBindingTests(unittest.TestCase):
     def test_some_unregistered_tokens(self) -> None:
         db = self._db()
         _make_registry(db, ["yt-bb-dog:v1:video-track:1"])
-        from enrollment.registry.identity_registry import compute_identity_token
         t_reg = compute_identity_token("yt-bb-dog:v1:video-track:1")
 
         assignment = _make_assignment([
@@ -324,8 +323,6 @@ class BuildBindingTests(unittest.TestCase):
         db = self._db()
         did = "yt-bb-dog:v1:video-track:1"
         _make_registry(db, [did])
-        from enrollment.registry.identity_registry import compute_identity_token
-
         assignment = _make_assignment([{
             "identity_token": compute_identity_token(did),
             "dataset_name": "yt-bb-dog",
@@ -429,7 +426,6 @@ class BuildBindingTests(unittest.TestCase):
         db = self._db()
         did = "yt-bb-dog:v1:video-track:1"
         _make_registry(db, [did])
-        from enrollment.registry.identity_registry import compute_identity_token
         assignment = _make_assignment([{
             "identity_token": compute_identity_token(did),
             "dataset_name": "yt-bb-dog",
@@ -472,7 +468,6 @@ class BuildBindingTests(unittest.TestCase):
         db = self._db()
         did = "yt-bb-dog:v1:video-track:1"
         _make_registry(db, [did])
-        from enrollment.registry.identity_registry import compute_identity_token
         assignment = _make_assignment([{
             "identity_token": compute_identity_token(did),
             "dataset_name": "yt-bb-dog",
@@ -510,7 +505,6 @@ class BuildBindingTests(unittest.TestCase):
         db = self._db()
         did = "yt-bb-dog:v1:video-track:1"
         _make_registry(db, [did])
-        from enrollment.registry.identity_registry import compute_identity_token
         token = compute_identity_token(did)
         assignment = _make_assignment([
             {"identity_token": token, "dataset_name": "yt-bb-dog",

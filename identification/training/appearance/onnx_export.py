@@ -1,7 +1,4 @@
-"""Export a trained PyTorch checkpoint to ONNX.
-
-Produces a single ONNX file suitable for OnnxExtractor.
-"""
+"""Export a trained PyTorch checkpoint to ONNX."""
 
 from __future__ import annotations
 

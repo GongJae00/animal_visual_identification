@@ -55,7 +55,3 @@ def main() -> None:
         ),
         "output_directory": str(args.output_directory),
     }, sort_keys=True))
-
-
-if __name__ == "__main__":
-    main()

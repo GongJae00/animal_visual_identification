@@ -29,7 +29,7 @@ def main(argv: Sequence[str] | None = None) -> int:
 
         run(rest)
         return 0
-    if command in {"pretrained", "export_pretrained", "pretrained-onnx"}:
+    if command == "pretrained":
         from prototype.export.pretrained_onnx import main as run
 
         run(rest)

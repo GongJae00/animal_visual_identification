@@ -1202,7 +1202,7 @@ def train_and_export(
         validate_lineage_manifest(lineage, output_root)
         return lineage
     except BaseException:
-        # Keep the private, non-overwriting output for forensic inspection.
+        # Private output is left in place for forensic inspection; it is never overwritten.
         raise
 
 

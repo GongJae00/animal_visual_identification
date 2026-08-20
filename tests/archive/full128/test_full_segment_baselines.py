@@ -17,19 +17,18 @@ from shared.contracts.intake.pretrained_weight_intake import (
 
 from tests.repo_root import REPO_ROOT
 from shared.foundation.provenance import content_sha256
-from archive.full128.methods import (
-    Classical128,
-    ClassicalFitInput,
-    DatasetViewBalancedPKSampler,
-    FeatureOutputStatisticsHooks,
-    MaskedGAP128,
-    batch_hard_triplet_loss,
+from archive.full128.methods.models.classical import Classical128, ClassicalFitInput
+from archive.full128.methods.models.model import MaskedGAP128
+from archive.full128.methods.training.losses import batch_hard_triplet_loss
+from archive.full128.methods.training.manifests import (
     build_baseline_family_manifest,
     build_checkpoint_manifest,
     build_embedding_manifest,
     build_preprocessing_manifest,
     manifest_sha256,
 )
+from archive.full128.methods.training.sampler import DatasetViewBalancedPKSampler
+from archive.full128.methods.training.statistics import FeatureOutputStatisticsHooks
 
 _B2_SOURCE_CONTRACT_PATH = (
     REPO_ROOT

@@ -194,7 +194,7 @@ class ProtectedPublicSplitTests(unittest.TestCase):
 
     def test_cli_help_and_fixed_policy_example_round_trip(self) -> None:
         completed = subprocess.run(
-            [sys.executable, "evaluation/splits/build_protected_public_split.py", "--help"],
+            [sys.executable, "-m", "evaluation.commands.evaluate", "protected-split", "--help"],
             check=True,
             capture_output=True,
             text=True,

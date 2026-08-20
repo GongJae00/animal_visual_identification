@@ -1,4 +1,4 @@
-"""ROI extraction utilities: crop generation from bbox predictions."""
+"""ROI crop geometry from detection boxes and pose anchors."""
 
 from __future__ import annotations
 
@@ -9,8 +9,6 @@ from parsing.export.types import DetectionBox, KeypointSet
 
 
 def compute_iou(first: DetectionBox, second: DetectionBox) -> float:
-    """Compute intersection over union for two boxes."""
-
     x1 = max(first.x1, second.x1)
     y1 = max(first.y1, second.y1)
     x2 = min(first.x2, second.x2)

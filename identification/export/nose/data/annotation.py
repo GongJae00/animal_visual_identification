@@ -15,7 +15,7 @@ from typing import Any, Callable, Iterable
 import uuid
 
 import numpy as np
-from PIL import Image
+from PIL import Image, UnidentifiedImageError
 
 from identification.export.nose.types import NOSE_KEYPOINTS
 from shared.foundation.provenance import content_sha256
@@ -585,7 +585,7 @@ def validate_acquisition_records(
             with Image.open(BytesIO(image_bytes)) as image:
                 image.load()
                 size = image.size
-        except Exception as exc:
+        except (UnidentifiedImageError, OSError, ValueError) as exc:
             raise ValueError(
                 f"original image cannot be decoded: {record.original_image.relative_path}"
             ) from exc
@@ -619,7 +619,7 @@ def _validate_mask(
                 raise ValueError(f"{name} must be a PNG")
             opened.load()
             mask = np.asarray(opened)
-    except Exception as exc:
+    except (UnidentifiedImageError, OSError, ValueError) as exc:
         if isinstance(exc, ValueError):
             raise
         raise ValueError(f"{name} cannot be decoded") from exc

@@ -64,8 +64,6 @@ def export_dinov2_small(
     crop_root: Path | None = None,
     crop_tokens: tuple[str, ...] = (),
 ) -> tuple[Path, Path, Path, Path]:
-    """Export and atomically publish a no-overwrite DINO artifact bundle."""
-
     output_root = output_directory.resolve(strict=True)
     if not output_root.is_dir() or output_directory.is_symlink():
         raise ValueError("output_directory must be an existing local directory")
@@ -363,7 +361,7 @@ def _load_crop_panel(
         capture_payload=True,
         subject="crop export receipt",
     )
-    if receipt_result.payload is None:  # pragma: no cover - helper contract
+    if receipt_result.payload is None:
         raise RuntimeError("crop export receipt payload was not retained")
     receipt = CropExportReceipt.from_dict(
         parse_bounded_strict_json_object(receipt_result.payload)

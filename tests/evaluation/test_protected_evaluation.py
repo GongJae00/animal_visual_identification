@@ -39,9 +39,9 @@ def _write(path: Path, payload: object) -> None:
 class ProtectedEvaluationTests(unittest.TestCase):
     def test_protected_cli_help_surfaces_are_available(self) -> None:
         commands = (
-            [sys.executable, "evaluation/protected_prepare.py", "--help"],
+            [sys.executable, "-m", "evaluation.commands.evaluate", "protected-prepare", "--help"],
             [sys.executable, "-m", "evaluation.commands.evaluate", "protected", "--help"],
-            [sys.executable, "evaluation/protected_verify.py", "--help"],
+            [sys.executable, "-m", "evaluation.commands.evaluate", "protected-verify", "--help"],
         )
         for command in commands:
             completed = subprocess.run(

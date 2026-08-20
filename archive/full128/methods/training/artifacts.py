@@ -614,8 +614,10 @@ def _require_sha256(value: object, label: str) -> str:
 def _distribution_version(name: str) -> str:
     try:
         return version(name)
-    except PackageNotFoundError:
-        return "NOT_INSTALLED"
+    except PackageNotFoundError as exc:
+        raise RuntimeError(
+            f"Full128 runtime distribution {name!r} is not installed"
+        ) from exc
 
 
 __all__ = [

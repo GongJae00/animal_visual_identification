@@ -13,7 +13,7 @@ OOF_SIMPLEX_SCHEMA_VERSION = "cvi.oof_simplex_fusion.v1"
 
 
 class OOFSimplexError(ValueError):
-    """Raised when the OOF simplex fusion contract is violated."""
+    pass
 
 
 def _validate_scalar(
@@ -37,10 +37,8 @@ def _validate_scalar(
 
 @dataclass(frozen=True, slots=True)
 class OOFSimplexConfig:
-    """Low-capacity grid-search settings.
-
-    ``quality_floor`` is applied only to available channels, preventing an
-    available zero-quality channel from making a row unusable when positive.
+    """``quality_floor`` applies only to available channels so a zero-quality
+    available channel cannot make a row unusable when other channels are usable.
     """
 
     resolution: int = 20

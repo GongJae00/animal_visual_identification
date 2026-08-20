@@ -16,18 +16,8 @@ from evaluation.protected_verification import (
     required_zero_event_trials,
 )
 
-# Calibration fixture: 6 samples, 2 pos 4 neg
-# scores: [0.9, 0.8, 0.6, 0.4, 0.3, 0.1], labels: [1, 1, 0, 0, 0, 0]
-# Score-derived thresholds: [inf, 0.9, 0.8, 0.6, 0.4, 0.3, 0.1, -inf]
-# Target FAR=0.001: only FAR=0 qualifies (indices 0,1,2)
-#   FAR=0 thresholds: inf(TAR=0), 0.9(TAR=0.5), 0.8(TAR=1.0)
-# Max TAR among FAR<=0.001: t=0.8, TAR=1.0
 CAL_SCORES = np.array([0.9, 0.8, 0.6, 0.4, 0.3, 0.1], dtype=np.float64)
 CAL_LABELS = np.array([1, 1, 0, 0, 0, 0], dtype=np.int64)
-
-# Test fixture: 4 samples, 2 pos 2 neg
-# OLD code (linspace + valid[-1]): threshold=1.0, TAR=0.0
-# NEW code (score-derived + max TAR): threshold=0.8, TAR=1.0
 TEST_SCORES = np.array([0.9, 0.7, 0.4, 0.2], dtype=np.float64)
 TEST_LABELS = np.array([1, 1, 0, 0], dtype=np.int64)
 

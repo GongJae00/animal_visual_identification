@@ -183,7 +183,3 @@ def main(argv: list[str] | None = None) -> int:
         "cycle": _run_cycle,
         "source-admissions": _run_source_admissions,
     }[command](argv)
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())

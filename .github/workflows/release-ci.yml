@@ -130,7 +130,7 @@ jobs:
           assert "operations/workers/embedding_production_runner.py" in names
           assert "operations/measurement/capacity.py" in names
           assert "operations/video/decode.py" in names
-          assert "prototype/export/configs/onnx_cpu_backend.example.json" in names
+          assert "prototype/export/configs/onnx_cpu_backend.example.json" not in names
           assert not any(name.startswith("runtime/") for name in names)
           assert not any(name.startswith("systems/") for name in names)
           assert "visualization/__init__.py" in names

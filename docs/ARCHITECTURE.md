@@ -24,9 +24,9 @@ The supported public Python export surface is `IdentityEngine` and `Match`, impl
 
 Target order: `parsing → identification → representation → enrollment → gallery → search → evaluation`. 등록 is `enrollment/`. 검색 is `search/`. GenID and ReID are not stage names. Vendor names (Pet-ReID, MiewID) stay. Visualization observes from outside; prototype composes `export/` only.
 
-Current code still lives in the packages below. The target tree is [AGENTS.md](../AGENTS.md).
+The packages below are the target tree. See [AGENTS.md](../AGENTS.md).
 
-| Stage | Current package | Runtime meaning |
+| Stage | Package | Runtime meaning |
 |---|---|---|
 | Parsing | `parsing/` | Frozen detection/segmentation that materializes crops and masks. Not invoked by `IdentityEngine`. |
 | Identification | `identification/` | Encoders that emit per-channel embeddings. Appearance is the live channel. |
@@ -71,7 +71,7 @@ same representation path has run for query or enrollment input.
 | `enrollment/` | Canonical UUIDv5 registry, registered-only gallery policy, and crop/vector write |
 | `gallery/` | On-disk key/value store and v3→v4 migration |
 | `search/` | Query / gallery-key / gallery-value scoring and crop matching. Not attention. |
-| `parsing/` | Detection, segmentation, regions, quality, and crops. `training/` vs `export/`; commands at `parsing/commands/parse.py`. Identity embedding trainers are not parsing-owned. |
+| `parsing/` | Detection, segmentation, regions, quality, and crops. `training/` vs `export/`; commands at `parsing/commands/parse.py`. Identification embedding trainers are not parsing-owned. |
 | `identification/` | Channel encoders. `training/` vs `export/` for appearance, face, and nose. Commands at `identification/commands/`. |
 | `representation/` | Evidence contracts, quality observations, and channel packing. No trainers. |
 | `archive/` | Completed comparison families: `full128`, `appearance_face_nose`, `nose_metric`, `nose`, `face`, `shared_helpers`. Live identification path is Appearance. |

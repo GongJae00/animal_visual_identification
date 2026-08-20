@@ -73,8 +73,7 @@ def _convert_superanimal_to_onnx(pt_path: Path, onnx_path: Path) -> None:
 def download_model(name: str) -> None:
     info = _MODELS.get(name)
     if info is None:
-        print(f"Unknown: {name}. Available: {list(_MODELS)}")
-        return
+        raise RuntimeError(f"Unknown: {name}. Available: {list(_MODELS)}")
 
     status = info["status"]
     if status in {_DISABLED, _MANUAL}:

@@ -27,8 +27,8 @@ from shared.foundation.protected_io import (
     read_strict_json_object,
 )
 from shared.foundation.protected_publication import (
-    fsync_directory as _fsync_directory,
-    rename_directory_noreplace as _rename_directory_noreplace,
+    fsync_directory,
+    rename_directory_noreplace,
 )
 from shared.foundation.provenance import content_sha256
 from shared.foundation.retained_file import (
@@ -812,12 +812,12 @@ def run_embedding_production_fresh_worker(
         try:
             if output_target.exists() or output_target.is_symlink():
                 raise FileExistsError("embedding output appeared during execution")
-            publication_strategy = _rename_directory_noreplace(
+            publication_strategy = rename_directory_noreplace(
                 staged_cache,
                 output_target,
             )
             published = True
-            _fsync_directory(output_parent)
+            fsync_directory(output_parent)
             inventory = ControlScoringInventory.from_dict(
                 read_strict_json_object(Path(bindings["inventory"]["path"]))
             )
@@ -832,8 +832,8 @@ def run_embedding_production_fresh_worker(
             )
             if final_verification != production_receipt.cache_verification:
                 raise RuntimeError("published cache verification differs")
-            _fsync_directory(output_target)
-            _fsync_directory(output_parent)
+            fsync_directory(output_target)
+            fsync_directory(output_parent)
             publication_status = "ATOMIC_DIRECTORY_RENAME_COMMITTED"
             return EmbeddingFreshWorkerReceipt(
                 publication_status=publication_status,
@@ -1233,7 +1233,7 @@ def _snapshot_code_sources(
         if written != expected_size or digest.hexdigest() != expected_digest:
             raise RuntimeError("embedding code snapshot content differs")
         os.chmod(target, 0o400)
-    _fsync_directory(destination_root)
+    fsync_directory(destination_root)
     _verify_code_source_snapshot(destination_root, expected)
     return len(expected), total_bytes
 
@@ -1324,7 +1324,7 @@ def _remove_exact_published_cache(
     for path in observed.values():
         path.unlink()
     root.rmdir()
-    _fsync_directory(root.parent)
+    fsync_directory(root.parent)
 
 
 def _stat_identity(value: os.stat_result) -> tuple[int, int, int, int, int]:

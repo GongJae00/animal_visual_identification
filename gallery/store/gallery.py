@@ -1114,11 +1114,10 @@ class IdentityGallery:
                 raise ValueError(
                     f"idempotency key {idempotency_key!r} conflicts with an existing enrollment"
                 )
-            else:
-                raise ValueError(
-                    f"template/content {template_id!r} is already enrolled with different "
-                    "immutable evidence or metadata"
-                )
+            raise ValueError(
+                f"template/content {template_id!r} is already enrolled with different "
+                "immutable evidence or metadata"
+            )
         if existing_idempotency_row is not None:
             raise ValueError(
                 f"idempotency key {idempotency_key!r} conflicts with an existing enrollment"
@@ -2013,13 +2012,13 @@ def _template_id(content_sha256: str) -> str:
 
 
 def _is_sha256(value: object) -> bool:
-    if not isinstance(value, str) or len(value) != 64:
+    if not isinstance(value, str) or len(value) != 64 or value != value.lower():
         return False
     try:
         int(value, 16)
     except ValueError:
         return False
-    return value == value.lower()
+    return True
 
 
 def _is_canonical_uuid5(value: object) -> bool:

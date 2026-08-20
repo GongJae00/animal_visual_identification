@@ -1,4 +1,4 @@
-"""Face ReID losses — reuses NoseID-v1 SubCenter ArcFace, SupCon, triplet."""
+"""Face encoder losses — reuses NoseID-v1 SubCenter ArcFace, SupCon, triplet."""
 
 from __future__ import annotations
 

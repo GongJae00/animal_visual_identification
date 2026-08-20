@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import hashlib
-from pathlib import Path
 from typing import Any
 
 import torch
@@ -13,22 +12,7 @@ from shared.contracts.dinov2_contract import Dinov2LocalArtifactContract
 from identification.training.face.losses import FaceIDObjective, FaceResidualObjective
 from identification.export.face.model import FaceIDModel
 from identification.export.face.residual_model import FaceIDResidualModel
-
-
-def load_receipt_bound_frozen_dino(
-    *,
-    model_directory: Path,
-    weight_intake_bundle: Path,
-    preprocessor_intake_bundle: Path,
-) -> tuple[torch.nn.Module, Dinov2LocalArtifactContract]:
-    """Reused from identification.training.nose.trainer — identical contract."""
-    from identification.training.nose.trainer import load_receipt_bound_frozen_dino as _loader
-
-    return _loader(
-        model_directory=model_directory,
-        weight_intake_bundle=weight_intake_bundle,
-        preprocessor_intake_bundle=preprocessor_intake_bundle,
-    )
+from identification.training.nose.trainer import load_receipt_bound_frozen_dino
 
 
 def build_faceid_model(

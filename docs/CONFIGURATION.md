@@ -74,11 +74,9 @@ committed.
 
 ## Other Config Files
 
-Tracked configs live with their owning packages: ONNX backend examples
-under `prototype/export/configs/`, operational policies under
-`operations/configs/`, data policies under `data/configs/`, schemas
-under `shared/contracts/configs/`, and research definitions under
-`archive/shared_helpers/configs/`. Their independent schemas are not
+Tracked configs live with their owning packages: operational policies
+under `operations/configs/`, schemas under `shared/contracts/configs/`,
+and research definitions under `archive/shared_helpers/configs/`. Their independent schemas are not
 interchangeable with retrieval config v2 and must not be passed to
 `IdentityEngine` unless they explicitly declare that schema. The public
 runtime takes a retrieval-config v2 object; it does not ship example JSON.

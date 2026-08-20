@@ -76,7 +76,8 @@ class FigureData:
     @property
     def payload(self) -> dict[str, Any]:
         value = json.loads(self._payload_bytes)
-        assert isinstance(value, dict)
+        if not isinstance(value, dict):
+            raise FigureContractError("figure payload must be an object")
         return value
 
     @classmethod

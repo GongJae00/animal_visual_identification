@@ -2,13 +2,34 @@ from __future__ import annotations
 
 import hashlib
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Protocol
 
 import numpy as np
 from PIL import Image
 
 from representation.channels.extraction import EvidenceExtractionPipeline
-from search.scoring.roles import QueryExclusions
+from search.scoring.roles import QueryExclusions, RetrievalQuery
+
+
+class _GalleryStore(Protocol):
+    def prepare_query(
+        self,
+        vectors: dict[str, np.ndarray],
+        availability: dict[str, bool],
+        exclusions: QueryExclusions = ...,
+    ) -> RetrievalQuery: ...
+
+    def search(
+        self, query: RetrievalQuery, top_k: int
+    ) -> list[tuple[int, float, dict[str, Any]]]: ...
+
+    def search_filtered(
+        self, query: RetrievalQuery, allowed_breeds: list[str], top_k: int
+    ) -> list[tuple[int, float, dict[str, Any]]]: ...
+
+    def explain_identity(
+        self, query: RetrievalQuery, dog_id: str
+    ) -> tuple[int, float, dict[str, Any]] | None: ...
 
 
 @dataclass
@@ -22,9 +43,9 @@ class RetrievalResult:
     metadata: dict[str, Any] = field(default_factory=dict)
 
 
-class IdentityRetrievalPipeline:
+class SearchPipeline:
     def __init__(
-        self, extraction: EvidenceExtractionPipeline, gallery: Any
+        self, extraction: EvidenceExtractionPipeline, gallery: _GalleryStore
     ) -> None:
         self._extraction = extraction
         self._gallery = gallery
@@ -55,52 +76,12 @@ class IdentityRetrievalPipeline:
             ),
             duplicate_group_ids=duplicate_group_ids,
         )
-        query = self._gallery.prepare_query(
-            vectors,
-            availability,
-            exclusions,
-        )
+        query = self._gallery.prepare_query(vectors, availability, exclusions)
         if allowed_breeds:
             raw = self._gallery.search_filtered(query, allowed_breeds, top_k)
         else:
             raw = self._gallery.search(query, top_k)
-
-        results: list[RetrievalResult] = []
-        for _, score, meta in raw:
-            registered_dog_id = meta.get("registered_dog_id")
-            if not isinstance(registered_dog_id, str) or not registered_dog_id:
-                raise RuntimeError("gallery metadata is missing registered_dog_id")
-            results.append(
-                RetrievalResult(
-                    registered_dog_id=registered_dog_id,
-                    similarity=float(score),
-                    evidence=dict(meta["_evidence"]),
-                    evidence_availability=dict(meta["_evidence_availability"]),
-                    scorer_hash=meta["_scorer_hash"],
-                    exact=meta["_exact"],
-                    metadata={
-                        **meta.get("metadata", {}),
-                        "template_id": meta["template_id"],
-                        "content_sha256": meta["content_sha256"],
-                        "idempotency_key": meta["idempotency_key"],
-                        "template_schema": meta["template_schema"],
-                        "query_evidence_availability": meta[
-                            "_query_availability"
-                        ],
-                        "template_evidence_availability": meta[
-                            "_template_availability"
-                        ],
-                        "identity_evidence_kind": meta[
-                            "_identity_evidence_kind"
-                        ],
-                        "enrollment_rank": meta["_enrollment_rank"],
-                        "enrollment_view": meta["_enrollment_view"],
-                        "duplicate_group_ids": meta["_duplicate_group_ids"],
-                        "winning_template_row": meta["_winning_template_row"],
-                    },
-                )
-            )
-        return results
+        return [_result_from_row(score, meta) for _, score, meta in raw]
 
     def explain(self, image: Image.Image, dog_id: str) -> dict[str, Any]:
         vectors, availability = self._extract_available_evidence(image)
@@ -137,6 +118,34 @@ class IdentityRetrievalPipeline:
             for name, observation in observations.items()
         }
         return vectors, availability
+
+
+def _result_from_row(score: float, meta: dict[str, Any]) -> RetrievalResult:
+    registered_dog_id = meta.get("registered_dog_id")
+    if not isinstance(registered_dog_id, str) or not registered_dog_id:
+        raise RuntimeError("gallery metadata is missing registered_dog_id")
+    return RetrievalResult(
+        registered_dog_id=registered_dog_id,
+        similarity=float(score),
+        evidence=dict(meta["_evidence"]),
+        evidence_availability=dict(meta["_evidence_availability"]),
+        scorer_hash=meta["_scorer_hash"],
+        exact=meta["_exact"],
+        metadata={
+            **meta.get("metadata", {}),
+            "template_id": meta["template_id"],
+            "content_sha256": meta["content_sha256"],
+            "idempotency_key": meta["idempotency_key"],
+            "template_schema": meta["template_schema"],
+            "query_evidence_availability": meta["_query_availability"],
+            "template_evidence_availability": meta["_template_availability"],
+            "identity_evidence_kind": meta["_identity_evidence_kind"],
+            "enrollment_rank": meta["_enrollment_rank"],
+            "enrollment_view": meta["_enrollment_view"],
+            "duplicate_group_ids": meta["_duplicate_group_ids"],
+            "winning_template_row": meta["_winning_template_row"],
+        },
+    )
 
 
 def _image_content_sha256(image: Image.Image) -> str:

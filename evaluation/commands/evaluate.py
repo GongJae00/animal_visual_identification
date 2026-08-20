@@ -4,9 +4,11 @@ Run: ``uv run python -m evaluation.commands.evaluate --help``
 
 Protocols: verification, retrieval, open-set, protected.
 Also: parsed-body, pairs, controls, drift, identity-kfold,
-localization-kfold, protected-split, unified-split, oxford-pet,
-protected-prepare, protected-verify, role-exposure, research-cycle,
-research-plan, batch-precommit, batch-verify.
+localization-kfold, localization-benchmark, oracle-crops,
+protected-split, unified-split, oxford-pet, protected-prepare,
+protected-verify, role-exposure, research-cycle, research-plan,
+batch-precommit, batch-verify, registry-build, registry-bind,
+split-check.
 """
 
 from __future__ import annotations
@@ -136,8 +138,6 @@ def _wilson_ci(events: int, trials: int, level: float = 0.95) -> dict:
         "confidence_level": level,
     }
 
-# Data loading
-
 def load_pairs(path: Path) -> list[dict]:
     if not path.exists():
         raise FileNotFoundError(f"pairs file not found: {path}")
@@ -169,8 +169,6 @@ def _template_ids(manifest: dict, name: str) -> tuple[np.ndarray | None, str | N
     if sample_ids is not None:
         return np.asarray(sample_ids), "sample_ids"
     return None, None
-
-# Split validation
 
 def validate_split_disjoint(
     cal: list[dict],
@@ -240,8 +238,6 @@ def relaxed_status_from_warnings(warnings: list[str], relaxed: bool) -> str:
         return "RELAXED_UNSAFE"
     return "INVALID"
 
-# Similarity helpers
-
 def compute_similarity(emb_a: np.ndarray, emb_b: np.ndarray) -> float:
     na = np.linalg.norm(emb_a)
     nb = np.linalg.norm(emb_b)
@@ -258,8 +254,6 @@ def _extract_sims(ev: AbstractEvidencer, pairs: list[dict]) -> tuple[list[float]
         sims.append(compute_similarity(emb_a, emb_b))
         labels.append(p["label"])
     return sims, labels
-
-# Verification protocol
 
 def cmd_verification(args: argparse.Namespace) -> None:
     start_ts = datetime.now(timezone.utc).isoformat()
@@ -391,8 +385,6 @@ def cmd_verification(args: argparse.Namespace) -> None:
     _write_report(args.output, report)
     print(json.dumps({"event": "verification_done", "output": str(args.output)}))
 
-# Retrieval protocol
-
 def cmd_retrieval(args: argparse.Namespace) -> None:
     start_ts = datetime.now(timezone.utc).isoformat()
     gallery = load_embedding_manifest(args.gallery)
@@ -491,8 +483,6 @@ def cmd_retrieval(args: argparse.Namespace) -> None:
     _write_report(args.output, report)
     print(json.dumps({"event": "retrieval_done", "output": str(args.output)}))
 
-# Open-set protocol
-
 def cmd_open_set(args: argparse.Namespace) -> None:
     start_ts = datetime.now(timezone.utc).isoformat()
     gallery = load_embedding_manifest(args.gallery)
@@ -557,8 +547,6 @@ def cmd_open_set(args: argparse.Namespace) -> None:
         report["FPIR_CI"][target_key] = _wilson_ci(fpir_events, fpir_trials)
     _write_report(args.output, report)
     print(json.dumps({"event": "open_set_done", "output": str(args.output)}))
-
-# Receipt-bound protected retrieval protocol
 
 def cmd_protected(args: argparse.Namespace) -> None:
     provenance = build_offline_tool_provenance(
@@ -698,8 +686,6 @@ def cmd_protected(args: argparse.Namespace) -> None:
         "output_receipt_sha256": receipt.receipt_sha256,
     }, sort_keys=True))
 
-# CLI entry
-
 _ABSORBED = {
     "parsed-body": "evaluation.parsed_body",
     "pairs": "evaluation.controls.construct_pairs",
@@ -707,6 +693,8 @@ _ABSORBED = {
     "drift": "evaluation.commands.compare_score_drift",
     "identity-kfold": "evaluation.splits.research.build_kfold",
     "localization-kfold": "evaluation.localization_kfold_cli",
+    "localization-benchmark": "evaluation.localization_benchmark",
+    "oracle-crops": "evaluation.controls.oracle_crop_export",
     "protected-split": "evaluation.splits.build_protected_public_split",
     "unified-split": "evaluation.splits.build_unified_full_split",
     "oxford-pet": "evaluation.oxford_pet_foreground",
@@ -717,6 +705,14 @@ _ABSORBED = {
     "research-plan": "evaluation.splits.research.build_research_task_plan",
     "batch-precommit": "evaluation.commands.create_batch_invariance_precommitment",
     "batch-verify": "operations.workers.verify_batch_invariance_receipt",
+    "registry-build": "evaluation.splits.registry_cli",
+    "registry-bind": "evaluation.splits.registry_cli",
+    "split-check": "evaluation.splits.registry_cli",
+}
+
+_ABSORBED_SUBCOMMAND = {
+    "registry-bind": "bind",
+    "split-check": "check",
 }
 
 
@@ -726,7 +722,9 @@ def main() -> None:
         import importlib
 
         module = importlib.import_module(_ABSORBED[argv[0]])
-        sys.argv = [sys.argv[0], *argv[1:]]
+        injected = _ABSORBED_SUBCOMMAND.get(argv[0])
+        rest = argv[1:] if injected is None else [injected, *argv[1:]]
+        sys.argv = [sys.argv[0], *rest]
         result = module.main()
         if isinstance(result, int):
             raise SystemExit(result)

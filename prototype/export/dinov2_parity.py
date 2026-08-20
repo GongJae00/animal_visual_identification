@@ -3,12 +3,8 @@
 from __future__ import annotations
 
 import argparse
-import sys
 from hashlib import sha256
 from pathlib import Path
-
-_REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(_REPOSITORY_ROOT))
 
 from shared.contracts.dinov2_contract import (
     Dinov2LocalArtifactContract,
@@ -48,7 +44,7 @@ def verify_dinov2_bundle(
         capture_payload=True,
         subject="DINOv2 ONNX manifest",
     )
-    if manifest_result.payload is None:  # pragma: no cover - helper contract
+    if manifest_result.payload is None:
         raise RuntimeError("DINOv2 manifest payload was not retained")
     manifest = Dinov2OnnxArtifactManifest.from_dict(
         parse_bounded_strict_json_object(manifest_result.payload)
@@ -61,7 +57,7 @@ def verify_dinov2_bundle(
         capture_payload=True,
         subject="DINOv2 ONNX artifact",
     )
-    if artifact.payload is None:  # pragma: no cover - helper contract
+    if artifact.payload is None:
         raise RuntimeError("DINOv2 ONNX payload was not retained")
     _validate_self_contained_onnx(artifact.payload)
 
@@ -71,7 +67,7 @@ def verify_dinov2_bundle(
         capture_payload=True,
         subject="DINOv2 preprocessing config",
     )
-    if preprocessing_result.payload is None:  # pragma: no cover
+    if preprocessing_result.payload is None:
         raise RuntimeError("DINOv2 preprocessing payload was not retained")
     preprocessing_payload = parse_bounded_strict_json_object(
         preprocessing_result.payload

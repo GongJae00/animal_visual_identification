@@ -564,6 +564,8 @@ def _fingerprint_source(
                                 )
             _verify_archive_stability(source.archive_path, stream.fileno(), initial_stat)
     except Exception:
+        # os.fdopen owns the descriptor after entry. If entry failed, close the
+        # still-owned raw descriptor without masking the cause.
         try:
             os.close(descriptor)
         except OSError:

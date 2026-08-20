@@ -71,8 +71,7 @@ class IdentityTokenTests(unittest.TestCase):
             compute_public_subject_token(did), compute_identity_token(did)
         )
 
-    def test_sequence_token_falls_back_hashes_identity_token(self) -> None:
-        import hashlib
+    def test_sequence_token_hashes_identity_when_sequence_absent(self) -> None:
         token = compute_identity_token("dogfacenet224:v1:web-folder:231")
         expected = hashlib.sha256(b"sequence\x00" + token.encode("utf-8")).hexdigest()
         self.assertEqual(compute_sequence_token(None, token), expected)
@@ -101,7 +100,6 @@ class RegisteredDogIdTests(unittest.TestCase):
         self.assertNotEqual(yt_id, dogface_id)
 
     def test_output_is_valid_uuid(self) -> None:
-        import uuid
         rid = compute_registered_dog_id("sibetan:v1:gt-json:dog_ABC")
         parsed = uuid.UUID(rid)
         self.assertEqual(parsed.version, 5)
@@ -443,7 +441,9 @@ class RegistryBuilderBoundaryTests(unittest.TestCase):
                     "uv",
                     "run",
                     "python",
-                    "enrollment/commands/enroll.py",
+                    "-m",
+                    "evaluation.commands.evaluate",
+                    "registry-build",
                     "--source-bundle",
                     str(root / "missing-source.json"),
                     "--db-output",

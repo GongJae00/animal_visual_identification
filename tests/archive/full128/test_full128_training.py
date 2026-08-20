@@ -21,6 +21,7 @@ from shared.foundation.provenance import content_sha256
 from archive.full128.methods.training.artifacts import (
     default_full128_run_config,
     file_binding,
+    runtime_versions,
     validate_embedding_cache,
     validate_full128_run_config,
     validate_variant_run,
@@ -91,6 +92,19 @@ def test_mask_only_reader_matches_full_crop_reader(tmp_path: Path) -> None:
     _, full_mask = read_full128_crop(sample)
 
     np.testing.assert_array_equal(read_full128_mask(sample), full_mask)
+
+def test_runtime_versions_fail_closed_when_distribution_missing(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from importlib.metadata import PackageNotFoundError
+
+    def _missing(name: str) -> str:
+        raise PackageNotFoundError(name)
+
+    monkeypatch.setattr(full128_artifacts, "version", _missing)
+    with pytest.raises(RuntimeError, match="not installed"):
+        runtime_versions()
+
 
 def test_run_config_fixes_current_admitted_quotas_and_protocol() -> None:
     config = default_full128_run_config()

@@ -622,7 +622,3 @@ def _write_regular_file(path: Path, payload: bytes) -> None:
         os.fsync(descriptor)
     finally:
         os.close(descriptor)
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())

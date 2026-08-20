@@ -56,19 +56,7 @@ class PerChannelCalibrator:
             )
         self._calibrators = fitted
 
-    def transform(self, scores: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
-        output: dict[str, np.ndarray] = {}
-        for name, values in scores.items():
-            if name not in self._calibrators:
-                raise KeyError(f"channel {name!r} has no fitted calibrator")
-            array = np.asarray(values, dtype=np.float64)
-            if array.ndim != 1 or not np.all(np.isfinite(array)):
-                raise ValueError("calibration scores must be a finite vector")
-            x, y = self._calibrators[name]
-            output[name] = np.interp(array, x, y, left=y[0], right=y[-1])
-        return output
-
-    def calibrate(self, raw_score: float, channel: str = "all") -> float:
+    def calibrate(self, raw_score: float, channel: str) -> float:
         if channel not in self._calibrators:
             raise KeyError(f"channel {channel!r} has no fitted calibrator")
         if not np.isfinite(raw_score):

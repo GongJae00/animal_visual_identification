@@ -15,13 +15,13 @@ from identification.export.face.checkpoint import (
 from tests.repo_root import REPO_ROOT as ROOT
 
 def test_v2_source_closure_is_recursive_logical_and_deterministic() -> None:
-    tool = ROOT / "enrollment" / "commands" / "enroll.py"
+    tool = ROOT / "evaluation" / "splits" / "registry_cli.py"
     first = build_offline_tool_provenance(tool)
     second = build_offline_tool_provenance(tool)
 
     assert first == second
     assert first["schema_version"] == "canine_identity.source_provenance.v3"
-    assert first["entrypoints"] == ["enrollment.commands.enroll"]
+    assert first["entrypoints"] == ["evaluation.splits.registry_cli"]
     paths = [row["relative_path"] for row in first["code_source_files"]]
     assert "enrollment/registry/identity_registry.py" in paths
     assert "shared/foundation/provenance.py" in paths

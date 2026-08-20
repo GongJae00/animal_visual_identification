@@ -1,4 +1,4 @@
-"""Face ReID sampler — identity-balanced, provenance-aware."""
+"""Face encoder sampler — identity-balanced, provenance-aware."""
 
 from __future__ import annotations
 

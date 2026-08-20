@@ -87,7 +87,7 @@ SOURCE_REGISTRY: tuple[CanidDatasetRecord, ...] = (
         has_nose_mask=False,
         admission=DatasetAdmission.ADMIT_TRAIN,
         notes="Per-identity web-album crops; no bbox, keypoint, or breed labels. "
-        "Useful for appearance/face ReID identity training.",
+        "Useful for appearance/face identity training.",
     ),
     CanidDatasetRecord(
         canonical_name="mpdd",

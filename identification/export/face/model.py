@@ -1,4 +1,4 @@
-"""Face ReID model — DINOv2 patch tokens + anatomical regional pooling."""
+"""Face encoder model — DINOv2 patch tokens + anatomical regional pooling."""
 
 from __future__ import annotations
 

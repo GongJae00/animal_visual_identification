@@ -1657,7 +1657,6 @@ def _evaluate(args: argparse.Namespace) -> None:
         roles=("calibration",),
     )
 
-    # Calibration selection is complete before final model inference starts.
     calibration_report, frozen_runtime = _calibrate_and_select(
         plan, populations, calibration_channels
     )

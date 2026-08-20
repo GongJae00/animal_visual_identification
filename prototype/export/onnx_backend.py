@@ -49,8 +49,6 @@ def dinov2_image_preprocessing_config(
     maximum_source_height: int = 16_384,
     maximum_source_pixels: int = 67_108_864,
 ) -> ImagePreprocessingConfig:
-    """Translate an admitted DINOv2 processor into the ONNX contract."""
-
     processor = contract.preprocessor
     return ImagePreprocessingConfig(
         schema_version="cvi.image_preprocessing.v2",

@@ -87,7 +87,7 @@ def test_dependency_direction() -> None:
             elif package == "prototype":
                 relative = path.relative_to(ROOT).parts
                 if relative[1:2] == ("commands",):
-                    forbidden = roots & set()
+                    forbidden = set()
                 elif relative[:2] == ("prototype", "runtime"):
                     forbidden = roots & {
                         "evaluation",

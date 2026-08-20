@@ -1,7 +1,0 @@
-{
-  "maximum_accessory_outside_dog_fraction": 0.0,
-  "maximum_mask_pixels": 16777216,
-  "raw_scan_chunk_bytes": 1048576,
-  "schema_version": "cvi.mask_semantic_policy.v1",
-  "timeout_seconds_per_mask": 30.0
-}

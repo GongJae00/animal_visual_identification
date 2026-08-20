@@ -78,21 +78,23 @@ def test_auxiliary_data_reject_identity_training(dataset: str) -> None:
         )
 
 @pytest.mark.parametrize("dataset", ("ap10k-dog", "dogflw"))
-def test_auxiliary_data_admits_train_only_ssl_and_provisional_genid(dataset: str) -> None:
+def test_auxiliary_data_admits_train_only_ssl_and_provisional_identity_mining(
+    dataset: str,
+) -> None:
     ssl = ResearchTaskAssignment(
         dataset,
         ResearchTask.SELF_SUPERVISION,
         ResearchTaskRole.FIT,
         "publisher-train",
     )
-    genid = ResearchTaskAssignment(
+    mining = ResearchTaskAssignment(
         dataset,
         ResearchTask.PROVISIONAL_IDENTITY_MINING,
         ResearchTaskRole.FIT,
         "publisher-train",
     )
     assert ssl.role is ResearchTaskRole.FIT
-    assert genid.role is ResearchTaskRole.FIT
+    assert mining.role is ResearchTaskRole.FIT
 
     with pytest.raises(ValueError, match="must not use a test partition"):
         ResearchTaskAssignment(
@@ -155,7 +157,9 @@ def test_source_checkout_cli_builds_task_plan(tmp_path: Path) -> None:
     completed = subprocess.run(
         [
             sys.executable,
-            "evaluation/splits/research/build_research_task_plan.py",
+            "-m",
+            "evaluation.commands.evaluate",
+            "research-plan",
             "--source-admissions",
             str(admissions_path),
             "--output",

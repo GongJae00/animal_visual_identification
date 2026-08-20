@@ -179,7 +179,6 @@ def find_pdq_near_duplicate_candidates(
     raw_posting_visits = 0
 
     for query_sample_index in range(eligible_count):
-        # other_sample_index -> (distance, left orientation, right orientation)
         sample_minima: dict[int, tuple[int, int, int]] = {}
         for query_orientation_index in range(PDQ_ORIENTATION_COUNT):
             query_orientation_id = (

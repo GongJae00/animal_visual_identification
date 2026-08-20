@@ -56,7 +56,3 @@ def main() -> None:
             sort_keys=True,
         )
     )
-
-
-if __name__ == "__main__":
-    main()

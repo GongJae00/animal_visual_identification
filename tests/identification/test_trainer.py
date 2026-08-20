@@ -631,7 +631,7 @@ def _requires_dinov2():
         from transformers import AutoModel
         AutoModel.from_pretrained("facebook/dinov2-small", attn_implementation="sdpa")
         return False
-    except Exception:
+    except (ImportError, OSError, RuntimeError, ValueError):
         return True
 
 class Dinov2EmbeddingTests(unittest.TestCase):

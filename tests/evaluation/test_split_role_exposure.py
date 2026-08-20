@@ -93,7 +93,9 @@ class SplitRoleExposureTests(unittest.TestCase):
             completed = subprocess.run(
                 [
                     sys.executable,
-                    "evaluation/splits/assemble_role_exposure_ledger.py",
+                    "-m",
+                    "evaluation.commands.evaluate",
+                    "role-exposure",
                     "--source-bundle",
                     str(root / "missing-source.json"),
                     "--declaration",

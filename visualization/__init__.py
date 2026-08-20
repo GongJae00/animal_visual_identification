@@ -1,7 +1,4 @@
-"""Contract-bound research visualization publication tools.
-
-Importing :mod:`visualization` does not import Matplotlib or inspect local assets.
-"""
+"""Contract-bound research visualization. Package import does not load Matplotlib."""
 
 from visualization.contracts import FigureData, SourceBinding
 from visualization.privacy import PublicationScope

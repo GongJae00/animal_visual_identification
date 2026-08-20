@@ -128,16 +128,6 @@ class EvidenceObservation:
     def abstain_reason(self) -> EvidenceUnavailableReason | None:
         return self.reason
 
-    @property
-    def roi_box(self) -> tuple[int, int, int, int] | None:
-        value = self.details.get("roi_box")
-        return None if value is None else tuple(value)
-
-    @property
-    def detection_confidence(self) -> float | None:
-        value = self.details.get("detection_confidence")
-        return None if value is None else float(value)
-
 
 class AbstractEvidencer(ABC):
     name: str = "base"
@@ -176,6 +166,3 @@ class AbstractEvidencer(ABC):
             roi_box=selected_roi,
             mapper=self.map_quality,
         )
-
-    def to_dict(self) -> dict[str, Any]:
-        return {"name": self.name, "output_dim": self.output_dim}

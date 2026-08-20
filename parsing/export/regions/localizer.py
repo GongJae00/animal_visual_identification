@@ -96,6 +96,8 @@ class LetterboxTransform:
     @property
     def normalized_content_diagonal(self) -> float:
         return math.hypot(self.resized_width, self.resized_height) / self.target_size
+
+
 def letterbox_image(
     image: Image.Image,
     target_size: int = INPUT_SIZE,
@@ -114,12 +116,16 @@ def letterbox_image(
     canvas = Image.new("RGB", (target_size, target_size), fill)
     canvas.paste(resized, (transform.pad_left, transform.pad_top))
     return canvas, transform
+
+
 def image_to_tensor(image: Image.Image) -> torch.Tensor:
     values = np.asarray(image, dtype=np.float32) / np.float32(255.0)
     mean = np.asarray(IMAGE_MEAN, dtype=np.float32)
     std = np.asarray(IMAGE_STD, dtype=np.float32)
     values = (values - mean) / std
     return torch.from_numpy(np.ascontiguousarray(values.transpose(2, 0, 1)))
+
+
 class MobileNetV4NoseLocalizer(nn.Module):
     """MobileNetV4 Conv Small with an eight-keypoint xy-confidence head."""
 
@@ -138,6 +144,8 @@ class MobileNetV4NoseLocalizer(nn.Module):
             features = features.mean(dim=(2, 3))
         raw = self.head(features).reshape(images.shape[0], len(KEYPOINT_ORDER), 3)
         return torch.sigmoid(raw)
+
+
 def mobilenetv4_feature_dim(backbone: nn.Module) -> int:
     """Return the actual pre-logits width, not timm's map-channel metadata."""
 
@@ -149,6 +157,8 @@ def mobilenetv4_feature_dim(backbone: nn.Module) -> int:
     if not isinstance(feature_dim, int) or feature_dim <= 0:
         raise ValueError("MobileNetV4 pre-logits feature dimension is unavailable")
     return feature_dim
+
+
 def load_mobilenetv4_localizer(weights_path: Path) -> MobileNetV4NoseLocalizer:
     """Load the exact caller-provided timm safetensors with strict key matching."""
 
@@ -168,6 +178,8 @@ def load_mobilenetv4_localizer(weights_path: Path) -> MobileNetV4NoseLocalizer:
     state_dict = load_file(str(path), device="cpu")
     backbone.load_state_dict(state_dict, strict=True)
     return MobileNetV4NoseLocalizer(backbone, mobilenetv4_feature_dim(backbone))
+
+
 class NoseDetectorWrapper(nn.Module):
     """Differentiably convert six NoseID keypoints to one xyxy-confidence box."""
 
@@ -186,12 +198,15 @@ class NoseDetectorWrapper(nn.Module):
         confidence = nose[..., 2].mean(dim=1, keepdim=True)
         detection = torch.cat((minimum.clamp(0.0, 1.0), maximum.clamp(0.0, 1.0), confidence), dim=1)
         return detection.unsqueeze(1)
+
+
 def file_sha256(path: Path) -> str:
     digest = sha256()
     with Path(path).open("rb") as stream:
         for chunk in iter(lambda: stream.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
 
 __all__ = [
     "AP10K_SUPPORTED_INDICES",

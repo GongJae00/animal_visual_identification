@@ -35,7 +35,3 @@ def main() -> None:
         "report_canonical_payload_sha256": receipt.report_canonical_payload_sha256,
         "output_receipt_sha256": receipt.receipt_sha256,
     }, sort_keys=True))
-
-
-if __name__ == "__main__":
-    main()

@@ -30,7 +30,7 @@ import importlib
 import os
 
 modules = (
-    "runtime",
+    "prototype.runtime",
     "faiss",
     "jsonschema",
     "numpy",
@@ -55,6 +55,5 @@ print(f"[ok] selected dependency lane: {lane}")
 if lane == "cuda" and not torch.cuda.is_available():
     raise SystemExit("error: cuda lane selected but torch.cuda.is_available() is false")
 
-# Keep disabled research artifacts visible without presenting an install route.
 print("[ok] SuperAnimal runtime: DISABLED")
 PY

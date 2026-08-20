@@ -145,7 +145,9 @@ class ResearchTaskAssignment:
             in {ResearchTask.SELF_SUPERVISION, ResearchTask.PROVISIONAL_IDENTITY_MINING}
             and "test" in self.source_partition.lower()
         ):
-            raise ValueError("auxiliary SSL and GenID mining must not use a test partition")
+            raise ValueError(
+                "auxiliary SSL and provisional identity mining must not use a test partition"
+            )
 
     def to_dict(self) -> dict[str, Any]:
         return {

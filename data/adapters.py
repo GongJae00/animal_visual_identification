@@ -910,7 +910,6 @@ ADAPTERS = {
     "yt-bb-dog": adapt_yt_bb_dog,
 }
 
-# PetFace is intentionally separate until source provenance is admitted.
 RESEARCH_INTAKE_ADAPTERS = {"petface-dog": adapt_petface_dog}
 
 

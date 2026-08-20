@@ -26,10 +26,6 @@ def main(argv: Sequence[str] | None = None) -> int:
         "three-region",
         help="Export A/F/N evidence from one ROI bundle",
     )
-    sub.add_parser("benchmark-batches", help="Benchmark parser batches")
-    sub.add_parser("benchmark-localizers", help="Benchmark dog detectors")
-    sub.add_parser("unified-manifest", help="Build a unified canid JSONL manifest")
-    sub.add_parser("oracle-crops", help="Export token-only oracle crops")
     if not argv or argv[0] in {"-h", "--help"}:
         parser.print_help()
         return 0
@@ -65,23 +61,6 @@ def main(argv: Sequence[str] | None = None) -> int:
         from parsing.export.regions.three_region_export import main as run_export
 
         return run_export(rest)
-    absorbed = {
-        "benchmark-batches": "archive.full128.evaluation.parsing_batch_benchmark",
-        "benchmark-localizers": "evaluation.localization_benchmark",
-        "unified-manifest": "data.unified_manifest",
-        "oracle-crops": "evaluation.controls.oracle_crop_export",
-    }
-    if command in absorbed:
-        import importlib
-
-        module = importlib.import_module(absorbed[command])
-        previous = sys.argv
-        sys.argv = [previous[0], *rest]
-        try:
-            result = module.main(rest) if command == "unified-manifest" else module.main()
-        finally:
-            sys.argv = previous
-        return 0 if result is None else int(result)
     parser.error(f"unknown command {command}")
     return 2
 

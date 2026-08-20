@@ -1,31 +1,6 @@
-"""Public API for explicit crop-level closed-set retrieval.
+"""Public crop-level closed-set API: IdentityEngine and Match.
 
-The supported public API does not require direct use of internal gallery,
-query/gallery-key scoring, or evidence-extraction modules.
-All configuration lives in a single JSON/ dict.
-
-Usage:
-    from prototype.runtime import IdentityEngine
-
-    engine = IdentityEngine(config={
-        "schema_version": "cvi.retrieval_config.v2",
-        "mode": "closed_set_retrieval",
-        "index_dir": "/var/lib/identity-gallery",
-        "channels": {...},
-        "optional_channels": [],
-    })
-
-    # Enrollment requires the registry-issued UUIDv5, not a display name.
-    # The field is still named dog_id in the public contract.
-    engine.enroll(
-        image,
-        dog_id="877d96de-ba43-542d-9523-5c20213bfc09",
-        breed="beagle",
-    )
-
-    results = engine.search(query_image, top_k=5)
-
-    engine.save()
+Enrollment takes a registry-issued UUIDv5 in the public field ``dog_id``.
 """
 
 from __future__ import annotations
@@ -161,7 +136,7 @@ class IdentityEngine:
         from enrollment.write.writer import EnrollmentWriter
         from gallery.store.gallery import IdentityGallery
         from representation.channels.extraction import EvidenceExtractionPipeline
-        from search.matching.pipeline import IdentityRetrievalPipeline
+        from search.matching.pipeline import SearchPipeline
         from search.scoring.roles import (
             AvailableIntersectionScorer,
             EvidenceChannelSpec,
@@ -226,7 +201,7 @@ class IdentityEngine:
                 "gallery query/gallery-key scorer contract differs from configuration"
             )
         self._writer = EnrollmentWriter(extraction, self._gallery)
-        self._retrieval = IdentityRetrievalPipeline(
+        self._retrieval = SearchPipeline(
             extraction, self._gallery
         )
 

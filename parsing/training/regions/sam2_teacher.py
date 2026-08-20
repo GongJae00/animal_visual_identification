@@ -698,14 +698,11 @@ def load_local_sam2(
         image_predictor = SAM2ImagePredictor(model)
         video_predictor = None
         if enable_video:
-            try:
-                from sam2.build_sam import build_sam2_video_predictor
-            except ImportError:
-                video_predictor = None
-            else:
-                video_predictor = build_sam2_video_predictor(
-                    config_name, str(checkpoint_path), device=device
-                )
+            from sam2.build_sam import build_sam2_video_predictor
+
+            video_predictor = build_sam2_video_predictor(
+                config_name, str(checkpoint_path), device=device
+            )
     except (ImportError, ModuleNotFoundError) as exc:
         raise RuntimeError(
             "validated local SAM2 checkout could not be imported; install its declared dependencies"

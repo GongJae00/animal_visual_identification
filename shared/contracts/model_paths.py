@@ -17,10 +17,6 @@ DATA_DIR = _env_path(
 )
 DATASETS_DIR = _env_path("CANINE_IDENTITY_DATASETS_DIR", DATA_DIR / "datasets")
 CHECKPOINTS_DIR = DATA_DIR / "checkpoints"
-CACHE_DIR = DATA_DIR / "cache"
-RECEIPTS_DIR = DATA_DIR / "receipts"
-
-# Model cache root
 MODELS_DIR = Path(
     os.environ.get(
         "CANINE_IDENTITY_MODELS_DIR",
@@ -28,7 +24,7 @@ MODELS_DIR = Path(
     )
 )
 
-# Dataset path metadata. Automatic acquisition is not admitted.
+# Automatic acquisition is not admitted.
 SUPPORTED_DATASETS: dict[str, dict] = {
     "ap10k-dog": {
         "name": "AP-10K domestic dog subset",
@@ -66,19 +62,6 @@ SUPPORTED_DATASETS: dict[str, dict] = {
         "desc": "External dataset; automatic acquisition is disabled",
     },
 }
-
-
-def dataset_path(name: str) -> Path:
-    if name not in SUPPORTED_DATASETS:
-        raise KeyError(
-            f"Unknown dataset: {name}. Supported: {list(SUPPORTED_DATASETS)}"
-        )
-    return DATASETS_DIR / SUPPORTED_DATASETS[name]["dir"]
-
-
-# Registry cache paths
-IDENTITY_REGISTRY_DB = CACHE_DIR / "registries" / "identity_registry.db"
-BINDING_JSON = CACHE_DIR / "registries" / "binding.json"
 
 # Disabled DogFLW candidate
 DOGFLW_LANDMARK_PATH = MODELS_DIR / "dogflw_landmark_full.tflite"

@@ -108,8 +108,7 @@ def _draw_cosine_distribution(ax: Any, payload: dict[str, Any]) -> None:
     centers = (edges[:-1] + edges[1:]) / 2
     for index, series in enumerate(payload["series"]):
         counts = np.asarray(series["counts"], dtype=float)
-        denominator = counts.sum()
-        density = counts / denominator if denominator else counts
+        density = counts / counts.sum()
         ax.step(
             centers,
             density,

@@ -11,41 +11,11 @@ from evaluation.calibration import (
     InvalidProbabilityError,
 )
 
-# Fixture A: probabilities with known ECE, Brier, NLL
-# p = [0.8, 0.2, 0.7, 0.3], labels = [1, 0, 1, 0]
-# 2 bins: [0,0.5),[0.5,1.0]
-# Bin 0: p=[0.2,0.3], labels=[0,0], acc=0, conf=0.25, diff=0.25
-# Bin 1: p=[0.8,0.7], labels=[1,1], acc=1, conf=0.75, diff=0.25
-# ECE = (2/4)*0.25 + (2/4)*0.25 = 0.25
-# Brier = ((1-0.8)^2 + (0-0.2)^2 + (1-0.7)^2 + (0-0.3)^2)/4
-#       = (0.04+0.04+0.09+0.09)/4 = 0.26/4 = 0.065
-# NLL = -mean(1*log(0.8) + 0*log(0.2) + 1*log(0.7) + 0*log(0.3))
-#     = -(log(0.8)+log(0.7))/4 = -(0.26)/4 with numerical log? Let me compute.
 PROB_A = np.array([0.8, 0.2, 0.7, 0.3], dtype=np.float64)
 LABEL_A = np.array([1, 0, 1, 0], dtype=np.int64)
-# Brier = 0.065, NLL = -mean(log(0.8)+log(0.2 ignored)+log(0.7)+log(0.3 ignored))
-# = -(ln(0.8)+ln(0.7))/4 = -( -0.22314 + -0.35667)/4 = 0.57981/4 ≈ 0.14495
-
-# Hmm wait, let me recompute NLL more carefully:
-# NLL = -1/n * sum(y*log(p) + (1-y)*log(1-p))
-# = -1/4 * (1*ln(0.8) + 0*ln(0.2) + 0*ln(0.2) + 1*ln(0.7) + 0*ln(0.3) + 0*ln(0.3))
-# Wait, labels are [1, 0, 1, 0], so:
-# = -1/4 * (1*ln(0.8) + 0*ln(1-0.8) + 0*ln(0.2) + 1*ln(1-0.2) + 1*ln(0.7) + 0*ln(1-0.7) + 0*ln(0.3) + 1*ln(1-0.3))
-# Hmm no, the formula is for each sample:
-# = -1/4 * sum over i of [y_i * ln(p_i) + (1-y_i) * ln(1-p_i)]
-# sample 0: y=1, p=0.8: 1*ln(0.8) + 0*ln(0.2) = ln(0.8) = -0.22314
-# sample 1: y=0, p=0.2: 0*ln(0.2) + 1*ln(0.8) = ln(0.8) = -0.22314
-# sample 2: y=1, p=0.7: 1*ln(0.7) + 0*ln(0.3) = ln(0.7) = -0.35667
-# sample 3: y=0, p=0.3: 0*ln(0.3) + 1*ln(0.7) = ln(0.7) = -0.35667
-# sum = -0.22314 + -0.22314 + -0.35667 + -0.35667 = -1.15962
-# NLL = -(-1.15962)/4 = 0.289905
-
-# exp_NLL (using scipy): from the script we got 0.2899092476
 EXP_BRIER_A = 0.065
 EXP_NLL_A = 0.2899092476
 EXP_ECE_A_10BIN = 0.25
-
-# with 2 bins (same fixture):
 EXP_ECE_A_2BIN = 0.25
 
 class CalibrationMetricsTest(unittest.TestCase):

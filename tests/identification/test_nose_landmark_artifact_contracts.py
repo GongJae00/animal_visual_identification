@@ -236,7 +236,7 @@ class ExactArtifactContractsTests(unittest.TestCase):
         )
         result = extractor.extract(image)
         self.assertFalse(result.abstained)
-        self.assertEqual(result.roi_box, (0, 10, 100, 90))
+        self.assertEqual(result.details["roi_box"], [0, 10, 100, 90])
         self.assertEqual(result.embedding.shape, (3,))
         self.assertAlmostEqual(float(np.linalg.norm(result.embedding)), 1.0, places=6)
 

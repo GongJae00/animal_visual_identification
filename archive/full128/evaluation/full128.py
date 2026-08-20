@@ -548,7 +548,6 @@ def _evaluate_full128_variant_with_evidence(
     validated_panel = evidence.panel
     root = _new_gallery_root(gallery_root)
 
-    # This is the first operation allowed to request embedding values.
     sample_tokens = validated_panel["required_sample_tokens"]
     packed_matrix = adapter.load_embeddings(sample_tokens)
     _validate_loaded_matrix(packed_matrix, len(sample_tokens))

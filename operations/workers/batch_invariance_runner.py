@@ -518,6 +518,8 @@ def _validate_common_worker_result(
     expected_kind = "DISCOVERY" if discovery else "RECEIPT"
     if payload["kind"] != expected_kind:
         raise ValueError("batch worker result kind differs")
+
+
 def _sha256(value: Any, name: str) -> None:
     if not isinstance(value, str) or len(value) != 64 or any(
         character not in "0123456789abcdef" for character in value

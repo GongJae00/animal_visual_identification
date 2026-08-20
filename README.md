@@ -23,9 +23,9 @@ Linux, Python 3.12, [`uv`](https://docs.astral.sh/uv/). 안내는 [setup/](setup
 Pet-ReID, MiewID 같은 공급업체 이름은 유지합니다. visualization은 파이프라인 밖에서
 관찰하고, prototype은 `export/`만 조합합니다.
 
-현재 구현은 아래 패키지에 있습니다. 대상 트리는 [AGENTS.md](AGENTS.md)입니다.
+패키지는 아래와 같습니다. 대상 트리는 [AGENTS.md](AGENTS.md)입니다.
 
-| 단계 | 현재 패키지 | 역할 |
+| 단계 | 패키지 | 역할 |
 |---|---|---|
 | Parsing | `parsing/` | Frozen detection/segmentation. 배경 shortcut을 줄인 crop/mask. `IdentityEngine`은 호출하지 않음. |
 | Identification | `identification/` | Channel embedding. 현재 E2E 기준은 Appearance. Face/Nose는 연구 후보. |

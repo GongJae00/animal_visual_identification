@@ -91,7 +91,7 @@ Current model behavior:
 | Model selector | Operation status | Current behavior and boundary |
 |---|---|---|
 | `dogflw-landmark` | Disabled | Fails before download because no publisher-authoritative artifact URL, checksum, and redistribution contract are verified |
-| `miewid` | Disabled and unadmitted | Fails before network or model-framework imports because the removed converter did not produce the exact `cvi.miewid_artifact_bundle.v1` runtime manifest or a genuine passing parity receipt |
+| `miewid` | Disabled and unadmitted | Fails before network or model-framework imports; no admitted `cvi.miewid_artifact_bundle.v1` runtime manifest or genuine passing parity receipt |
 | `superanimal` | Disabled | Fails before download because the weights and official-architecture export contract are not approved |
 
 `supported` operations are automatic and included by the default `all`

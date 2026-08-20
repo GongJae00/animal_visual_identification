@@ -9,6 +9,20 @@ contracts remain readable.
 
 ### Compact follow-up
 
+- Renamed `IdentityRetrievalPipeline` to `SearchPipeline`.
+- Parsing CLI no longer dispatches evaluation/archive/data jobs. Those live on
+  `evaluation.commands.evaluate` and `data.commands.audit`.
+- Registry build/bind and split-manifest check moved to
+  `evaluation.commands.evaluate registry-build|registry-bind|split-check`.
+  `enrollment.commands.enroll` only augments labels.
+- Evaluation library modules are no longer `python -m` entrypoints; use
+  `evaluation.commands.evaluate`.
+- Moved pairing-score tests from `tests/search/` to
+  `tests/evaluation/test_pair_scoring.py`.
+- Root `AGENTS.md` is the only agent law. Removed unused example JSON and
+  restating comments. `cvi.*` schema identifiers stay as persisted contracts.
+
+
 - Dataset files resolve from `CANINE_IDENTITY_DATASETS_DIR` when set, otherwise
   `$CANINE_IDENTITY_DATA_DIR/datasets`. Checkpoints, receipts, caches, and
   experiment state stay under `CANINE_IDENTITY_DATA_DIR`.

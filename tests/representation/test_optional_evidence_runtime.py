@@ -25,7 +25,7 @@ from enrollment.registry.identity_registry import compute_registered_dog_id
 from enrollment.write.writer import EnrollmentWriter
 from gallery.store.gallery import IdentityGallery
 from representation.channels.extraction import EvidenceExtractionPipeline
-from search.matching.pipeline import IdentityRetrievalPipeline
+from search.matching.pipeline import SearchPipeline
 from search.scoring.roles import RetrievalQuery
 from gallery.migration.v3_to_v4 import migrate_gallery
 
@@ -385,7 +385,7 @@ class ExactOptionalGalleryTests(unittest.TestCase):
             },
             {"optional"},
         )
-        pipeline = IdentityRetrievalPipeline(evidence, index)
+        pipeline = SearchPipeline(evidence, index)
         writer = EnrollmentWriter(evidence, index)
         image = Image.new("RGB", (2, 2))
         try:

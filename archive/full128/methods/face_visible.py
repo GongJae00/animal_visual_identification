@@ -1646,12 +1646,6 @@ def _require_sha256(value: object, label: str) -> None:
         raise FaceVisibleInventoryError(f"{label} must be lowercase SHA-256")
 
 
-# Explicit long-form alias used by workflow callers and artifact documentation.
-build_metadata_face_eligible_successor_inventory = build_face_visible_successor_inventory
-validate_metadata_face_eligible_successor_inventory_bundle = (
-    validate_face_visible_successor_inventory_bundle
-)
-
 __all__ = [
     "AUTHORITATIVE_PANEL_SCHEMA",
     "BUNDLE_SCHEMA",
@@ -1663,9 +1657,7 @@ __all__ = [
     "build_authoritative_face_visible_panel",
     "build_face_visible_successor_inventory",
     "build_face_visible_successor_inventory_v2",
-    "build_metadata_face_eligible_successor_inventory",
     "build_score_blind_face_visible_panel",
     "validate_face_visible_successor_inventory_bundle",
-    "validate_metadata_face_eligible_successor_inventory_bundle",
     "validate_score_blind_face_visible_panel",
 ]

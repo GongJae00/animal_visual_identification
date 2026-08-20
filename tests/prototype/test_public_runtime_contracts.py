@@ -36,7 +36,7 @@ from enrollment.registry.identity_registry import compute_registered_dog_id
 from enrollment.write.writer import EnrollmentWriter
 from gallery.store.gallery import IdentityGallery
 from representation.channels.extraction import EvidenceExtractionPipeline
-from search.matching.pipeline import IdentityRetrievalPipeline
+from search.matching.pipeline import SearchPipeline
 
 class _FixedEvidencer(AbstractEvidencer):
     name = "fixed"
@@ -649,7 +649,7 @@ class SearchContractTests(unittest.TestCase):
             def search(query, top_k):
                 return [(0, 0.75, metadata)]
 
-        pipeline = IdentityRetrievalPipeline(
+        pipeline = SearchPipeline(
             EvidenceExtractionPipeline(
                 {"appearance": _FixedEvidencer(np.array([1.0, 0.0]))}
             ),
@@ -682,7 +682,7 @@ class SearchContractTests(unittest.TestCase):
                 name: _FixedEvidencer(embedding)
                 for name, embedding in query.items()
             })
-            pipeline = IdentityRetrievalPipeline(extraction, index)
+            pipeline = SearchPipeline(extraction, index)
             index.enroll(candidate, _dog_id("fusion-order"))
             result = pipeline.search(Image.new("RGB", (4, 4)), top_k=1)[0]
             self.assertAlmostEqual(result.evidence["a"], 1.0)
@@ -698,7 +698,7 @@ class SearchContractTests(unittest.TestCase):
             evidence = EvidenceExtractionPipeline({
                 "appearance": _FixedEvidencer(np.array([1.0, 0.0]))
             })
-            pipeline = IdentityRetrievalPipeline(evidence, index)
+            pipeline = SearchPipeline(evidence, index)
             writer = EnrollmentWriter(evidence, index)
             dog_id = _dog_id("same-embedding")
             writer.enroll(Image.new("RGB", (2, 2), "black"), dog_id)

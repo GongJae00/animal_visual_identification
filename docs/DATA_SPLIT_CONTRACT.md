@@ -63,7 +63,7 @@ scores are observed.
 ## Validation
 
 ```bash
-uv run python -m enrollment.commands.enroll check \
+uv run python -m evaluation.commands.evaluate split-check \
   /protected/manifests/split.json
 ```
 

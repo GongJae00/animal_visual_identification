@@ -424,9 +424,12 @@ _FLOPS_BY_MODEL: dict[str, int] = {
 
 
 def estimate_flops(config: TrainConfig, num_samples: int) -> dict[str, Any]:
-    flops_per_sample = _FLOPS_BY_MODEL.get(
-        config.model_name, 4_600_000_000
-    )
+    try:
+        flops_per_sample = _FLOPS_BY_MODEL[config.model_name]
+    except KeyError as exc:
+        raise ValueError(
+            f"unsupported backbone for FLOP estimate: {config.model_name}"
+        ) from exc
     steps_per_epoch = math.ceil(num_samples / config.batch_size)
     flops_per_step = config.batch_size * flops_per_sample * 3
     total_flops = flops_per_step * steps_per_epoch * config.epochs

@@ -392,7 +392,9 @@ def test_cli_writes_manifest_and_requested_views_without_overwrite() -> None:
         cycle_path.write_text(json.dumps(cycle.to_dict()), encoding="utf-8")
         command = [
             sys.executable,
-            "evaluation/splits/research/build_kfold.py",
+            "-m",
+            "evaluation.commands.evaluate",
+            "identity-kfold",
             "--protocol-name",
             "unified-afn-five-fold-v1",
             "--research-cycle",

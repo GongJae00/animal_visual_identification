@@ -1,9 +1,0 @@
-{
-  "schema_version": "cvi.control_score_policy.v1",
-  "maximum_requests": 1000000,
-  "maximum_scalar_products": 1000000000,
-  "maximum_embedding_bytes_read": 8589934592,
-  "dot_chunk_floats": 4096,
-  "metric": "cosine_l2_dot",
-  "accumulation": "float64_chunk_fsum_neumaier"
-}

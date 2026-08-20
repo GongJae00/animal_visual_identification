@@ -38,10 +38,6 @@ class QualityReason(str, Enum):
     INVALID_MAPPING_RESULT = "INVALID_MAPPING_RESULT"
 
 
-# Descriptive alias for callers that name enums by their serialized role.
-QualityReasonCode = QualityReason
-
-
 @dataclass(frozen=True, slots=True)
 class QualityLimits:
     min_dimension: int = 3
@@ -142,10 +138,6 @@ class QualityObservation:
         QualityMapping(self.state, self.reason_codes, self.score)
         if self.state is not QualityState.UNAVAILABLE and self.diagnostics is None:
             raise ValueError("available quality requires diagnostics")
-
-    @property
-    def available(self) -> bool:
-        return self.state is not QualityState.UNAVAILABLE
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -321,22 +313,5 @@ def observe_quality(
     )
 
 
-def estimate_sharpness(image: Image.Image) -> float:
-    return _quality_diagnostics(image).sharpness
-
-
 def estimate_blur(image: Image.Image) -> float:
-    return float(np.clip(estimate_sharpness(image) / 100.0, 0.0, 1.0))
-
-
-def overall_quality(image: Image.Image) -> float:
-    diagnostics = _quality_diagnostics(image)
-    sharpness = float(np.clip(diagnostics.sharpness / 100.0, 0.0, 1.0))
-    brightness = diagnostics.brightness / 255.0
-    contrast = diagnostics.contrast / 128.0
-    score = (
-        0.5 * sharpness
-        + 0.25 * (1.0 - abs(brightness - 0.5) * 2)
-        + 0.25 * min(contrast, 1.0)
-    )
-    return float(np.clip(score, 0.0, 1.0))
+    return float(np.clip(_quality_diagnostics(image).sharpness / 100.0, 0.0, 1.0))

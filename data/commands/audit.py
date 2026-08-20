@@ -20,6 +20,7 @@ _ABSORBED = {
     "pretrained-weight": "shared.contracts.intake.audit_pretrained_weight",
     "pretrained-asset": "shared.contracts.intake.audit_pretrained_supporting_asset",
     "pdq-intake": "data.audit.pdq.intake_threatexchange",
+    "unified-manifest": "data.unified_manifest",
 }
 
 
@@ -40,6 +41,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         ("pretrained-weight", "Audit pretrained weight bytes"),
         ("pretrained-asset", "Audit pretrained supporting JSON"),
         ("pdq-intake", "Publish an audited PDQ source subset"),
+        ("unified-manifest", "Build a unified canid JSONL manifest"),
     ):
         sub.add_parser(name, help=help_text)
     if not argv or argv[0] in {"-h", "--help"}:

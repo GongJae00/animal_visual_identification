@@ -1,7 +1,4 @@
-"""End-to-end integration test: registry → binding → evaluation.
-
-Uses synthetic data to exercise every layer without real archives or GPU.
-"""
+"""Synthetic registry-to-binding checks (not IdentityEngine product E2E)."""
 
 from __future__ import annotations
 
@@ -30,10 +27,7 @@ from evaluation.splits.split_registry_binding import (
 def _make_fake_source_bundle(
     identities: list[tuple[str, str, str]],
 ) -> dict:
-    """Build a minimal PublicSplitSourceBundle payload.
-
-    Each identity: (dataset_name, identity_label, sample_count)
-    """
+    """Minimal PublicSplitSourceBundle: (dataset_name, identity_label, sample_count)."""
     samples: list[dict] = []
     for dsn, label, count in identities:
         did = f"{dsn}:v1:{label}"
@@ -66,10 +60,7 @@ def _make_fake_source_bundle(
 def _make_fake_assignment(
     identities: list[tuple[str, str, str, str, str, int]],
 ) -> dict:
-    """Build a minimal assignment payload.
-
-    Each: (dataset_name, identity_label, identity_role, model_access, sample_disposition, sample_count)
-    """
+    """Minimal assignment: (dataset, label, role, access, disposition, count)."""
     records: list[dict] = []
     for dsn, label, role, access, disp, count in identities:
         did = f"{dsn}:v1:{label}"
@@ -213,7 +204,7 @@ def _build_binding(assignment: dict, db_path: Path) -> SplitRegistryBinding:
     )
 
 class EndToEndPipelineTest(unittest.TestCase):
-    """Synthetic end-to-end test from registry → binding."""
+    """Synthetic registry-to-binding checks."""
 
     def setUp(self) -> None:
         self._tmpdir = Path(tempfile.mkdtemp(prefix="cvi_e2e_"))
@@ -422,7 +413,7 @@ class EndToEndPipelineTest(unittest.TestCase):
         )
 
 class RegistryAugmentationTest(unittest.TestCase):
-    """Test the augment_labels_with_registry tool logic."""
+    """Registered-dog-id label augmentation."""
 
     def test_augment_labels(self) -> None:
         from enrollment.registry.identity_registry import compute_registered_dog_id as _crid

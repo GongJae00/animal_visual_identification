@@ -394,7 +394,6 @@ class _CoverageBucket:
 
 
 class CoverageAccumulator:
-    """Chronological fixed-memory accumulator."""
 
     __slots__ = (
         "_active_run_duration_ns",

@@ -14,7 +14,9 @@ from prototype.runtime import IdentityEngine, Match
 
 Behavior stays: caller-provided crops, fail-closed required evidence, explicit optional evidence, local gallery, availability-aware weighted cosine (not attention), identity-level max template with deterministic ordering.
 
-Do not add performance, deployment, dataset-size, or model-license claims without reproducible evidence and an attributable source. Unit and synthetic tests are not biometric validation.
+`evaluation.open_set` and `evaluation.open_set_calibration` are research protocols, not `IdentityEngine` capabilities. Fitting, threshold, and policy selection stay off evaluation identities.
+
+Do not add performance, deployment, dataset-size, or model-license claims without reproducible evidence and an attributable source. Unit and synthetic tests are not biometric validation. Public API, gallery, and failure-behavior changes require contract and wheel-installed tests.
 
 ## Frozen Contracts
 
@@ -109,6 +111,30 @@ No `workflows/`, `utils/`, `misc/`, `helpers/`, or `common/` dumps.
 6. Do not add Java-style getters/setters. Public surfaces are explicit exports and dataclasses.
 7. Prefer deleting unused code over wrapping it. Delete only when the module has no import, no test, and no current doc/CHANGELOG command.
 8. Each stage `__init__.py`: 5–15 lines, public types only.
+9. Root `AGENTS.md` is the only agent law. Do not add per-package `AGENTS.md`.
+
+## Clean Replacement
+
+Edits replace dirty code in place. Do not reintroduce agent residue, and do not wrap unused code to keep it for later. New work must read as if the previous full-repo cleanup already happened.
+
+Dirty — delete on evidence, and refuse to add:
+
+- Comments or doc lines that narrate the next statement, restate a name, or use `TODO` / `NOTE` / `FIXME` / `IMPORTANT` banners
+- Live comments that treat GenID or ReID as pipeline stages. Vendor names (`Pet-ReID`, MiewID) and historical CHANGELOG entries may keep ReID
+- Unused helpers, wrappers, example configs not loaded by a current command or test, and modules with no command, test, receipt, or `IdentityEngine` owner
+- Silent `except Exception`, default-on-failure, and sentinel placeholders (`__GIT_FAILED__`, `UNVERIFIED` written as success)
+- Fat `__init__.py` implementations, dump folders (`utils/`, `misc/`, `helpers/`, `common/`, `workflows/`), leftover compatibility shims after a move
+- New knobs, retries, fallbacks, or optional paths for hypothetical callers
+- New `docs/*.md`, per-package `AGENTS.md`, or a README that restates the package
+- Performance, deployment, dataset-size, or license claims without a cited reproducible source
+
+Keep, after classifying the site:
+
+- Cleanup-and-re-raise, `raise X from exc`, fail-closed mapping to `QualityReason`, and destructor swallows
+- Comments that record a non-obvious constraint: schema identifier, fail-closed rule, provenance, or filesystem semantics (including DrvFS `renameat2` fallback — that is not leftover native-disk optimization)
+- Archive families as completed comparisons, not as live features
+
+When touching a file: read implementation, tests, and persisted schemas first. Classify every broad `except` before changing it. Delete only with evidence (no import, no test, no current command, no receipt entrypoint). Same-commit import and test updates. No shim at the end of a wave. New code exists only when a current command, test, or `IdentityEngine` path needs it.
 
 ## Invariants
 
@@ -116,7 +142,7 @@ No `workflows/`, `utils/`, `misc/`, `helpers/`, or `common/` dumps.
 2. Evaluation and training partitions must be identity-disjoint where the protocol requires it; random frame splitting is not an acceptable shortcut.
 3. Required evidence fails closed. Optional evidence is explicit in config v2 and remains auditable in gallery state.
 4. Model, preprocessing, gallery, source, and receipt schemas remain versioned and content-bound. Persisted `cvi.*` identifiers are compatibility contracts, not Python package names.
-5. External datasets, weights, caches, galleries, and experiment outputs stay outside Git.
+5. External datasets, weights, caches, galleries, and experiment outputs stay outside Git. Acquisition is not admission: download and extraction fail closed, reject traversal and ambiguous archives, and never imply a dataset is admitted.
 6. CUDA behavior is optional and guarded. Portable CPU behavior must not import CUDA-only dependencies at package import time.
 7. Never commit secrets, private animal or owner data, credentials, or licensed artifacts.
 8. Respect the dependency direction enforced by `tests/test_dependency_boundaries.py`; algorithms must not depend on evaluation or operations. Update that test in the same wave a package split lands. Tests live under `tests/<stage>/`; archive families live under `tests/archive/<family>/`.

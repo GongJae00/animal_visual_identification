@@ -693,7 +693,7 @@ class EvidenceModelContractTests(unittest.TestCase):
         ).read_text()
         self.assertIn("SuperAnimal runtime: DISABLED", script)
         self.assertNotIn("--model superanimal", script)
-        self.assertIn('"runtime",', script)
+        self.assertIn('"prototype.runtime",', script)
         self.assertNotIn('"cvi",', script)
         downloader = (
             REPO_ROOT / "data" / "download_models.py"

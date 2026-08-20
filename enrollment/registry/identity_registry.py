@@ -1,17 +1,8 @@
-"""Deterministic identity registry mapping public dataset labels to registered dog IDs.
+"""Deterministic identity registry: dataset labels to registered UUIDv5 dog IDs.
 
-A registered dog ID is a UUIDv5 deterministically derived from a
-dataset-identity label. It is a stable identifier, not an anonymity or privacy
-boundary.
-
-Namespace isolation
-  REGISTERED_DOG_NAMESPACE = uuid5(DNS, "cvi.registered_dog.v1")
-  registered_dog_id = uuid5(NAMESPACE, dataset_identity_id)
-
-The registry persists both the identity_token (opaque SHA256 used in the
-split infrastructure) and the registered_dog_id so that the protected
-split can be bound to registered IDs without passing source labels to model or
-evaluator code.
+REGISTERED_DOG_NAMESPACE = uuid5(DNS, "cvi.registered_dog.v1").
+registered_dog_id = uuid5(NAMESPACE, dataset_identity_id).
+The ID is a stable identifier, not an anonymity boundary.
 """
 
 from __future__ import annotations
@@ -26,10 +17,10 @@ from typing import Any
 from shared.contracts.identity_ids import (
     REGISTERED_DOG_NAMESPACE,
     compute_identity_token,
-    compute_public_subject_token as compute_public_subject_token,
+    compute_public_subject_token,
     compute_registered_dog_id,
-    compute_sample_token as compute_sample_token,
-    compute_sequence_token as compute_sequence_token,
+    compute_sample_token,
+    compute_sequence_token,
     extract_dataset_name,
 )
 
@@ -118,7 +109,7 @@ class IdentityRegistry:
 
     def __post_init__(self) -> None:
         if self.schema_version != _SCHEMA_VERSION:
-            raise ValueError(f"unsupported identity registry schema")
+            raise ValueError("unsupported identity registry schema")
         seen_tokens: set[str] = set()
         seen_ids: set[str] = set()
         for rec in self.records:
@@ -212,15 +203,13 @@ def register_records(
     db_path: Path,
     dataset_identity_ids: list[str],
 ) -> dict[str, str]:
-    """Register many dataset_identity_ids and return {identity_token: registered_dog_id}.
-
-    Caller should pass each distinct identity ID once.  Duplicates within one
-    call are deduplicated transparently; each unique ID is inserted once with
-    an image_count of 1, and the ON CONFLICT clause increments the count on
-    subsequent calls for the same identity_token.
-    """
+    """Register dataset_identity_ids; return {identity_token: registered_dog_id}."""
     seen: set[str] = set()
-    unique_ids = [did for did in dataset_identity_ids if did not in seen and not seen.add(did)]
+    unique_ids: list[str] = []
+    for did in dataset_identity_ids:
+        if did not in seen:
+            seen.add(did)
+            unique_ids.append(did)
     now = datetime.now(timezone.utc).isoformat()
     conn = sqlite3.connect(str(db_path))
     mapping: dict[str, str] = {}

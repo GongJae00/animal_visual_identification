@@ -381,7 +381,9 @@ def test_source_checkout_cli_builds_content_bound_manifest() -> None:
             paths[name].write_text(json.dumps(payload), encoding="utf-8")
         command = [
             sys.executable,
-            "evaluation/splits/research/build_research_cycle_manifest.py",
+            "-m",
+            "evaluation.commands.evaluate",
+            "research-cycle",
             "--cycle-name",
             "fixture-cycle-2026",
             "--source-bundle",

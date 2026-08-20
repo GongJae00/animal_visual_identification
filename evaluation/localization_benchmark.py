@@ -193,7 +193,3 @@ def main() -> None:
     )
     (args.output_dir / "summary.json").write_text(json.dumps(report, indent=2))
     print(json.dumps(report, indent=2))
-
-
-if __name__ == "__main__":
-    main()

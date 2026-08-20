@@ -50,8 +50,14 @@ def adapt_master_results_table(
             continue
         lower = row.get("lower_bound")
         upper = row.get("upper_bound")
-        lower = estimate if lower is None else lower
-        upper = estimate if upper is None else upper
+        if lower is None:
+            lower = estimate
+        if upper is None:
+            upper = estimate
+        if isinstance(lower, bool) or not isinstance(lower, (int, float)):
+            raise FigureContractError("master results lower_bound must be numeric")
+        if isinstance(upper, bool) or not isinstance(upper, (int, float)):
+            raise FigureContractError("master results upper_bound must be numeric")
         label_parts = [
             row.get("metric_name"),
             row.get("region"),

@@ -11,7 +11,7 @@ class PublicSplitEvidenceGraphToolTests(unittest.TestCase):
     def test_adjudication_and_graph_cli_help(self) -> None:
         for command, expected in (
             (
-                [sys.executable, str(ROOT / "evaluation" / "splits" / "adjudicate_public_duplicates.py"), "--help"],
+                [sys.executable, "-m", "data.commands.audit", "duplicates", "--help"],
                 "{exact,chunk,source-generation,merge,review-queue}",
             ),
             (
@@ -19,7 +19,7 @@ class PublicSplitEvidenceGraphToolTests(unittest.TestCase):
                 "--split-policy",
             ),
             (
-                [sys.executable, str(ROOT / "evaluation" / "splits" / "assemble_public_split_evidence_graph.py"), "--help"],
+                [sys.executable, "-m", "data.commands.audit", "evidence-graph", "--help"],
                 "--adjudication-ledger",
             ),
         ):

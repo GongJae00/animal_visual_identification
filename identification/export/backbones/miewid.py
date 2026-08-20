@@ -265,10 +265,11 @@ class MiewIDReIDExtractor(AbstractEvidencer):
             onnx_path, maximum_bytes=_MAXIMUM_ONNX_BYTES, label="MiewID ONNX"
         )
         import onnx
+        from google.protobuf.message import DecodeError, Error as ProtobufError
 
         try:
             model = onnx.load_model_from_string(model_bytes)
-        except Exception as exc:
+        except (DecodeError, ProtobufError) as exc:
             raise MiewIDModelContractError("MiewID ONNX protobuf is invalid") from exc
         _reject_external_data(model.graph, onnx)
         if sha256(model_bytes).hexdigest() != manifest.onnx_sha256:
@@ -296,7 +297,7 @@ class MiewIDReIDExtractor(AbstractEvidencer):
             ) from exc
         try:
             onnx.checker.check_model(model)
-        except Exception as exc:
+        except onnx.checker.ValidationError as exc:
             raise MiewIDModelContractError(
                 "MiewID ONNX failed graph validation"
             ) from exc

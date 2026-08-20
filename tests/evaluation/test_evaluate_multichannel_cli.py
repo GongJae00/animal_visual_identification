@@ -1,4 +1,4 @@
-"""E2E CLI smoke tests for evaluate_multichannel.py (G1 gate)."""
+"""CLI smoke tests for evaluation.commands.evaluate."""
 
 import json
 import subprocess
@@ -36,7 +36,6 @@ class EvaluateMultichannelCliTest(unittest.TestCase):
     def _path(self, *parts):
         return Path(self.td, *parts)
 
-    # ---- Help ----
     def test_help_exits_zero(self):
         result = _run("--help", check=False)
         self.assertEqual(result.returncode, 0)
@@ -53,7 +52,6 @@ class EvaluateMultichannelCliTest(unittest.TestCase):
         result = _run("open-set", "--help", check=False)
         self.assertEqual(result.returncode, 0)
 
-    # ---- Positive retrieval (open-set mode) ----
     def test_retrieval_happy_path(self):
         out = self._path("report.json")
         gal = self._path("gal.json")
@@ -85,7 +83,6 @@ class EvaluateMultichannelCliTest(unittest.TestCase):
         report = json.loads(out.read_text())
         self.assertIn("Rank-1", report)
 
-    # ---- Retrieval: self-match with sample IDs ----
     def test_retrieval_self_match_excluded(self):
         out = self._path("report.json")
         gal = self._path("gal.json")
@@ -119,7 +116,6 @@ class EvaluateMultichannelCliTest(unittest.TestCase):
         self.assertIn("self_match_excluded", report)
         self.assertTrue(report["self_match_excluded"])
 
-    # ---- Retrieval: missing sample IDs with --no-self-match ----
     def test_retrieval_no_self_match_missing_sample_ids(self):
         out = self._path("report.json")
         gal = self._path("gal.json")
@@ -191,7 +187,6 @@ class EvaluateMultichannelCliTest(unittest.TestCase):
         self.assertFalse(report["valid_for_model_selection"])
         self.assertFalse(report["valid_for_final_reporting"])
 
-    # ---- Positive open-set ----
     def test_open_set_happy_path(self):
         out = self._path("report.json")
         gal = self._path("gal.json")
@@ -240,7 +235,6 @@ class EvaluateMultichannelCliTest(unittest.TestCase):
         self.assertIn("known_detection_AUROC", report)
         self.assertIn("per_target", report)
 
-    # ---- Open-set: without unknowns raises ----
     def test_open_set_no_unknowns_raises(self):
         out = self._path("report.json")
         gal = self._path("gal.json")
@@ -289,7 +283,6 @@ class EvaluateMultichannelCliTest(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("unknown", result.stdout + result.stderr)
 
-    # ---- Provenance checks via retrieval ----
     def test_provenance_has_git_info(self):
         out = self._path("report.json")
         gal = self._path("gal.json")
@@ -310,7 +303,6 @@ class EvaluateMultichannelCliTest(unittest.TestCase):
         self.assertIn("dirty_state", prov)
         self.assertIn("python_version", prov)
 
-    # ---- Schema version via retrieval ----
     def test_schema_version_in_report(self):
         out = self._path("report.json")
         gal = self._path("gal.json")
@@ -331,7 +323,6 @@ class EvaluateMultichannelCliTest(unittest.TestCase):
             "cvi.evaluation.report.v2",
         )
 
-    # ---- Bootstrap CIs in retrieval ----
     def test_retrieval_bootstrap_ci_present(self):
         out = self._path("report.json")
         gal = self._path("gal.json")

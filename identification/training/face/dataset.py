@@ -1,4 +1,4 @@
-"""Face ReID dataset — loads DogFaceNet 224 crops with provenance."""
+"""Face encoder dataset — loads DogFaceNet 224 crops with provenance."""
 
 from __future__ import annotations
 
