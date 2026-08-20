@@ -6,26 +6,26 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
-
+from tests.repo_root import REPO_ROOT
 
 class OptionalImportSurfaceTests(unittest.TestCase):
     def test_evidence_import_does_not_load_optional_runtime_modules(self) -> None:
         script = """
 import sys
-import embedding.evidence as evidence
+import representation.evidence as evidence
 
 forbidden = {
-    'embedding.evidence.calibrator',
-    'embedding.evidence.oof_simplex',
-    'embedding.methods.appearance',
-    'embedding.methods.landmark',
-    'embedding.methods.backbones.miewid',
-    'embedding.methods.nose.extractor',
-    'embedding.methods.nose.data.dataset',
-    'embedding.methods.nose.signal.frequency',
-    'embedding.methods.nose.training.losses',
-    'embedding.methods.nose.modeling.model',
-    'embedding.methods.nose.training.trainer',
+    'representation.evidence.calibrator',
+    'representation.evidence.oof_simplex',
+    'identification.export.appearance',
+    'identification.export.landmark',
+    'identification.export.backbones.miewid',
+    'identification.export.nose.extractor',
+    'identification.export.nose.data.dataset',
+    'identification.export.nose.signal.frequency',
+    'identification.training.nose.losses',
+    'identification.export.nose.modeling.model',
+    'identification.training.nose.trainer',
     'torch',
     'transformers',
 }
@@ -40,10 +40,10 @@ if evidence.__all__ != [
     'EvidenceUnavailableReason',
     'RequiredEvidenceUnavailableError',
 ]:
-    raise SystemExit(f'unexpected embedding.evidence exports: {evidence.__all__}')
+    raise SystemExit(f'unexpected representation.evidence exports: {evidence.__all__}')
 """
         environment = os.environ.copy()
-        source = str(Path(__file__).resolve().parents[1])
+        source = str(REPO_ROOT)
         environment["PYTHONPATH"] = os.pathsep.join(
             part for part in (source, environment.get("PYTHONPATH", "")) if part
         )
@@ -62,8 +62,9 @@ import sys
 
 original_import = builtins.__import__
 blocked_roots = {
-    'embedding.methods',
-    'embedding.learning',
+    'identification.export',
+    'identification.training',
+    'archive.full128',
     'torch',
     'torchvision',
     'transformers',
@@ -77,7 +78,7 @@ def guarded_import(name, *args, **kwargs):
 builtins.__import__ = guarded_import
 
 import visualization.successor_family as successor_family
-from foundation.provenance import content_sha256
+from shared.foundation.provenance import content_sha256
 
 validator = successor_family.validate_public_successor_evaluation_report
 if validator.__module__ != 'evaluation.full128_successor_reporting':
@@ -154,7 +155,7 @@ report = {
 }
 if validator(report) != report:
     raise SystemExit('public successor report validation changed the report')
-if 'evaluation.full_segment.full128_successors' in sys.modules:
+if 'archive.full128.evaluation.full128_successors' in sys.modules:
     raise SystemExit('visualization loaded the heavyweight successor evaluator')
 loaded = sorted(
     name
@@ -165,7 +166,7 @@ if loaded:
     raise SystemExit(f'blocked optional modules loaded: {loaded}')
 """
         environment = os.environ.copy()
-        source = str(Path(__file__).resolve().parents[1])
+        source = str(REPO_ROOT)
         environment["PYTHONPATH"] = os.pathsep.join(
             part for part in (source, environment.get("PYTHONPATH", "")) if part
         )
@@ -175,11 +176,10 @@ if loaded:
             env=environment,
         )
 
-
 class ModelPathTests(unittest.TestCase):
     def test_dogflw_download_is_disabled_without_an_authoritative_hash(self) -> None:
-        from contracts.model_paths import DOGFLW_LANDMARK_MD5
-        from workflows.download_models import download_model
+        from shared.contracts.model_paths import DOGFLW_LANDMARK_MD5
+        from data.download_models import download_model
 
         self.assertIsNone(DOGFLW_LANDMARK_MD5)
         with self.assertRaisesRegex(RuntimeError, "DogFLW download is disabled"):
@@ -190,7 +190,7 @@ class ModelPathTests(unittest.TestCase):
             target = Path(directory) / "models"
             environment = os.environ.copy()
             environment["CANINE_IDENTITY_MODELS_DIR"] = str(target)
-            source = str(Path(__file__).resolve().parents[1])
+            source = str(REPO_ROOT)
             environment["PYTHONPATH"] = os.pathsep.join(
                 part for part in (source, environment.get("PYTHONPATH", "")) if part
             )
@@ -199,7 +199,7 @@ class ModelPathTests(unittest.TestCase):
                     sys.executable,
                     "-c",
                     (
-                        "import contracts.model_paths; "
+                        "import shared.contracts.model_paths; "
                         "from pathlib import Path; "
                         f"assert not Path({str(target)!r}).exists()"
                     ),
@@ -207,7 +207,6 @@ class ModelPathTests(unittest.TestCase):
                 check=True,
                 env=environment,
             )
-
 
 if __name__ == "__main__":
     unittest.main()

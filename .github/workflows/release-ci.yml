@@ -45,17 +45,17 @@ jobs:
 
       - name: Run portable test suite
         run: |
-          uv run --no-sync pytest tests/test_full128_training.py
+          uv run --no-sync pytest tests/archive/full128/test_full128_training.py
           uv run --no-sync pytest -m "not controlled_host" \
-            --ignore=tests/test_full128_training.py
+            --ignore=tests/archive/full128/test_full128_training.py
 
       - name: Check source diff and compile Python
         run: |
           git diff --check
           uv run --no-sync python -m compileall -q \
-            runtime contracts data evaluation \
-            embedding foundation identity legacy \
-            parsing retrieval systems visualization workflows
+            prototype shared data evaluation \
+            identification representation archive enrollment gallery search \
+            parsing operations visualization
 
       - name: Build distributions
         run: uv build --out-dir dist
@@ -72,48 +72,87 @@ jobs:
           with zipfile.ZipFile(wheel_path) as wheel:
               names = set(wheel.namelist())
           assert any(name.endswith(".dist-info/licenses/LICENSE") for name in names)
-          assert "contracts/schemas/cvi.evaluation.report.v3.schema.json" in names
-          assert "contracts/intake/pretrained_weight_intake.py" in names
-          assert "contracts/pdq.py" in names
-          assert "contracts/pretrained_weight_intake.py" not in names
+          assert "shared/__init__.py" in names
+          assert "shared/foundation/__init__.py" in names
+          assert "shared/contracts/schemas/cvi.evaluation.report.v3.schema.json" in names
+          assert "shared/contracts/intake/pretrained_weight_intake.py" in names
+          assert "shared/contracts/pdq.py" in names
+          assert "shared/contracts/pretrained_weight_intake.py" not in names
           assert not any(name.startswith("artifact_contracts/") for name in names)
+          assert not any(name.startswith("foundation/") for name in names)
+          assert not any(name.startswith("contracts/") for name in names)
           assert "data/__init__.py" in names
           assert "data/configs/crop_export_policy.example.json" in names
-          assert "data/public/public_dataset.py" in names
+          assert "data/public_sources/public_dataset.py" in names
           assert "data/full_segment/route_plan.py" in names
           assert "data/dataset.py" not in names
           assert "data/decode.py" not in names
           assert not any(name.startswith("data_pipeline/") for name in names)
-          assert "retrieval/__init__.py" in names
+          assert "enrollment/__init__.py" in names
+          assert "gallery/__init__.py" in names
+          assert "search/__init__.py" in names
+          assert "search/scoring/roles.py" in names
+          assert not any(name.startswith("identity/") for name in names)
+          assert not any(name.startswith("retrieval/") for name in names)
           assert not any(name.startswith("identity_retrieval/") for name in names)
           assert "parsing/__init__.py" in names
+          assert "parsing/export/detection/detection.py" in names
+          assert "parsing/export/segmentation/animal_parsing.py" in names
+          assert "parsing/commands/parse.py" in names
+          assert "parsing/detection.py" not in names
           assert "parsing/landmark_graph.py" not in names
           assert "parsing/benchmark.py" not in names
           assert "parsing/fold_protocol.py" not in names
+          assert not any(name.startswith("parsing/full_segment/") for name in names)
+          assert not any(name.startswith("parsing/nose_region/") for name in names)
           assert not any(name.startswith("localization/") for name in names)
-          assert "embedding/methods/landmark.py" in names
-          assert "embedding/methods/full_segment/preparation/route_plan.py" not in names
-          assert "embedding/methods/nose/data/embedding_views.py" in names
-          assert "embedding/methods/nose/training/embedding_consistency_training.py" in names
-          assert "embedding/evidence/__init__.py" in names
+          assert "identification/export/landmark.py" in names
+          assert "identification/export/appearance/evidencer.py" in names
+          assert "representation/channels/extraction.py" in names
+          assert "archive/full128/methods/__init__.py" in names
+          assert "data/audit/pdq/native.py" in names
+          assert "archive/full128/methods/preparation/route_plan.py" not in names
+          assert "identification/export/nose/data/embedding_views.py" in names
+          assert "identification/training/nose/embedding_consistency_training.py" in names
+          assert "representation/evidence/__init__.py" in names
+          assert not any(name.startswith("embedding/") for name in names)
           assert not any(name.startswith("identity_methods/") for name in names)
           assert not any(name.startswith("representation_learning/") for name in names)
           assert not any(name.startswith("evidence_fusion/") for name in names)
-          assert "identity/registry/identity_registry.py" in names
-          assert "identity/splits/protected_public_split.py" in names
-          assert "identity/splits/tracklet_split.py" in names
-          assert "identity/splits/public_duplicate_adjudication.py" in names
+          assert "enrollment/registry/identity_registry.py" in names
+          assert "evaluation/splits/protected_public_split.py" in names
+          assert "evaluation/splits/tracklet_split.py" in names
+          assert "evaluation/splits/public_duplicate_adjudication.py" in names
           assert not any(name.startswith("identity_governance/") for name in names)
-          assert "systems/inference/onnx_backend.py" in names
-          assert "systems/workers/embedding_production_runner.py" in names
-          assert "systems/measurement/capacity.py" in names
-          assert "systems/measurement/decode.py" in names
-          assert "systems/configs/onnx_cpu_backend.example.json" in names
-          assert not any(name.startswith("operations/") for name in names)
+          assert "prototype/runtime/__init__.py" in names
+          assert "prototype/runtime/engine.py" in names
+          assert "prototype/export/onnx_backend.py" in names
+          assert "operations/workers/embedding_production_runner.py" in names
+          assert "operations/measurement/capacity.py" in names
+          assert "operations/video/decode.py" in names
+          assert "prototype/export/configs/onnx_cpu_backend.example.json" in names
+          assert not any(name.startswith("runtime/") for name in names)
+          assert not any(name.startswith("systems/") for name in names)
           assert "visualization/__init__.py" in names
           assert not any(name.startswith("vis/") for name in names)
           assert "evaluation/localization.py" in names
           assert "evaluation/localization_kfold.py" in names
+          assert "evaluation/search_metrics/metrics.py" in names
+          assert "evaluation/verification/__init__.py" in names
+          assert "evaluation/verification/metrics.py" in names
+          assert "evaluation/commands/evaluate.py" in names
+          assert "evaluation/verification.py" not in names
+          assert "data/public/public_dataset.py" not in names
+          assert "identification/commands/onnx.py" not in names
+          assert "archive/appearance_face_nose/__init__.py" in names
+          assert "visualization/commands/render.py" in names
+          assert "visualization/parsing/__init__.py" in names
+          assert "data/commands/download.py" in names
+          assert "data/commands/audit.py" in names
+          assert "representation/commands/embed.py" in names
+          assert not any(name.startswith("legacy/") for name in names)
+          assert not any(name.startswith("workflows/") for name in names)
+          assert "evaluation/retrieval.py" not in names
           PY
           UV_PROJECT_ENVIRONMENT=.wheel-venv \
             uv sync --locked --extra cpu --no-dev
@@ -124,19 +163,22 @@ jobs:
           .wheel-venv/bin/python -I - <<'PY'
           from importlib import resources, util
 
-          import runtime
-          import contracts.intake
+          import prototype.runtime as runtime
+          import shared.contracts.intake
           import data
-          import embedding
-          import identity
+          import identification
+          import representation
+          import enrollment
+          import gallery
+          import search
           import parsing
-          import systems
-          from embedding.methods.nose.data import embedding_views
-          from identity.splits import tracklet_split
-          from systems.measurement import capacity
+          import operations
+          from identification.export.nose.data import embedding_views
+          from evaluation.splits import tracklet_split
+          from operations.measurement import capacity
           import torch
 
-          schema = resources.files("contracts").joinpath(
+          schema = resources.files("shared.contracts").joinpath(
               "schemas/cvi.evaluation.report.v3.schema.json"
           )
           assert schema.is_file()
@@ -145,24 +187,32 @@ jobs:
           ).is_file()
           assert embedding_views.MANIFEST_SCHEMA == "cvi.nose_embedding_views.v1"
           assert tracklet_split.SplitManifest.__module__ == (
-              "identity.splits.tracklet_split"
+              "evaluation.splits.tracklet_split"
           )
-          assert capacity.CapacityPlan.__module__ == "systems.measurement.capacity"
+          assert capacity.CapacityPlan.__module__ == "operations.measurement.capacity"
           assert util.find_spec("data_pipeline") is None
           assert util.find_spec("data.dataset") is None
           assert util.find_spec("data.decode") is None
           assert util.find_spec("parsing.landmark_graph") is None
           for old_package in (
               "canine_identity",
+              "contracts",
+              "embedding",
               "evidence_fusion",
+              "foundation",
+              "identity",
               "identity_governance",
               "identity_methods",
+              "legacy",
               "localization",
-              "operations",
+              "workflows",
+              "retrieval",
+              "runtime",
+              "systems",
               "representation_learning",
           ):
               assert util.find_spec(old_package) is None
           assert runtime.__all__ == ["IdentityEngine", "Match"]
-          assert runtime.IdentityEngine.__module__ == "runtime.engine"
+          assert runtime.IdentityEngine.__module__ == "prototype.runtime.engine"
           assert torch.version.cuda is None
           PY

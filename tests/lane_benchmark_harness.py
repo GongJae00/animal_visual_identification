@@ -6,17 +6,16 @@ import argparse
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from contracts.runtime_library_provenance import (
+from shared.contracts.runtime_library_provenance import (
     RuntimeLibraryManifest,
     freeze_runtime_library_policy,
 )
-from foundation.protected_io import read_strict_json_object, write_private_json_bundle
-from systems.measurement.onnx_inference_benchmark import (
+from shared.foundation.protected_io import read_strict_json_object, write_private_json_bundle
+from operations.measurement.onnx_inference_benchmark import (
     OnnxBenchmarkBackend,
     OnnxInferenceBenchmarkPolicy,
     benchmark_onnx_inference,
 )
-
 
 def main() -> None:
     parser = argparse.ArgumentParser()
@@ -82,7 +81,6 @@ def main() -> None:
             ),
         )
     )
-
 
 if __name__ == "__main__":
     main()
