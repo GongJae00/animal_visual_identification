@@ -27,18 +27,12 @@ def build_static_index(figures: Iterable[FigureData], *, target_scope: str) -> s
                     '<article class="figure-card">',
                     f"<h2>{stem}: {title}</h2>",
                     (
-                        f'<a href="figures/{stem}.svg">'
-                        f'<img src="figures/{stem}.svg" alt="{title}"></a>'
+                        f'<a href="figures/{stem}.png">'
+                        f'<img src="figures/{stem}.png" alt="{title}"></a>'
                     ),
                     f"<p>{caption}</p>",
                     f'<p class="sources">Sources: {sources}</p>',
                     f"<ul>{limitations}</ul>",
-                    (
-                        '<p class="formats">'
-                        f'<a href="figures/{stem}.svg">SVG</a> '
-                        f'<a href="figures/{stem}.pdf">PDF</a> '
-                        f'<a href="figures/{stem}.png">PNG</a></p>'
-                    ),
                     "</article>",
                 )
             )
@@ -58,7 +52,6 @@ header {{ border-bottom: 3px solid #2667a9; margin-bottom: 2rem; }}
 .figure-card {{ background: #faf8f3; border: 1px solid #d8dee3; margin: 1.5rem 0; padding: 1.25rem; }}
 .figure-card img {{ display: block; height: auto; max-width: 100%; width: 100%; }}
 .sources {{ color: #61707d; font-size: .85rem; }}
-.formats a {{ margin-right: 1rem; }}
 a {{ color: #2667a9; }}
 </style>
 </head>

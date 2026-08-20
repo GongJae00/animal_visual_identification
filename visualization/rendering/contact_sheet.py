@@ -81,7 +81,17 @@ def _draw_card(
     ax.imshow(image)
     ax.set_xticks([])
     ax.set_yticks([])
-    ax.set_title(header, fontsize=7.2, color=COLORS["ink"], pad=4)
+    ax.text(
+        0.5,
+        1.03,
+        header,
+        transform=ax.transAxes,
+        ha="center",
+        va="bottom",
+        fontsize=7.2,
+        color=COLORS["ink"],
+        clip_on=False,
+    )
     ax.set_xlabel(footer, fontsize=6.5, color=color, labelpad=3, fontweight="bold")
     for spine in ax.spines.values():
         spine.set_color(color)

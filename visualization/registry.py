@@ -10,7 +10,7 @@ class FigureSpec:
     figure_id: str
     kind: str
     section: str
-    primary_formats: tuple[str, ...] = ("svg", "pdf", "png")
+    primary_formats: tuple[str, ...] = ("png",)
     alternate_kinds: tuple[str, ...] = ()
 
 

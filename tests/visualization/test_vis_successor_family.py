@@ -568,19 +568,19 @@ def test_successor_public_bundle_renders_in_chapter_order(
     output_inventory = json.loads(
         (output / "output_inventory.json").read_text(encoding="utf-8")
     )
-    svg_chapters = [
-        entry["path"].split("/", 1)[1].removesuffix(".svg")
+    png_chapters = [
+        entry["path"].split("/", 1)[1].removesuffix(".png")
         for entry in output_inventory["entries"]
-        if entry["path"].endswith(".svg")
+        if entry["path"].endswith(".png")
     ]
-    assert svg_chapters == [figure.figure_id for figure in figures]
+    assert png_chapters == [figure.figure_id for figure in figures]
     for figure in figures:
         with Image.open(output / "figures" / f"{figure.figure_id}.png") as rendered:
             assert rendered.size == (1280, 720)
     serialized = b"".join(
         path.read_bytes()
         for path in output.rglob("*")
-        if path.suffix in {".svg", ".html", ".json"}
+        if path.suffix in {".html", ".json"}
     )
     assert b"S0" not in serialized and b"S1" not in serialized
 
@@ -807,7 +807,8 @@ def test_private_ranked_qkv_requires_asset_root_and_renders(
         asset_root=tmp_path,
         figure_ids=("12_private_ranked_qkv",),
     )
-    assert (output / "figures" / "12_private_ranked_qkv.svg").is_file()
+    assert (output / "figures" / "12_private_ranked_qkv.png").is_file()
+    assert not (output / "figures" / "12_private_ranked_qkv.svg").exists()
     with Image.open(output / "figures" / "12_private_ranked_qkv.png") as rendered:
         assert rendered.size == (1280, 720)
 

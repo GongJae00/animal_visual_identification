@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from visualization.privacy import PublicationScope, validate_publishable_value
-from visualization.rendering.style import COLORS, matplotlib_rc
+from visualization.rendering.style import paper_matplotlib_rc
 
 STAGE_LAYOUT: dict[str, tuple[str, tuple[str, ...]]] = {
     "parsing": (
@@ -37,6 +37,7 @@ STAGE_LAYOUT: dict[str, tuple[str, tuple[str, ...]]] = {
 }
 
 _ACTIVATIONS_ABSENT = "activations absent"
+_OPTIMIZATION_SCHEMA = "evaluation.optimization_protocol.v1"
 
 
 def vis_directory(output_root: Path, stage: str) -> Path:
@@ -56,6 +57,9 @@ def render_stage(
 
     if stage not in STAGE_LAYOUT:
         raise ValueError(f"unknown visualization stage: {stage}")
+    catalog = write_optimization_catalog(stage, trace, output_root)
+    if catalog:
+        return catalog
     declared = trace.get("stage")
     if declared is not None and declared != stage:
         raise ValueError(f"trace stage {declared!r} does not match {stage!r}")
@@ -88,16 +92,82 @@ def render_stage(
             json.dumps(record, indent=2, sort_keys=True) + "\n",
             encoding="utf-8",
         )
-        png_path = target / "trace.png"
-        _draw_plate(
-            png_path,
-            title=f"{vis_dir} / {name}",
-            summary=str(record["summary"]),
-            activations=record["activations"],
-            image_path=_resolve_image(sub.get("image"), asset_root),
+        written.append(json_path)
+        image_path = (
+            _resolve_image(sub.get("image"), asset_root)
+            if sub.get("image") is not None
+            else None
         )
-        written.extend((json_path, png_path))
+        if image_path is not None:
+            png_path = target / "trace.png"
+            _draw_image(png_path, image_path)
+            written.append(png_path)
     return tuple(written)
+
+
+def write_optimization_catalog(
+    stage: str,
+    trace: dict[str, Any],
+    output_root: Path,
+) -> tuple[Path, ...]:
+    """Write vis/0N_<stage>/optimization.json from an optimization protocol trace.
+
+    Runtime rows (prototype, operations, evaluation.integrity) stay on the
+    protocol document, not a vis/06 directory. JSON only; no plates.
+    """
+
+    payload = _optimization_stage_substages(stage, trace)
+    if payload is None:
+        return ()
+    protocol = trace["protocol"]
+    vis_dir, _substages = STAGE_LAYOUT[stage]
+    stage_root = output_root / "vis" / vis_dir
+    stage_root.mkdir(parents=True, exist_ok=True)
+    document = {
+        "schema_version": protocol["schema_version"],
+        "interpretation": protocol["interpretation"],
+        "stage": stage,
+        "substages": payload,
+    }
+    path = stage_root / "optimization.json"
+    path.write_text(
+        json.dumps(document, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    return (path,)
+
+
+def _optimization_stage_substages(
+    stage: str,
+    trace: dict[str, Any],
+) -> dict[str, list[Any]] | None:
+    protocol = trace.get("protocol")
+    if not isinstance(protocol, dict):
+        return None
+    if protocol.get("schema_version") != _OPTIMIZATION_SCHEMA:
+        return None
+    if "runtime" not in trace:
+        return None
+    nested = trace.get("substages")
+    if nested is None:
+        nested = {}
+    if not isinstance(nested, dict):
+        raise ValueError("trace substages must be an object")
+    _vis_dir, names = STAGE_LAYOUT[stage]
+    if stage in nested and isinstance(nested[stage], dict):
+        source = nested[stage]
+    else:
+        source = nested
+    payload: dict[str, list[Any]] = {}
+    for name in names:
+        rows = source.get(name)
+        if rows is None:
+            payload[name] = []
+            continue
+        if not isinstance(rows, list):
+            raise ValueError(f"optimization substage {name} must be a list")
+        payload[name] = rows
+    return payload
 
 
 def _activation_status(value: Any) -> str:
@@ -129,50 +199,27 @@ def _resolve_image(value: Any, asset_root: Path | None) -> Path | None:
     return path
 
 
-def _draw_plate(
-    target: Path,
-    *,
-    title: str,
-    summary: str,
-    activations: str,
-    image_path: Path | None,
-) -> None:
+def _draw_image(target: Path, image_path: Path) -> None:
     import matplotlib
 
     matplotlib.use("Agg", force=True)
     from matplotlib import pyplot as plt
+    from PIL import Image
 
-    rc = matplotlib_rc()
+    rc = paper_matplotlib_rc()
     with matplotlib.rc_context(rc):
-        figure = plt.figure(figsize=(8.0, 4.5), constrained_layout=False)
+        figure = plt.figure(figsize=(4.0, 4.0))
         try:
-            ax = figure.add_subplot(1, 1, 1)
+            ax = figure.add_axes((0.0, 0.0, 1.0, 1.0))
             ax.set_axis_off()
-            if image_path is not None:
-                from PIL import Image
-
-                ax.imshow(Image.open(image_path).convert("RGB"))
-            ax.set_title(title, loc="left", fontsize=12, fontweight="bold")
-            ax.text(
-                0.02,
-                0.12 if image_path is None else -0.08,
-                f"{summary}\n{activations}",
-                transform=ax.transAxes,
-                fontsize=9,
-                color=COLORS["muted"],
-                va="top",
+            ax.imshow(Image.open(image_path).convert("RGB"))
+            figure.savefig(
+                target,
+                format="png",
+                dpi=rc["savefig.dpi"],
+                facecolor=rc["savefig.facecolor"],
+                bbox_inches="tight",
+                pad_inches=0.0,
             )
-            if image_path is None:
-                ax.text(
-                    0.5,
-                    0.55,
-                    activations,
-                    transform=ax.transAxes,
-                    ha="center",
-                    va="center",
-                    fontsize=14,
-                    color=COLORS["ink"],
-                )
-            figure.savefig(target, format="png", dpi=rc["savefig.dpi"])
         finally:
             plt.close(figure)

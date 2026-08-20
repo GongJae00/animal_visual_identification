@@ -8,5 +8,7 @@ Out: GalleryKey / GalleryValue rows admitted by the registry policy.
 fail-closed registered-only gallery policy. `write/` enrolls extracted vectors
 into a gallery store.
 
+Optimization catalog (no measured values): `evaluation.optimization_surfaces.enrollment`.
+
 Commands: `uv run python -m enrollment.commands.enroll --help` (label augment).
 Registry build/bind and split check: `evaluation.commands.evaluate registry-build|registry-bind|split-check`.

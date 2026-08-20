@@ -7,6 +7,17 @@ contracts remain readable.
 
 ## Unreleased
 
+### Catalogs and observer rasters
+
+- Added `evaluation.parsing_protocol.v1` and
+  `evaluation.optimization_protocol.v1` catalogs (stage × data/lever, no
+  measured values). CLI:
+  `evaluation.commands.evaluate parsing-protocol|optimization-protocol`.
+- Visualization rasters are PNG only, with no baked titles or captions.
+  Identification and representation emit PCA and cosine plates from embedding
+  traces. An optimization protocol trace writes `optimization.json` under
+  `Visualization/vis/00_parsing` … `05_search`.
+
 ### Compact follow-up
 
 - Renamed `IdentityRetrievalPipeline` to `SearchPipeline`.

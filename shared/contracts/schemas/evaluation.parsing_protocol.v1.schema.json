@@ -1,0 +1,105 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "evaluation.parsing_protocol.v1",
+  "title": "Parsing evaluation protocol v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "interpretation",
+    "backbone_independent",
+    "columns",
+    "stages",
+    "metrics",
+    "figure_rows"
+  ],
+  "properties": {
+    "schema_version": {"const": "evaluation.parsing_protocol.v1"},
+    "interpretation": {
+      "const": "PARSING_EVALUATION_CATALOG_NOT_MEASURED_VALUES_NOT_BIOMETRIC_VALIDATION"
+    },
+    "backbone_independent": {"const": true},
+    "columns": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "prefixItems": [
+        {"const": "stage"},
+        {"const": "data"},
+        {"const": "metric"},
+        {"const": "extraction"}
+      ],
+      "items": false
+    },
+    "stages": {
+      "type": "array",
+      "minItems": 5,
+      "maxItems": 5,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["stage_id", "vis_substage", "label", "output"],
+        "properties": {
+          "stage_id": {
+            "type": "string",
+            "enum": ["detection", "segmentation", "regions", "quality", "crops"]
+          },
+          "vis_substage": {"type": "string", "pattern": "^0[0-4]_[a-z]+$"},
+          "label": {"type": "string", "minLength": 1},
+          "output": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "metrics": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "metric_id",
+          "stage_id",
+          "label",
+          "data",
+          "extraction",
+          "owner",
+          "report_schema",
+          "kind",
+          "command"
+        ],
+        "properties": {
+          "metric_id": {"type": "string", "minLength": 1},
+          "stage_id": {
+            "type": "string",
+            "enum": ["detection", "segmentation", "regions", "quality", "crops"]
+          },
+          "label": {"type": "string", "minLength": 1},
+          "data": {"type": "string", "minLength": 1},
+          "extraction": {"type": "string", "minLength": 1},
+          "owner": {"type": "string", "minLength": 1},
+          "report_schema": {"type": "string"},
+          "kind": {
+            "type": "string",
+            "enum": ["supervised", "unsupervised", "census", "control", "review"]
+          },
+          "command": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "figure_rows": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["stage", "data", "metric", "extraction"],
+        "properties": {
+          "stage": {"type": "string", "minLength": 1},
+          "data": {"type": "string", "minLength": 1},
+          "metric": {"type": "string", "minLength": 1},
+          "extraction": {"type": "string", "minLength": 1}
+        }
+      }
+    }
+  }
+}

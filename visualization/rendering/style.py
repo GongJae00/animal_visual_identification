@@ -42,6 +42,22 @@ FIXED_STYLE: dict[str, Any] = {
 }
 STYLE_FINGERPRINT = content_sha256(FIXED_STYLE)
 
+PAPER_STYLE_VERSION = "visualization.paper_style.v1"
+PAPER_COLORS = {
+    "ink": "#111111",
+    "muted": "#4A4A4A",
+    "rule": "#111111",
+    "paper": "#FFFFFF",
+}
+PAPER_DPI = 300
+PAPER_STYLE: dict[str, Any] = {
+    "version": PAPER_STYLE_VERSION,
+    "font_family": FONT_FAMILY,
+    "colors": PAPER_COLORS,
+    "figure_width_inches": 7.2,
+    "dpi": PAPER_DPI,
+}
+
 
 def matplotlib_rc() -> dict[str, Any]:
     return {
@@ -58,12 +74,41 @@ def matplotlib_rc() -> dict[str, Any]:
         "grid.linewidth": 0.6,
         "legend.frameon": False,
         "lines.linewidth": FIXED_STYLE["line_width"],
-        "pdf.fonttype": 42,
         "savefig.dpi": DPI,
         "savefig.facecolor": COLORS["paper"],
-        "svg.fonttype": "none",
-        "svg.hashsalt": "visualization.v1",
         "text.color": COLORS["ink"],
         "xtick.color": COLORS["ink"],
         "ytick.color": COLORS["ink"],
+    }
+
+
+def paper_matplotlib_rc() -> dict[str, Any]:
+    """White, caption-free publication rc. Does not alter observer STYLE_FINGERPRINT."""
+
+    return {
+        "axes.edgecolor": PAPER_COLORS["ink"],
+        "axes.facecolor": PAPER_COLORS["paper"],
+        "axes.grid": False,
+        "axes.labelcolor": PAPER_COLORS["ink"],
+        "axes.linewidth": 0.0,
+        "axes.spines.top": False,
+        "axes.spines.right": False,
+        "axes.spines.bottom": False,
+        "axes.spines.left": False,
+        "axes.titlepad": 0.0,
+        "axes.titlesize": 0.0,
+        "figure.dpi": PAPER_DPI,
+        "figure.facecolor": PAPER_COLORS["paper"],
+        "font.family": FONT_FAMILY,
+        "font.size": 8,
+        "legend.frameon": False,
+        "savefig.bbox": "tight",
+        "savefig.dpi": PAPER_DPI,
+        "savefig.facecolor": PAPER_COLORS["paper"],
+        "savefig.pad_inches": 0.04,
+        "text.color": PAPER_COLORS["ink"],
+        "xtick.bottom": False,
+        "xtick.labelbottom": False,
+        "ytick.left": False,
+        "ytick.labelleft": False,
     }

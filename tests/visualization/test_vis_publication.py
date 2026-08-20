@@ -357,7 +357,9 @@ def test_static_index_escapes_text_and_has_no_remote_assets() -> None:
     assert '<A & "B">' not in page
     assert "&lt;A &amp; &quot;B&quot;&gt;" in page
     assert "http://" not in page and "https://" not in page
-    assert 'src="figures/02_census_availability.svg"' in page
+    assert 'src="figures/02_census_availability.png"' in page
+    assert ".svg" not in page
+    assert ".pdf" not in page
 
 def test_all_recipe_families_validate_and_render(tmp_path: Path) -> None:
     pytest.importorskip("matplotlib")
@@ -369,7 +371,7 @@ def test_all_recipe_families_validate_and_render(tmp_path: Path) -> None:
         figure = _figure(figure_id, kind, payload)
         validate_recipe(figure)
         paths = render_static_figure(figure, tmp_path / "rendered", asset_root=tmp_path)
-        assert tuple(Path(path).suffix for path in paths) == (".svg", ".pdf", ".png")
+        assert tuple(Path(path).suffix for path in paths) == (".png",)
         assert all((tmp_path / "rendered" / path).stat().st_size > 0 for path in paths)
 
 def test_publication_is_byte_deterministic_and_inventory_is_ordered(
@@ -392,11 +394,7 @@ def test_publication_is_byte_deterministic_and_inventory_is_ordered(
     )
     paths = [entry["path"] for entry in inventory["entries"]]
     assert paths == [
-        "figures/02_census_availability.svg",
-        "figures/02_census_availability.pdf",
         "figures/02_census_availability.png",
-        "figures/03_role_dependency_closure.svg",
-        "figures/03_role_dependency_closure.pdf",
         "figures/03_role_dependency_closure.png",
         "index.html",
     ]
@@ -489,7 +487,8 @@ def test_workflow_renders_figure_data_bundle(tmp_path: Path) -> None:
     receipt = json.loads(result.stdout)
     assert receipt["event"] == "research_visualizations_rendered"
     assert receipt["figure_ids"] == ["02_census_availability"]
-    assert (output / "figures" / "02_census_availability.svg").is_file()
+    assert (output / "figures" / "02_census_availability.png").is_file()
+    assert not (output / "figures" / "02_census_availability.svg").exists()
 
 def test_tracked_json_schema_accepts_normalized_bundle() -> None:
     jsonschema = pytest.importorskip("jsonschema")

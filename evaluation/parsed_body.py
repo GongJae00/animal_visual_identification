@@ -1,4 +1,4 @@
-"""Run a frozen-feature parsed whole-body ReID diagnostic on YT-BB-Dog tracks."""
+"""Run a frozen-feature parsed whole-body retrieval diagnostic on YT-BB-Dog tracks."""
 
 from __future__ import annotations
 

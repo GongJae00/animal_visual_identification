@@ -233,15 +233,7 @@ def _draw_embedding_diagnostics(figure: Any, payload: dict[str, Any]) -> None:
     cumulative_ax.set_ylabel("Cumulative explained variance")
     for ax in (spectrum_ax, cumulative_ax):
         ax.spines[["right", "top"]].set_visible(False)
-    handles, labels = spectrum_ax.get_legend_handles_labels()
-    figure.legend(
-        handles,
-        labels,
-        loc="lower center",
-        bbox_to_anchor=(0.5, 0.105),
-        ncol=min(5, len(labels)),
-        fontsize=6.8,
-    )
+    spectrum_ax.legend(frameon=False, fontsize=7, loc="upper right")
 
 
 def _draw_model_ladder(figure: Any, payload: dict[str, Any]) -> None:
@@ -346,7 +338,6 @@ def _draw_successor_results(figure: Any, payload: dict[str, Any]) -> None:
     absolute_ax.invert_yaxis()
     absolute_ax.set_xlim(0, 1)
     absolute_ax.set_xlabel("Aggregate metric")
-    absolute_ax.set_title("Absolute Rank-1 / MRR", fontsize=9)
     absolute_ax.spines[["right", "top"]].set_visible(False)
     handles = [
         Line2D(
@@ -420,9 +411,6 @@ def _draw_successor_results(figure: Any, payload: dict[str, Any]) -> None:
     delta_ax.axvline(0, color=COLORS["ink"], linestyle="--", linewidth=1)
     delta_ax.set_xlim(-limit, limit)
     delta_ax.set_xlabel("Paired DEV difference (95% interval)")
-    delta_ax.set_title(
-        f"DEV delta: {payload['selected_alias']} - comparator", fontsize=9
-    )
     delta_ax.spines[["right", "top"]].set_visible(False)
 
     legend = [

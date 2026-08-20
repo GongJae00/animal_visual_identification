@@ -98,6 +98,9 @@ Thumbs.db
 /node_modules/
 /audit/
 /workspace/
+.gemini/
+.cursor/
+.claude/
 
 # Docker
 docker-compose.override.yml

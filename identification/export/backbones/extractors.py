@@ -160,9 +160,6 @@ class OnnxExtractor(EvidenceExtractor):
         tensors = np.concatenate([self.preprocess(img) for img in images], axis=0)
         return self._normalized(self._run(tensors))
 
-    def run_raw(self, image: Image.Image) -> np.ndarray:
-        return self._run(self.preprocess(image))[0]
-
     def _run(self, tensor: np.ndarray) -> np.ndarray:
         result = self._sess.run([self._out.name], {self._inp.name: tensor})
         if len(result) != 1 or not isinstance(result[0], np.ndarray):

@@ -1,0 +1,140 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "evaluation.optimization_protocol.v1",
+  "title": "Optimization evaluation protocol v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "interpretation",
+    "backbone_independent",
+    "stage_ids",
+    "axes",
+    "surfaces"
+  ],
+  "properties": {
+    "schema_version": {"const": "evaluation.optimization_protocol.v1"},
+    "interpretation": {
+      "const": "OPTIMIZATION_CATALOG_NOT_MEASURED_VALUES_NOT_BIOMETRIC_VALIDATION_NOT_A_PERFORMANCE_CLAIM"
+    },
+    "backbone_independent": {"const": true},
+    "stage_ids": {
+      "type": "array",
+      "minItems": 19,
+      "maxItems": 19,
+      "prefixItems": [
+        {"const": "parsing.detection"},
+        {"const": "parsing.segmentation"},
+        {"const": "parsing.regions"},
+        {"const": "parsing.quality"},
+        {"const": "parsing.crops"},
+        {"const": "identification.appearance"},
+        {"const": "identification.face"},
+        {"const": "identification.nose"},
+        {"const": "representation.evidence"},
+        {"const": "representation.channels"},
+        {"const": "representation.quality"},
+        {"const": "enrollment.registry"},
+        {"const": "enrollment.write"},
+        {"const": "gallery.store"},
+        {"const": "search.scoring"},
+        {"const": "search.matching"},
+        {"const": "prototype.runtime"},
+        {"const": "operations.measurement"},
+        {"const": "evaluation.integrity"}
+      ],
+      "items": false
+    },
+    "axes": {
+      "type": "array",
+      "minItems": 12,
+      "maxItems": 12,
+      "prefixItems": [
+        {"const": "parallel_sequential"},
+        {"const": "memory"},
+        {"const": "latency"},
+        {"const": "compute"},
+        {"const": "code"},
+        {"const": "execution"},
+        {"const": "evaluation"},
+        {"const": "cuda"},
+        {"const": "math"},
+        {"const": "io"},
+        {"const": "session"},
+        {"const": "batch"}
+      ],
+      "items": false
+    },
+    "surfaces": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "surface_id",
+          "stage_id",
+          "axis",
+          "lever",
+          "survives_backbone_swap",
+          "status",
+          "owner",
+          "measurement",
+          "constraint"
+        ],
+        "properties": {
+          "surface_id": {"type": "string", "minLength": 1},
+          "stage_id": {
+            "type": "string",
+            "enum": [
+              "parsing.detection",
+              "parsing.segmentation",
+              "parsing.regions",
+              "parsing.quality",
+              "parsing.crops",
+              "identification.appearance",
+              "identification.face",
+              "identification.nose",
+              "representation.evidence",
+              "representation.channels",
+              "representation.quality",
+              "enrollment.registry",
+              "enrollment.write",
+              "gallery.store",
+              "search.scoring",
+              "search.matching",
+              "prototype.runtime",
+              "operations.measurement",
+              "evaluation.integrity"
+            ]
+          },
+          "axis": {
+            "type": "string",
+            "enum": [
+              "parallel_sequential",
+              "memory",
+              "latency",
+              "compute",
+              "code",
+              "execution",
+              "evaluation",
+              "cuda",
+              "math",
+              "io",
+              "session",
+              "batch"
+            ]
+          },
+          "lever": {"type": "string", "minLength": 1},
+          "survives_backbone_swap": {"type": "boolean"},
+          "status": {
+            "type": "string",
+            "enum": ["wired", "admitted", "forbidden", "out_of_product_boundary"]
+          },
+          "owner": {"type": "string", "minLength": 1},
+          "measurement": {"type": "string", "minLength": 1},
+          "constraint": {"type": "string", "minLength": 1}
+        }
+      }
+    }
+  }
+}

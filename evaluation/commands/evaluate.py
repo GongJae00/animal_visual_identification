@@ -3,7 +3,7 @@
 Run: ``uv run python -m evaluation.commands.evaluate --help``
 
 Protocols: verification, retrieval, open-set, protected.
-Also: parsed-body, pairs, controls, drift, identity-kfold,
+Also: parsing-protocol, optimization-protocol, parsed-body, pairs, controls, drift, identity-kfold,
 localization-kfold, localization-benchmark, oracle-crops,
 protected-split, unified-split, oxford-pet, protected-prepare,
 protected-verify, role-exposure, research-cycle, research-plan,
@@ -378,7 +378,7 @@ def cmd_verification(args: argparse.Namespace) -> None:
                 "error": f"calibration failed for channel {name}: {exc}",
                 "protocol_status": "INVALID",
             }))
-            raise SystemExit(1)
+            raise SystemExit(1) from exc
 
     prov["end_timestamp"] = datetime.now(timezone.utc).isoformat()
     report["provenance"] = prov
@@ -574,8 +574,6 @@ def cmd_protected(args: argparse.Namespace) -> None:
         gallery_path=args.gallery,
         queries_path=args.queries,
     )
-    # All byte, count, dimension, and score-matrix caps have passed before
-    # these dense arrays are allocated.
     gallery_embeddings = np.asarray(
         [record.embedding for record in prepared.gallery.records], dtype=np.float64
     )
@@ -687,6 +685,8 @@ def cmd_protected(args: argparse.Namespace) -> None:
     }, sort_keys=True))
 
 _ABSORBED = {
+    "parsing-protocol": "evaluation.parsing_protocol",
+    "optimization-protocol": "evaluation.optimization_protocol",
     "parsed-body": "evaluation.parsed_body",
     "pairs": "evaluation.controls.construct_pairs",
     "controls": "evaluation.controls.visual_controls",
