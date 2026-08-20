@@ -179,7 +179,7 @@ if loaded:
 class ModelPathTests(unittest.TestCase):
     def test_dogflw_download_is_disabled_without_an_authoritative_hash(self) -> None:
         from shared.contracts.model_paths import DOGFLW_LANDMARK_MD5
-        from data.download_models import download_model
+        from data.acquisition.models import download_model
 
         self.assertIsNone(DOGFLW_LANDMARK_MD5)
         with self.assertRaisesRegex(RuntimeError, "DogFLW download is disabled"):

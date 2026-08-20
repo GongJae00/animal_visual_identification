@@ -7,6 +7,22 @@ contracts remain readable.
 
 ## Unreleased
 
+### Dataset layout adapters
+
+- Split `data/adapters.py` into `data/adapters/<dataset>.py` (one publisher
+  layout per module) plus `io.py`. `data.adapters.load(name, root)` is the
+  entry. Acquisition downloaders live under `data/acquisition/`.
+  `public_sources/` remains archive intake. Disk dataset trees are unchanged.
+
+### Comparable transfer protocol
+
+- Frozen YT-BB-Dog train-ID → Sibetan held-out panel
+  (`evaluation.comparable_transfer.v1`): identity-disjoint, seed-0 gallery/query
+  lists, parser policy v6 crop binding, Rank-1 / Rank-5 / mAP. Backbone is the
+  only comparison variable. CLI:
+  `evaluation.commands.evaluate comparable-transfer
+  admit-models|freeze|score|smoke|run`.
+
 ### Catalogs and observer rasters
 
 - Added `evaluation.parsing_protocol.v1` and

@@ -58,7 +58,9 @@ uv run python -m operations.commands.measure --help
 검색 CLI는 없고 `IdentityEngine.search`가 제품입니다. 각 단계 README가 하위 명령을 색인합니다.
 
 연구 diagnostic E2E: parser materialize → Appearance embed →
-`evaluation/parsed_body.py`. 완료된 ablation은
+`evaluation/parsed_body.py`. Comparable transfer (YT-BB-Dog train IDs →
+Sibetan, frozen gallery/query, Rank-1/5/mAP):
+`evaluation.commands.evaluate comparable-transfer`. 완료된 ablation은
 [archive/](archive/README.md), 결과 표는
 [연구 진행 요약](docs/RESEARCH_PROGRESS.md). 제품 경로는 아래 API입니다.
 

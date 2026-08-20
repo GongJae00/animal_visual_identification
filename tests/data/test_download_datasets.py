@@ -8,7 +8,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
-from data import download_datasets
+from data.acquisition import datasets as download_datasets
 
 class DatasetDownloaderTests(unittest.TestCase):
     def test_all_named_selectors_fail_before_external_imports_or_writes(self) -> None:

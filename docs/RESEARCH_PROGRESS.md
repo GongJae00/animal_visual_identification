@@ -5,6 +5,15 @@ open-set assurance, or deployment performance. Frozen functional path:
 parser policy v6 + Appearance A0 + cosine retrieval. Ablation sets live in [archive/](../archive/README.md)
 (`full128`, `appearance_face_nose`, `nose_metric`, `nose`, `face`).
 
+## Comparable transfer protocol
+
+Frozen before measuring. Train: `yt-bb-dog` official train IDs. Eval: Sibetan
+held-out, identity-disjoint. Crops: parser policy v6, byte-bound when scored.
+Gallery and query lists are hashed. Backbone is the only comparison variable.
+Metrics: Rank-1 / Rank-5 / mAP. Split seed `0`. CLI:
+`evaluation.commands.evaluate comparable-transfer`. Not a BIFOR sequence-mean
+claim and not biometric validation.
+
 ## Current path
 
 | Stage | Frozen choice | Why |

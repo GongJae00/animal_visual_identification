@@ -7,7 +7,7 @@ import sys
 
 from tests.repo_root import REPO_ROOT as ROOT
 
-SCRIPT = ROOT / "data" / "download_models.py"
+SCRIPT = ROOT / "data" / "acquisition" / "models.py"
 
 def _run_downloader(tmp_path: Path, *args: str) -> subprocess.CompletedProcess[str]:
     environment = os.environ.copy()
@@ -67,8 +67,8 @@ def guarded_import(name, *args, **kwargs):
     return original_import(name, *args, **kwargs)
 
 builtins.__import__ = guarded_import
-sys.argv = ["data/download_models.py", "--model", "miewid"]
-runpy.run_path("data/download_models.py", run_name="__main__")
+sys.argv = ["data/acquisition/models.py", "--model", "miewid"]
+runpy.run_path("data/acquisition/models.py", run_name="__main__")
 """
     environment = os.environ.copy()
     environment["CANINE_IDENTITY_MODELS_DIR"] = str(tmp_path / "models")

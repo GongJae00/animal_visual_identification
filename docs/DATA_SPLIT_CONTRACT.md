@@ -60,6 +60,22 @@ clothing signature and at least one changed gallery/query pairing per known
 identity. `minimum_gallery_query_gap_seconds` fixes the longitudinal gap before
 scores are observed.
 
+## Comparable transfer protocol
+
+Frozen comparison panel for prior-work-adjacent closed-set retrieval. This is
+not a random-frame split and not a BIFOR sequence-mean reproduction.
+
+- Train: official `yt-bb-dog` train identities only.
+- Eval: Sibetan identities held out of training (identity-disjoint).
+- Gallery and query: same frozen lists; sequences do not overlap; seed `0`.
+- Crops: parser policy v6 materialization, byte-bound when scored.
+- Comparison variable: backbone only.
+- Metrics: Rank-1, Rank-5, mAP.
+
+```bash
+uv run python -m evaluation.commands.evaluate comparable-transfer freeze --help
+```
+
 ## Validation
 
 ```bash

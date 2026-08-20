@@ -54,7 +54,7 @@ from identification.export.nose.extractor import (
     YoloNoseDetector,
 )
 from identification.export.landmark import LandmarkEvidencer
-from data.download_models import _convert_superanimal_to_onnx, download_model
+from data.acquisition.models import _convert_superanimal_to_onnx, download_model
 
 class _TensorInfo:
     def __init__(self, name: str, shape: list[object]):
@@ -671,14 +671,14 @@ class EvidenceModelContractTests(unittest.TestCase):
                 _convert_superanimal_to_onnx(source, output)
             self.assertEqual(output.read_bytes(), before)
 
-        with patch("data.download_models._download_hf") as download:
+        with patch("data.acquisition.models._download_hf") as download:
             with self.assertRaisesRegex(RuntimeError, "SuperAnimal is disabled"):
                 download_model("superanimal")
             download.assert_not_called()
 
     def test_superanimal_cli_and_environment_check_report_disabled(self) -> None:
         completed = subprocess.run(
-            [sys.executable, "data/download_models.py", "--model", "superanimal"],
+            [sys.executable, "data/acquisition/models.py", "--model", "superanimal"],
             cwd=REPO_ROOT,
             capture_output=True,
             text=True,
@@ -696,7 +696,7 @@ class EvidenceModelContractTests(unittest.TestCase):
         self.assertIn('"prototype.runtime",', script)
         self.assertNotIn('"cvi",', script)
         downloader = (
-            REPO_ROOT / "data" / "download_models.py"
+            REPO_ROOT / "data" / "acquisition" / "models.py"
         ).read_text()
         self.assertIn("external_data=False", downloader)
 

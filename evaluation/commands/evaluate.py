@@ -3,7 +3,7 @@
 Run: ``uv run python -m evaluation.commands.evaluate --help``
 
 Protocols: verification, retrieval, open-set, protected.
-Also: parsing-protocol, optimization-protocol, parsed-body, pairs, controls, drift, identity-kfold,
+Also: comparable-transfer, parsing-protocol, optimization-protocol, parsed-body, pairs, controls, drift, identity-kfold,
 localization-kfold, localization-benchmark, oracle-crops,
 protected-split, unified-split, oxford-pet, protected-prepare,
 protected-verify, role-exposure, research-cycle, research-plan,
@@ -685,6 +685,7 @@ def cmd_protected(args: argparse.Namespace) -> None:
     }, sort_keys=True))
 
 _ABSORBED = {
+    "comparable-transfer": "evaluation.comparable_transfer",
     "parsing-protocol": "evaluation.parsing_protocol",
     "optimization-protocol": "evaluation.optimization_protocol",
     "parsed-body": "evaluation.parsed_body",

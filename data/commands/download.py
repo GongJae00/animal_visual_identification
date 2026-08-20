@@ -32,7 +32,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     if argv[0] in {"datasets", "models"}:
         target, rest = argv[0], argv[1:]
     if target == "models":
-        from data.download_models import main as run_models
+        from data.acquisition.models import main as run_models
 
         previous = sys.argv
         sys.argv = [previous[0], *rest]
@@ -41,7 +41,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         finally:
             sys.argv = previous
         return 0
-    from data.download_datasets import main as run_datasets
+    from data.acquisition.datasets import main as run_datasets
 
     run_datasets(rest)
     return 0

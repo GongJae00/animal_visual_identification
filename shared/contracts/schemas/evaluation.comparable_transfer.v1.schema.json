@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "evaluation.comparable_transfer.v1",
+  "title": "Comparable transfer split v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "interpretation",
+    "split_seed",
+    "comparable",
+    "parser_policy_schema",
+    "crop_binding_status",
+    "metrics",
+    "comparison_variable",
+    "train",
+    "eval",
+    "train_identity_sha256",
+    "train_sample_sha256",
+    "gallery_list_sha256",
+    "query_list_sha256",
+    "split_sha256"
+  ],
+  "properties": {
+    "schema_version": {"const": "evaluation.comparable_transfer.v1"},
+    "interpretation": {
+      "type": "string",
+      "minLength": 1
+    },
+    "split_seed": {"type": "integer"},
+    "comparable": {"type": "boolean"},
+    "parser_policy_schema": {"const": "parsing.policy.v6"},
+    "crop_binding_status": {"type": "string", "enum": ["unbound", "bound"]},
+    "metrics": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "prefixItems": [
+        {"const": "Rank-1"},
+        {"const": "Rank-5"},
+        {"const": "mAP"}
+      ],
+      "items": false
+    },
+    "comparison_variable": {"const": "backbone"},
+    "train": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["dataset", "split_role", "identities", "samples"],
+      "properties": {
+        "dataset": {"const": "yt-bb-dog"},
+        "split_role": {"const": "train"},
+        "identities": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/identity"}
+        },
+        "samples": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/row"}
+        }
+      }
+    },
+    "eval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["dataset", "gallery", "query"],
+      "properties": {
+        "dataset": {"const": "sibetan"},
+        "gallery": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/row"}
+        },
+        "query": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/row"}
+        }
+      }
+    },
+    "train_identity_sha256": {"$ref": "#/$defs/sha256"},
+    "train_sample_sha256": {"$ref": "#/$defs/sha256"},
+    "gallery_list_sha256": {"$ref": "#/$defs/sha256"},
+    "query_list_sha256": {"$ref": "#/$defs/sha256"},
+    "split_sha256": {"$ref": "#/$defs/sha256"}
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["identity_id", "raw_identity_id", "dataset_name"],
+      "properties": {
+        "identity_id": {"type": "string", "minLength": 1},
+        "raw_identity_id": {"type": "string", "minLength": 1},
+        "dataset_name": {"type": "string", "minLength": 1}
+      }
+    },
+    "row": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sample_id",
+        "identity_id",
+        "raw_identity_id",
+        "dataset_name",
+        "sequence_id",
+        "image_path",
+        "image_sha256",
+        "crop_sha256"
+      ],
+      "properties": {
+        "sample_id": {"type": "string", "minLength": 1},
+        "identity_id": {"type": "string", "minLength": 1},
+        "raw_identity_id": {"type": "string", "minLength": 1},
+        "dataset_name": {"type": "string", "minLength": 1},
+        "sequence_id": {"type": "string", "minLength": 1},
+        "image_path": {"type": "string", "minLength": 1},
+        "image_sha256": {"$ref": "#/$defs/sha256"},
+        "crop_sha256": {
+          "anyOf": [{"type": "null"}, {"$ref": "#/$defs/sha256"}]
+        }
+      }
+    }
+  }
+}

@@ -35,7 +35,11 @@ $CANINE_IDENTITY_DATA_DIR/
   manifests/
   cache/
   artifacts/
-$CANINE_IDENTITY_DATASETS_DIR/{ap10k,dogflw,dogfacenet224,mpdd,sibetan,yt-bb-dog}/
+$CANINE_IDENTITY_DATASETS_DIR/{ap10k,dogflw,dogfacenet224,mpdd,sibetan,yt-bb-dog,oxford-iiit-pet,PetFace}/
+
+Layout parsers: ``data.adapters.load("<canonical-name>", root)``. One module
+per publisher tree under ``data/adapters/``. Do not parse those folders from
+identification or evaluation.
 ```
 
 ## Dataset Downloader
