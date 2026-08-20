@@ -120,7 +120,7 @@ def _checkpoint_bindings() -> dict:
 
 def _checkpoint_config() -> dict:
     return {
-        "schema_version": "cvi.nose_region_rgb_embedding_training_config.v1",
+        "schema_version": "identification.nose.nose_region_rgb_embedding_training_config.v1",
         "model": "DINOv2-small CLS L2-normalized 384D",
         "input": {
             "shape": [3, 224, 224],
@@ -506,7 +506,7 @@ def test_selection_accepts_bounded_raw_tradeoff_for_masked_improvement() -> None
 def _consistency_bindings() -> dict:
     ssl = _dog("binding-ssl")
     split_body = {
-        "schema_version": "cvi.nose_region_embedding_consistency_splits.v1",
+        "schema_version": "identification.nose.nose_region_embedding_consistency_splits.v1",
         "rule": {
             "parent_seen": "old TRAIN yt-bb-dog registered_dog_id",
             "minimum_localized_frames_for_dev_eval": 10,
@@ -655,7 +655,7 @@ def test_consistency_tiny_static_onnx_ort_parity_and_runtime_id(tmp_path: Path) 
     onnx_path = tmp_path / "nose-v2.onnx"
     export_static_onnx(model, onnx_path)
     manifest = consistency.build_runtime_manifest(onnx_path)
-    assert manifest.artifact_id == "cvi.nose_region_rgb_embedding.dinov2-small-cls.v3"
+    assert manifest.artifact_id == "identification.nose.nose_region_rgb_embedding.dinov2-small-cls.v3"
 
     crop = tmp_path / "crop.png"
     Image.new("RGB", (27, 33), color=(60, 100, 150)).save(crop)

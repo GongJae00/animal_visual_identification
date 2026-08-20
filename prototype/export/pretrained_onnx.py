@@ -119,7 +119,7 @@ def export_dinov2_small(
         parameter.requires_grad = False
     wrapper = _Dinov2ExportWrapper(model).eval()
 
-    with TemporaryDirectory(prefix=".cvi-dinov2-export-", dir=output_root) as temp:
+    with TemporaryDirectory(prefix=".dinov2-export-", dir=output_root) as temp:
         stage = Path(temp)
         staged_model = stage / targets[0].name
         staged_preprocessing = stage / targets[1].name

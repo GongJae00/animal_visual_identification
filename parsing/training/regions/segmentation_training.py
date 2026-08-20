@@ -48,12 +48,12 @@ from parsing.training.regions.sam2_teacher import (
 )
 
 IMAGE_SIZE = 224
-MODEL_ID = "cvi.nose_mask.mobilenetv4-conv-small.v1"
+MODEL_ID = "identification.nose.nose_mask.mobilenetv4-conv-small.v1"
 LICENSE_ID = "CC-BY-NC-4.0-derived"
-CHECKPOINT_SCHEMA = "cvi.nose_segmentation_student.checkpoint.v1"
-LINEAGE_SCHEMA = "cvi.nose_segmentation_student.artifact_bundle.v1"
-PARITY_SCHEMA = "cvi.nose_segmentation_student.cpu_ort_parity.v1"
-DEV_REPORT_SCHEMA = "cvi.nose_segmentation_student.dev_selection.v1"
+CHECKPOINT_SCHEMA = "identification.nose.nose_segmentation_student.checkpoint.v1"
+LINEAGE_SCHEMA = "identification.nose.nose_segmentation_student.artifact_bundle.v1"
+PARITY_SCHEMA = "identification.nose.nose_segmentation_student.cpu_ort_parity.v1"
+DEV_REPORT_SCHEMA = "identification.nose.nose_segmentation_student.dev_selection.v1"
 SELECTION_METRICS = ("DEV_teacher_Dice", "DEV_teacher_IoU")
 INTERPRETATION = "RESEARCH_ONLY_TEACHER_AGREEMENT_NOT_BIOMETRIC_VALIDATION"
 
@@ -500,7 +500,7 @@ def build_training_config(
     parity_max_absolute_error: float,
 ) -> dict[str, Any]:
     config = {
-        "schema_version": "cvi.nose_segmentation_student.training_config.v1",
+        "schema_version": "identification.nose.nose_segmentation_student.training_config.v1",
         "model": {
             "backbone": MOBILENETV4_MODEL_NAME,
             "spatial_feature_channels": 960,
@@ -1297,7 +1297,7 @@ def _validate_training_config(config: object) -> None:
     }
     if not isinstance(config, dict) or set(config) != expected:
         raise ValueError("segmentation training config keys differ")
-    if config["schema_version"] != "cvi.nose_segmentation_student.training_config.v1" or config["selection_metric_order"] != list(SELECTION_METRICS) or config["device"] not in {"cpu", "cuda"}:
+    if config["schema_version"] != "identification.nose.nose_segmentation_student.training_config.v1" or config["selection_metric_order"] != list(SELECTION_METRICS) or config["device"] not in {"cpu", "cuda"}:
         raise ValueError("segmentation training config contract differs")
     if (
         not isinstance(config["model"], dict)

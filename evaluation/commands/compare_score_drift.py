@@ -42,7 +42,7 @@ def _numerical_receipt(path: Path) -> NumericalAdmissionReceipt:
     return NumericalAdmissionReceipt.from_dict(
         read_content_hashed_json_bundle(
             path,
-            schema_version="cvi.numerical_admission_bundle.v1",
+            schema_version="evaluation.numerical_admission_bundle.v1",
             payload_field="receipt",
             sha256_field="receipt_sha256",
         )
@@ -53,7 +53,7 @@ def _admission_plan(path: Path) -> ScoreDriftAdmissionPlan:
     return ScoreDriftAdmissionPlan.from_dict(
         read_content_hashed_json_bundle(
             path,
-            schema_version="cvi.score_drift_admission_plan_bundle.v2",
+            schema_version="evaluation.score_drift_admission_plan_bundle.v2",
             payload_field="plan",
             sha256_field="plan_sha256",
         )
@@ -162,7 +162,7 @@ def _run_compare(argv: list[str]) -> None:
         ),
     )
     output = {
-        "schema_version": "cvi.score_drift_admission_bundle.v2",
+        "schema_version": "evaluation.score_drift_admission_bundle.v2",
         "receipt_sha256": receipt.receipt_sha256,
         "receipt": receipt.to_dict(),
     }
@@ -248,7 +248,7 @@ def _run_precommit(argv: list[str]) -> None:
         precommitment_sequence=args.precommitment_sequence,
     )
     output = {
-        "schema_version": "cvi.score_drift_precommitment_bundle.v1",
+        "schema_version": "evaluation.score_drift_precommitment_bundle.v1",
         "precommitment_sha256": precommitment.precommitment_sha256,
         "precommitment": precommitment.to_dict(),
     }
@@ -326,7 +326,7 @@ def _run_plan(argv: list[str]) -> None:
         numerical_admission=NumericalAdmissionReceipt.from_dict(
             read_content_hashed_json_bundle(
                 args.numerical_admission,
-                schema_version="cvi.numerical_admission_bundle.v1",
+                schema_version="evaluation.numerical_admission_bundle.v1",
                 payload_field="receipt",
                 sha256_field="receipt_sha256",
             )
@@ -346,14 +346,14 @@ def _run_plan(argv: list[str]) -> None:
         precommitment=ScoreDriftPrecommitment.from_dict(
             read_content_hashed_json_bundle(
                 args.precommitment,
-                schema_version="cvi.score_drift_precommitment_bundle.v1",
+                schema_version="evaluation.score_drift_precommitment_bundle.v1",
                 payload_field="precommitment",
                 sha256_field="precommitment_sha256",
             )
         ),
     )
     output = {
-        "schema_version": "cvi.score_drift_admission_plan_bundle.v2",
+        "schema_version": "evaluation.score_drift_admission_plan_bundle.v2",
         "plan_sha256": plan.plan_sha256,
         "plan": plan.to_dict(),
     }
@@ -381,7 +381,7 @@ def _run_verify(argv: list[str]) -> None:
     receipt = ScoreDriftAdmissionReceipt.from_dict(
         read_content_hashed_json_bundle(
             args.receipt,
-            schema_version="cvi.score_drift_admission_bundle.v2",
+            schema_version="evaluation.score_drift_admission_bundle.v2",
             payload_field="receipt",
             sha256_field="receipt_sha256",
         )

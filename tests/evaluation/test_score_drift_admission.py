@@ -400,7 +400,7 @@ def protected_production_receipt(
     publication_strategy = "RENAMEAT2_NOREPLACE"
     actual_provider_options_sha256 = opaque(f"provider-options:{sequence}")
     completed_head = content_sha256({
-        "schema_version": "cvi.embedding_completed_attempt.v2",
+        "schema_version": "operations.embedding_completed_attempt.v2",
         "prior_attempt_ledger_sha256": (
             precommitment.prior_attempt_ledger_sha256
         ),
@@ -1186,18 +1186,18 @@ class ScoreDriftAdmissionTests(unittest.TestCase):
                 "reference-producer-config": case["reference_config"].to_dict(),
                 "candidate-producer-config": case["candidate_config"].to_dict(),
                 "numerical-admission": {
-                    "schema_version": "cvi.numerical_admission_bundle.v1",
+                    "schema_version": "evaluation.numerical_admission_bundle.v1",
                     "receipt_sha256": case["numerical"].receipt_sha256,
                     "receipt": case["numerical"].to_dict(),
                 },
                 "numerical-policy": case["numerical_policy"].to_dict(),
                 "reference-production": {
-                    "schema_version": "cvi.embedding_production_bundle.v2",
+                    "schema_version": "operations.embedding_production_bundle.v2",
                     "receipt_sha256": reference_outer.receipt_sha256,
                     "receipt": reference_outer.to_dict(),
                 },
                 "candidate-production": {
-                    "schema_version": "cvi.embedding_production_bundle.v2",
+                    "schema_version": "operations.embedding_production_bundle.v2",
                     "receipt_sha256": candidate_outer.receipt_sha256,
                     "receipt": candidate_outer.to_dict(),
                 },
@@ -1251,7 +1251,7 @@ class ScoreDriftAdmissionTests(unittest.TestCase):
             legacy_reference.write_text(
                 json.dumps(
                     {
-                        "schema_version": "cvi.embedding_production_bundle.v1",
+                        "schema_version": "operations.embedding_production_bundle.v1",
                         "receipt_sha256": (
                             case["reference_production"].receipt_sha256
                         ),

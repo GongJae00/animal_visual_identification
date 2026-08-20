@@ -254,7 +254,7 @@ class VerificationEvaluation:
 
     def to_dict(self) -> dict[str, Any]:
         return {
-            "schema_version": "cvi.verification_evaluation.v1",
+            "schema_version": "evaluation.verification_evaluation.v1",
             "test_manifest_sha256": self.test_manifest_sha256,
             "threshold_sha256": self.threshold_sha256,
             "direction": self.direction.value,

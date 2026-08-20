@@ -165,7 +165,7 @@ def _panel(shot: int, *, unavailable_method: str | None = None) -> dict[str, obj
 
 def _source_bundle(*, unavailable_method: str | None = None) -> dict[str, object]:
     report = {
-        "schema_version": "cvi.sibetan_multievidence_evaluation.v2",
+        "schema_version": "archive.sibetan.sibetan_multievidence_evaluation.v2",
         "status": "PASS_EXPOSED_SIBETAN_FROZEN_TRANSFER_DIAGNOSTIC",
         "interpretation": "EXPOSED_SIBETAN_CROSS_SEQUENCE_FROZEN_TRANSFER_DIAGNOSTIC_NOT_FINAL_OR_BIOMETRIC_VALIDATION",
         "protocol": {
@@ -210,7 +210,7 @@ def _source_bundle(*, unavailable_method: str | None = None) -> dict[str, object
         },
     }
     return {
-        "schema_version": "cvi.sibetan_multievidence_evaluation_bundle.v2",
+        "schema_version": "archive.sibetan.sibetan_multievidence_evaluation_bundle.v2",
         "report_sha256": content_sha256(report),
         "report": report,
     }
@@ -255,7 +255,7 @@ def test_records_legitimate_unavailable_query_summaries() -> None:
 @pytest.mark.parametrize(
     "mutation",
     [
-        lambda bundle: bundle.update(schema_version="cvi.sibetan_multievidence_evaluation_bundle.v1"),
+        lambda bundle: bundle.update(schema_version="archive.sibetan.sibetan_multievidence_evaluation_bundle.v1"),
         lambda bundle: bundle["report"]["panels"][0]["methods"][BRANCHES[0]]["query_rows"][0].update(rank=2),
         lambda bundle: bundle["report"]["panels"][0]["branch_availability"][BRANCHES[1]].update(pair_coverage=0.5),
         lambda bundle: bundle["report"]["panels"][0]["methods"]["A0_plus_F0"][

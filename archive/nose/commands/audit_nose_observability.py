@@ -70,7 +70,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "byte_size": document.byte_size,
     }
     report["tool_provenance"] = {
-        "schema_version": "cvi.nose_observability_tool_provenance.v1",
+        "schema_version": "archive.nose.nose_observability_tool_provenance.v1",
         "code_sha256s": {
             row["relative_path"]: row["content_sha256"]
             for row in source_provenance["code_source_files"]

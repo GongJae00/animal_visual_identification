@@ -483,7 +483,7 @@ class CoverageAccumulator:
         self._closed = True
         single_dog_hours = self._aggregate.single_dog_ns / 3_600_000_000_000
         return {
-            "schema_version": "cvi.coverage.v1",
+            "schema_version": "representation.coverage.v1",
             "policy": self._policy.to_dict(),
             "policy_sha256": self._policy.policy_sha256,
             "timeline_start_ns": self._timeline_start_ns,

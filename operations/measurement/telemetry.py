@@ -407,7 +407,7 @@ def monitor_operation(
                 if process.stderr is not None:
                     process.stderr.close()
 
-    thread = threading.Thread(target=worker, name="cvi-gpu-telemetry", daemon=True)
+    thread = threading.Thread(target=worker, name="gpu-telemetry", daemon=True)
     thread.start()
     if not ready.wait(timeout=10.0):
         stop.set()

@@ -25,7 +25,7 @@
       "name": "gallery",
       "protocol": "YT_CLOSED_SET",
       "role": "GALLERY",
-      "schema_version": "cvi.protected_evaluation_role_binding.v1",
+      "schema_version": "evaluation.protected_evaluation_role_binding.v1",
       "shot": 3
     },
     {
@@ -34,11 +34,11 @@
       "name": "queries",
       "protocol": "YT_CLOSED_SET",
       "role": "KNOWN_QUERY",
-      "schema_version": "cvi.protected_evaluation_role_binding.v1",
+      "schema_version": "evaluation.protected_evaluation_role_binding.v1",
       "shot": 3
     }
   ],
-  "schema_version": "cvi.protected_evaluation_policy.v1",
+  "schema_version": "evaluation.protected_evaluation_policy.v1",
   "score_dtype": "float64",
   "self_match_policy": "exclude"
 }

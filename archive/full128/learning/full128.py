@@ -52,7 +52,7 @@ from archive.full128.methods.training.manifests import (
 from archive.full128.methods.models.model import MaskedGAP128
 from archive.full128.methods.training.sampler import DatasetViewBalancedPKSampler
 
-RUN_MANIFEST_SCHEMA = "cvi.full128_training_run.v1"
+RUN_MANIFEST_SCHEMA = "archive.full128.training_run.v1"
 _VARIANT_IDS = {item[0] for item in BASELINE_VARIANTS}
 _PREFETCH_FACTOR = 2
 
@@ -473,7 +473,7 @@ def _produce_neural(
         cpu_state,
         str(state_path),
         metadata={
-            "schema_version": "cvi.full128_masked_gap_state.v1",
+            "schema_version": "archive.full128.masked_gap_state.v1",
             "variant_id": variant,
             "run_config_sha256": content_sha256(config),
             "selection": "FIXED_LAST_EPOCH",

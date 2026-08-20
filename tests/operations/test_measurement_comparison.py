@@ -102,7 +102,7 @@ def run_isolated_lane_benchmark(
     )
     payload = json.loads(receipt_path.read_text())
     if payload.get("schema_version") != (
-        "cvi.onnx_inference_benchmark_receipt.v3"
+        "operations.onnx_inference_benchmark_receipt.v3"
     ):
         raise AssertionError("isolated benchmark receipt schema differs")
     summary = OnnxInferenceBenchmarkSummary.from_dict(payload["summary"])
@@ -278,14 +278,14 @@ class PairedMeasurementComparisonTests(unittest.TestCase):
             payloads = {
                 "reference-benchmark.json": {
                     "schema_version": (
-                        "cvi.onnx_inference_benchmark_receipt.v3"
+                        "operations.onnx_inference_benchmark_receipt.v3"
                     ),
                     "summary_sha256": cpu.summary_sha256,
                     "summary": cpu.to_dict(),
                 },
                 "candidate-benchmark.json": {
                     "schema_version": (
-                        "cvi.onnx_inference_benchmark_receipt.v3"
+                        "operations.onnx_inference_benchmark_receipt.v3"
                     ),
                     "summary_sha256": cuda.summary_sha256,
                     "summary": cuda.to_dict(),
@@ -295,7 +295,7 @@ class PairedMeasurementComparisonTests(unittest.TestCase):
                 "reference-manifest.json": reference_manifest.to_dict(),
                 "candidate-manifest.json": candidate_manifest.to_dict(),
                 "numerical.json": {
-                    "schema_version": "cvi.numerical_admission_bundle.v1",
+                    "schema_version": "evaluation.numerical_admission_bundle.v1",
                     "receipt_sha256": numerical.receipt_sha256,
                     "receipt": numerical.to_dict(),
                 },

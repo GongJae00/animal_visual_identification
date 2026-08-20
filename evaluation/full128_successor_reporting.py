@@ -9,9 +9,9 @@ from typing import Any
 
 from shared.foundation.provenance import content_sha256
 
-PUBLIC_REPORT_SCHEMA = "cvi.full128_successor_public_evaluation.v1"
-DEV_SELECTION_SCHEMA = "cvi.full128_successor_dev_selection_receipt.v1"
-PAIRED_BOOTSTRAP_SCHEMA = "cvi.full128_successor_paired_bootstrap.v1"
+PUBLIC_REPORT_SCHEMA = "archive.full128.successor_public_evaluation.v1"
+DEV_SELECTION_SCHEMA = "archive.full128.successor_dev_selection_receipt.v1"
+PAIRED_BOOTSTRAP_SCHEMA = "archive.full128.successor_paired_bootstrap.v1"
 EVALUATION_SCOPES = ("DEV", "CAL", "EXPOSED_DIAGNOSTIC")
 ENROLLMENT_KS = (1, 3, 5)
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")

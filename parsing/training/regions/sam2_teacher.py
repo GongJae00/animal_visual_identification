@@ -33,7 +33,7 @@ from shared.foundation.provenance import content_sha256
 from shared.foundation.retained_file import read_retained_regular_file
 
 
-SOURCE_IMAGE_MANIFEST_SCHEMA = "cvi.yt_native_nose_teacher_source_images.v1"
+SOURCE_IMAGE_MANIFEST_SCHEMA = "archive.nose.yt_native_nose_teacher_source_images.v1"
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 _GIT_COMMIT = re.compile(r"[0-9a-f]{40}\Z")
 _SOURCE_FIELDS = {
@@ -625,7 +625,7 @@ class _LocalSam2Predictor:
         if self._video is None:
             raise RuntimeError("SAM2 video predictor is unavailable")
         images = kwargs["images"]
-        with tempfile.TemporaryDirectory(prefix="cvi-sam2-video-") as temporary:
+        with tempfile.TemporaryDirectory(prefix="sam2-video-") as temporary:
             root = Path(temporary)
             for index, image in enumerate(images):
                 payload = io.BytesIO()

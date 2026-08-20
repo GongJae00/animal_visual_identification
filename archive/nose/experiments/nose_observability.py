@@ -24,8 +24,8 @@ from parsing.export.regions.native_yt import (
     validate_manifest_bundle,
 )
 
-REPORT_SCHEMA = "cvi.nose_observability_proxy_report.v1"
-REPORT_BUNDLE_SCHEMA = "cvi.nose_observability_proxy_report_bundle.v1"
+REPORT_SCHEMA = "archive.nose.nose_observability_proxy_report.v1"
+REPORT_BUNDLE_SCHEMA = "archive.nose.nose_observability_proxy_report_bundle.v1"
 REFERENCE_RESIZE_SIDE = 224
 SUPPORTED_BUNDLE_SCHEMAS = (
     YT_BUNDLE_SCHEMA,

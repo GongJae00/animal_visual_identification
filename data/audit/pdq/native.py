@@ -79,8 +79,8 @@ CANONICAL_RETAINED_MEMBERS: tuple[tuple[str, int, str], ...] = (
     ("pdq/cpp/hashing/torben.h", 626, "d58b25e10d30de4137e53ea869008f911687851a19b5d25c091e56ec5030acf3"),
 )
 
-REQUEST_MAGIC = b"CVIPDQ02"
-RESPONSE_MAGIC = b"CVIPDQR2"
+REQUEST_MAGIC = b"PDQREQ02"
+RESPONSE_MAGIC = b"PDQRSP02"
 PROTOCOL_VERSION = 2
 REQUEST_HEADER = struct.Struct("<8sIQIII32s")
 RESPONSE_PREFIX = struct.Struct("<8sIIIQ32s")
@@ -278,15 +278,15 @@ class BuilderToolProvenance:
     code_source_files: tuple[BuilderSourceProvenanceRow, ...]
     runtime: BuilderRuntimeProvenance
     runtime_sha256: str
-    schema_version: str = "cvi.offline_tool_provenance.v1"
+    schema_version: str = "source.offline_tool_provenance.v1"
     logical_component: str | None = None
     entrypoints: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         if self.schema_version not in {
-            "cvi.offline_tool_provenance.v1",
-            "canine_identity.source_provenance.v2",
-            "canine_identity.source_provenance.v3",
+            "source.offline_tool_provenance.v1",
+            "source.provenance.v2",
+            "source.provenance.v3",
         }:
             raise ValueError("builder tool provenance schema differs")
         _validate_sha256(self.code_source_manifest_sha256)
@@ -296,90 +296,26 @@ class BuilderToolProvenance:
         paths = tuple(row.relative_path for row in self.code_source_files)
         if paths != tuple(sorted(paths)) or len(set(paths)) != len(paths):
             raise ValueError("builder source provenance rows must be sorted and unique")
-        if self.schema_version == "cvi.offline_tool_provenance.v1":
-            cli_rows = tuple(
-                path for path in paths if path == "tools/build_native_pdq_worker.py"
-            )
-            package_rows = tuple(path for path in paths if path.startswith("src/cvi/"))
-            if len(cli_rows) != 1 or len(package_rows) != len(paths) - 1:
-                raise ValueError("legacy builder source provenance path policy differs")
-            if any(
-                len(PurePosixPath(path).parts) != 3 or not path.endswith(".py")
-                for path in package_rows
-            ):
-                raise ValueError("legacy builder provenance source shape differs")
-            required = {
-                "src/cvi/pdq_native.py",
-                "tools/build_native_pdq_worker.py",
-            }
-            if self.logical_component is not None or self.entrypoints:
-                raise ValueError("legacy builder provenance has v2 fields")
-        else:
-            required_families = (
-                {
-                    "identity_methods/classical/pdq_contracts.py",
-                    "identity_methods/classical/pdq_native.py",
-                    "identity_methods/classical/pdq_source_intake.py",
-                    "workflows/build_native_pdq_worker.py",
-                },
-                {
-                    "embedding/methods/classical/pdq_contracts.py",
-                    "embedding/methods/classical/pdq_native.py",
-                    "embedding/methods/classical/pdq_source_intake.py",
-                    "workflows/build_native_pdq_worker.py",
-                },
-                {
-                    "data/audit/pdq/contracts.py",
-                    "data/audit/pdq/native.py",
-                    "data/audit/pdq/source_intake.py",
-                    "workflows/build_native_pdq_worker.py",
-                },
-                {
-                    "identity_methods/classical/pdq_contracts.py",
-                    "identity_methods/classical/pdq_native.py",
-                    "identity_methods/classical/pdq_source_intake.py",
-                    "archive/shared_helpers/commands/build_native_pdq_worker.py",
-                },
-                {
-                    "embedding/methods/classical/pdq_contracts.py",
-                    "embedding/methods/classical/pdq_native.py",
-                    "embedding/methods/classical/pdq_source_intake.py",
-                    "archive/shared_helpers/commands/build_native_pdq_worker.py",
-                },
-                {
-                    "data/audit/pdq/contracts.py",
-                    "data/audit/pdq/native.py",
-                    "data/audit/pdq/source_intake.py",
-                    "archive/shared_helpers/commands/build_native_pdq_worker.py",
-                },
-            )
-            accepted_entrypoints = {
-                "workflows.build_native_pdq_worker",
-                "archive.shared_helpers.commands.build_native_pdq_worker",
-            }
-            if (
-                not isinstance(self.logical_component, str)
-                or not self.logical_component
-                or self.entrypoints != tuple(sorted(set(self.entrypoints)))
-                or accepted_entrypoints.isdisjoint(self.entrypoints)
-                or any(row.logical_name is None for row in self.code_source_files)
-            ):
-                raise ValueError("builder source provenance v2 logical closure differs")
+        required_paths = {
+            "data/audit/pdq/contracts.py",
+            "data/audit/pdq/native.py",
+            "data/audit/pdq/source_intake.py",
+            "archive/shared_helpers/commands/build_native_pdq_worker.py",
+        }
+        accepted_entrypoints = {
+            "archive.shared_helpers.commands.build_native_pdq_worker",
+        }
+        if (
+            not isinstance(self.logical_component, str)
+            or not self.logical_component
+            or self.entrypoints != tuple(sorted(set(self.entrypoints)))
+            or accepted_entrypoints.isdisjoint(self.entrypoints)
+            or any(row.logical_name is None for row in self.code_source_files)
+        ):
+            raise ValueError("builder source provenance logical closure differs")
         if any(row.byte_size > 10_000_000 for row in self.code_source_files):
             raise ValueError("builder source provenance row exceeds the byte bound")
-        if self.schema_version == "cvi.offline_tool_provenance.v1":
-            valid_required_paths = required.issubset(paths)
-        else:
-            valid_required_paths = any(
-                required_paths.issubset(paths)
-                and set(paths).isdisjoint(
-                    set.union(
-                        *(other - required_paths for other in required_families)
-                    )
-                )
-                for required_paths in required_families
-            )
-        if not valid_required_paths:
+        if not required_paths.issubset(paths):
             raise ValueError("builder provenance omits a required implementation source")
         source_payload = [row.to_dict() for row in self.code_source_files]
         if content_sha256(source_payload) != self.code_source_manifest_sha256:
@@ -400,8 +336,8 @@ class BuilderToolProvenance:
             "runtime_sha256": self.runtime_sha256,
         }
         if self.schema_version in {
-            "canine_identity.source_provenance.v2",
-            "canine_identity.source_provenance.v3",
+            "source.provenance.v2",
+            "source.provenance.v3",
         }:
             payload["logical_component"] = self.logical_component
             payload["entrypoints"] = list(self.entrypoints)
@@ -474,10 +410,10 @@ class PdqNativeBuildReceipt:
     license_content_sha256: str
     publication_guarantee: str = "ATOMIC_DIRECTORY_NOREPLACE"
     interpretation: str = CANONICAL_INTERPRETATION
-    schema_version: str = "cvi.pdq_native_build_receipt.v4"
+    schema_version: str = "pdq.native_build_receipt.v4"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.pdq_native_build_receipt.v4":
+        if self.schema_version != "pdq.native_build_receipt.v4":
             raise ValueError("unsupported native PDQ build receipt")
         for digest in (
             self.intake_bundle_sha256,
@@ -693,7 +629,7 @@ def build_native_pdq_worker(
     if output_directory.exists() or output_directory.is_symlink():
         raise FileExistsError(output_directory)
     parent = output_directory.parent.resolve(strict=True)
-    stage = Path(mkdtemp(prefix=".cvi-pdq-build-", dir=parent))
+    stage = Path(mkdtemp(prefix=".pdq-build-", dir=parent))
     try:
         staged_source = stage / "source"
         for relative_path, payload, _ in retained_payloads:

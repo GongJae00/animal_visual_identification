@@ -225,7 +225,7 @@ class ExternalAppearanceToolTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "unsupported.*schema"):
             tool._source_spec_from_payload(
                 {
-                    "schema_version": "cvi.external_appearance_source_spec.v0",
+                    "schema_version": "archive.appearance_face_nose.external_appearance_source_spec.v0",
                     "sources": [],
                 }
             )

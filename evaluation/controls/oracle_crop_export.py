@@ -32,7 +32,7 @@ def _receipt_target(path: Path) -> Path:
 
 def _write_private_receipt(path: Path, payload: dict[str, Any]) -> None:
     target = _receipt_target(path)
-    with TemporaryDirectory(prefix=".cvi-crop-receipt-", dir=target.parent) as temp:
+    with TemporaryDirectory(prefix=".crop-receipt-", dir=target.parent) as temp:
         staged = Path(temp) / "receipt.json"
         staged.write_text(
             json.dumps(

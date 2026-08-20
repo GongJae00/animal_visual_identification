@@ -33,8 +33,8 @@ from evaluation.splits.role_exposure import (
 )
 
 
-REPORT_SCHEMA_VERSION = "cvi.evaluation.report.v3"
-REPORT_SCHEMA_FILENAME = "cvi.evaluation.report.v3.schema.json"
+REPORT_SCHEMA_VERSION = "evaluation.report.v3"
+REPORT_SCHEMA_FILENAME = "evaluation.report.v3.schema.json"
 REPORT_PROTOCOL_STATUS = "RECEIPT_CHAIN_VERIFIED"
 REPORT_INTERPRETATION = (
     "RECEIPT_CHAIN_INTEGRITY_ONLY_SCIENTIFIC_VALIDITY_REQUIRES_EXTERNAL_PROTOCOL_MODEL_DATA_REVIEW"
@@ -55,10 +55,10 @@ class ProtectedEvaluationRoleBinding:
     gallery_size: int
     shot: int
     role: str
-    schema_version: str = "cvi.protected_evaluation_role_binding.v1"
+    schema_version: str = "evaluation.protected_evaluation_role_binding.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.protected_evaluation_role_binding.v1":
+        if self.schema_version != "evaluation.protected_evaluation_role_binding.v1":
             raise ValueError("unsupported protected evaluation role binding")
         if self.name not in {"gallery", "queries"}:
             raise ValueError("protected evaluation input name differs")
@@ -99,10 +99,10 @@ class ProtectedEvaluationPolicy:
     score_dtype: str
     metric: str
     self_match_policy: str
-    schema_version: str = "cvi.protected_evaluation_policy.v1"
+    schema_version: str = "evaluation.protected_evaluation_policy.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.protected_evaluation_policy.v1":
+        if self.schema_version != "evaluation.protected_evaluation_policy.v1":
             raise ValueError("unsupported protected evaluation policy")
         if not isinstance(self.role_bindings, tuple) or tuple(
             item.name for item in self.role_bindings
@@ -171,10 +171,10 @@ class ProtectedEvaluationExternalPins:
     gallery_production_receipt_sha256: str
     queries_raw_sha256: str
     queries_production_receipt_sha256: str
-    schema_version: str = "cvi.protected_evaluation_external_pins.v1"
+    schema_version: str = "evaluation.protected_evaluation_external_pins.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.protected_evaluation_external_pins.v1":
+        if self.schema_version != "evaluation.protected_evaluation_external_pins.v1":
             raise ValueError("unsupported protected evaluation external pins")
         for name in self.__dataclass_fields__:
             if name != "schema_version":
@@ -196,10 +196,10 @@ class ProtectedEmbeddingRecord:
     public_subject_token: str
     template_token: str
     embedding: tuple[float, ...]
-    schema_version: str = "cvi.protected_embedding_record.v1"
+    schema_version: str = "evaluation.protected_embedding_record.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.protected_embedding_record.v1":
+        if self.schema_version != "evaluation.protected_embedding_record.v1":
             raise ValueError("unsupported protected embedding record")
         for name in ("sample_token", "identity_token", "public_subject_token", "template_token"):
             _sha256(getattr(self, name), name)
@@ -237,10 +237,10 @@ class ProtectedEmbeddingManifest:
     production_receipt_sha256: str
     records: tuple[ProtectedEmbeddingRecord, ...]
     interpretation: str = "RECEIPT_BOUND_EMBEDDINGS_ONLY_NO_INFERENCE"
-    schema_version: str = "cvi.protected_embedding_manifest.v1"
+    schema_version: str = "evaluation.protected_embedding_manifest.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.protected_embedding_manifest.v1":
+        if self.schema_version != "evaluation.protected_embedding_manifest.v1":
             raise ValueError("unsupported protected embedding manifest")
         if self.input_name not in {"gallery", "queries"}:
             raise ValueError("protected embedding input name differs")
@@ -300,10 +300,10 @@ class ProtectedFileReceipt:
     canonical_payload_sha256: str
     byte_size: int
     external_receipt_sha256: str | None
-    schema_version: str = "cvi.protected_file_receipt.v1"
+    schema_version: str = "evaluation.protected_file_receipt.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.protected_file_receipt.v1":
+        if self.schema_version != "evaluation.protected_file_receipt.v1":
             raise ValueError("unsupported protected file receipt")
         _text(self.name, "protected file name", 128)
         _sha256(self.raw_sha256, "raw_sha256")
@@ -327,10 +327,10 @@ class ProtectedEvaluationPolicyReceipt:
     policy_sha256: str
     external_pins: ProtectedFileReceipt
     interpretation: str = "FROZEN_POLICY_AND_EXTERNAL_PINS_BEFORE_SCORING"
-    schema_version: str = "cvi.protected_evaluation_policy_receipt.v1"
+    schema_version: str = "evaluation.protected_evaluation_policy_receipt.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.protected_evaluation_policy_receipt.v1":
+        if self.schema_version != "evaluation.protected_evaluation_policy_receipt.v1":
             raise ValueError("unsupported protected policy receipt")
         if self.policy.name != "policy" or self.external_pins.name != "external_pins":
             raise ValueError("protected policy receipt names differ")
@@ -373,7 +373,7 @@ class ProtectedEvaluationInputReceipt:
     total_embedding_values: int
     score_matrix_elements: int
     interpretation: str = "ALL_SCORING_INPUTS_HASHED_AND_RESOURCE_CHECKED_BEFORE_ALLOCATION"
-    schema_version: str = "cvi.protected_evaluation_input_receipt.v1"
+    schema_version: str = "evaluation.protected_evaluation_input_receipt.v1"
 
     EXPECTED_NAMES: ClassVar[tuple[str, ...]] = (
         "exposure_ledger",
@@ -385,7 +385,7 @@ class ProtectedEvaluationInputReceipt:
     )
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.protected_evaluation_input_receipt.v1":
+        if self.schema_version != "evaluation.protected_evaluation_input_receipt.v1":
             raise ValueError("unsupported protected input receipt")
         if tuple(item.name for item in self.files) != self.EXPECTED_NAMES:
             raise ValueError("protected input receipt file set differs")
@@ -447,10 +447,10 @@ class ProtectedEvaluationPlanReceipt:
     tool_provenance_sha256: str
     status: str = "PRE_SCORE_EXPOSURE_PUBLISHED"
     interpretation: str = "PLAN_ONLY_NO_SCORE_OR_PERFORMANCE_EVIDENCE"
-    schema_version: str = "cvi.protected_evaluation_plan_receipt.v1"
+    schema_version: str = "evaluation.protected_evaluation_plan_receipt.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.protected_evaluation_plan_receipt.v1":
+        if self.schema_version != "evaluation.protected_evaluation_plan_receipt.v1":
             raise ValueError("unsupported protected evaluation plan receipt")
         for name in (
             "evaluation_token",
@@ -496,10 +496,10 @@ class ProtectedEvaluationOutputReceipt:
     evaluator_provenance_sha256: str
     status: str = REPORT_PROTOCOL_STATUS
     interpretation: str = REPORT_INTERPRETATION
-    schema_version: str = "cvi.protected_evaluation_output_receipt.v2"
+    schema_version: str = "evaluation.protected_evaluation_output_receipt.v2"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.protected_evaluation_output_receipt.v2":
+        if self.schema_version != "evaluation.protected_evaluation_output_receipt.v2":
             raise ValueError("unsupported protected output receipt")
         for name in (
             "plan_receipt_sha256",
@@ -660,7 +660,7 @@ def prepare_protected_evaluation(
     )
     declaration_sha256 = content_sha256(declaration.to_dict())
     evaluation_token = content_sha256({
-        "domain": "CVI_PROTECTED_EVALUATION_V1",
+        "domain": "PROTECTED_EVALUATION_V1",
         "policy_receipt_sha256": policy_receipt.receipt_sha256,
         "input_receipt_sha256": input_receipt.receipt_sha256,
         "advanced_exposure_declaration_sha256": declaration_sha256,
@@ -679,10 +679,10 @@ def prepare_protected_evaluation(
     write_private_json_directory_bundle(
         output_directory,
         (
-            ("policy_receipt.json", _bundle("cvi.protected_evaluation_policy_bundle.v1", policy_receipt.receipt_sha256, policy_receipt.to_dict())),
-            ("input_receipt.json", _bundle("cvi.protected_evaluation_input_bundle.v1", input_receipt.receipt_sha256, input_receipt.to_dict())),
+            ("policy_receipt.json", _bundle("evaluation.protected_evaluation_policy_bundle.v1", policy_receipt.receipt_sha256, policy_receipt.to_dict())),
+            ("input_receipt.json", _bundle("evaluation.protected_evaluation_input_bundle.v1", input_receipt.receipt_sha256, input_receipt.to_dict())),
             ("advanced_exposure_declaration.json", declaration.to_dict()),
-            ("plan_receipt.json", _bundle("cvi.protected_evaluation_plan_bundle.v1", plan.receipt_sha256, plan.to_dict())),
+            ("plan_receipt.json", _bundle("evaluation.protected_evaluation_plan_bundle.v1", plan.receipt_sha256, plan.to_dict())),
         ),
     )
     return plan
@@ -707,17 +707,17 @@ def load_protected_evaluation(
     _sha256(expected_advanced_exposure_declaration_sha256, "expected exposure declaration")
     policy_receipt = _read_bundle(
         preparation_directory / "policy_receipt.json",
-        "cvi.protected_evaluation_policy_bundle.v1",
+        "evaluation.protected_evaluation_policy_bundle.v1",
         ProtectedEvaluationPolicyReceipt,
     )
     input_receipt = _read_bundle(
         preparation_directory / "input_receipt.json",
-        "cvi.protected_evaluation_input_bundle.v1",
+        "evaluation.protected_evaluation_input_bundle.v1",
         ProtectedEvaluationInputReceipt,
     )
     plan = _read_bundle(
         preparation_directory / "plan_receipt.json",
-        "cvi.protected_evaluation_plan_bundle.v1",
+        "evaluation.protected_evaluation_plan_bundle.v1",
         ProtectedEvaluationPlanReceipt,
     )
     if plan.receipt_sha256 != expected_plan_receipt_sha256:
@@ -858,7 +858,7 @@ def publish_protected_evaluation_output(
         output_directory,
         (
             ("report.json", report),
-            ("output_receipt.json", _bundle("cvi.protected_evaluation_output_bundle.v2", output_receipt.receipt_sha256, output_receipt.to_dict())),
+            ("output_receipt.json", _bundle("evaluation.protected_evaluation_output_bundle.v2", output_receipt.receipt_sha256, output_receipt.to_dict())),
         ),
     )
     return output_receipt
@@ -882,17 +882,17 @@ def verify_protected_evaluation_output(
     _sha256(expected_output_receipt_sha256, "expected output receipt")
     policy_receipt = _read_bundle(
         preparation_directory / "policy_receipt.json",
-        "cvi.protected_evaluation_policy_bundle.v1",
+        "evaluation.protected_evaluation_policy_bundle.v1",
         ProtectedEvaluationPolicyReceipt,
     )
     input_receipt = _read_bundle(
         preparation_directory / "input_receipt.json",
-        "cvi.protected_evaluation_input_bundle.v1",
+        "evaluation.protected_evaluation_input_bundle.v1",
         ProtectedEvaluationInputReceipt,
     )
     plan = _read_bundle(
         preparation_directory / "plan_receipt.json",
-        "cvi.protected_evaluation_plan_bundle.v1",
+        "evaluation.protected_evaluation_plan_bundle.v1",
         ProtectedEvaluationPlanReceipt,
     )
     if plan.receipt_sha256 != expected_plan_receipt_sha256:
@@ -911,7 +911,7 @@ def verify_protected_evaluation_output(
         raise ValueError("advanced exposure declaration differs from external anchor")
     output = _read_bundle(
         output_directory / "output_receipt.json",
-        "cvi.protected_evaluation_output_bundle.v2",
+        "evaluation.protected_evaluation_output_bundle.v2",
         ProtectedEvaluationOutputReceipt,
     )
     if output.receipt_sha256 != expected_output_receipt_sha256:
@@ -1039,11 +1039,11 @@ def _validate_split_binding(
     queries: ProtectedEmbeddingManifest,
 ) -> None:
     required_assignment = {"schema_version", "status", "records"}
-    if not required_assignment <= set(assignment) or assignment["schema_version"] != "cvi.protected_public_split_assignment.v1" or assignment["status"] != "PASS_PROTECTED_SPLIT_CONSTRUCTION" or not isinstance(assignment["records"], list):
+    if not required_assignment <= set(assignment) or assignment["schema_version"] != "evaluation.protected_public_split_assignment.v1" or assignment["status"] != "PASS_PROTECTED_SPLIT_CONSTRUCTION" or not isinstance(assignment["records"], list):
         raise ValueError("protected split assignment is not an admitted final split")
     if (
         split_receipt.get("schema_version")
-        != "cvi.protected_public_split_receipt.v2"
+        != "evaluation.protected_public_split_receipt.v2"
         or split_receipt.get("assignment_sha256") != assignment_sha256
         or not _is_sha256(split_receipt.get("role_exposure_ledger_sha256"))
         or not _is_sha256(split_receipt.get("role_exposure_receipt_sha256"))

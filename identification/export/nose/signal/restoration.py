@@ -538,7 +538,7 @@ def restore_nose_frames(
             )
         )
     diagnostics = RestorationDiagnostics(
-        schema_version="cvi.nose_restoration.v1",
+        schema_version="identification.nose.nose_restoration.v1",
         image_shape=(height, width, 3),
         reference_index=reference_index,
         config=settings,

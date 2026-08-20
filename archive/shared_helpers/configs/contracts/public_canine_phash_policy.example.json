@@ -23,5 +23,5 @@
   "read_chunk_bytes": 1048576,
   "resize_height": 32,
   "resize_width": 32,
-  "schema_version": "cvi.public_canine_phash_policy.v1"
+  "schema_version": "data.public_canine_phash_policy.v1"
 }

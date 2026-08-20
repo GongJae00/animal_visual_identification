@@ -221,7 +221,7 @@ def write_model(path: Path) -> None:
                 ["embedding"],
             ),
         ],
-        "cvi-benchmark-test",
+        "benchmark-test",
         [
             helper.make_tensor_value_info(
                 "images",
@@ -439,7 +439,7 @@ class OnnxInferenceBenchmarkIntegrationTests(unittest.TestCase):
             precommitment_path = root / "precommitment.json"
             inventory_path.write_text(json.dumps(inventory.to_dict()))
             artifact_paths_path.write_text(json.dumps({
-                "schema_version": "cvi.batch_artifact_paths.v1",
+                "schema_version": "operations.batch_artifact_paths.v1",
                 "entries": [
                     {"artifact_token": token, "path": str(path)}
                     for token, path in artifact_paths.items()
@@ -481,7 +481,7 @@ class OnnxInferenceBenchmarkIntegrationTests(unittest.TestCase):
                 )
                 precommitment_path.write_text(json.dumps({
                     "schema_version": (
-                        "cvi.batch_invariance_precommitment_bundle.v1"
+                        "evaluation.batch_invariance_precommitment_bundle.v1"
                     ),
                     "precommitment_sha256": (
                         precommitment.precommitment_sha256
@@ -636,7 +636,7 @@ class OnnxInferenceBenchmarkIntegrationTests(unittest.TestCase):
             precommitment_path = root / "embedding-precommitment.json"
             inventory_path.write_text(json.dumps(inventory.to_dict()))
             artifact_paths_path.write_text(json.dumps({
-                "schema_version": "cvi.embedding_artifact_paths.v1",
+                "schema_version": "operations.embedding_artifact_paths.v1",
                 "entries": [
                     {"artifact_token": token, "path": str(path)}
                     for token, path in artifact_paths.items()
@@ -682,7 +682,7 @@ class OnnxInferenceBenchmarkIntegrationTests(unittest.TestCase):
                 )
                 precommitment_path.write_text(json.dumps({
                     "schema_version": (
-                        "cvi.embedding_production_precommitment_bundle.v1"
+                        "operations.embedding_production_precommitment_bundle.v1"
                     ),
                     "precommitment_sha256": (
                         precommitment.precommitment_sha256
@@ -735,7 +735,7 @@ class OnnxInferenceBenchmarkIntegrationTests(unittest.TestCase):
                 path = root / f"embedding-discovery-{sequence}.json"
                 path.write_text(json.dumps({
                     "schema_version": (
-                        "cvi.embedding_runtime_discovery_bundle.v1"
+                        "operations.embedding_runtime_discovery_bundle.v1"
                     ),
                     "discovery_sha256": discovery.discovery_sha256,
                     "discovery": discovery.to_dict(),
@@ -1016,7 +1016,7 @@ class OnnxInferenceBenchmarkIntegrationTests(unittest.TestCase):
             receipt = json.loads(receipt_path.read_text())
             self.assertEqual(
                 receipt["schema_version"],
-                "cvi.onnx_inference_benchmark_receipt.v3",
+                "operations.onnx_inference_benchmark_receipt.v3",
             )
             self.assertEqual(
                 receipt["summary"]["interpretation"],

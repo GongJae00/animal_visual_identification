@@ -186,7 +186,7 @@ def _gallery_contract(
 ) -> dict:
     weights = weights or [1.0 / len(channels)] * len(channels)
     return {
-        "schema_version": "cvi.gallery_embedding_contract.v1",
+        "schema_version": "gallery.embedding_contract.v1",
         "dimension": sum(dimension for _, dimension in channels),
         "channels": [
             {"name": name, "dimension": dimension, "optional": False}
@@ -591,7 +591,7 @@ class GalleryContractTests(unittest.TestCase):
 
     def test_gallery_rejects_a_different_embedding_contract(self) -> None:
         first_contract = {
-            "schema_version": "cvi.gallery_embedding_contract.v1",
+            "schema_version": "gallery.embedding_contract.v1",
             "dimension": 2,
             "channels": ["a", "b"],
             "weights": [0.9, 0.1],
@@ -624,7 +624,7 @@ class SearchContractTests(unittest.TestCase):
             "template_id": "1" * 64,
             "content_sha256": "2" * 64,
             "idempotency_key": "request-1",
-            "template_schema": "cvi.gallery_template.v1",
+            "template_schema": "gallery.template.v1",
             "metadata": {"capture": {"view": "front"}},
             "_evidence": {"appearance": 0.75},
             "_evidence_availability": {"appearance": True},
@@ -709,9 +709,9 @@ class PublicConfigurationTests(unittest.TestCase):
     @staticmethod
     def _config(channels: dict) -> dict:
         return {
-            "schema_version": "cvi.retrieval_config.v1",
+            "schema_version": "search.config.v1",
             "mode": "closed_set_retrieval",
-            "index_dir": "/tmp/cvi-public-runtime-contract-gallery",
+            "index_dir": "/tmp/public-runtime-contract-gallery",
             "channels": channels,
         }
 
@@ -729,15 +729,15 @@ class PublicConfigurationTests(unittest.TestCase):
             IdentityEngine()
         with self.assertRaisesRegex(ValueError, "explicit index_dir"):
             IdentityEngine({
-                "schema_version": "cvi.retrieval_config.v1",
+                "schema_version": "search.config.v1",
                 "mode": "closed_set_retrieval",
                 "channels": {},
             })
         with self.assertRaisesRegex(ValueError, "channels"):
             IdentityEngine({
-                "schema_version": "cvi.retrieval_config.v1",
+                "schema_version": "search.config.v1",
                 "mode": "closed_set_retrieval",
-                "index_dir": "/tmp/cvi-public-runtime-contract-gallery",
+                "index_dir": "/tmp/public-runtime-contract-gallery",
             })
         with self.assertRaisesRegex(ValueError, "schema_version"):
             IdentityEngine({"mode": "closed_set_retrieval", "channels": {}})
@@ -745,9 +745,9 @@ class PublicConfigurationTests(unittest.TestCase):
     def test_configuration_rejects_unknown_models(self) -> None:
         with self.assertRaisesRegex(ValueError, "unsupported channel"):
             IdentityEngine({
-                "schema_version": "cvi.retrieval_config.v1",
+                "schema_version": "search.config.v1",
                 "mode": "closed_set_retrieval",
-                "index_dir": "/tmp/cvi-public-runtime-contract-gallery",
+                "index_dir": "/tmp/public-runtime-contract-gallery",
                 "channels": {"visual": {"type": "dinov3"}},
             })
 
@@ -847,7 +847,7 @@ class PublicConfigurationTests(unittest.TestCase):
     def test_configuration_rejects_heuristic_open_set(self) -> None:
         with self.assertRaisesRegex(ValueError, "frozen calibration"):
             IdentityEngine({
-                "schema_version": "cvi.retrieval_config.v1",
+                "schema_version": "search.config.v1",
                 "mode": "closed_set_retrieval",
                 "channels": {"visual": {"type": "dinov2"}},
                 "open_set": {"enabled": True},
@@ -857,7 +857,7 @@ class PublicConfigurationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "config.json"
             path.write_text(
-                '{"schema_version":"cvi.retrieval_config.v1",'
+                '{"schema_version":"search.config.v1",'
                 '"mode":"closed_set_retrieval","mode":"other",'
                 '"channels":{}}',
                 encoding="utf-8",
@@ -865,9 +865,9 @@ class PublicConfigurationTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "duplicate"):
                 IdentityEngine(path)
             path.write_text(
-                '{"schema_version":"cvi.retrieval_config.v1",'
+                '{"schema_version":"search.config.v1",'
                 '"mode":"closed_set_retrieval",'
-                '"index_dir":"/tmp/cvi-index","channels":{},'
+                '"index_dir":"/tmp/index","channels":{},'
                 '"fusion_weights":[NaN]}',
                 encoding="utf-8",
             )
@@ -875,7 +875,7 @@ class PublicConfigurationTests(unittest.TestCase):
                 IdentityEngine(path)
         with self.assertRaisesRegex(ValueError, "finite JSON"):
             IdentityEngine({
-                "schema_version": "cvi.retrieval_config.v1",
+                "schema_version": "search.config.v1",
                 "mode": "closed_set_retrieval",
                 "channels": {"visual": {"type": "dinov3"}},
                 "fusion_weights": [float("nan")],

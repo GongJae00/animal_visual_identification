@@ -83,7 +83,7 @@ class FeatureOutputStatisticsHooks:
 
     def snapshot(self) -> dict[str, Any]:
         return {
-            "schema_version": "cvi.full_segment_dimension_statistics.v1",
+            "schema_version": "parsing.full_segment_dimension_statistics.v1",
             "feature_channels": self._feature.snapshot(axis_kind="FEATURE_CHANNEL_INDEX"),
             "output_dimensions": self._output.snapshot(axis_kind="OUTPUT_DIMENSION_INDEX"),
         }

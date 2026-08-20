@@ -451,7 +451,7 @@ def _decision_fixture(
     dataset: str, instances: tuple[ParsedAnimalInstance, ...]
 ) -> Any:
     row = {
-        "schema_version": "cvi.full128_route_plan_record.v3",
+        "schema_version": "archive.full128.route_plan_record.v3",
         "sample_token": _sha(f"decision:{dataset}"),
         "dataset_name": dataset,
         "record_sha256": _sha(f"record:{dataset}"),
@@ -591,7 +591,7 @@ def test_all_routes_ap_global_matching_terminals_and_resume(
     dogface_lineage = by_dataset["dogfacenet224"]["parser_lineage"]
     assert dogface_lineage["association"]["instance_index"] == 1
     assert dogface_lineage["selection"] == {
-        "schema_version": "cvi.full128_parser_selection_lineage.v1",
+        "schema_version": "archive.full128.parser_selection_lineage.v1",
         "rule": "REQUIRE_EXACTLY_ONE_POST_SUPPRESSION_DOG",
         "prediction_instance_count": 2,
         "post_suppression_dog_count": 1,

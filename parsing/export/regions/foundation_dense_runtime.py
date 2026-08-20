@@ -268,7 +268,7 @@ def _load_bound_cradio(artifact: FoundationVisionArtifact) -> Any:
     """Import C-RADIO from the exact validated directory, not an HF code cache."""
 
     root = artifact.model_directory
-    namespace = f"_cvi_cradio_{artifact.manifest.manifest_sha256}"
+    namespace = f"_cradio_{artifact.manifest.manifest_sha256}"
     package = sys.modules.get(namespace)
     if package is None:
         package = types.ModuleType(namespace)

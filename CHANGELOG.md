@@ -20,7 +20,11 @@ contracts remain readable.
 - Moved pairing-score tests from `tests/search/` to
   `tests/evaluation/test_pair_scoring.py`.
 - Root `AGENTS.md` is the only agent law. Removed unused example JSON and
-  restating comments. `cvi.*` schema identifiers stay as persisted contracts.
+  restating comments.
+- Replaced persisted `cvi.*` and `canine_identity.*` schema identifiers with
+  capability-owned names (`gallery.manifest.v5`, `search.config.v2`,
+  `enrollment.registry_manifest.v1`, `pdq.fingerprint.v1`,
+  `source.provenance.v3`). Old identifier strings are not accepted.
 
 
 - Dataset files resolve from `CANINE_IDENTITY_DATASETS_DIR` when set, otherwise

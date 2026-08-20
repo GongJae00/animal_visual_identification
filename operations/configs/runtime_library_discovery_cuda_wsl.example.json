@@ -9,5 +9,5 @@
   "maximum_maps_bytes": 8388608,
   "maximum_maps_lines": 100000,
   "maximum_total_binary_bytes": 8589934592,
-  "schema_version": "cvi.runtime_library_policy.v1"
+  "schema_version": "operations.runtime_library_policy.v1"
 }

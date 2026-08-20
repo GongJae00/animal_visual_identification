@@ -34,8 +34,8 @@ from evaluation.splits.role_exposure import ExposureStage, RoleExposureLedger, R
 from evaluation.splits.split_role_exposure import verify_split_role_exposure_inputs
 
 
-CVI_RESEARCH_CYCLE_NAMESPACE = uuid.uuid5(
-    uuid.NAMESPACE_DNS, "cvi.research_cycle.v1"
+RESEARCH_CYCLE_NAMESPACE = uuid.uuid5(
+    uuid.NAMESPACE_DNS, "evaluation.research_cycle.v1"
 )
 
 _IDENTITY_DATASETS = frozenset(
@@ -80,10 +80,10 @@ class ResearchSourceAdmission:
     license_lane: ResearchLicenseLane
     source_role: ResearchSourceRole
     identity_target_mode: IdentityTargetMode
-    schema_version: str = "cvi.research_source_admission.v1"
+    schema_version: str = "evaluation.research_source_admission.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.research_source_admission.v1":
+        if self.schema_version != "evaluation.research_source_admission.v1":
             raise ValueError("unsupported research source admission schema")
         if self.dataset_name not in _REQUIRED_DATASETS:
             raise ValueError("unsupported research source dataset")
@@ -138,10 +138,10 @@ class ResearchSourceAdmission:
 class ResearchSourceAdmissions:
     sources: tuple[ResearchSourceAdmission, ...]
     interpretation: str = "EXPLICIT_LICENSED_RESEARCH_SOURCES_ONLY"
-    schema_version: str = "cvi.research_source_admissions.v1"
+    schema_version: str = "evaluation.research_source_admissions.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.research_source_admissions.v1":
+        if self.schema_version != "evaluation.research_source_admissions.v1":
             raise ValueError("unsupported research source admissions schema")
         if self.interpretation != "EXPLICIT_LICENSED_RESEARCH_SOURCES_ONLY":
             raise ValueError("research source admissions interpretation differs")
@@ -189,10 +189,10 @@ class ResearchIdentityAssignment:
     component_tokens: tuple[str, ...]
     historical_maximum_exposure: ExposureStage | None
     quarantine_reasons: tuple[str, ...]
-    schema_version: str = "cvi.research_identity_assignment.v1"
+    schema_version: str = "evaluation.research_identity_assignment.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.research_identity_assignment.v1":
+        if self.schema_version != "evaluation.research_identity_assignment.v1":
             raise ValueError("unsupported research identity assignment schema")
         _require_sha256(self.identity_token, "identity_token")
         _require_text(self.dataset_identity_id, "dataset_identity_id")
@@ -270,10 +270,10 @@ class ResearchSampleAssignment:
     component_token: str
     source_variant: str
     role: ResearchRole | None
-    schema_version: str = "cvi.research_sample_assignment.v1"
+    schema_version: str = "evaluation.research_sample_assignment.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.research_sample_assignment.v1":
+        if self.schema_version != "evaluation.research_sample_assignment.v1":
             raise ValueError("unsupported research sample assignment schema")
         for value, name in (
             (self.sample_token, "sample_token"),
@@ -324,13 +324,13 @@ class ResearchCycleManifest:
     score_inputs_used: bool = False
     final_evaluation_permitted: bool = False
     interpretation: str = _INTERPRETATION
-    schema_version: str = "cvi.research_cycle_manifest.v1"
+    schema_version: str = "evaluation.research_cycle_manifest.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.research_cycle_manifest.v1":
+        if self.schema_version != "evaluation.research_cycle_manifest.v1":
             raise ValueError("unsupported research cycle manifest schema")
         _require_text(self.cycle_name, "cycle_name")
-        if self.cycle_namespace_uuid != str(CVI_RESEARCH_CYCLE_NAMESPACE):
+        if self.cycle_namespace_uuid != str(RESEARCH_CYCLE_NAMESPACE):
             raise ValueError("research cycle namespace UUID differs")
         if self.cycle_id != compute_research_cycle_id(self.cycle_name):
             raise ValueError("research cycle UUIDv5 is not deterministic")
@@ -490,7 +490,7 @@ class ResearchCycleManifest:
 
 def compute_research_cycle_id(cycle_name: str) -> str:
     _require_text(cycle_name, "cycle_name")
-    return str(uuid.uuid5(CVI_RESEARCH_CYCLE_NAMESPACE, cycle_name))
+    return str(uuid.uuid5(RESEARCH_CYCLE_NAMESPACE, cycle_name))
 
 
 def build_research_cycle_manifest(
@@ -603,7 +603,7 @@ def build_research_cycle_manifest(
     return ResearchCycleManifest(
         cycle_name=cycle_name,
         cycle_id=compute_research_cycle_id(cycle_name),
-        cycle_namespace_uuid=str(CVI_RESEARCH_CYCLE_NAMESPACE),
+        cycle_namespace_uuid=str(RESEARCH_CYCLE_NAMESPACE),
         registered_identity_namespace_uuid=str(REGISTERED_DOG_NAMESPACE),
         source_bundle_sha256=source.bundle_sha256,
         dependency_graph_sha256=graph.graph_sha256,
@@ -643,7 +643,7 @@ def _assign_blocks(
     def tie_token(block: Any) -> str:
         return hashlib.sha256(
             (
-                "CVI_RESEARCH_BLOCK_ORDER_V1\0"
+                "RESEARCH_BLOCK_ORDER_V1\0"
                 + cycle_name
                 + "\0"
                 + evidence_root
@@ -765,7 +765,7 @@ def _exact_keys(payload: object, expected: set[str], name: str) -> None:
 
 
 __all__ = [
-    "CVI_RESEARCH_CYCLE_NAMESPACE",
+    "RESEARCH_CYCLE_NAMESPACE",
     "IdentityTargetMode",
     "ResearchCycleManifest",
     "ResearchIdentityAssignment",

@@ -61,10 +61,10 @@ class BlindScoreReceipt:
     precision: str
     device: str
     scores: tuple[BlindPairScore, ...]
-    schema_version: str = "cvi.blind_score_receipt.v1"
+    schema_version: str = "evaluation.blind_score_receipt.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.blind_score_receipt.v1":
+        if self.schema_version != "evaluation.blind_score_receipt.v1":
             raise ValueError("unsupported blind score receipt schema")
         for name in (
             "pair_set_sha256",
@@ -158,7 +158,7 @@ class BlindVerificationEvaluation:
 
     def to_dict(self) -> dict[str, Any]:
         return {
-            "schema_version": "cvi.blind_verification_evaluation.v1",
+            "schema_version": "evaluation.blind_verification_evaluation.v1",
             "score_receipt_sha256": self.score_receipt_sha256,
             "verification": self.verification.to_dict(),
         }

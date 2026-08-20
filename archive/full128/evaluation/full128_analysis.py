@@ -17,11 +17,11 @@ from archive.full128.methods.models.successor_models import (
     SpatialScorer128,
 )
 
-TRACE_SCHEMA = "cvi.full128_representation_trace.v1"
-PUBLIC_TRACE_SCHEMA = "cvi.full128_representation_trace_public.v3"
-EXECUTED_TRACE_SCHEMA = "cvi.full128_representation_trace.v2"
+TRACE_SCHEMA = "archive.full128.representation_trace.v1"
+PUBLIC_TRACE_SCHEMA = "archive.full128.representation_trace_public.v3"
+EXECUTED_TRACE_SCHEMA = "archive.full128.representation_trace.v2"
 EXECUTED_PUBLIC_TRACE_SCHEMA = PUBLIC_TRACE_SCHEMA
-PUBLIC_ANALYSIS_SCHEMA = "cvi.full128_representation_analysis_public.v2"
+PUBLIC_ANALYSIS_SCHEMA = "archive.full128.representation_analysis_public.v2"
 EMBEDDING_DIMENSION = 128
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 _SPATIAL_MAP_NAMES = {

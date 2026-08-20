@@ -26,11 +26,11 @@
     "maximum_total_path_utf8_bytes": 5000000,
     "maximum_total_uncompressed_bytes": 1000000000,
     "read_chunk_bytes": 1048576,
-    "schema_version": "cvi.pdq_source_intake_policy.v1"
+    "schema_version": "pdq.source_intake_policy.v1"
   },
   "repository": "facebook/ThreatExchange",
   "require_verified_commit": true,
-  "schema_version": "cvi.pdq_source_contract.v1",
+  "schema_version": "pdq.source_contract.v1",
   "selected_members": [
     {
       "content_sha256": "68ecc6aafbd2a205a1077f86127030898f03091b7dae9d9017325a8702d8668f",

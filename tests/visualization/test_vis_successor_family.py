@@ -66,7 +66,7 @@ def _selection(candidates: list[dict], selected: str) -> dict:
         for candidate in candidates
     ]
     body = {
-        "schema_version": "cvi.full128_successor_dev_selection_receipt.v1",
+        "schema_version": "archive.full128.successor_dev_selection_receipt.v1",
         "selection_scope": "DEV_ONLY",
         "objective_metric": "Rank-1",
         "tie_policy": "SUCCESSOR_ID_ASC",
@@ -82,7 +82,7 @@ def _paired(left: str, right: str, *, scope: str = "DEV") -> dict:
     for index, metric in enumerate(("Rank-1", "Rank-5", "Rank-10", "MRR")):
         estimate = 0.1 - index * 0.01
         body = {
-            "schema_version": "cvi.full128_successor_paired_bootstrap.v1",
+            "schema_version": "archive.full128.successor_paired_bootstrap.v1",
             "metric": metric,
             "estimate": estimate,
             "lower_bound": estimate - 0.05,
@@ -142,7 +142,7 @@ def _public_report(
             }
         )
     body = {
-        "schema_version": "cvi.full128_successor_public_evaluation.v1",
+        "schema_version": "archive.full128.successor_public_evaluation.v1",
         "visibility": "PUBLIC_AGGREGATE",
         "source_private_report_sha256": _sha("private-report"),
         "evaluation_panel_sha256": _sha("evaluation-panel"),
@@ -175,7 +175,7 @@ def _governance() -> tuple[dict, dict, dict]:
     panel_sha = _sha("panel")
     panel_bundle_sha = _sha("panel-bundle")
     protocol = {
-        "schema_version": "cvi.face_identity_protocol_bundle.v2",
+        "schema_version": "evaluation.face_identity_protocol_bundle.v2",
         "protocol_sha256": protocol_sha,
         "bundle_sha256": protocol_bundle_sha,
         "protocol": {
@@ -192,7 +192,7 @@ def _governance() -> tuple[dict, dict, dict]:
         },
     }
     panel = {
-        "schema_version": "cvi.face_gallery_query_panel_bundle.v1",
+        "schema_version": "evaluation.face_gallery_query_panel_bundle.v1",
         "panel_sha256": panel_sha,
         "bundle_sha256": panel_bundle_sha,
         "panel": {
@@ -231,7 +231,7 @@ def _governance() -> tuple[dict, dict, dict]:
         }
     ]
     inventory = {
-        "schema_version": "cvi.full128_face_visible_successor_inventory_bundle.v1",
+        "schema_version": "archive.full128.face_visible_successor_inventory_bundle.v1",
         "bundle_sha256": _sha("inventory-bundle"),
         "source_binding": {
             "face_protocol_v2_sha256": protocol_sha,
@@ -340,7 +340,7 @@ def test_public_successor_family_is_ordered_aggregate_only_and_deterministic(
     jsonschema = pytest.importorskip("jsonschema")
     schema_path = (
         REPO_ROOT
-        / "shared/contracts/schemas/cvi.figure_data.bundle.v1.schema.json"
+        / "shared/contracts/schemas/visualization.figure_data.bundle.v1.schema.json"
     )
     schema_document = json.loads(schema_path.read_text(encoding="utf-8"))
     validator = jsonschema.Draft202012Validator(schema_document)
@@ -499,7 +499,7 @@ def test_successor_public_bundle_renders_in_chapter_order(
     protocol, panel, inventory = _governance()
     descriptors = tuple(
         {
-            "schema_version": "cvi.full128_successor_embedding_cache.v1",
+            "schema_version": "archive.full128.successor_embedding_cache.v1",
             "successor_id": successor_id,
             "cache_descriptor_sha256": _sha(f"descriptor:{successor_id}"),
             "sample_tokens": [_sha(f"sample:{index}") for index in range(12)],
@@ -590,7 +590,7 @@ def test_cache_descriptors_produce_aggregate_pca_without_tokens_or_paths(
     _patch_governance_validators(monkeypatch)
     protocol, panel, inventory = _governance()
     descriptor = {
-        "schema_version": "cvi.full128_successor_embedding_cache.v1",
+        "schema_version": "archive.full128.successor_embedding_cache.v1",
         "successor_id": "S1",
         "cache_descriptor_sha256": _sha("descriptor:S1"),
         "sample_tokens": [_sha(f"sample:{index}") for index in range(4)],
@@ -725,7 +725,7 @@ def _private_and_public(tmp_path: Path) -> tuple[dict, dict, dict]:
         candidates.append({**body, "candidate_report_sha256": content_sha256(body)})
     selection = _selection(candidates, "S1")
     private_body = {
-        "schema_version": "cvi.full128_successor_private_evaluation.v1",
+        "schema_version": "archive.full128.successor_private_evaluation.v1",
         "visibility": "PRIVATE",
         "successor_inventory_bundle_sha256": _sha("inventory-bundle"),
         "evaluation_panel": {"panel_sha256": _sha("evaluation-panel")},

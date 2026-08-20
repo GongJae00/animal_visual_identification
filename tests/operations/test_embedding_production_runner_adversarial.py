@@ -358,7 +358,7 @@ class EmbeddingProductionRunnerAdversarialTests(unittest.TestCase):
             root = Path(temporary)
             bundle_path = root / "receipt.json"
             legacy = {
-                "schema_version": "cvi.embedding_production_bundle.v1",
+                "schema_version": "operations.embedding_production_bundle.v1",
                 "receipt_sha256": HASH_A,
                 "receipt": {},
             }
@@ -378,7 +378,7 @@ class EmbeddingProductionRunnerAdversarialTests(unittest.TestCase):
             receipt_payload = {"synthetic": "payload"}
             receipt_sha256 = runner.content_sha256(receipt_payload)
             current = {
-                "schema_version": "cvi.embedding_production_bundle.v2",
+                "schema_version": "operations.embedding_production_bundle.v2",
                 "receipt_sha256": receipt_sha256,
                 "receipt": receipt_payload,
             }

@@ -2,7 +2,7 @@
 
 ## Retrieval Config V2
 
-The canonical configuration schema is `cvi.retrieval_config.v2`. The top-level
+The canonical configuration schema is `search.config.v2`. The top-level
 [README](../README.md) shows only the public API shape; exact field and channel
 requirements are maintained here. A ready-to-run retrieval JSON file is
 intentionally not shipped because artifact-backed channels require
@@ -14,7 +14,7 @@ unknown top-level fields, and non-object roots are rejected.
 
 | Field | Requirement | Meaning |
 |---|---|---|
-| `schema_version` | Required | Must be `cvi.retrieval_config.v2` for new configurations |
+| `schema_version` | Required | Must be `search.config.v2` for new configurations |
 | `mode` | Required | Must be `closed_set_retrieval` |
 | `index_dir` | Required | Explicit non-empty path to the local gallery directory |
 | `channels` | Required | Non-empty object of named evidence channel specifications |

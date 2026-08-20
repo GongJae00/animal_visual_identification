@@ -9,10 +9,10 @@ from typing import Any
 
 from shared.foundation.provenance import content_sha256
 
-OBSERVATION_SCHEMA = "cvi.full_segment_observation.v1"
-ROLE_SCHEMA = "cvi.full_segment_role.v1"
-ASSOCIATION_SCHEMA = "cvi.full_segment_association.v1"
-BODY_MASK_POLICY_SCHEMA = "cvi.full_segment_body_mask_policy.v1"
+OBSERVATION_SCHEMA = "parsing.full_segment_observation.v1"
+ROLE_SCHEMA = "parsing.full_segment_role.v1"
+ASSOCIATION_SCHEMA = "parsing.full_segment_association.v1"
+BODY_MASK_POLICY_SCHEMA = "parsing.full_segment_body_mask_policy.v1"
 
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 

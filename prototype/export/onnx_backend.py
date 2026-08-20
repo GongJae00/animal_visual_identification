@@ -51,7 +51,7 @@ def dinov2_image_preprocessing_config(
 ) -> ImagePreprocessingConfig:
     processor = contract.preprocessor
     return ImagePreprocessingConfig(
-        schema_version="cvi.image_preprocessing.v2",
+        schema_version="shared.image_preprocessing.v2",
         width=processor["crop_size"]["width"],
         height=processor["crop_size"]["height"],
         color_mode="RGB",
@@ -137,13 +137,13 @@ class ImagePreprocessingConfig:
     icc_profile_policy: str = "REJECT"
     gamma_policy: str = "IGNORE_METADATA"
     operation_order: str = "CONVERT_THEN_RESIZE"
-    schema_version: str = "cvi.image_preprocessing.v1"
+    schema_version: str = "shared.image_preprocessing.v1"
     resize_shortest_edge: int | None = None
 
     def __post_init__(self) -> None:
         if self.schema_version not in {
-            "cvi.image_preprocessing.v1",
-            "cvi.image_preprocessing.v2",
+            "shared.image_preprocessing.v1",
+            "shared.image_preprocessing.v2",
         }:
             raise ValueError("unsupported image preprocessing schema")
         _require_positive_int(self.width, "width")
@@ -210,7 +210,7 @@ class ImagePreprocessingConfig:
                 "initial gamma policy is fixed to IGNORE_METADATA"
             )
         if self.resize_policy is ImageResizePolicy.SHORTEST_EDGE_CENTER_CROP:
-            if self.schema_version != "cvi.image_preprocessing.v2":
+            if self.schema_version != "shared.image_preprocessing.v2":
                 raise ValueError("shortest-edge preprocessing requires schema v2")
             _require_positive_int(
                 self.resize_shortest_edge,
@@ -264,7 +264,7 @@ class ImagePreprocessingConfig:
             "gamma_policy": self.gamma_policy,
             "operation_order": self.operation_order,
         }
-        if self.schema_version == "cvi.image_preprocessing.v2":
+        if self.schema_version == "shared.image_preprocessing.v2":
             payload["resize_shortest_edge"] = self.resize_shortest_edge
         return payload
 
@@ -300,7 +300,7 @@ class ImagePreprocessingConfig:
             "gamma_policy",
             "operation_order",
         }
-        if schema_version == "cvi.image_preprocessing.v2":
+        if schema_version == "shared.image_preprocessing.v2":
             expected_keys.add("resize_shortest_edge")
         _require_exact_keys(
             payload,
@@ -434,10 +434,10 @@ class OnnxRuntimeBackendConfig:
     ort_load_config_from_model: str = "DISABLED"
     inference_api: str = "session_run_named_output"
     session_log_severity_level: int = 3
-    schema_version: str = "cvi.onnx_runtime_backend_config.v1"
+    schema_version: str = "prototype.onnx_runtime_backend_config.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.onnx_runtime_backend_config.v1":
+        if self.schema_version != "prototype.onnx_runtime_backend_config.v1":
             raise ValueError("unsupported ONNX backend config schema")
         _validate_sha256(
             self.preprocessing_config_sha256,
@@ -736,7 +736,7 @@ class OnnxRuntimeCpuBackend:
         self._model_sha256 = model_sha256
         self._identity = EmbeddingBackendIdentity(
             backend_name="onnxruntime.cpu",
-            backend_version="cvi.onnx_cpu_backend.v1",
+            backend_version="prototype.onnx_cpu_backend.v1",
             runtime_version=(
                 f"onnxruntime={ort.__version__};onnx={onnx.__version__};"
                 f"numpy={np.__version__};pillow={pillow_version}"
@@ -932,7 +932,7 @@ class OnnxRuntimeCudaBackend:
         visible_devices = os.environ.get("CUDA_VISIBLE_DEVICES", "UNSET")
         self._identity = EmbeddingBackendIdentity(
             backend_name="onnxruntime.cuda.full_graph",
-            backend_version="cvi.onnx_cuda_backend.v1",
+            backend_version="prototype.onnx_cuda_backend.v1",
             runtime_version=(
                 f"distribution={distribution_name}=={distribution_version};"
                 f"onnxruntime={ort.__version__};onnx={onnx.__version__};"

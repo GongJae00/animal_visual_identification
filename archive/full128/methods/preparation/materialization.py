@@ -97,18 +97,18 @@ from parsing.export.segmentation.full_segment_contracts import (
 )
 from parsing.export.crops.full_segment_crop import verify_full_crop_artifacts
 
-PARSER_CACHE_RECEIPT_SCHEMA = "cvi.full128_parser_cache_receipt.v1"
-PARSER_RUNTIME_BINDING_SCHEMA = "cvi.full128_parser_runtime_binding.v2"
-ASSOCIATION_AUTHORITY_SCHEMA = "cvi.full128_parser_association_authority.v1"
+PARSER_CACHE_RECEIPT_SCHEMA = "archive.full128.parser_cache_receipt.v1"
+PARSER_RUNTIME_BINDING_SCHEMA = "archive.full128.parser_runtime_binding.v2"
+ASSOCIATION_AUTHORITY_SCHEMA = "archive.full128.parser_association_authority.v1"
 POLICY_SELECTION_AUTHORITY_SCHEMA = (
-    "cvi.full128_parser_policy_selection_authority.v1"
+    "archive.full128.parser_policy_selection_authority.v1"
 )
-SELECTION_LINEAGE_SCHEMA = "cvi.full128_parser_selection_lineage.v1"
-DERIVED_LINEAGE_SCHEMA = "cvi.full128_derived_source_lineage.v1"
-EXECUTION_RECEIPT_SCHEMA = "cvi.full128_sample_execution_receipt.v1"
-SHARD_SELECTION_SCHEMA = "cvi.full128_shard_selection.v1"
-ASSEMBLY_SCHEMA = "cvi.full128_materialization_assembly.v1"
-INVENTORY_REQUEST_SCHEMA = "cvi.full128_experiment_inventory_request.v2"
+SELECTION_LINEAGE_SCHEMA = "archive.full128.parser_selection_lineage.v1"
+DERIVED_LINEAGE_SCHEMA = "archive.full128.derived_source_lineage.v1"
+EXECUTION_RECEIPT_SCHEMA = "archive.full128.sample_execution_receipt.v1"
+SHARD_SELECTION_SCHEMA = "archive.full128.shard_selection.v1"
+ASSEMBLY_SCHEMA = "archive.full128.materialization_assembly.v1"
+INVENTORY_REQUEST_SCHEMA = "archive.full128.experiment_inventory_request.v2"
 
 _MAX_SOURCE_BYTES = 67_108_864
 _MAX_SOURCE_PIXELS = 33_554_432
@@ -1157,11 +1157,11 @@ def _parser_decisions(
         )
     if any(row["dataset_name"] == "ap10k-dog" for row in rows):
         raise ValueError("AP-10K parser source cannot mix with another dataset")
-    if all(row["schema_version"] == "cvi.full128_route_plan_record.v2" for row in rows):
+    if all(row["schema_version"] == "archive.full128.route_plan_record.v2" for row in rows):
         return _legacy_parser_decisions(
             rows, prediction=prediction, cache_receipt=cache_receipt
         )
-    if any(row["schema_version"] != "cvi.full128_route_plan_record.v3" for row in rows):
+    if any(row["schema_version"] != "archive.full128.route_plan_record.v3" for row in rows):
         raise ValueError("Full128 parser rows mix route-plan record schemas")
     datasets = {row["dataset_name"] for row in rows}
     if len(datasets) != 1:
@@ -1428,7 +1428,7 @@ def _ap10k_parser_decisions(
                 scope=SourceViewScope.UNAVAILABLE,
                 selection=(
                     selection
-                    if row["schema_version"] == "cvi.full128_route_plan_record.v3"
+                    if row["schema_version"] == "archive.full128.route_plan_record.v3"
                     else None
                 ),
             )
@@ -1459,7 +1459,7 @@ def _ap10k_parser_decisions(
                 scope=SourceViewScope.AMBIGUOUS,
                 selection=(
                     selection
-                    if row["schema_version"] == "cvi.full128_route_plan_record.v3"
+                    if row["schema_version"] == "archive.full128.route_plan_record.v3"
                     else None
                 ),
             )
@@ -1507,7 +1507,7 @@ def _ap10k_parser_decisions(
             authority=authority,
             selection=(
                 selection
-                if row["schema_version"] == "cvi.full128_route_plan_record.v3"
+                if row["schema_version"] == "archive.full128.route_plan_record.v3"
                 else None
             ),
         )
@@ -1956,7 +1956,7 @@ def _fast_validate_sample_output(
             "association",
             "association_authority",
         }
-        if row["schema_version"] == "cvi.full128_route_plan_record.v3":
+        if row["schema_version"] == "archive.full128.route_plan_record.v3":
             lineage_fields.add("selection")
         if not isinstance(lineage, dict) or set(lineage) != lineage_fields:
             raise ValueError("Full128 parser lineage fields differ")
@@ -2647,7 +2647,7 @@ def _unified_observation(
         identity_kind = IdentityEvidenceKind.GENERATED
         identity_namespace = str(GENERATED_DOG_NAMESPACE)
         identity_token = compute_generated_identity_id(
-            "cvi.full128.yt-bb-dog.video-track:v1", cluster
+            "archive.full128.yt_bb_dog.video_track:v1", cluster
         )
         fixed_role = TerminalRole.EVAL if row["split"] == "test" else None
     else:

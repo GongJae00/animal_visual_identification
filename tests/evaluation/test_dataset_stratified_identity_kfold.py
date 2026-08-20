@@ -28,7 +28,7 @@ from enrollment.registry.identity_registry import (
     compute_sequence_token,
 )
 from evaluation.splits.research.research_cycle_admission import (
-    CVI_RESEARCH_CYCLE_NAMESPACE,
+    RESEARCH_CYCLE_NAMESPACE,
     IdentityTargetMode,
     ResearchCycleManifest,
     ResearchIdentityAssignment,
@@ -188,7 +188,7 @@ def _research_cycle() -> ResearchCycleManifest:
     return ResearchCycleManifest(
         cycle_name=cycle_name,
         cycle_id=compute_research_cycle_id(cycle_name),
-        cycle_namespace_uuid=str(CVI_RESEARCH_CYCLE_NAMESPACE),
+        cycle_namespace_uuid=str(RESEARCH_CYCLE_NAMESPACE),
         registered_identity_namespace_uuid=str(REGISTERED_DOG_NAMESPACE),
         source_bundle_sha256=_sha("source-bundle"),
         dependency_graph_sha256=_sha("dependency-graph"),

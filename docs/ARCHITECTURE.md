@@ -1,10 +1,10 @@
 # Architecture
 
-This document is the authority for repository ownership and dependency direction. Persisted `cvi.*` values are historical schema identifiers; they are not Python namespaces.
+This document is the authority for repository ownership and dependency direction. Persisted schema identifiers are capability-owned contract strings; they are not Python namespaces.
 
 ## Public Runtime
 
-`prototype.runtime.IdentityEngine` is the only public runtime. It accepts caller-provided `PIL.Image` crops and performs strict closed-set enrollment and search. It does not decode video or invoke detection, tracking, temporal aggregation, open-set rejection, or a serving facade. The public import is `from prototype.runtime import IdentityEngine, Match`. Persisted `cvi.*` values remain schema identifiers, not Python namespaces.
+`prototype.runtime.IdentityEngine` is the only public runtime. It accepts caller-provided `PIL.Image` crops and performs strict closed-set enrollment and search. It does not decode video or invoke detection, tracking, temporal aggregation, open-set rejection, or a serving facade. The public import is `from prototype.runtime import IdentityEngine, Match`. Persisted schema identifiers are capability-owned contract strings, not Python namespaces.
 
 ```text
 explicit config v2
@@ -107,9 +107,9 @@ Source provenance v3 binds a logical component, entry points, existing parent pa
 
 Compatibility is narrow:
 
-- Face F4/F5 checkpoint validation accepts only the recorded pre-move architecture and dataset hashes. New Face contracts use `canine_identity.faceid_architecture_input_contract.v3` and source closure v2.
-- Existing PDQ receipts continue to parse and verify `cvi.offline_tool_provenance.v1`; newly built provenance uses the logical v2 closure.
-- Existing gallery, checkpoint, receipt, and evaluation schema identifiers remain unchanged unless the source-provenance metadata itself is explicitly versioned.
+- Face F4/F5 checkpoint validation accepts only the recorded pre-move architecture and dataset hashes. New Face contracts use `identification.face.architecture_input_contract.v3` and source closure v2.
+- PDQ builder provenance requires current `data/audit/pdq` sources and `archive.shared_helpers.commands.build_native_pdq_worker`.
+- Gallery v4 and v5 are accepted; gallery v3 requires explicit migration. Schema identifiers are capability-owned.
 - Gallery v4 and v5 are accepted; gallery v3 requires explicit migration.
 - Full128 route-plan v2, parser policies v4/v5, and parser runtime
   manifest/bundle v1 remain readable for completed external artifacts. Current

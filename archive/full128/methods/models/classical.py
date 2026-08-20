@@ -19,7 +19,7 @@ from archive.full128.methods.preparation.data import Full128Sample, read_full128
 
 _GROUPS = ("hog", "hsv_histogram", "uniform_lbp")
 _GROUP_DIMENSIONS = {"hog": 1764, "hsv_histogram": 32, "uniform_lbp": 10}
-_STATE_SCHEMA = "cvi.full128_classical_state.v1"
+_STATE_SCHEMA = "archive.full128.classical_state.v1"
 _STATE_ARRAYS = {
     "metadata",
     "scaler_mean",

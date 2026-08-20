@@ -1,5 +1,5 @@
 {
-  "schema_version": "cvi.embedding_production_policy.v1",
+  "schema_version": "operations.embedding_production_policy.v1",
   "maximum_artifacts": 100000,
   "maximum_unique_inputs": 100000,
   "maximum_batches": 100000,

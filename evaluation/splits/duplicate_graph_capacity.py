@@ -118,7 +118,7 @@ def analyze_duplicate_graph_capacity(
     component_sizes = [len(members) for members in component_samples.values()]
     block_sizes = [len(members) for members in blocks.values()]
     report = {
-        "schema_version": "cvi.duplicate_graph_component_capacity.v1",
+        "schema_version": "evaluation.duplicate_graph_component_capacity.v1",
         "source_bundle_sha256": source.bundle_sha256,
         "graph_sha256": graph.graph_sha256,
         "split_policy_sha256": policy.policy_sha256,

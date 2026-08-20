@@ -10,10 +10,10 @@ from typing import Any, Mapping, Sequence
 from shared.foundation.provenance import content_sha256
 
 
-BUNDLE_SCHEMA = "cvi.sibetan_multievidence_bundle.v1"
-MANIFEST_SCHEMA = "cvi.sibetan_multievidence_manifest.v1"
-V2_BUNDLE_SCHEMA = "cvi.sibetan_multievidence_bundle.v2"
-V2_MANIFEST_SCHEMA = "cvi.sibetan_multievidence_manifest.v2"
+BUNDLE_SCHEMA = "archive.sibetan.sibetan_multievidence_bundle.v1"
+MANIFEST_SCHEMA = "archive.sibetan.sibetan_multievidence_manifest.v1"
+V2_BUNDLE_SCHEMA = "archive.sibetan.sibetan_multievidence_bundle.v2"
+V2_MANIFEST_SCHEMA = "archive.sibetan.sibetan_multievidence_manifest.v2"
 STATES = {"AVAILABLE", "UNAVAILABLE"}
 REASONS = {
     "NO_TARGET_DOG_INSTANCE",

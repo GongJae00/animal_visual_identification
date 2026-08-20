@@ -109,7 +109,7 @@ candidate = {
     'gallery_bindings': [],
 }
 selection_payload = {
-    'schema_version': 'cvi.full128_successor_dev_selection_receipt.v1',
+    'schema_version': 'archive.full128.successor_dev_selection_receipt.v1',
     'selection_scope': 'DEV_ONLY',
     'objective_metric': 'Rank-1',
     'tie_policy': 'SUCCESSOR_ID_ASC',
@@ -128,7 +128,7 @@ selection = {
     'receipt_sha256': content_sha256(selection_payload),
 }
 report_payload = {
-    'schema_version': 'cvi.full128_successor_public_evaluation.v1',
+    'schema_version': 'archive.full128.successor_public_evaluation.v1',
     'visibility': 'PUBLIC_AGGREGATE',
     'source_private_report_sha256': '1' * 64,
     'evaluation_panel_sha256': '2' * 64,

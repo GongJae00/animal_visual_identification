@@ -16,8 +16,8 @@ from uuid import UUID
 import numpy as np
 from PIL import Image
 
-_RETRIEVAL_CONFIG_SCHEMA_V1 = "cvi.retrieval_config.v1"
-_RETRIEVAL_CONFIG_SCHEMA_V2 = "cvi.retrieval_config.v2"
+_RETRIEVAL_CONFIG_SCHEMA_V1 = "search.config.v1"
+_RETRIEVAL_CONFIG_SCHEMA_V2 = "search.config.v2"
 _MAXIMUM_CONFIG_BYTES = 1_048_576
 _MAXIMUM_MANIFEST_BYTES = 65_536
 _MAXIMUM_METADATA_BYTES = 65_536
@@ -174,7 +174,7 @@ class IdentityEngine:
             )
         )
         embedding_contract = {
-            "schema_version": "cvi.gallery_embedding_contract.v1",
+            "schema_version": "gallery.embedding_contract.v1",
             "dimension": total_dimension,
             "channels": [
                 {

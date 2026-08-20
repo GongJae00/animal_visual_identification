@@ -129,7 +129,7 @@ class CapacityTests(unittest.TestCase):
 
     def test_capacity_parser_rejects_unknown_fields(self) -> None:
         payload = {
-            "schema_version": "cvi.capacity_plan.v1",
+            "schema_version": "operations.capacity_plan.v1",
             "camera_count": 1,
             "occupied_fraction": 0.5,
             "stages": [],

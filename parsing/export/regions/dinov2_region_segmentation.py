@@ -22,8 +22,8 @@ from shared.foundation.protected_publication import fsync_directory, rename_dire
 from shared.foundation.provenance import content_sha256
 from shared.foundation.retained_file import read_retained_regular_file
 
-MANIFEST_SCHEMA = "cvi.dinov2_region_candidates.v1"
-BUNDLE_SCHEMA = "cvi.dinov2_region_candidates_bundle.v1"
+MANIFEST_SCHEMA = "parsing.dinov2_region_candidates.v1"
+BUNDLE_SCHEMA = "parsing.dinov2_region_candidates_bundle.v1"
 INTERPRETATION = (
     "RESEARCH_ONLY_DINOV2_PATCH_TOKEN_MODEL_GENERATED_CANDIDATES_"
     "NOT_VERIFIED_SEMANTIC_SEGMENTATION_OR_BIOMETRIC_VALIDATION"
@@ -720,7 +720,7 @@ def _nose_seed(
 
 def _algorithm_contract() -> dict[str, Any]:
     return {
-        "schema_version": "cvi.dinov2_region_candidate_algorithm.v1",
+        "schema_version": "parsing.dinov2_region_candidate_algorithm.v1",
         "input_resize": "PIL_RGB_BICUBIC_224X224",
         "normalization": "IMAGENET_MEAN_STD",
         "patch_grid": [PATCH_GRID, PATCH_GRID],

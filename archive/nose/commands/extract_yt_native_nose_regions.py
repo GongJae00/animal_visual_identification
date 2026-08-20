@@ -53,8 +53,8 @@ from parsing.training.regions.sam2_teacher import (
 )
 
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
-_ROI_BUNDLE_SCHEMA = "cvi.canid_roi_manifest_bundle.v2"
-_ROI_MANIFEST_SCHEMA = "cvi.canid_roi_manifest.v2"
+_ROI_BUNDLE_SCHEMA = "parsing.canid_roi_manifest_bundle.v2"
+_ROI_MANIFEST_SCHEMA = "parsing.canid_roi_manifest.v2"
 
 
 def _parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
@@ -138,9 +138,9 @@ def _validate_split_inputs(
     expected_receipt_sha256: str,
 ) -> tuple[PublicSplitSourceBundle, tuple[dict[str, Any], ...]]:
     _require_sha256(expected_receipt_sha256, "expected split receipt SHA-256")
-    if not isinstance(assignment, dict) or assignment.get("schema_version") != "cvi.protected_public_split_assignment.v1" or assignment.get("status") != "PASS_PROTECTED_SPLIT_CONSTRUCTION" or not isinstance(assignment.get("records"), list):
+    if not isinstance(assignment, dict) or assignment.get("schema_version") != "evaluation.protected_public_split_assignment.v1" or assignment.get("status") != "PASS_PROTECTED_SPLIT_CONSTRUCTION" or not isinstance(assignment.get("records"), list):
         raise ValueError("protected assignment schema or status differs")
-    if not isinstance(receipt, dict) or receipt.get("schema_version") != "cvi.protected_public_split_receipt.v3" or receipt.get("status") != "PASS_PROTECTED_SPLIT_CONSTRUCTION":
+    if not isinstance(receipt, dict) or receipt.get("schema_version") != "evaluation.protected_public_split_receipt.v3" or receipt.get("status") != "PASS_PROTECTED_SPLIT_CONSTRUCTION":
         raise ValueError("protected split receipt schema or status differs")
     if receipt.get("receipt_sha256") != expected_receipt_sha256 or receipt["receipt_sha256"] != content_sha256({key: value for key, value in receipt.items() if key != "receipt_sha256"}):
         raise ValueError("protected split receipt digest differs")

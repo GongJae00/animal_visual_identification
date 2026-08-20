@@ -27,7 +27,7 @@ from typing import Any
 from data.public_sources.public_canine_manifest import PublicCanineManifest, PublicCanineRecord
 from shared.foundation.provenance import content_sha256
 
-_PIXEL_HASH_DOMAIN = b"CVI_PIXEL_CANONICAL_RGB_V1\0"
+_PIXEL_HASH_DOMAIN = b"PIXEL_CANONICAL_RGB_V1\0"
 _ALLOWED_ZIP_COMPRESSION = (zipfile.ZIP_STORED, zipfile.ZIP_DEFLATED)
 
 
@@ -55,10 +55,10 @@ class ImageContentAuditPolicy:
     allowed_zip_compression: tuple[int, ...] = _ALLOWED_ZIP_COMPRESSION
     canonical_mode: str = "RGB"
     apply_exif_orientation: bool = True
-    schema_version: str = "cvi.image_content_audit_policy.v1"
+    schema_version: str = "data.image_content_audit_policy.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.image_content_audit_policy.v1":
+        if self.schema_version != "data.image_content_audit_policy.v1":
             raise ValueError("unsupported image-content audit policy")
         integer_fields = (
             "maximum_archive_bytes",
@@ -169,10 +169,10 @@ class ImageContentDigestRecord:
     canonical_height: int
     canonical_bytes: int
     exif_orientation_applied: bool
-    schema_version: str = "cvi.image_content_digest_record.v1"
+    schema_version: str = "data.image_content_digest_record.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.image_content_digest_record.v1":
+        if self.schema_version != "data.image_content_digest_record.v1":
             raise ValueError("unsupported image-content digest record")
         for name in (
             "dataset_name",
@@ -234,10 +234,10 @@ class ImageContentDigestRecord:
 class PixelExactDuplicateGroup:
     pixel_sha256: str
     source_sample_ids: tuple[str, ...]
-    schema_version: str = "cvi.pixel_exact_duplicate_group.v1"
+    schema_version: str = "data.pixel_exact_duplicate_group.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.pixel_exact_duplicate_group.v1":
+        if self.schema_version != "data.pixel_exact_duplicate_group.v1":
             raise ValueError("unsupported exact-pixel duplicate group")
         _require_sha256(self.pixel_sha256, "pixel_sha256")
         if (
@@ -276,10 +276,10 @@ class ImageContentAuditReceipt:
     interpretation: str = (
         "DECODE_AND_PIXEL_EXACT_DUPLICATE_EVIDENCE_ONLY_NOT_SPLIT_OR_MODEL_ADMISSION"
     )
-    schema_version: str = "cvi.image_content_audit_receipt.v1"
+    schema_version: str = "data.image_content_audit_receipt.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.image_content_audit_receipt.v1":
+        if self.schema_version != "data.image_content_audit_receipt.v1":
             raise ValueError("unsupported image-content audit receipt")
         for name in (
             "dataset_name",
@@ -692,7 +692,7 @@ def _stage_nested_container(
         raise ValueError("insufficient temporary space for nested ZIP staging")
     staged = tempfile.TemporaryFile(
         mode="w+b",
-        prefix="cvi-nested-public-zip-",
+        prefix="nested-public-zip-",
         dir=temporary_root,
     )
     total = 0

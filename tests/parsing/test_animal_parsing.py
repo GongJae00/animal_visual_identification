@@ -21,26 +21,26 @@ from parsing.export.segmentation.foreground_segmentation import ForegroundSegmen
 
 def test_animal_parsing_policy_v6_is_dog_only_and_prior_policies_round_trip() -> None:
     policy = AnimalParsingPolicy()
-    assert policy.schema_version == "cvi.animal_parsing_policy.v6"
+    assert policy.schema_version == "parsing.policy.v6"
     assert policy.class_names == ("dog",)
 
     legacy = replace(
         policy,
         class_names=("dog", "cat"),
-        schema_version="cvi.animal_parsing_policy.v5",
+        schema_version="parsing.policy.v5",
     )
     restored = AnimalParsingPolicy.from_dict(legacy.to_dict())
     assert restored == legacy
     assert restored.policy_sha256 == legacy.policy_sha256
 
-    v4 = replace(legacy, schema_version="cvi.animal_parsing_policy.v4")
+    v4 = replace(legacy, schema_version="parsing.policy.v4")
     assert AnimalParsingPolicy.from_dict(v4.to_dict()) == v4
 
 def test_animal_parsing_policy_v6_rejects_non_dog_classes() -> None:
     with pytest.raises(ValueError, match="dog-only"):
         AnimalParsingPolicy(class_names=("dog", "cat"))
     with pytest.raises(ValueError, match="schema differs"):
-        AnimalParsingPolicy(schema_version="cvi.animal_parsing_policy.v3")
+        AnimalParsingPolicy(schema_version="parsing.policy.v3")
 
 def _candidate(
     *,

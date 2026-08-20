@@ -297,7 +297,7 @@ class ControlEvaluationTests(unittest.TestCase):
     def test_binding_parser_is_strict_and_round_trips(self) -> None:
         payload = {
             "schema_version": (
-                "cvi.visual_control_evaluation_bindings.v1"
+                "evaluation.visual_control_evaluation_bindings.v1"
             ),
             "plan_sha256": HASH_A,
             "pair_set_sha256": _construction().result_sha256,
@@ -430,7 +430,7 @@ class ControlEvaluationTests(unittest.TestCase):
                 "pairing-policy": _pairing_policy().to_dict(),
                 "control-bindings": {
                     "schema_version": (
-                        "cvi.visual_control_evaluation_bindings.v1"
+                        "evaluation.visual_control_evaluation_bindings.v1"
                     ),
                     "plan_sha256": HASH_A,
                     "pair_set_sha256": construction.result_sha256,

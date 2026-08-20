@@ -295,7 +295,7 @@ class SplitManifest:
     policy: SplitPolicy
     admitted_source_ids: tuple[str, ...]
     records: tuple[TrackletRecord, ...]
-    schema_version: str = "cvi.split.v1"
+    schema_version: str = "evaluation.split.v1"
 
     def __post_init__(self) -> None:
         if not self.admitted_source_ids:
@@ -546,7 +546,7 @@ class SplitManifest:
         }
         _reject_unknown_keys(payload, allowed, "split manifest")
         schema_version = payload.get("schema_version")
-        if schema_version != "cvi.split.v1":
+        if schema_version != "evaluation.split.v1":
             raise ValueError(f"unsupported split schema: {schema_version!r}")
         admitted_sources = payload.get("admitted_source_ids")
         records = payload.get("records")

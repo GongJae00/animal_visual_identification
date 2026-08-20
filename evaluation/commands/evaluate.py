@@ -62,12 +62,12 @@ from shared.foundation.protected_io import write_private_json_bundle
 from shared.foundation.provenance import content_sha256
 from identification.export.appearance import ReceiptBoundDinov2Small
 
-SCHEMA_VERSION = "cvi.evaluation.report.v2"
+SCHEMA_VERSION = "evaluation.report.v2"
 SCHEMA_PATH = (
     Path(__file__).resolve().parents[2]
     / "shared" / "contracts"
     / "schemas"
-    / "cvi.evaluation.report.v2.schema.json"
+    / "evaluation.report.v2.schema.json"
 )
 
 def _git_text(*args: str) -> str:

@@ -215,7 +215,7 @@ def _parse_sha256(value: str) -> str:
 def _source_spec_from_payload(payload: object) -> tuple[ArchiveSource, ...]:
     if not isinstance(payload, dict) or set(payload) != {"schema_version", "sources"}:
         raise ValueError("external appearance source spec fields differ")
-    if payload["schema_version"] != "cvi.external_appearance_source_spec.v1":
+    if payload["schema_version"] != "archive.appearance_face_nose.external_appearance_source_spec.v1":
         raise ValueError("unsupported external appearance source spec schema")
     raw_sources = payload["sources"]
     if not isinstance(raw_sources, list) or len(raw_sources) != len(_TARGET_DATASETS):
@@ -232,7 +232,7 @@ def _source_spec_from_payload(payload: object) -> tuple[ArchiveSource, ...]:
     for raw in raw_sources:
         if not isinstance(raw, dict) or set(raw) != expected_keys:
             raise ValueError("external appearance source fields differ")
-        if raw["schema_version"] != "cvi.external_appearance_source.v1":
+        if raw["schema_version"] != "archive.appearance_face_nose.external_appearance_source.v1":
             raise ValueError("unsupported external appearance source schema")
         dataset_name = raw["dataset_name"]
         if dataset_name not in _TARGET_DATASETS:
@@ -1015,7 +1015,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         )
 
     report = {
-        "schema_version": "cvi.external_appearance_paired_evaluation.v1",
+        "schema_version": "archive.appearance_face_nose.external_appearance_paired_evaluation.v1",
         "status": "PASS_PAIRED_EXTERNAL_APPEARANCE_EVALUATION",
         "preprocessing": {
             **_PREPROCESSING,

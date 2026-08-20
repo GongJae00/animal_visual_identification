@@ -163,7 +163,7 @@ class PublicDatasetExtractionTests(unittest.TestCase):
                 )
             self.assertFalse((output_parent / "changed").exists())
             self.assertEqual(
-                list(output_parent.glob(".cvi-public-extract-*")),
+                list(output_parent.glob(".public-extract-*")),
                 [],
             )
 

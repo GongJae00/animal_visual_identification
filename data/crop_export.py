@@ -158,7 +158,7 @@ class CropExportPolicy:
 
     def to_dict(self) -> dict[str, str | float | int]:
         return {
-            "schema_version": "cvi.crop_export_policy.v1",
+            "schema_version": "data.crop_export_policy.v1",
             "timeout_seconds_per_artifact": (
                 self.timeout_seconds_per_artifact
             ),
@@ -192,7 +192,7 @@ class CropExportPolicy:
             },
             "crop export policy",
         )
-        if payload["schema_version"] != "cvi.crop_export_policy.v1":
+        if payload["schema_version"] != "data.crop_export_policy.v1":
             raise ValueError("unsupported crop export policy schema")
         return cls(
             timeout_seconds_per_artifact=payload[
@@ -266,7 +266,7 @@ class CropExportReceipt:
 
     def to_dict(self) -> dict[str, Any]:
         return {
-            "schema_version": "cvi.crop_export_receipt.v1",
+            "schema_version": "data.crop_export_receipt.v1",
             "pair_set_sha256": self.pair_set_sha256,
             "source_manifest_sha256": self.source_manifest_sha256,
             "export_policy_sha256": self.export_policy_sha256,
@@ -290,7 +290,7 @@ class CropExportReceipt:
             },
             "crop export receipt",
         )
-        if payload["schema_version"] != "cvi.crop_export_receipt.v1":
+        if payload["schema_version"] != "data.crop_export_receipt.v1":
             raise ValueError("unsupported crop export receipt schema")
         return cls(
             pair_set_sha256=payload["pair_set_sha256"],
@@ -314,7 +314,7 @@ def oracle_crop_sources_from_payload(
         {"schema_version", "sources"},
         "oracle crop source manifest",
     )
-    if payload["schema_version"] != "cvi.oracle_crop_sources.v1":
+    if payload["schema_version"] != "evaluation.oracle_crop_sources.v1":
         raise ValueError("unsupported oracle crop source schema")
     sources = payload["sources"]
     if not isinstance(sources, list):
@@ -452,7 +452,7 @@ def export_oracle_crops(
     entries: list[PairArtifactEntry] = []
     total_output_bytes = 0
     with TemporaryDirectory(
-        prefix=".cvi-crop-export-",
+        prefix=".crop-export-",
         dir=output_root.parent,
     ) as temporary:
         temporary_root = Path(temporary)

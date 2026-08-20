@@ -19,11 +19,11 @@ from shared.foundation.provenance import content_sha256
 from enrollment.registry.generated_identity_registry import GENERATED_DOG_NAMESPACE
 from enrollment.registry.identity_registry import REGISTERED_DOG_NAMESPACE
 
-MANIFEST_SCHEMA = "cvi.unified_full_split_manifest.v1"
-OBSERVATION_SCHEMA = "cvi.unified_full_split_observation.v1"
-POLICY_SCHEMA = "cvi.unified_full_split_policy.v1"
-CENSUS_SCHEMA = "cvi.unified_full_split_census.v1"
-BUNDLE_SCHEMA = "cvi.unified_full_split_bundle.v1"
+MANIFEST_SCHEMA = "evaluation.unified_full_split_manifest.v1"
+OBSERVATION_SCHEMA = "evaluation.unified_full_split_observation.v1"
+POLICY_SCHEMA = "evaluation.unified_full_split_policy.v1"
+CENSUS_SCHEMA = "evaluation.unified_full_split_census.v1"
+BUNDLE_SCHEMA = "evaluation.unified_full_split_bundle.v1"
 
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 _ALLOCATABLE_ROLES = ("FIT", "DEV", "CAL")
@@ -498,7 +498,7 @@ def allocate_unified_full_split(
             block.stratum,
             content_sha256(
                 {
-                    "domain": "CVI_UNIFIED_FULL_BLOCK_ORDER_V1",
+                    "domain": "UNIFIED_FULL_BLOCK_ORDER_V1",
                     "allocation_name": allocation_name,
                     "policy_sha256": policy.policy_sha256,
                     "sample_tokens": list(block.sample_tokens),

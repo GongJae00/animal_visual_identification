@@ -20,5 +20,5 @@
   ],
   "quality_threshold": 50,
   "quality_threshold_status": "INITIALIZATION_ONLY_NOT_CALIBRATION_ADMISSION",
-  "schema_version": "cvi.public_canine_pdq_policy.v1"
+  "schema_version": "data.public_canine_pdq_policy.v1"
 }

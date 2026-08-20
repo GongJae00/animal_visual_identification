@@ -1,5 +1,5 @@
 {
-  "schema_version": "cvi.pretrained_supporting_asset_source_contract.v1",
+  "schema_version": "shared.pretrained_supporting_asset_source_contract.v1",
   "source_model_id": "facebook/dinov2-small",
   "source_revision": "ed25f3a31f01632728cabb09d1542f84ab7b0056",
   "source_model_page_url": "https://huggingface.co/facebook/dinov2-small",

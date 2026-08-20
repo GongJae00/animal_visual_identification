@@ -110,7 +110,7 @@ def _run_build(argv: list[str]) -> None:
             )
         manifest = registry.to_dict()
         manifest["source_bundle_sha256"] = source.bundle_sha256
-        manifest["schema_version"] = "cvi.identity_registry_manifest.v1"
+        manifest["schema_version"] = "enrollment.registry_manifest.v1"
         manifest["tool_provenance"] = build_offline_tool_provenance(Path(__file__))
         manifest["manifest_sha256"] = content_sha256(
             {k: v for k, v in manifest.items() if k != "manifest_sha256"}

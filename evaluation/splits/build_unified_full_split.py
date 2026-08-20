@@ -15,7 +15,7 @@ from evaluation.splits.full_split_census import (
     unified_full_split_bundle,
 )
 
-REQUEST_SCHEMA = "cvi.unified_full_split_request.v1"
+REQUEST_SCHEMA = "evaluation.unified_full_split_request.v1"
 _LIMITS = {
     "maximum_bytes": 2_147_483_648,
     "maximum_nodes": 25_000_000,

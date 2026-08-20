@@ -38,7 +38,7 @@ def publish(
         target_scope=target_scope,
         figure_ids=figure_ids,
     )
-    with TemporaryDirectory(prefix=".cvi-vis-", dir=parent) as temporary:
+    with TemporaryDirectory(prefix=".vis-", dir=parent) as temporary:
         staging = Path(temporary) / "publication"
         staging.mkdir(mode=0o700)
         artifact_paths: list[str] = []

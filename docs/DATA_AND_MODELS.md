@@ -71,7 +71,7 @@ Do not publish source labels or owner information as registered identities.
 Dataset folder, cluster, and video-track labels are protocol labels: their
 deterministic UUID mappings do not establish lifelong animal identity.
 
-Unlabeled clusters may receive a `cvi.generated_identity_registry.v1`
+Unlabeled clusters may receive a `enrollment.generated_identity_registry.v1`
 provisional GenID for SSL, mining, or research bookkeeping. GenIDs use a
 separate UUIDv5 namespace and never become registered identities implicitly.
 Only an explicit audited transition may merge a provisional record into a
@@ -91,7 +91,7 @@ Current model behavior:
 | Model selector | Operation status | Current behavior and boundary |
 |---|---|---|
 | `dogflw-landmark` | Disabled | Fails before download because no publisher-authoritative artifact URL, checksum, and redistribution contract are verified |
-| `miewid` | Disabled and unadmitted | Fails before network or model-framework imports; no admitted `cvi.miewid_artifact_bundle.v1` runtime manifest or genuine passing parity receipt |
+| `miewid` | Disabled and unadmitted | Fails before network or model-framework imports; no admitted `identification.miewid_artifact_bundle.v1` runtime manifest or genuine passing parity receipt |
 | `superanimal` | Disabled | Fails before download because the weights and official-architecture export contract are not approved |
 
 `supported` operations are automatic and included by the default `all`

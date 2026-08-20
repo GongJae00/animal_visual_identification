@@ -35,10 +35,10 @@ class DescriptivePointComparison:
     candidate_minus_reference: float
     candidate_over_reference: float
     interpretation: str = "DESCRIPTIVE_POINT_ESTIMATE_NO_UNCERTAINTY"
-    schema_version: str = "cvi.descriptive_point_comparison.v1"
+    schema_version: str = "evaluation.descriptive_point_comparison.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.descriptive_point_comparison.v1":
+        if self.schema_version != "evaluation.descriptive_point_comparison.v1":
             raise ValueError("unsupported point-comparison schema")
         for name in ("name", "scope", "unit"):
             if not getattr(self, name).strip():
@@ -106,10 +106,10 @@ class PairedInferenceMeasurementReceipt:
         "PAIRED_MEASUREMENT_AND_NUMERICAL_ADMISSION_ONLY_"
         "NOT_BIOMETRIC_NONINFERIORITY_OR_OPTIMIZATION_PROMOTION"
     )
-    schema_version: str = "cvi.paired_inference_measurement_receipt.v1"
+    schema_version: str = "operations.paired_inference_measurement_receipt.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.paired_inference_measurement_receipt.v1":
+        if self.schema_version != "operations.paired_inference_measurement_receipt.v1":
             raise ValueError("unsupported paired-measurement receipt schema")
         for name in (
             "reference_summary_sha256",

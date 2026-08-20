@@ -69,7 +69,7 @@ def main() -> None:
     if set(precommitment_payload) != {
         "schema_version", "precommitment_sha256", "precommitment"
     } or precommitment_payload["schema_version"] != (
-        "cvi.batch_invariance_precommitment_bundle.v1"
+        "evaluation.batch_invariance_precommitment_bundle.v1"
     ):
         raise ValueError("batch worker precommitment bundle differs")
     precommitment = BatchInvariancePrecommitment.from_dict(
@@ -133,7 +133,7 @@ def main() -> None:
         preprocessing=preprocessing,
     )
     common = {
-        "schema_version": "cvi.batch_fresh_worker_result.v1",
+        "schema_version": "operations.batch_fresh_worker_result.v1",
         "request_sha256": request_sha256,
         "backend": request["backend"],
         "worker_environment_identity": observed_environment.to_dict(),
@@ -199,7 +199,7 @@ def _validate_request(payload: dict[str, Any]) -> None:
         "discovery", "scratch_path",
     }
     if set(payload) != expected or payload["schema_version"] != (
-        "cvi.batch_fresh_worker_request.v1"
+        "operations.batch_fresh_worker_request.v1"
     ):
         raise ValueError("batch fresh-worker request schema differs")
     if payload["backend"] not in {"cpu", "cuda"}:

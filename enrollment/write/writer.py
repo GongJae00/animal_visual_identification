@@ -63,7 +63,7 @@ class EnrollmentWriter:
 
 def _image_content_sha256(image: Image.Image) -> str:
     digest = hashlib.sha256()
-    digest.update(b"cvi.enrollment_pixels.v1\0")
+    digest.update(b"search.enrollment_pixels.v1\0")
     mode = image.mode.encode("utf-8")
     digest.update(len(mode).to_bytes(4, "big"))
     digest.update(mode)

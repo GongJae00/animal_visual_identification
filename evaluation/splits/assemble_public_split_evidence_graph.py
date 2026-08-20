@@ -38,7 +38,7 @@ def main() -> int:
     graph = assemble_frozen_evidence_graph(source=source, ledger=ledger)
     provenance = build_offline_tool_provenance(Path(__file__))
     receipt = {
-        "schema_version": "cvi.public_split_evidence_graph_assembly_receipt.v1",
+        "schema_version": "evaluation.public_split_evidence_graph_assembly_receipt.v1",
         "source_bundle_sha256": source.bundle_sha256,
         "adjudication_ledger_sha256": ledger.ledger_sha256,
         "candidate_set_sha256": ledger.candidate_set_sha256,

@@ -32,9 +32,9 @@ from parsing.export.segmentation.full_segment_cache import validate_full_segment
 from parsing.export.segmentation.full_segment_contracts import FullSegmentObservation
 from parsing.export.crops.full_segment_crop import verify_full_crop_artifacts
 
-INVENTORY_SCHEMA = "cvi.full128_experiment_inventory.v2"
-BUNDLE_SCHEMA = "cvi.full128_experiment_inventory_bundle.v2"
-ADMISSION_STATE_SCHEMA = "cvi.full128_source_registry_admission_state.v1"
+INVENTORY_SCHEMA = "archive.full128.experiment_inventory.v2"
+BUNDLE_SCHEMA = "archive.full128.experiment_inventory_bundle.v2"
+ADMISSION_STATE_SCHEMA = "archive.full128.source_registry_admission_state.v1"
 
 FULL128_REQUEST_ROW_FIELDS = frozenset(
     {

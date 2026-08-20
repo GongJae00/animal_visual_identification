@@ -28,12 +28,12 @@ from data.full_segment.route_plan import (
     validate_full128_route_plan_bundle,
 )
 
-PROTOCOL_SCHEMA = "cvi.face_identity_protocol.v2"
-IDENTITY_SCHEMA = "cvi.face_identity_protocol_identity.v2"
-SAMPLE_SCHEMA = "cvi.face_identity_protocol_sample.v2"
-CENSUS_SCHEMA = "cvi.face_identity_protocol_census.v2"
-BUNDLE_SCHEMA = "cvi.face_identity_protocol_bundle.v2"
-POLICY_SCHEMA = "cvi.face_identity_protocol_policy.v2"
+PROTOCOL_SCHEMA = "evaluation.face_identity_protocol.v2"
+IDENTITY_SCHEMA = "evaluation.face_identity_protocol_identity.v2"
+SAMPLE_SCHEMA = "evaluation.face_identity_protocol_sample.v2"
+CENSUS_SCHEMA = "evaluation.face_identity_protocol_census.v2"
+BUNDLE_SCHEMA = "evaluation.face_identity_protocol_bundle.v2"
+POLICY_SCHEMA = "evaluation.face_identity_protocol_policy.v2"
 
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 _ALLOCATABLE_ROLES = ("FIT", "DEV", "CAL")
@@ -388,7 +388,7 @@ def _validate_joint_filter_receipt(
     payload = {key: item for key, item in receipt.items() if key != "receipt_sha256"}
     if (
         receipt["schema_version"]
-        != "cvi.public_split_evidence_graph_assembly_receipt.v1"
+        != "evaluation.public_split_evidence_graph_assembly_receipt.v1"
         or receipt["receipt_sha256"] != content_sha256(payload)
         or receipt["source_bundle_sha256"] != source_bundle_sha256
         or receipt["graph_sha256"] != graph.graph_sha256
@@ -474,7 +474,7 @@ def _graph_components(
         ordered = tuple(sorted(members))
         component = content_sha256(
             {
-                "schema_version": "cvi.face_dependency_component.v2",
+                "schema_version": "evaluation.face_dependency_component.v2",
                 "public_sample_tokens": list(ordered),
             }
         )
@@ -488,7 +488,7 @@ def _component_token(sample: str, components: Mapping[str, str]) -> str:
         sample,
         content_sha256(
             {
-                "schema_version": "cvi.face_dependency_component.v2",
+                "schema_version": "evaluation.face_dependency_component.v2",
                 "public_sample_tokens": [sample],
             }
         ),
@@ -566,7 +566,7 @@ def _allocate_identities(
 def _allocation_rank(protocol_name: str, public_identity_token: str) -> str:
     return hashlib.sha256(
         (
-            "CVI_FACE_PROTOCOL_V2_PUBLIC_IDENTITY_ORDER\0"
+            "FACE_PROTOCOL_V2_PUBLIC_IDENTITY_ORDER\0"
             f"{protocol_name}\0{public_identity_token}"
         ).encode()
     ).hexdigest()

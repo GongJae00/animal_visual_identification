@@ -83,10 +83,10 @@ class RetrievalScoreWorkload:
     data_role: str
     selection_blind_to_candidate_outputs: bool
     requests: tuple[RetrievalScoreRequest, ...]
-    schema_version: str = "cvi.retrieval_score_workload.v2"
+    schema_version: str = "search.score_workload.v2"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.retrieval_score_workload.v2":
+        if self.schema_version != "search.score_workload.v2":
             raise ValueError("unsupported retrieval score workload schema")
         for name in (
             "gallery_sha256",
@@ -226,10 +226,10 @@ class FrozenScoreMarginBoundary:
     score_rule: str = "TOP1_SCORE_GREATER_THAN_OR_EQUAL"
     margin_rule: str = "TOP1_MINUS_TOP2_GREATER_THAN_OR_EQUAL"
     ranking_rule: str = "DESCENDING_SCORE_THEN_ASCENDING_OPAQUE_SLOT"
-    schema_version: str = "cvi.frozen_score_margin_boundary.v1"
+    schema_version: str = "evaluation.frozen_score_margin_boundary.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.frozen_score_margin_boundary.v1":
+        if self.schema_version != "evaluation.frozen_score_margin_boundary.v1":
             raise ValueError("unsupported frozen score-margin boundary schema")
         _require_finite(self.score_threshold, "score_threshold")
         _require_finite_positive(self.margin_threshold, "margin_threshold")
@@ -345,10 +345,10 @@ class ScoreDriftPolicy:
     dot_chunk_floats: int = 4_096
     metric: str = "cosine_l2_dot"
     accumulation: str = "float64_chunk_fsum_neumaier"
-    schema_version: str = "cvi.score_drift_policy.v2"
+    schema_version: str = "evaluation.score_drift_policy.v2"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.score_drift_policy.v2":
+        if self.schema_version != "evaluation.score_drift_policy.v2":
             raise ValueError("unsupported score drift policy schema")
         for name in (
             "maximum_absolute_score_drift",
@@ -434,7 +434,7 @@ def score_drift_scoring_semantics_sha256(
 ) -> str:
     return content_sha256(
         {
-            "schema_version": "cvi.score_drift_scoring_semantics.v1",
+            "schema_version": "evaluation.score_drift_scoring_semantics.v1",
             "metric": policy.metric,
             "accumulation": policy.accumulation,
             "dot_chunk_floats": policy.dot_chunk_floats,
@@ -481,10 +481,10 @@ class ScoreDriftSummary:
     minimum_candidate_margin_boundary_distance: float
     reference_score_digest: str
     candidate_score_digest: str
-    schema_version: str = "cvi.score_drift_summary.v1"
+    schema_version: str = "evaluation.score_drift_summary.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.score_drift_summary.v1":
+        if self.schema_version != "evaluation.score_drift_summary.v1":
             raise ValueError("unsupported score drift summary schema")
         for name in (
             "requests",
@@ -653,10 +653,10 @@ class ScoreDriftPrecommitment:
     prior_attempt_ledger_sha256: str
     candidate_attempt_token: str
     precommitment_sequence: int
-    schema_version: str = "cvi.score_drift_precommitment.v1"
+    schema_version: str = "evaluation.score_drift_precommitment.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.score_drift_precommitment.v1":
+        if self.schema_version != "evaluation.score_drift_precommitment.v1":
             raise ValueError("unsupported score drift precommitment schema")
         for name in self.__dataclass_fields__:
             if name not in ("schema_version", "precommitment_sequence"):
@@ -749,10 +749,10 @@ class ScoreDriftAdmissionPlan:
     frozen_boundary_sha256: str
     score_drift_policy_sha256: str
     cache_policy_sha256: str
-    schema_version: str = "cvi.score_drift_admission_plan.v2"
+    schema_version: str = "evaluation.score_drift_admission_plan.v2"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.score_drift_admission_plan.v2":
+        if self.schema_version != "evaluation.score_drift_admission_plan.v2":
             raise ValueError("unsupported score drift admission plan schema")
         for name in self.__dataclass_fields__:
             if name not in ("schema_version", "precommitment"):
@@ -879,7 +879,7 @@ def score_drift_attempt_ledger_head(
     )
     return content_sha256(
         {
-            "schema_version": "cvi.score_drift_attempt_ledger_entry.v1",
+            "schema_version": "evaluation.score_drift_attempt_ledger_entry.v1",
             "prior_attempt_ledger_sha256": (
                 precommitment.prior_attempt_ledger_sha256
             ),
@@ -928,10 +928,10 @@ class ScoreDriftAdmissionReceipt:
         "LABEL_BLIND_SCORE_RANK_THRESHOLD_ADMISSION_ONLY_"
         "NOT_BIOMETRIC_NONINFERIORITY_OR_OPTIMIZATION_PROMOTION"
     )
-    schema_version: str = "cvi.score_drift_admission_receipt.v2"
+    schema_version: str = "evaluation.score_drift_admission_receipt.v2"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.score_drift_admission_receipt.v2":
+        if self.schema_version != "evaluation.score_drift_admission_receipt.v2":
             raise ValueError("unsupported score drift receipt schema")
         for name in (
             "precommitment_sha256",

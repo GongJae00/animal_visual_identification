@@ -19,17 +19,17 @@ _INTERPRETATION = (
     "IDENTITY_FREE_LOCALIZATION_CROSS_VALIDATION;SOURCE_GROUP_AND_EXACT_IMAGE_CLOSED;"
     "EXPOSED_DIAGNOSTIC_NOT_FINAL_EVALUATION"
 )
-_BUNDLE_SCHEMA = "cvi.localization_kfold_manifest_bundle.v1"
+_BUNDLE_SCHEMA = "evaluation.localization_kfold_manifest_bundle.v1"
 
 
 @dataclass(frozen=True, slots=True)
 class LocalizationKFoldPolicy:
     fold_count: int = 5
     dev_offset: int = 1
-    schema_version: str = "cvi.localization_kfold_policy.v1"
+    schema_version: str = "evaluation.localization_kfold_policy.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.localization_kfold_policy.v1":
+        if self.schema_version != "evaluation.localization_kfold_policy.v1":
             raise ValueError("unsupported localization K-fold policy schema")
         if (
             isinstance(self.fold_count, bool)
@@ -68,10 +68,10 @@ class LocalizationFoldAssignment:
     allocation_unit_token: str
     home_fold: int
     identity_target_mode: str = "NONE"
-    schema_version: str = "cvi.localization_fold_assignment.v1"
+    schema_version: str = "evaluation.localization_fold_assignment.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.localization_fold_assignment.v1":
+        if self.schema_version != "evaluation.localization_fold_assignment.v1":
             raise ValueError("unsupported localization fold assignment schema")
         for value, name in (
             (self.sample_id, "sample_id"),
@@ -114,10 +114,10 @@ class LocalizationKFoldManifest:
     score_inputs_used: bool = False
     final_evaluation_permitted: bool = False
     interpretation: str = _INTERPRETATION
-    schema_version: str = "cvi.localization_kfold_manifest.v1"
+    schema_version: str = "evaluation.localization_kfold_manifest.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.localization_kfold_manifest.v1":
+        if self.schema_version != "evaluation.localization_kfold_manifest.v1":
             raise ValueError("unsupported localization K-fold manifest schema")
         _require_text(self.protocol_name, "protocol_name")
         if not isinstance(self.policy, LocalizationKFoldPolicy):
@@ -394,7 +394,7 @@ def build_localization_source_manifest(
         for sample in sorted(selected, key=lambda item: item.sample_id)
     ]
     return {
-        "schema_version": "cvi.localization_source_manifest.v1",
+        "schema_version": "evaluation.localization_source_manifest.v1",
         "dataset_name": dataset,
         "dataset_version": next(iter(versions)),
         "identity_target_mode": "NONE",
@@ -416,7 +416,7 @@ def materialize_localization_fold(
         return "TRAIN"
 
     view = {
-        "schema_version": "cvi.localization_kfold_view.v1",
+        "schema_version": "evaluation.localization_kfold_view.v1",
         "parent_manifest_sha256": manifest.manifest_sha256,
         "fold_index": fold_index,
         "assignments": [
@@ -433,7 +433,7 @@ def materialize_localization_fold(
         "interpretation": "EXPOSED_LOCALIZATION_CROSS_VALIDATION_VIEW_NOT_FINAL_TEST",
     }
     return {
-        "schema_version": "cvi.localization_kfold_view_bundle.v1",
+        "schema_version": "evaluation.localization_kfold_view_bundle.v1",
         "view_sha256": content_sha256(view),
         "view": view,
     }
@@ -536,7 +536,7 @@ def _assign_units(
 
     def rank(unit: str) -> str:
         return hashlib.sha256(
-            f"CVI_LOCALIZATION_KFOLD_UNIT_V1\0{protocol_name}\0{evidence_root}\0{unit}".encode()
+            f"LOCALIZATION_KFOLD_UNIT_V1\0{protocol_name}\0{evidence_root}\0{unit}".encode()
         ).hexdigest()
 
     result: dict[str, int] = {}

@@ -645,7 +645,7 @@ class ControlTransformTests(unittest.TestCase):
             payloads = {
                 "tasks": {
                     "schema_version": (
-                        "cvi.visual_control_transform_tasks.v1"
+                        "evaluation.visual_control_transform_tasks.v1"
                     ),
                     "plan_sha256": HASH_A,
                     "scoring_requests_sha256": HASH_B,

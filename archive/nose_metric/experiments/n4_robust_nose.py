@@ -32,8 +32,8 @@ from shared.foundation.protected_io import (
 )
 from shared.foundation.provenance import content_sha256
 
-REPORT_SCHEMA_VERSION = "cvi.n4_robust_nose_evaluation.v1"
-REPORT_BUNDLE_SCHEMA_VERSION = "cvi.n4_robust_nose_evaluation_bundle.v1"
+REPORT_SCHEMA_VERSION = "archive.nose_metric.n4_robust_nose_evaluation.v1"
+REPORT_BUNDLE_SCHEMA_VERSION = "archive.nose_metric.n4_robust_nose_evaluation_bundle.v1"
 N3_BRANCH = METHODS[2]
 METRICS = ("Rank-1", "MRR", "Rank-5")
 NORMALIZATION_TOLERANCE = 1e-6

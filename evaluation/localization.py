@@ -25,7 +25,7 @@ from parsing.export.types import (
     LocalizationResult,
 )
 
-_POSE_EVALUATION_SCHEMA = "cvi.ap10k_body17_pose_evaluation.v1"
+_POSE_EVALUATION_SCHEMA = "evaluation.ap10k_body17_pose_evaluation.v1"
 _POSE_MATCH_IOU = 0.50
 _POSE_KEYPOINT_CONFIDENCE = 0.50
 

@@ -30,10 +30,10 @@ class ExpectedRuntimeBinary:
     resolved_path: str
     byte_size: int
     content_sha256: str
-    schema_version: str = "cvi.expected_runtime_binary.v1"
+    schema_version: str = "operations.expected_runtime_binary.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.expected_runtime_binary.v1":
+        if self.schema_version != "operations.expected_runtime_binary.v1":
             raise ValueError("unsupported expected runtime binary schema")
         if not Path(self.resolved_path).is_absolute():
             raise ValueError("expected runtime binary path must be absolute")
@@ -62,10 +62,10 @@ class RuntimeLibraryPolicy:
     hash_chunk_bytes: int = 1_048_576
     allow_wsl_driver_projection_device_mismatch: bool = False
     allow_discovery_only: bool = False
-    schema_version: str = "cvi.runtime_library_policy.v1"
+    schema_version: str = "operations.runtime_library_policy.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.runtime_library_policy.v1":
+        if self.schema_version != "operations.runtime_library_policy.v1":
             raise ValueError("unsupported runtime library policy schema")
         for name in (
             "maximum_maps_bytes", "maximum_maps_lines",
@@ -154,10 +154,10 @@ class RuntimeBinaryEntry:
     content_sha256: str
     first_seen_phase: RuntimeLibraryPhase
     last_seen_phase: RuntimeLibraryPhase
-    schema_version: str = "cvi.runtime_binary_entry.v1"
+    schema_version: str = "operations.runtime_binary_entry.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.runtime_binary_entry.v1":
+        if self.schema_version != "operations.runtime_binary_entry.v1":
             raise ValueError("unsupported runtime binary entry schema")
         if not Path(self.resolved_path).is_absolute():
             raise ValueError("runtime binary path must be absolute")
@@ -199,10 +199,10 @@ class RuntimeLibraryManifest:
     provenance_wall_time_ns: int
     decision: str
     hard_failures: tuple[str, ...]
-    schema_version: str = "cvi.runtime_library_manifest.v1"
+    schema_version: str = "operations.runtime_library_manifest.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.runtime_library_manifest.v1":
+        if self.schema_version != "operations.runtime_library_manifest.v1":
             raise ValueError("unsupported runtime library manifest schema")
         _sha256(self.policy_sha256, "runtime policy hash")
         _sha256(self.binary_set_sha256, "runtime binary set hash")

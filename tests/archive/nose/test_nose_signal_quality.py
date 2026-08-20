@@ -73,7 +73,7 @@ def test_frontality_components_separate_geometry_and_confidence() -> None:
 
 def test_label_blind_audit_exposes_confidence_limited_attrition() -> None:
     manifest = {
-        "schema_version": "cvi.yt_native_nose_manifest.v1",
+        "schema_version": "archive.nose.yt_native_nose_manifest.v1",
         "policy": {
             "minimum_detector_confidence": 0.3,
             "minimum_frontality": 0.5,

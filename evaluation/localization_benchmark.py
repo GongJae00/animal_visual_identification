@@ -34,7 +34,7 @@ from parsing.export.types import (
     LocalizationResult,
 )
 
-_SUMMARY_SCHEMA = "cvi.canid_localizer_benchmark_summary.v1"
+_SUMMARY_SCHEMA = "parsing.canid_localizer_benchmark_summary.v1"
 
 
 def _build_summary(

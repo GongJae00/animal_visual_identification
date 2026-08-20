@@ -47,7 +47,7 @@ def read_route_plan_bundle(path: Path) -> dict[str, Any]:
         maximum_array_length=1_000_000,
     ).payload
 
-REPORT_SCHEMA = "cvi.parser_materialization_comparison.v1"
+REPORT_SCHEMA = "parsing.parser_materialization_comparison.v1"
 
 
 def _run_compare(argv: list[str]) -> int:
@@ -283,7 +283,7 @@ def _binding(
     }
 
 
-SUMMARY_REPORT_SCHEMA = "cvi.parser_materialization_summary.v1"
+SUMMARY_REPORT_SCHEMA = "parsing.parser_materialization_summary.v1"
 
 
 def _run_summarize(argv: list[str]) -> int:
@@ -337,7 +337,7 @@ def summarize(
             reason_counts[reason] += 1
             reason_dataset_counts[(reason, row["dataset_name"])] += 1
         lineage = receipt["parser_lineage"]
-        if row["schema_version"] == "cvi.full128_route_plan_record.v3":
+        if row["schema_version"] == "archive.full128.route_plan_record.v3":
             if not isinstance(lineage, dict) or not isinstance(
                 lineage.get("selection"), dict
             ):
@@ -488,7 +488,7 @@ def render_parser_failure_review(
                     _manifest_row(reason, item) for item in rendered
                 )
         body = {
-            "schema_version": "cvi.parser_failure_visual_review.v1",
+            "schema_version": "parsing.parser_failure_visual_review.v1",
             "source_route_plan_sha256": plan_bundle["plan_sha256"],
             "source_route_plan_bundle_sha256": plan_bundle["bundle_sha256"],
             "materialization_root": str(root),
@@ -973,7 +973,7 @@ def render(
         key: value for key, value in comparison.items() if key != "comparison_sha256"
     }
     if (
-        comparison.get("schema_version") != "cvi.parser_materialization_comparison.v1"
+        comparison.get("schema_version") != "parsing.parser_materialization_comparison.v1"
         or comparison.get("comparison_sha256") != content_sha256(comparison_payload)
     ):
         raise ValueError("parser comparison report differs")
@@ -1034,7 +1034,7 @@ def render(
                     }
                 )
         body = {
-            "schema_version": "cvi.parser_materialization_comparison_review.v1",
+            "schema_version": "parsing.parser_materialization_comparison_review.v1",
             "comparison_sha256": comparison["comparison_sha256"],
             "baseline_route_plan_sha256": baseline_bundle["plan_sha256"],
             "candidate_route_plan_sha256": candidate_bundle["plan_sha256"],

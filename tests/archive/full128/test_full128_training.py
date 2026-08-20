@@ -312,7 +312,7 @@ def test_variant_validation_binds_cache_manifest_file_content(tmp_path: Path) ->
         "manifest": cache,
     }
     payload = {
-        "schema_version": "cvi.full128_variant_run.v1",
+        "schema_version": "archive.full128.variant_run.v1",
         "variant_id": "B0",
         "method": "CLASSICAL128",
         "initialization": "FIT_ONLY",
@@ -459,7 +459,7 @@ def test_resume_training_contract_rejects_neural_summary_tampering() -> None:
 
 def test_run_root_is_no_overwrite_but_exactly_resumable(tmp_path: Path) -> None:
     manifest_payload = {
-        "schema_version": "cvi.full128_training_run.v1",
+        "schema_version": "archive.full128.training_run.v1",
         "run_config": {},
         "bindings": {},
         "source_closure": {},

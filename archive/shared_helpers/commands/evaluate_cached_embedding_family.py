@@ -109,7 +109,7 @@ def main() -> None:
             }
         )
     index_payload: dict[str, Any] = {
-        "schema_version": "cvi.common_evaluation_family_index.v1",
+        "schema_version": "evaluation.common_evaluation_family_index.v1",
         "cache_family_sha256": next(iter(family_hashes)),
         "expected_protocols": expected_keys,
         "reports": entries,

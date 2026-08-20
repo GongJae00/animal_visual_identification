@@ -6,7 +6,7 @@ from typing import Any
 
 from shared.foundation.provenance import content_sha256
 
-STYLE_VERSION = "cvi.vis.style.v1"
+STYLE_VERSION = "visualization.style.v1"
 FONT_FAMILY = "DejaVu Sans"
 COLORS = {
     "ink": "#17212B",
@@ -62,7 +62,7 @@ def matplotlib_rc() -> dict[str, Any]:
         "savefig.dpi": DPI,
         "savefig.facecolor": COLORS["paper"],
         "svg.fonttype": "none",
-        "svg.hashsalt": "cvi-vis-v1",
+        "svg.hashsalt": "visualization.v1",
         "text.color": COLORS["ink"],
         "xtick.color": COLORS["ink"],
         "ytick.color": COLORS["ink"],

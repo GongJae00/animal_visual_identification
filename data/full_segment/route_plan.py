@@ -23,16 +23,16 @@ from data.source_lock import SOURCE_REGISTRY, get_record
 from data.types import DatasetAdmission, UnifiedCanidSample
 from shared.foundation.provenance import content_sha256
 
-ROUTE_PLAN_SCHEMA = "cvi.full128_route_plan.v3"
-ROUTE_PLAN_RECORD_SCHEMA = "cvi.full128_route_plan_record.v3"
-ROUTE_PLAN_BUNDLE_SCHEMA = "cvi.full128_route_plan_bundle.v3"
-ROUTE_POLICY_SCHEMA = "cvi.full128_route_policy.v3"
-_LEGACY_ROUTE_PLAN_SCHEMA = "cvi.full128_route_plan.v2"
-_LEGACY_ROUTE_PLAN_RECORD_SCHEMA = "cvi.full128_route_plan_record.v2"
-_LEGACY_ROUTE_PLAN_BUNDLE_SCHEMA = "cvi.full128_route_plan_bundle.v2"
-_LEGACY_ROUTE_POLICY_SCHEMA = "cvi.full128_route_policy.v2"
-ADMISSION_STATE_SCHEMA = "cvi.full128_route_source_registry_admission_state.v1"
-PARSER_CACHE_KEY_SCHEMA = "cvi.full128_parser_cache_key.v1"
+ROUTE_PLAN_SCHEMA = "archive.full128.route_plan.v3"
+ROUTE_PLAN_RECORD_SCHEMA = "archive.full128.route_plan_record.v3"
+ROUTE_PLAN_BUNDLE_SCHEMA = "archive.full128.route_plan_bundle.v3"
+ROUTE_POLICY_SCHEMA = "archive.full128.route_policy.v3"
+_LEGACY_ROUTE_PLAN_SCHEMA = "archive.full128.route_plan.v2"
+_LEGACY_ROUTE_PLAN_RECORD_SCHEMA = "archive.full128.route_plan_record.v2"
+_LEGACY_ROUTE_PLAN_BUNDLE_SCHEMA = "archive.full128.route_plan_bundle.v2"
+_LEGACY_ROUTE_POLICY_SCHEMA = "archive.full128.route_policy.v2"
+ADMISSION_STATE_SCHEMA = "archive.full128.route_source_registry_admission_state.v1"
+PARSER_CACHE_KEY_SCHEMA = "archive.full128.parser_cache_key.v1"
 
 CANONICAL_DATASETS = (
     "ap10k-dog",

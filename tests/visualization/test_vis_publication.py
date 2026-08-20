@@ -436,7 +436,7 @@ def test_contact_sheet_rejects_tampered_asset(tmp_path: Path) -> None:
 
 def test_master_results_adapter_rejects_tampering() -> None:
     without_hash = {
-        "schema_version": "cvi.master_results_table.v1",
+        "schema_version": "visualization.master_results_table.v1",
         "source_report_sha256s": ["a" * 64],
         "columns": ["section", "metric_name", "value"],
         "rows": [
@@ -498,7 +498,7 @@ def test_tracked_json_schema_accepts_normalized_bundle() -> None:
         REPO_ROOT
         / "shared" / "contracts"
         / "schemas"
-        / "cvi.figure_data.bundle.v1.schema.json"
+        / "visualization.figure_data.bundle.v1.schema.json"
     )
     schema = json.loads(schema_path.read_text(encoding="utf-8"))
     jsonschema.Draft202012Validator(schema).validate(

@@ -37,16 +37,16 @@ from data.full_segment.route_plan import (
     validate_full128_route_plan_bundle,
 )
 
-PANEL_SCHEMA = "cvi.full128_face_visible_fixed_panel.v1"
-PANEL_RECORD_SCHEMA = "cvi.full128_face_visible_fixed_panel_record.v1"
-AUTHORITATIVE_PANEL_SCHEMA = "cvi.full128_face_visible_authoritative_panel.v2"
+PANEL_SCHEMA = "archive.full128.face_visible_fixed_panel.v1"
+PANEL_RECORD_SCHEMA = "archive.full128.face_visible_fixed_panel_record.v1"
+AUTHORITATIVE_PANEL_SCHEMA = "archive.full128.face_visible_authoritative_panel.v2"
 AUTHORITATIVE_PANEL_RECORD_SCHEMA = (
-    "cvi.full128_face_visible_authoritative_panel_record.v2"
+    "archive.full128.face_visible_authoritative_panel_record.v2"
 )
-AUTHORITATIVE_COHORT_SCHEMA = "cvi.full128_face_visible_authoritative_cohort.v2"
-INVENTORY_SCHEMA = "cvi.full128_face_visible_successor_inventory.v1"
-INVENTORY_RECORD_SCHEMA = "cvi.full128_face_visible_successor_record.v1"
-BUNDLE_SCHEMA = "cvi.full128_face_visible_successor_inventory_bundle.v1"
+AUTHORITATIVE_COHORT_SCHEMA = "archive.full128.face_visible_authoritative_cohort.v2"
+INVENTORY_SCHEMA = "archive.full128.face_visible_successor_inventory.v1"
+INVENTORY_RECORD_SCHEMA = "archive.full128.face_visible_successor_record.v1"
+BUNDLE_SCHEMA = "archive.full128.face_visible_successor_inventory_bundle.v1"
 
 EVALUATION_SCOPES = ("DEV", "CAL", "EXPOSED_DIAGNOSTIC")
 ENROLLMENT_KS = (1, 3, 5)

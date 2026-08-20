@@ -30,10 +30,10 @@ class NumericalDriftPolicy:
     maximum_vectors: int = 100_000
     maximum_vector_dimension: int = 65_536
     maximum_total_bytes_read: int = 17_179_869_184
-    schema_version: str = "cvi.numerical_drift_policy.v1"
+    schema_version: str = "evaluation.numerical_drift_policy.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.numerical_drift_policy.v1":
+        if self.schema_version != "evaluation.numerical_drift_policy.v1":
             raise ValueError("unsupported numerical drift policy schema")
         for name in (
             "absolute_tolerance",
@@ -102,10 +102,10 @@ class NumericalDriftSummary:
     worst_artifact_content_sha256: str | None
     worst_coordinate: int | None
     bytes_read: int
-    schema_version: str = "cvi.numerical_drift_summary.v1"
+    schema_version: str = "evaluation.numerical_drift_summary.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.numerical_drift_summary.v1":
+        if self.schema_version != "evaluation.numerical_drift_summary.v1":
             raise ValueError("unsupported numerical drift summary schema")
         for name in (
             "vectors",
@@ -204,10 +204,10 @@ class NumericalAdmissionReceipt:
     interpretation: str = (
         "NUMERICAL_ADMISSION_ONLY_NOT_OPTIMIZATION_PROMOTION"
     )
-    schema_version: str = "cvi.numerical_admission_receipt.v1"
+    schema_version: str = "evaluation.numerical_admission_receipt.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.numerical_admission_receipt.v1":
+        if self.schema_version != "evaluation.numerical_admission_receipt.v1":
             raise ValueError("unsupported numerical admission receipt schema")
         for name in (
             "reference_manifest_sha256",

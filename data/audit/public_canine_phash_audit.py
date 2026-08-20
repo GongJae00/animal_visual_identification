@@ -54,7 +54,7 @@ from data.audit.phash_mih import (
 
 _DATASETS = (DOGFACE_DATASET, MPDD_DATASET, SIBETAN_DATASET, YT_DATASET)
 _HEX_SHA256 = re.compile(r"[0-9a-f]{64}\Z")
-_PIXEL_HASH_DOMAIN = b"CVI_PIXEL_CANONICAL_RGB_V1\0"
+_PIXEL_HASH_DOMAIN = b"PIXEL_CANONICAL_RGB_V1\0"
 _ALLOWED_ZIP_COMPRESSION = (zipfile.ZIP_STORED, zipfile.ZIP_DEFLATED)
 
 
@@ -67,10 +67,10 @@ class PublicCaninePHashSource:
     image_content_receipt_path: Path
     dogface_classes_train_path: Path | None = None
     dogface_classes_test_path: Path | None = None
-    schema_version: str = "cvi.public_canine_phash_source.v1"
+    schema_version: str = "data.public_canine_phash_source.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.public_canine_phash_source.v1":
+        if self.schema_version != "data.public_canine_phash_source.v1":
             raise ValueError("unsupported pHash source schema")
         if self.dataset_name not in _DATASETS:
             raise ValueError("unsupported public canine dataset")
@@ -120,10 +120,10 @@ class PublicCaninePHashPolicy:
     interpolation: str = "PILLOW_LANCZOS"
     apply_exif_orientation: bool = True
     allowed_zip_compression: tuple[int, ...] = _ALLOWED_ZIP_COMPRESSION
-    schema_version: str = "cvi.public_canine_phash_policy.v1"
+    schema_version: str = "data.public_canine_phash_policy.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.public_canine_phash_policy.v1":
+        if self.schema_version != "data.public_canine_phash_policy.v1":
             raise ValueError("unsupported public canine pHash policy")
         integer_fields = (
             "maximum_fingerprints",
@@ -230,7 +230,7 @@ def read_public_canine_phash_sources(
     payload = read_strict_json_object(path)
     if set(payload) != {"schema_version", "sources"} or payload[
         "schema_version"
-    ] != "cvi.public_canine_phash_source_spec.v1":
+    ] != "data.public_canine_phash_source_spec.v1":
         raise ValueError("public canine pHash source spec fields differ")
     raw_sources = payload["sources"]
     if not isinstance(raw_sources, list) or len(raw_sources) != len(_DATASETS):
@@ -353,7 +353,7 @@ def run_public_canine_phash_audit(
     pillow = _pillow()[0]
     provenance_sha256 = content_sha256(tool_provenance)
     evidence = {
-        "schema_version": "cvi.public_canine_phash_evidence.v1",
+        "schema_version": "data.public_canine_phash_evidence.v1",
         "policy": policy.to_dict(),
         "policy_sha256": policy.policy_sha256,
         "source_spec_sha256": source_spec_sha256,
@@ -397,12 +397,12 @@ def run_public_canine_phash_audit(
     }
     evidence_sha256 = content_sha256(evidence)
     evidence_bundle = {
-        "schema_version": "cvi.public_canine_phash_evidence_bundle.v1",
+        "schema_version": "data.public_canine_phash_evidence_bundle.v1",
         "evidence": evidence,
         "evidence_sha256": evidence_sha256,
     }
     binding = {
-        "schema_version": "cvi.public_canine_phash_binding.v1",
+        "schema_version": "data.public_canine_phash_binding.v1",
         "evidence_sha256": evidence_sha256,
         "bindings": sorted(bindings, key=lambda row: row["opaque_sample_id"]),
         "binding_count": len(bindings),
@@ -415,7 +415,7 @@ def run_public_canine_phash_audit(
     }
     binding_sha256 = content_sha256(binding)
     binding_bundle = {
-        "schema_version": "cvi.public_canine_phash_binding_bundle.v1",
+        "schema_version": "data.public_canine_phash_binding_bundle.v1",
         "binding": binding,
         "binding_sha256": binding_sha256,
     }
@@ -725,7 +725,7 @@ def _verify_image_receipt(
         "interpretation",
     }
     if set(receipt) != expected_top or receipt["schema_version"] != (
-        "cvi.image_content_audit_receipt.v1"
+        "data.image_content_audit_receipt.v1"
     ):
         raise ValueError("image-content receipt fields differ")
     if (
@@ -779,7 +779,7 @@ def _verify_image_receipt(
     for digest, sample_ids in sorted(grouped.items()):
         if len(sample_ids) >= 2:
             expected_groups.append({
-                "schema_version": "cvi.pixel_exact_duplicate_group.v1",
+                "schema_version": "data.pixel_exact_duplicate_group.v1",
                 "pixel_sha256": digest,
                 "source_sample_ids": sorted(sample_ids),
             })
@@ -816,7 +816,7 @@ def _verify_image_record(
         "exif_orientation_applied",
     }
     if set(raw) != expected_keys or raw["schema_version"] != (
-        "cvi.image_content_digest_record.v1"
+        "data.image_content_digest_record.v1"
     ):
         raise ValueError("image-content digest record fields differ")
     sample_id = raw["source_sample_id"]
@@ -864,7 +864,7 @@ def _read_semantic_bundle(path: Path) -> dict[str, Any]:
         "tool_provenance_sha256",
     }
     if set(bundle) != expected or bundle["schema_version"] != (
-        "cvi.public_canine_semantic_bundle.v1"
+        "data.public_canine_semantic_bundle.v1"
     ):
         raise ValueError("public canine semantic bundle fields differ")
     if content_sha256(bundle["tool_provenance"]) != bundle[
@@ -887,7 +887,7 @@ def _read_image_bundle(path: Path) -> dict[str, Any]:
         "tool_provenance_sha256",
     }
     if set(bundle) != expected or bundle["schema_version"] != (
-        "cvi.image_content_audit_bundle.v1"
+        "data.image_content_audit_bundle.v1"
     ):
         raise ValueError("image-content bundle fields differ")
     for payload_name, digest_name in (
@@ -930,7 +930,7 @@ def _validate_image_content_policy(value: object) -> None:
         "apply_exif_orientation",
     }
     if set(value) != expected or value["schema_version"] != (
-        "cvi.image_content_audit_policy.v1"
+        "data.image_content_audit_policy.v1"
     ):
         raise ValueError("image-content policy fields differ")
     if value["canonical_mode"] != "RGB" or value["apply_exif_orientation"] is not True:
@@ -986,9 +986,9 @@ def _validate_tool_provenance(value: object) -> None:
     }
     v2_expected = expected | {"logical_component", "entrypoints"}
     if set(value) not in (expected, v2_expected) or value["schema_version"] not in {
-        "cvi.offline_tool_provenance.v1",
-        "canine_identity.source_provenance.v2",
-        "canine_identity.source_provenance.v3",
+        "source.offline_tool_provenance.v1",
+        "source.provenance.v2",
+        "source.provenance.v3",
     }:
         raise ValueError("tool provenance fields differ")
     files = value["code_source_files"]
@@ -1076,7 +1076,7 @@ def _source_spec_sha256(sources: tuple[PublicCaninePHashSource, ...]) -> str:
             ),
         })
     return content_sha256({
-        "schema_version": "cvi.public_canine_phash_source_spec.v1",
+        "schema_version": "data.public_canine_phash_source_spec.v1",
         "sources": rows,
     })
 
@@ -1271,7 +1271,7 @@ def _stage_nested_container(
     ):
         raise ValueError("insufficient temporary space for nested pHash ZIP")
     staged = tempfile.TemporaryFile(
-        mode="w+b", prefix="cvi-phash-nested-", dir=temporary_root
+        mode="w+b", prefix="phash-nested-", dir=temporary_root
     )
     total = 0
     try:

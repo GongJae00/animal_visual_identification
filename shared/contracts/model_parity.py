@@ -185,10 +185,10 @@ class ModelParityReceipt:
     fixtures: tuple[ParityFixtureResult, ...]
     decision: str
     interpretation: str = "NUMERICAL_EXPORT_PARITY_ONLY_NOT_IDENTITY_PERFORMANCE_ADMISSION"
-    schema_version: str = "cvi.model_parity_receipt.v1"
+    schema_version: str = "shared.model_parity_receipt.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.model_parity_receipt.v1":
+        if self.schema_version != "shared.model_parity_receipt.v1":
             raise ModelParityError("unsupported model parity receipt schema")
         _require_nonempty(self.model_id, "model_id")
         for name in (

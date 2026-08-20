@@ -26,10 +26,10 @@ class PublicCanineVariantSummary:
     split_image_counts: tuple[tuple[str, int], ...]
     split_identity_counts: tuple[tuple[str, int], ...]
     verified_camera_token_count: int
-    schema_version: str = "cvi.public_canine_variant_summary.v1"
+    schema_version: str = "data.public_canine_variant_summary.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.public_canine_variant_summary.v1":
+        if self.schema_version != "data.public_canine_variant_summary.v1":
             raise ValueError("unsupported public canine variant summary")
         _require_token(self.dataset_name, "dataset_name")
         _require_token(self.dataset_version, "dataset_version")
@@ -89,10 +89,10 @@ class PublicCanineSemanticReceipt:
     variants: tuple[PublicCanineVariantSummary, ...]
     audited_facts: tuple[tuple[str, int], ...]
     interpretation: str = "SEMANTIC_INTAKE_ONLY_NOT_SPLIT_OR_MODEL_ADMISSION"
-    schema_version: str = "cvi.public_canine_semantic_receipt.v1"
+    schema_version: str = "data.public_canine_semantic_receipt.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.public_canine_semantic_receipt.v1":
+        if self.schema_version != "data.public_canine_semantic_receipt.v1":
             raise ValueError("unsupported public canine semantic receipt")
         if not self.variants:
             raise ValueError("semantic receipt must contain a variant")

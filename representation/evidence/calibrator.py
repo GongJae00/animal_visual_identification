@@ -7,7 +7,7 @@ from sklearn.isotonic import IsotonicRegression
 
 from shared.foundation.protected_io import read_strict_json_object, write_private_json_bundle
 
-_SCHEMA_VERSION = "cvi.isotonic_calibrator.v1"
+_SCHEMA_VERSION = "evaluation.isotonic_calibrator.v1"
 
 
 class CalibrationError(ValueError):

@@ -173,10 +173,10 @@ class EmbeddingProductionPrecommitment:
     candidate_attempt_token: str
     precommitment_sequence: int
     selection_blind_to_candidate_outputs: bool = True
-    schema_version: str = "cvi.embedding_production_precommitment.v2"
+    schema_version: str = "operations.embedding_production_precommitment.v2"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.embedding_production_precommitment.v2":
+        if self.schema_version != "operations.embedding_production_precommitment.v2":
             raise ValueError("unsupported embedding production precommitment")
         for name in (
             "scoring_inventory_sha256", "producer_config_sha256",
@@ -309,10 +309,10 @@ class EmbeddingWorkerExecutionPolicy:
     maximum_worker_result_bytes: int = 67_108_864
     maximum_snapshot_bytes: int = 68_719_476_736
     maximum_code_snapshot_bytes: int = 16_777_216
-    schema_version: str = "cvi.embedding_worker_execution_policy.v2"
+    schema_version: str = "operations.embedding_worker_execution_policy.v2"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.embedding_worker_execution_policy.v2":
+        if self.schema_version != "operations.embedding_worker_execution_policy.v2":
             raise ValueError("unsupported embedding worker execution policy")
         _positive_int(
             self.maximum_worker_result_bytes,
@@ -380,10 +380,10 @@ class EmbeddingFreshWorkerReceipt:
     interpretation: str = (
         "FRESH_WORKER_EMBEDDING_PRODUCTION_NOT_OPTIMIZATION_PROMOTION"
     )
-    schema_version: str = "cvi.embedding_fresh_worker_receipt.v2"
+    schema_version: str = "operations.embedding_fresh_worker_receipt.v2"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.embedding_fresh_worker_receipt.v2":
+        if self.schema_version != "operations.embedding_fresh_worker_receipt.v2":
             raise ValueError("unsupported embedding fresh-worker receipt")
         _validate_outer_common(self)
         if self.runtime_library_manifest.decision != "PASS":
@@ -439,10 +439,10 @@ class EmbeddingFreshWorkerDiscovery:
     interpretation: str = (
         "DISCOVERY_ONLY_NO_CACHE_PUBLICATION_OR_ADMISSION"
     )
-    schema_version: str = "cvi.embedding_fresh_worker_discovery.v2"
+    schema_version: str = "operations.embedding_fresh_worker_discovery.v2"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.embedding_fresh_worker_discovery.v2":
+        if self.schema_version != "operations.embedding_fresh_worker_discovery.v2":
             raise ValueError("unsupported embedding fresh-worker discovery")
         _validate_outer_common(self)
         if self.production_receipt.receipt_sha256 != (
@@ -495,7 +495,7 @@ def read_embedding_production_outer_bundle(
     receipt = EmbeddingFreshWorkerReceipt.from_dict(
         read_content_hashed_json_bundle(
             path,
-            schema_version="cvi.embedding_production_bundle.v2",
+            schema_version="operations.embedding_production_bundle.v2",
             payload_field="receipt",
             sha256_field="receipt_sha256",
         )
@@ -576,7 +576,7 @@ def embedding_artifact_paths_from_dict(
 ) -> dict[str, Path]:
     if set(payload) != {"schema_version", "entries"} or payload[
         "schema_version"
-    ] != "cvi.embedding_artifact_paths.v1" or not isinstance(
+    ] != "operations.embedding_artifact_paths.v1" or not isinstance(
         payload["entries"], list
     ):
         raise ValueError("embedding artifact-path payload differs")
@@ -669,7 +669,7 @@ def run_embedding_production_fresh_worker(
     output_parent, output_target = _unpublished_output_path(output_directory)
     published = False
     with TemporaryDirectory(
-        prefix=".cvi-embedding-worker-",
+        prefix=".embedding-worker-",
         dir=output_parent,
     ) as temporary:
         root = Path(temporary)
@@ -686,7 +686,7 @@ def run_embedding_production_fresh_worker(
             maximum_bytes=execution_policy.maximum_code_snapshot_bytes,
         )
         request = {
-            "schema_version": "cvi.embedding_fresh_worker_request.v2",
+            "schema_version": "operations.embedding_fresh_worker_request.v2",
             "backend": backend,
             "files": bindings,
             "expected_precommitment_sha256": expected_precommitment_sha256,
@@ -892,7 +892,7 @@ def _completed_attempt_head(
     publication_strategy: str,
 ) -> str:
     return content_sha256({
-        "schema_version": "cvi.embedding_completed_attempt.v2",
+        "schema_version": "operations.embedding_completed_attempt.v2",
         "prior_attempt_ledger_sha256": (
             precommitment.prior_attempt_ledger_sha256
         ),
@@ -1263,7 +1263,7 @@ def _validate_worker_result(
         "runtime_library_manifest", "runtime_library_manifest_sha256",
     }
     if set(payload) != expected or payload["schema_version"] != (
-        "cvi.embedding_fresh_worker_result.v2"
+        "operations.embedding_fresh_worker_result.v2"
     ):
         raise ValueError("embedding worker result schema differs")
     if payload["request_sha256"] != request_sha256 or payload["backend"] != backend:

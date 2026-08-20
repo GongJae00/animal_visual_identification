@@ -177,7 +177,7 @@ class Dinov2OnnxArtifactManifest:
     usage_lane: str
     license_id: str
     parity_receipt_sha256: str
-    schema_version: str = "cvi.dinov2_onnx_artifact_manifest.v1"
+    schema_version: str = "identification.dinov2_onnx_artifact_manifest.v1"
     model_id: str = "facebook/dinov2-small"
     input_name: str = "images"
     input_shape: tuple[object, ...] = ("batch", 3, 224, 224)
@@ -187,7 +187,7 @@ class Dinov2OnnxArtifactManifest:
     external_data: bool = False
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.dinov2_onnx_artifact_manifest.v1":
+        if self.schema_version != "identification.dinov2_onnx_artifact_manifest.v1":
             raise ValueError("unsupported DINOv2 ONNX manifest schema")
         if self.model_id != "facebook/dinov2-small":
             raise ValueError("DINOv2 ONNX model_id differs")
@@ -272,7 +272,7 @@ def _read_weight_bundle(
     if (
         set(bundle) != _WEIGHT_BUNDLE_KEYS
         or bundle["schema_version"]
-        != "cvi.pretrained_weight_intake_bundle.v1"
+        != "shared.pretrained_weight_intake_bundle.v1"
     ):
         raise ValueError("DINOv2 weight intake bundle schema differs")
     source = PretrainedWeightSourceContract.from_dict(bundle["source_contract"])
@@ -292,7 +292,7 @@ def _read_preprocessor_bundle(
     if (
         set(bundle) != _ASSET_BUNDLE_KEYS
         or bundle["schema_version"]
-        != "cvi.pretrained_supporting_asset_intake_bundle.v1"
+        != "shared.pretrained_supporting_asset_intake_bundle.v1"
     ):
         raise ValueError("DINOv2 preprocessor intake bundle schema differs")
     source = PretrainedSupportingAssetSourceContract.from_dict(

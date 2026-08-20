@@ -48,10 +48,10 @@ def _make_fake_source_bundle(
                 "paired_source_sample_id": None,
                 "in_no_mono_subset": None,
                 "region": "FACE",
-                "schema_version": "cvi.public_split_sample.v1",
+                "schema_version": "evaluation.public_split_sample.v1",
             })
     return {
-        "schema_version": "cvi.public_split_source_bundle.v1",
+        "schema_version": "evaluation.public_split_source_bundle.v1",
         "evidence_bindings": [("semantic_receipts_sha256", "0" * 64)],
         "samples": samples,
         "interpretation": "SEMANTIC_LABEL_BINDING_ONLY_NOT_MODEL_INPUT",
@@ -101,7 +101,7 @@ def _make_fake_assignment(
     for role in identity_roles.values():
         actual_role_counts[role] = actual_role_counts.get(role, 0) + 1
     return {
-        "schema_version": "cvi.protected_public_split_assignment.v1",
+        "schema_version": "evaluation.protected_public_split_assignment.v1",
         "records": records,
         "status": "PASS_PROTECTED_SPLIT_CONSTRUCTION",
         "seed_commitment": "1" * 64,
@@ -147,7 +147,7 @@ def _make_fake_assignment(
 
 def _make_receipt(assignment: dict) -> dict:
     receipt = {
-        "schema_version": "cvi.protected_public_split_receipt.v3",
+        "schema_version": "evaluation.protected_public_split_receipt.v3",
         "status": assignment["status"],
         "seed_commitment": assignment["seed_commitment"],
         "evidence_root_sha256": assignment["evidence_root_sha256"],
@@ -184,7 +184,7 @@ def _make_receipt(assignment: dict) -> dict:
 def _make_registry_manifest(db_path: Path) -> dict:
     registry = load_registry_manifest(db_path)
     manifest = {
-        "schema_version": "cvi.identity_registry_manifest.v1",
+        "schema_version": "enrollment.registry_manifest.v1",
         "generated_at": "2026-07-26T00:00:00+00:00",
         "namespace_uuid": str(REGISTERED_DOG_NAMESPACE),
         "registrations": [record.to_dict() for record in registry.records],
@@ -207,7 +207,7 @@ class EndToEndPipelineTest(unittest.TestCase):
     """Synthetic registry-to-binding checks."""
 
     def setUp(self) -> None:
-        self._tmpdir = Path(tempfile.mkdtemp(prefix="cvi_e2e_"))
+        self._tmpdir = Path(tempfile.mkdtemp(prefix="eval_"))
         self._db = self._tmpdir / "registry.db"
 
     def tearDown(self) -> None:
@@ -384,7 +384,7 @@ class EndToEndPipelineTest(unittest.TestCase):
 
         binding = _build_binding(assignment, self._db)
         manifest = binding.to_dict()
-        self.assertEqual(manifest["schema_version"], "cvi.split_registry_binding.v2")
+        self.assertEqual(manifest["schema_version"], "evaluation.split_registry_binding.v2")
         self.assertTrue(manifest["is_valid"])
         self.assertIn("generated_at", manifest)
         self.assertIn("bindings", manifest)
@@ -419,7 +419,7 @@ class RegistryAugmentationTest(unittest.TestCase):
         from enrollment.registry.identity_registry import compute_registered_dog_id as _crid
 
         labels = {
-            "schema_version": "cvi.protected_public_split_labels.v1",
+            "schema_version": "evaluation.protected_public_split_labels.v1",
             "records": [
                 {"sample_token": "t1", "dataset_identity_id": "yt-bb-dog:v1:video-track:1"},
                 {"sample_token": "t2", "dataset_identity_id": "yt-bb-dog:v1:video-track:2"},

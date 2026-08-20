@@ -32,7 +32,7 @@ def main() -> int:
         output_path=args.output,
     )
     print(json.dumps({
-        "schema_version": "cvi.pdq_official_regression_tool_output.v1",
+        "schema_version": "pdq.official_regression_tool_output.v1",
         "receipt_sha256": receipt.receipt_sha256,
         "decision": receipt.decision,
         "interpretation": receipt.interpretation,

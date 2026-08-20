@@ -23,7 +23,7 @@ from shared.foundation.protected_publication import fsync_directory, rename_dire
 from shared.foundation.provenance import content_sha256
 from parsing.export.regions.dinov2_region_segmentation import read_region_candidates
 
-REPORT_SCHEMA = "cvi.masked_afn_kfold_report.v1"
+REPORT_SCHEMA = "archive.appearance_face_nose.masked_afn_kfold_report.v1"
 INTERPRETATION = (
     "RETROSPECTIVE_EXPOSED_CROSS_VALIDATION_WITH_MODEL_GENERATED_REGION_CANDIDATES_"
     "NOT_VERIFIED_SEGMENTATION_OR_FINAL_BIOMETRIC_EVALUATION"
@@ -158,7 +158,7 @@ def train_and_evaluate_masked_afn(
                     {key: value.detach().cpu() for key, value in adapter.state_dict().items()},
                     str(checkpoint_path),
                     metadata={
-                        "schema_version": "cvi.masked_afn_residual_adapter.v1",
+                        "schema_version": "archive.appearance_face_nose.masked_afn_residual_adapter.v1",
                         "fold_index": str(fold_index),
                         "region": region,
                         "kfold_manifest_sha256": kfold.manifest_sha256,

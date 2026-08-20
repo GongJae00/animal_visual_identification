@@ -45,10 +45,10 @@ class PublicDatasetSourceContract:
     expected_sha256: str | None
     expected_md5: str | None
     terms_snapshot_sha256: str
-    schema_version: str = "cvi.public_dataset_source_contract.v1"
+    schema_version: str = "data.public_dataset_source_contract.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.public_dataset_source_contract.v1":
+        if self.schema_version != "data.public_dataset_source_contract.v1":
             raise ValueError("unsupported public dataset source contract")
         for name in ("dataset_id", "dataset_version", "license_id"):
             _require_bounded_text(getattr(self, name), name, maximum=256)
@@ -141,10 +141,10 @@ class PublicDatasetArchivePolicy:
         ".txt",
     )
     verify_member_crc: bool = True
-    schema_version: str = "cvi.public_dataset_archive_policy.v1"
+    schema_version: str = "data.public_dataset_archive_policy.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.public_dataset_archive_policy.v1":
+        if self.schema_version != "data.public_dataset_archive_policy.v1":
             raise ValueError("unsupported public dataset archive policy")
         for name in (
             "maximum_archive_bytes",
@@ -256,10 +256,10 @@ class PublicDatasetArchiveReceipt:
     checksum_authority: SourceChecksumAuthority
     decision: str
     interpretation: str = "ARCHIVE_INTAKE_ONLY_NOT_DATASET_OR_MODEL_ADMISSION"
-    schema_version: str = "cvi.public_dataset_archive_receipt.v1"
+    schema_version: str = "data.public_dataset_archive_receipt.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.public_dataset_archive_receipt.v1":
+        if self.schema_version != "data.public_dataset_archive_receipt.v1":
             raise ValueError("unsupported public dataset archive receipt")
         for name in (
             "source_contract_sha256",

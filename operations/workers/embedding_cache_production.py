@@ -64,7 +64,7 @@ def _run_produce(argv: list[str]) -> None:
     precommitment = EmbeddingProductionPrecommitment.from_dict(
         read_content_hashed_json_bundle(
             args.precommitment,
-            schema_version="cvi.embedding_production_precommitment_bundle.v1",
+            schema_version="operations.embedding_production_precommitment_bundle.v1",
             payload_field="precommitment",
             sha256_field="precommitment_sha256",
         )
@@ -100,7 +100,7 @@ def _run_produce(argv: list[str]) -> None:
         if not isinstance(result, EmbeddingFreshWorkerDiscovery):
             raise RuntimeError("embedding discovery returned an admission receipt")
         bundle = {
-            "schema_version": "cvi.embedding_runtime_discovery_bundle.v1",
+            "schema_version": "operations.embedding_runtime_discovery_bundle.v1",
             "discovery_sha256": result.discovery_sha256,
             "discovery": result.to_dict(),
         }
@@ -119,7 +119,7 @@ def _run_produce(argv: list[str]) -> None:
     if not isinstance(result, EmbeddingFreshWorkerReceipt):
         raise RuntimeError("embedding strict execution returned discovery")
     bundle = {
-        "schema_version": "cvi.embedding_production_bundle.v2",
+        "schema_version": "operations.embedding_production_bundle.v2",
         "receipt_sha256": result.receipt_sha256,
         "receipt": result.to_dict(),
     }
@@ -212,7 +212,7 @@ def _run_precommit(argv: list[str]) -> None:
         precommitment_sequence=args.precommitment_sequence,
     )
     bundle = {
-        "schema_version": "cvi.embedding_production_precommitment_bundle.v1",
+        "schema_version": "operations.embedding_production_precommitment_bundle.v1",
         "precommitment_sha256": precommitment.precommitment_sha256,
         "precommitment": precommitment.to_dict(),
     }

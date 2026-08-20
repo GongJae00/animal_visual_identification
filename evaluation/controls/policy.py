@@ -201,10 +201,10 @@ class ControlMaskEntry:
 class ControlMaskManifest:
     base_artifact_manifest_sha256: str
     entries: tuple[ControlMaskEntry, ...]
-    schema_version: str = "cvi.control_mask_manifest.v1"
+    schema_version: str = "evaluation.control_mask_manifest.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.control_mask_manifest.v1":
+        if self.schema_version != "evaluation.control_mask_manifest.v1":
             raise ValueError("unsupported control mask manifest schema")
         _validate_sha256(
             self.base_artifact_manifest_sha256,
@@ -290,7 +290,7 @@ class ControlMaskVerification:
 
     def to_dict(self) -> dict[str, str | int]:
         return {
-            "schema_version": "cvi.control_mask_verification.v1",
+            "schema_version": "evaluation.control_mask_verification.v1",
             "mask_manifest_sha256": self.mask_manifest_sha256,
             "verified_files": self.verified_files,
             "verified_bytes": self.verified_bytes,
@@ -308,7 +308,7 @@ class ControlMaskVerification:
             },
             "control mask verification",
         )
-        if payload["schema_version"] != "cvi.control_mask_verification.v1":
+        if payload["schema_version"] != "evaluation.control_mask_verification.v1":
             raise ValueError("unsupported control mask verification schema")
         return cls(
             mask_manifest_sha256=payload["mask_manifest_sha256"],
@@ -437,10 +437,10 @@ class VisualControlPolicy:
     recipes: tuple[VisualControlRecipe, ...]
     panels: tuple[VisualControlPanel, ...]
     seed: int
-    schema_version: str = "cvi.visual_control_policy.v1"
+    schema_version: str = "evaluation.visual_control_policy.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.visual_control_policy.v1":
+        if self.schema_version != "evaluation.visual_control_policy.v1":
             raise ValueError("unsupported visual control policy schema")
         _require_nonempty(self.name, "name")
         if (
@@ -891,7 +891,7 @@ class VisualControlAuditPlan:
     scoring_requests: tuple[ControlScoringRequest, ...]
     evaluation_bindings: tuple[ControlEvaluationBinding, ...]
     cost: ControlCostSummary
-    schema_version: str = "cvi.visual_control_audit_plan.v1"
+    schema_version: str = "evaluation.visual_control_audit_plan.v1"
 
     @property
     def plan_sha256(self) -> str:
@@ -937,7 +937,7 @@ class VisualControlAuditPlan:
 
     def scoring_payload(self) -> dict[str, Any]:
         return {
-            "schema_version": "cvi.visual_control_scoring_requests.v1",
+            "schema_version": "evaluation.visual_control_scoring_requests.v1",
             "plan_sha256": self.plan_sha256,
             "requests": [
                 request.to_dict() for request in self.scoring_requests
@@ -946,7 +946,7 @@ class VisualControlAuditPlan:
 
     def protected_transform_payload(self) -> dict[str, Any]:
         return {
-            "schema_version": "cvi.visual_control_transform_tasks.v1",
+            "schema_version": "evaluation.visual_control_transform_tasks.v1",
             "plan_sha256": self.plan_sha256,
             "scoring_requests_sha256": content_sha256(
                 self.scoring_payload()
@@ -956,7 +956,7 @@ class VisualControlAuditPlan:
 
     def sealed_evaluation_payload(self) -> dict[str, Any]:
         return {
-            "schema_version": "cvi.visual_control_evaluation_bindings.v1",
+            "schema_version": "evaluation.visual_control_evaluation_bindings.v1",
             "plan_sha256": self.plan_sha256,
             "pair_set_sha256": self.pair_set_sha256,
             "bindings": [
@@ -969,7 +969,7 @@ class VisualControlAuditPlan:
 
     def summary_payload(self) -> dict[str, Any]:
         return {
-            "schema_version": "cvi.visual_control_audit_summary.v1",
+            "schema_version": "evaluation.visual_control_audit_summary.v1",
             "plan_sha256": self.plan_sha256,
             "pair_set_sha256": self.pair_set_sha256,
             "base_artifact_manifest_sha256": (

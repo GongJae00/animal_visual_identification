@@ -64,7 +64,7 @@ def _verify_model_artifact(
 ) -> None:
     bundle = read_strict_json_object(receipt_path)
     if set(bundle) != _MODEL_RECEIPT_BUNDLE_KEYS or bundle["schema_version"] != (
-        "cvi.pretrained_weight_intake_bundle.v1"
+        "shared.pretrained_weight_intake_bundle.v1"
     ):
         raise ValueError("training model receipt bundle schema differs")
     source = PretrainedWeightSourceContract.from_dict(bundle["source_contract"])

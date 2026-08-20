@@ -35,7 +35,7 @@ def main() -> None:
     )
     tool_provenance = build_offline_tool_provenance(Path(__file__))
     bundle = {
-        "schema_version": "cvi.pretrained_weight_intake_bundle.v1",
+        "schema_version": "shared.pretrained_weight_intake_bundle.v1",
         "source_contract_sha256": source.contract_sha256,
         "source_contract": source.to_dict(),
         "receipt_sha256": receipt.receipt_sha256,

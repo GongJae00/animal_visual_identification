@@ -35,7 +35,7 @@ from identification.export.nose.data.annotation import (
 )
 from identification.export.nose.extractor import YoloNoseDetector
 
-_BATCH_SCHEMA = "cvi.noseid.annotation_review_batch.v1"
+_BATCH_SCHEMA = "identification.nose.annotation_review_batch.v1"
 _BATCH_STATE = "NOT_ADMITTED_REQUIRES_HUMAN_ANNOTATION_AND_REVIEW"
 _PREDICTION_SOURCE = "AUTOMATED_LOCALIZER_PROPOSAL_NOT_A_LABEL"
 
@@ -139,7 +139,7 @@ def create_review_batch(
         detector_artifact, detector_manifest, use_cuda=use_cuda
     )
     acquisition_payload = canonical_jsonl_bytes(records)
-    with TemporaryDirectory(prefix=".cvi-nose-annotation-", dir=parent) as temporary:
+    with TemporaryDirectory(prefix=".nose-annotation-", dir=parent) as temporary:
         staging = Path(temporary) / "batch"
         staging.mkdir(mode=0o700)
         crops = staging / "predicted-crops"

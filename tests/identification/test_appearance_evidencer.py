@@ -166,7 +166,7 @@ def _local_fixture(
         _intake_bundle(
             weight_source,
             weight_receipt,
-            "cvi.pretrained_weight_intake_bundle.v1",
+            "shared.pretrained_weight_intake_bundle.v1",
         ),
     )
     _write_json(
@@ -174,7 +174,7 @@ def _local_fixture(
         _intake_bundle(
             preprocessor_source,
             preprocessor_receipt,
-            "cvi.pretrained_supporting_asset_intake_bundle.v1",
+            "shared.pretrained_supporting_asset_intake_bundle.v1",
         ),
     )
     return {

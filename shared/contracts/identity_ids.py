@@ -6,8 +6,8 @@ import hashlib
 import re
 import uuid
 
-REGISTERED_DOG_NAMESPACE = uuid.uuid5(uuid.NAMESPACE_DNS, "cvi.registered_dog.v1")
-GENERATED_DOG_NAMESPACE = uuid.uuid5(uuid.NAMESPACE_DNS, "cvi.generated_dog.v1")
+REGISTERED_DOG_NAMESPACE = uuid.uuid5(uuid.NAMESPACE_DNS, "enrollment.registered_dog.v1")
+GENERATED_DOG_NAMESPACE = uuid.uuid5(uuid.NAMESPACE_DNS, "enrollment.generated_dog.v1")
 
 _IDENTITY_TOKEN_PREFIX = b"identity\x00"
 _SAMPLE_TOKEN_PREFIX = b"sample\x00"

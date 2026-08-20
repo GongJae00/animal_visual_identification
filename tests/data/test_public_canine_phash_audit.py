@@ -106,7 +106,7 @@ def _provenance() -> dict[str, object]:
     files: list[object] = []
     runtime = {"python": "fixture"}
     return {
-        "schema_version": "cvi.offline_tool_provenance.v1",
+        "schema_version": "source.offline_tool_provenance.v1",
         "code_source_manifest_sha256": content_sha256(files),
         "code_source_files": files,
         "runtime": runtime,
@@ -144,7 +144,7 @@ class PublicCaninePHashConfigTests(unittest.TestCase):
             for dataset in _DATASETS:
                 class_value = str(root / "class.txt") if dataset == "dogfacenet224" else None
                 rows.append({
-                    "schema_version": "cvi.public_canine_phash_source.v1",
+                    "schema_version": "data.public_canine_phash_source.v1",
                     "dataset_name": dataset,
                     "archive_path": str(root / f"{dataset}.zip"),
                     "archive_receipt_path": str(root / f"{dataset}-archive.json"),
@@ -155,7 +155,7 @@ class PublicCaninePHashConfigTests(unittest.TestCase):
                 })
             path = root / "sources.json"
             path.write_text(json.dumps({
-                "schema_version": "cvi.public_canine_phash_source_spec.v1",
+                "schema_version": "data.public_canine_phash_source_spec.v1",
                 "sources": rows,
             }), encoding="utf-8")
             sources = read_public_canine_phash_sources(path)
@@ -164,7 +164,7 @@ class PublicCaninePHashConfigTests(unittest.TestCase):
             rows[-1]["dataset_name"] = "mpdd"
             duplicate = root / "duplicate.json"
             duplicate.write_text(json.dumps({
-                "schema_version": "cvi.public_canine_phash_source_spec.v1",
+                "schema_version": "data.public_canine_phash_source_spec.v1",
                 "sources": rows,
             }), encoding="utf-8")
             with self.assertRaisesRegex(ValueError, "each audited dataset once"):
@@ -264,7 +264,7 @@ class PublicCaninePHashDecodeTests(unittest.TestCase):
             )
             provenance = _provenance()
             image_bundle = {
-                "schema_version": "cvi.image_content_audit_bundle.v1",
+                "schema_version": "data.image_content_audit_bundle.v1",
                 "semantic_receipt_sha256": "4" * 64,
                 "policy": policy.to_dict(),
                 "policy_sha256": policy.policy_sha256,

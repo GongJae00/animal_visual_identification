@@ -249,7 +249,7 @@ def main() -> None:
                 args.output_dir / "best.pt",
             )
     summary = {
-        "schema_version": "cvi.faceid_training_summary.v2",
+        "schema_version": "identification.face.faceid_training_summary.v2",
         "architecture": args.architecture,
         "seed": args.seed,
         "epochs": args.epochs,

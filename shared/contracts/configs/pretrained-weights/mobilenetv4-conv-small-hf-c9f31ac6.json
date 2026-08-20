@@ -1,5 +1,5 @@
 {
-  "schema_version": "cvi.pretrained_weight_source_contract.v1",
+  "schema_version": "shared.pretrained_weight_source_contract.v1",
   "source_model_id": "timm/mobilenetv4_conv_small.e1200_r224_in1k",
   "source_revision": "c9f31ac64483d7f0590db9edccb4418392a96eea",
   "source_model_page_url": "https://huggingface.co/timm/mobilenetv4_conv_small.e1200_r224_in1k",

@@ -11,9 +11,9 @@ from shared.foundation.provenance import content_sha256
 from visualization.contracts import FigureData
 from visualization.rendering.style import STYLE_FINGERPRINT
 
-PROVENANCE_SCHEMA = "cvi.visualization.publication.v1"
-INVENTORY_SCHEMA = "cvi.visualization.output_inventory.v1"
-RENDERER_VERSION = "cvi.vis.renderer.v1"
+PROVENANCE_SCHEMA = "visualization.publication.v1"
+INVENTORY_SCHEMA = "visualization.output_inventory.v1"
+RENDERER_VERSION = "visualization.renderer.v1"
 _RENDERER_FILES = (
     "rendering/renderer.py",
     "rendering/recipes.py",

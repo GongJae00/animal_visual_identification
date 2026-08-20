@@ -34,10 +34,10 @@ class PDQFingerprintChunk:
     start_index: int
     end_index: int
     fingerprints: tuple[PDQFingerprint, ...]
-    schema_version: str = "cvi.public_canine_pdq_fingerprint_chunk.v1"
+    schema_version: str = "data.public_canine_pdq_fingerprint_chunk.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.public_canine_pdq_fingerprint_chunk.v1":
+        if self.schema_version != "data.public_canine_pdq_fingerprint_chunk.v1":
             raise ValueError("unsupported PDQ fingerprint chunk schema")
         for name in (
             "source_spec_sha256",
@@ -145,7 +145,7 @@ def merge_pdq_fingerprint_chunks(
     if observed_ids != expected_ids:
         raise ValueError("merged PDQ fingerprint IDs differ from authenticated corpus")
     return {
-        "schema_version": "cvi.public_canine_pdq_fingerprint_manifest.v1",
+        "schema_version": "data.public_canine_pdq_fingerprint_manifest.v1",
         "source_spec_sha256": context.source_spec_sha256,
         "source_receipt_bindings": list(context.source_receipt_bindings),
         "source_receipt_bindings_sha256": context.source_receipt_bindings_sha256,
@@ -174,7 +174,7 @@ def build_pdq_evidence_bundle(
         raise ValueError("PDQ fingerprint manifest exceeds search policy")
     search = find_pdq_near_duplicate_candidates(fingerprints, policy=policy)
     evidence = {
-        "schema_version": "cvi.public_canine_pdq_evidence.v1",
+        "schema_version": "data.public_canine_pdq_evidence.v1",
         "search_result": search.to_dict(),
         "sample_ids_sha256": fingerprint_manifest["corpus_sample_ids_sha256"],
         "fingerprint_count": len(fingerprints),
@@ -196,7 +196,7 @@ def build_pdq_evidence_bundle(
         "interpretation": _INTERPRETATION,
     }
     return {
-        "schema_version": "cvi.public_canine_pdq_evidence_bundle.v1",
+        "schema_version": "data.public_canine_pdq_evidence_bundle.v1",
         "evidence": evidence,
         "evidence_sha256": content_sha256(evidence),
     }
@@ -209,7 +209,7 @@ def publish_pdq_fingerprint_chunk(
     tool_provenance: Mapping[str, Any],
 ) -> str:
     bundle = _bundle(
-        "cvi.public_canine_pdq_fingerprint_chunk_bundle.v1",
+        "data.public_canine_pdq_fingerprint_chunk_bundle.v1",
         "chunk",
         chunk.to_dict(),
         "chunk_sha256",
@@ -228,7 +228,7 @@ def publish_pdq_evidence_bundle(path: Path, bundle: Mapping[str, Any]) -> str:
 def read_pdq_fingerprint_chunk(path: Path) -> PDQFingerprintChunk:
     payload = _read_bundle(
         path,
-        "cvi.public_canine_pdq_fingerprint_chunk_bundle.v1",
+        "data.public_canine_pdq_fingerprint_chunk_bundle.v1",
         "chunk",
         "chunk_sha256",
     )
@@ -309,7 +309,7 @@ def _validate_fingerprint_manifest(
     )
     ids = tuple(item.opaque_sample_id for item in fingerprints)
     if (
-        payload["schema_version"] != "cvi.public_canine_pdq_fingerprint_manifest.v1"
+        payload["schema_version"] != "data.public_canine_pdq_fingerprint_manifest.v1"
         or payload["fingerprint_count"] != len(fingerprints)
         or payload["chunk_count"] != len(payload["chunks"])
         or ids != tuple(sorted(ids))
@@ -333,7 +333,7 @@ def _validate_fingerprint_manifest(
 def _validate_pdq_evidence_bundle(bundle: Mapping[str, Any]) -> None:
     _exact(bundle, {"schema_version", "evidence", "evidence_sha256"}, "PDQ evidence bundle")
     if (
-        bundle["schema_version"] != "cvi.public_canine_pdq_evidence_bundle.v1"
+        bundle["schema_version"] != "data.public_canine_pdq_evidence_bundle.v1"
         or not isinstance(bundle["evidence"], Mapping)
         or content_sha256(bundle["evidence"]) != bundle["evidence_sha256"]
     ):

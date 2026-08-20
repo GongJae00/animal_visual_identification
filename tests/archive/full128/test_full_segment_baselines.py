@@ -66,13 +66,13 @@ def _write_b2_bundle(
     receipt_sha256: str | None = None,
 ) -> None:
     tool_provenance = {
-        "schema_version": "canine_identity.source_provenance.v2",
+        "schema_version": "source.provenance.v2",
         "logical_component": "workflows.audit_pretrained_weight",
     }
     path.write_text(
         json.dumps(
             {
-                "schema_version": "cvi.pretrained_weight_intake_bundle.v1",
+                "schema_version": "shared.pretrained_weight_intake_bundle.v1",
                 "source_contract_sha256": source.contract_sha256,
                 "source_contract": source.to_dict(),
                 "receipt_sha256": receipt_sha256 or receipt.receipt_sha256,
@@ -241,7 +241,7 @@ def test_b2_checkpoint_manifest_requires_source_and_receipt_binding() -> None:
         initialization_intake_receipt_sha256=receipt.receipt_sha256,
         initialization_usage_lane=receipt.admitted_lane.value,
     )
-    assert manifest["schema_version"] == "cvi.full_segment_checkpoint_manifest.v2"
+    assert manifest["schema_version"] == "parsing.full_segment_checkpoint_manifest.v2"
     assert manifest["initialization_sha256"] == source.expected_sha256
     assert manifest["initialization_source_contract_sha256"] == (
         source.contract_sha256

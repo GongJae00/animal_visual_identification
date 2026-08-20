@@ -466,7 +466,7 @@ def parse_training_checkpoint_config(payload: object) -> TrainConfig:
     """Return the training configuration from a versioned checkpoint."""
 
     if not isinstance(payload, dict) or payload.get("schema_version") != (
-        "cvi.training_checkpoint.v1"
+        "identification.training_checkpoint.v1"
     ):
         raise RuntimeError("unsupported or legacy training checkpoint")
     config_payload = payload.get("config")
@@ -488,7 +488,7 @@ def _checkpoint_payload(
     admission_receipt: Any | None = None,
 ) -> dict[str, Any]:
     return {
-        "schema_version": "cvi.training_checkpoint.v1",
+        "schema_version": "identification.training_checkpoint.v1",
         "architecture": {
             "architecture": config.architecture,
             "model_name": config.model_name,

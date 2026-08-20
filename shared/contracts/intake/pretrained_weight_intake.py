@@ -53,10 +53,10 @@ class PretrainedWeightSourceContract:
     checksum_authority: PretrainedWeightChecksumAuthority
     target_lane: PretrainedWeightUsageLane
     file_format: PretrainedWeightFileFormat
-    schema_version: str = "cvi.pretrained_weight_source_contract.v1"
+    schema_version: str = "shared.pretrained_weight_source_contract.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.pretrained_weight_source_contract.v1":
+        if self.schema_version != "shared.pretrained_weight_source_contract.v1":
             raise ValueError("unsupported pretrained weight source contract")
         for name in ("source_model_id", "source_revision", "license_id"):
             value = getattr(self, name)
@@ -186,10 +186,10 @@ class PretrainedWeightIntakeReceipt:
     interpretation: str = (
         "WEIGHT_BYTE_INTAKE_ONLY_NOT_DESERIALIZATION_MODEL_OR_PERFORMANCE_ADMISSION"
     )
-    schema_version: str = "cvi.pretrained_weight_intake_receipt.v1"
+    schema_version: str = "shared.pretrained_weight_intake_receipt.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.pretrained_weight_intake_receipt.v1":
+        if self.schema_version != "shared.pretrained_weight_intake_receipt.v1":
             raise ValueError("unsupported pretrained weight intake receipt")
         _require_enum(
             self.checksum_authority,

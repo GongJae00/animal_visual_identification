@@ -1,5 +1,5 @@
 {
-  "schema_version": "cvi.pretrained_weight_source_contract.v1",
+  "schema_version": "shared.pretrained_weight_source_contract.v1",
   "source_model_id": "torchvision.models.ResNet18_Weights.IMAGENET1K_V1",
   "source_revision": "torchvision-v0.26.0@336d36e8db990a905498c73933e35231876e28bc",
   "source_model_page_url": "https://github.com/pytorch/vision/blob/336d36e8db990a905498c73933e35231876e28bc/torchvision/models/resnet.py",

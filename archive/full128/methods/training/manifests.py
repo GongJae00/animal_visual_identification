@@ -8,7 +8,7 @@ from typing import Any
 from shared.foundation.provenance import content_sha256
 
 _METHODS = {"CLASSICAL128", "SEGMENT_FULL_MASKED_GAP128_RESNET18"}
-BASELINE_FAMILY_SCHEMA = "cvi.full128_baseline_family.v1"
+BASELINE_FAMILY_SCHEMA = "archive.full128.baseline_family.v1"
 BASELINE_VARIANTS = (
     ("B0", "CLASSICAL128", "FIT_SCALER_PCA"),
     ("B1", "SEGMENT_FULL_MASKED_GAP128_RESNET18", "RANDOM_SCRATCH"),
@@ -61,7 +61,7 @@ def build_preprocessing_manifest(*, method: str) -> dict[str, Any]:
             "pooling_mask_resize": "AREA",
         }
     return {
-        "schema_version": "cvi.full_segment_preprocessing_manifest.v1",
+        "schema_version": "parsing.full_segment_preprocessing_manifest.v1",
         "method": method,
         "preprocessing": preprocessing,
     }
@@ -73,7 +73,7 @@ def build_embedding_manifest(
     if method not in _METHODS:
         raise ValueError("unsupported full-segment embedding method")
     manifest: dict[str, Any] = {
-        "schema_version": "cvi.full_segment_embedding_manifest.v1",
+        "schema_version": "parsing.full_segment_embedding_manifest.v1",
         "method": method,
         "output_dimension": 128,
         "output_dtype": "float32",
@@ -108,7 +108,7 @@ def build_model_manifest(*, method: str) -> dict[str, Any]:
             "projection": "LINEAR_512_TO_128",
         }
     return {
-        "schema_version": "cvi.full128_model_manifest.v1",
+        "schema_version": "archive.full128.model_manifest.v1",
         "method": method,
         "architecture": architecture,
     }
@@ -179,7 +179,7 @@ def build_checkpoint_manifest(
     else:
         raise ValueError("unsupported full-segment checkpoint method")
     return {
-        "schema_version": "cvi.full_segment_checkpoint_manifest.v2",
+        "schema_version": "parsing.full_segment_checkpoint_manifest.v2",
         "method": method,
         "checkpoint_sha256": checkpoint_sha256,
         "preprocessing_manifest_sha256": content_sha256(preprocessing_manifest),

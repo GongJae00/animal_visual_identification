@@ -14,9 +14,9 @@ from evaluation.embedding_diagnostics import compute_embedding_diagnostics
 from evaluation.search_metrics.metrics import identity_clustered_bootstrap_ci
 from shared.foundation.provenance import canonical_json_bytes, content_sha256
 
-CACHED_PROTOCOL_INPUT_SCHEMA_VERSION = "cvi.cached_protocol_input.v1"
-COMMON_REPORT_SCHEMA_VERSION = "cvi.common_evaluation_report.v1"
-MASTER_RESULTS_SCHEMA_VERSION = "cvi.master_results_table.v1"
+CACHED_PROTOCOL_INPUT_SCHEMA_VERSION = "evaluation.cached_protocol_input.v1"
+COMMON_REPORT_SCHEMA_VERSION = "evaluation.common_evaluation_report.v1"
+MASTER_RESULTS_SCHEMA_VERSION = "visualization.master_results_table.v1"
 EMBEDDING_DIMENSION = 128
 RANK_KS = (1, 3, 5)
 REGIONS = ("Full", "Face", "Nose")

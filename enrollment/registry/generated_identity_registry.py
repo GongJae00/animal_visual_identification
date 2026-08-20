@@ -14,7 +14,7 @@ from shared.contracts.identity_ids import (
     compute_source_cluster_token,
 )
 
-_SCHEMA_VERSION = "cvi.generated_identity_registry.v1"
+_SCHEMA_VERSION = "enrollment.generated_identity_registry.v1"
 _GENERATOR_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}")
 _SHA256 = re.compile(r"[0-9a-f]{64}")
 _MAXIMUM_RECORDS = 1_000_000

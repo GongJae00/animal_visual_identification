@@ -38,7 +38,7 @@ from evaluation.oxford_pet_foreground import (
     _preflight_samples,
 )
 
-REPORT_SCHEMA = "cvi.animal_parsing_batch_benchmark.v1"
+REPORT_SCHEMA = "parsing.batch_benchmark.v1"
 INTERPRETATION = "FIXED_OXFORD_DOG_BATCH_EQUIVALENCE_AND_THROUGHPUT_NOT_BIOMETRIC_VALIDATION"
 _SAMPLE_COUNT = 512
 _REPEAT_COUNT = 3
@@ -214,7 +214,7 @@ def _select_samples(root: Path) -> tuple[OxfordPetSample, ...]:
     ordered = sorted(
         eligible,
         key=lambda item: hashlib.sha256(
-            b"cvi.animal_parsing_batch_benchmark.v1\0" + item.name.encode("ascii")
+            b"parsing.batch_benchmark.v1\0" + item.name.encode("ascii")
         ).digest(),
     )
     if len(ordered) < _SAMPLE_COUNT:
@@ -390,7 +390,7 @@ def _decision_fingerprint(
 ) -> dict[str, Any]:
     token = hashlib.sha256(f"benchmark:{sample_name}".encode("ascii")).hexdigest()
     row = {
-        "schema_version": "cvi.full128_route_plan_record.v3",
+        "schema_version": "archive.full128.route_plan_record.v3",
         "sample_token": token,
         "dataset_name": "oxford-pets-dog",
         "record_sha256": hashlib.sha256(

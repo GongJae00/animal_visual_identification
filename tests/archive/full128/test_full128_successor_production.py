@@ -385,7 +385,7 @@ def test_workflow_prints_production_config_without_running_training(
     output = capsys.readouterr().out
     assert PRODUCTION_CONFIG_SCHEMA_FRAGMENT in output
 
-PRODUCTION_CONFIG_SCHEMA_FRAGMENT = "cvi.full128_successor_production_config.v1"
+PRODUCTION_CONFIG_SCHEMA_FRAGMENT = "archive.full128.successor_production_config.v1"
 
 def test_trace_workflow_rejects_repository_and_existing_outputs(tmp_path: Path) -> None:
     repository_output = REPO_ROOT / "private-traces"

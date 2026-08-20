@@ -68,7 +68,7 @@ def _run_onnx(argv: list[str]) -> None:
         policy=policy,
     )
     receipt = {
-        "schema_version": "cvi.onnx_inference_benchmark_receipt.v3",
+        "schema_version": "operations.onnx_inference_benchmark_receipt.v3",
         "summary_sha256": summary.summary_sha256,
         "summary": summary.to_dict(),
     }

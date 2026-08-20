@@ -70,10 +70,10 @@ class ArchiveReceiptBinding:
     dataset_name: str
     archive_sha256: str
     archive_receipt_sha256: str
-    schema_version: str = "cvi.archive_receipt_binding.v1"
+    schema_version: str = "shared.archive_receipt_binding.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.archive_receipt_binding.v1":
+        if self.schema_version != "shared.archive_receipt_binding.v1":
             raise ValueError("unsupported archive receipt binding")
         _require_token(self.dataset_name, "dataset_name")
         _require_sha256(self.archive_sha256, "archive_sha256")
@@ -107,10 +107,10 @@ class PublicCanineRecord:
     container_member_path: str | None = None
     container_member_crc32: int | None = None
     container_member_uncompressed_bytes: int | None = None
-    schema_version: str = "cvi.public_canine_record.v1"
+    schema_version: str = "data.public_canine_record.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.public_canine_record.v1":
+        if self.schema_version != "data.public_canine_record.v1":
             raise ValueError("unsupported public canine record")
         for name in (
             "dataset_name",
@@ -187,10 +187,10 @@ class PublicCanineManifest:
     source_archive_sha256: str
     source_archive_receipt_sha256: str
     records: tuple[PublicCanineRecord, ...]
-    schema_version: str = "cvi.public_canine_manifest.v1"
+    schema_version: str = "data.public_canine_manifest.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.public_canine_manifest.v1":
+        if self.schema_version != "data.public_canine_manifest.v1":
             raise ValueError("unsupported public canine manifest")
         _require_token(self.dataset_name, "dataset_name")
         _require_token(self.dataset_version, "dataset_version")
@@ -237,10 +237,10 @@ class DogFaceClassSplitReceipt:
     test_lines: int
     test_identities: int
     identity_intersection: int
-    schema_version: str = "cvi.dogface_class_split_receipt.v1"
+    schema_version: str = "archive.face.dogface_class_split_receipt.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.dogface_class_split_receipt.v1":
+        if self.schema_version != "archive.face.dogface_class_split_receipt.v1":
             raise ValueError("unsupported DogFace class split receipt")
         _require_sha256(self.train_sha256, "train_sha256")
         _require_sha256(self.test_sha256, "test_sha256")

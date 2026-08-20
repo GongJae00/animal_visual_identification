@@ -22,7 +22,7 @@ from parsing.export.segmentation.full_segment_contracts import (
     ObservationRoute,
 )
 
-CROP_SCHEMA = "cvi.full_segment_crop.v1"
+CROP_SCHEMA = "parsing.full_segment_crop.v1"
 _MAX_SOURCE_PIXELS = 33_554_432
 _CROP_FIELDS = {
     "schema_version",

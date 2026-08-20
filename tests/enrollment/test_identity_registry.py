@@ -42,7 +42,7 @@ def _registry_payload(*dataset_identity_ids: str) -> dict:
         key=lambda record: (record.dataset_name, record.dataset_identity_id),
     )
     return {
-        "schema_version": "cvi.identity_registry.v1",
+        "schema_version": "enrollment.registry.v1",
         "generated_at": "2026-07-26T00:00:00+00:00",
         "namespace_uuid": str(REGISTERED_DOG_NAMESPACE),
         "registrations": [record.to_dict() for record in records],
@@ -107,7 +107,7 @@ class RegisteredDogIdTests(unittest.TestCase):
     def test_namespace_is_stable(self) -> None:
         self.assertEqual(
             str(REGISTERED_DOG_NAMESPACE),
-            "877d96de-ba43-542d-9523-5c20213bfc09",
+            "a627a960-f746-5dc5-b6e5-0c2dc713e72f",
         )
 
 class ExtractDatasetNameTests(unittest.TestCase):
@@ -211,7 +211,7 @@ class IdentityRegistryContractTests(unittest.TestCase):
     def test_manifest_rejects_forged_contract_fields(self) -> None:
         base = _registry_payload("yt-bb-dog:v1:video-track:1")
         invalid_manifests = (
-            {**base, "schema_version": "cvi.identity_registry.v2"},
+            {**base, "schema_version": "enrollment.registry.v2"},
             {**base, "namespace_uuid": str(uuid.uuid4())},
             {**base, "generated_at": 1},
             {**base, "generated_at": "x" * 65},
@@ -264,7 +264,7 @@ class SqliteRegistryTests(unittest.TestCase):
     _db: Path
 
     def setUp(self) -> None:
-        fd, path = tempfile.mkstemp(suffix=".db", prefix="cvi_reg_test_")
+        fd, path = tempfile.mkstemp(suffix=".db", prefix="reg_test_")
         self._db = Path(path)
         create_registry_database(self._db)
 

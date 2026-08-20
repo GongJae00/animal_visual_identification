@@ -35,8 +35,8 @@ from identification.export.nose.signal.frequency import classical_texture_descri
 from identification.export.nose.signal.temporal import aggregate_nose_embeddings
 from parsing.export.regions.native_yt import validate_manifest_bundle
 
-REPORT_SCHEMA = "cvi.yt_nose_texture_evaluation.v2"
-REPORT_BUNDLE_SCHEMA = "cvi.yt_nose_texture_evaluation_bundle.v2"
+REPORT_SCHEMA = "archive.nose.yt_nose_texture_evaluation.v2"
+REPORT_BUNDLE_SCHEMA = "archive.nose.yt_nose_texture_evaluation_bundle.v2"
 INTERPRETATION = (
     "YT_FIT_TRACK_PROXY_CLASSICAL_TEXTURE_DEVELOPMENT_DIAGNOSTIC_"
     "NOT_CROSS_SESSION_BIOMETRIC_VALIDATION"
@@ -141,7 +141,7 @@ def _fuse(vectors: Sequence[np.ndarray]) -> np.ndarray:
 
 
 def _identity_partition(identity: str) -> str:
-    digest = hashlib.sha256(f"cvi.nose_texture.v1:{identity}".encode("ascii")).digest()
+    digest = hashlib.sha256(f"identification.nose.nose_texture.v1:{identity}".encode("ascii")).digest()
     return "DEVELOPMENT" if int.from_bytes(digest[:4], "big") % 4 == 0 else "EVALUATION"
 
 

@@ -14,7 +14,7 @@ from archive.full128.methods.preparation.inventory import (
     build_full128_experiment_inventory,
 )
 
-REQUEST_SCHEMA = "cvi.full128_experiment_inventory_request.v2"
+REQUEST_SCHEMA = "archive.full128.experiment_inventory_request.v2"
 
 
 def run(

@@ -245,7 +245,7 @@ def _run_manifest(inventory: dict[str, Any]) -> dict[str, Any]:
         "uv_lock": {"sha256": _sha("uv-lock"), "byte_size": 1},
     }
     payload = {
-        "schema_version": "cvi.full128_training_run.v1",
+        "schema_version": "archive.full128.training_run.v1",
         "run_config": config,
         "bindings": bindings,
         "source_closure": source_closure,
@@ -364,7 +364,7 @@ def _write_variant(
     if variant == "B2":
         bindings["b2_initialization"] = {"test": True}
     payload = {
-        "schema_version": "cvi.full128_variant_run.v1",
+        "schema_version": "archive.full128.variant_run.v1",
         "variant_id": variant,
         "method": method,
         "initialization": variant_manifest["initialization"],
@@ -404,7 +404,7 @@ def _training_run(
         for variant in ("B0", "B1", "B2")
     ]
     payload = {
-        "schema_version": "cvi.full128_family_run.v1",
+        "schema_version": "archive.full128.family_run.v1",
         "family_id": "FULL128_B0_B1_B2",
         "run_manifest_sha256": run_manifest["run_manifest_sha256"],
         "run_config_sha256": run_manifest["bindings"]["run_config_sha256"],
@@ -768,7 +768,7 @@ def test_family_denominators_and_bootstrap_are_deterministic(tmp_path: Path) -> 
     )
 
     assert built_panel == panel
-    assert table["schema_version"] == "cvi.full128_master_table.v1"
+    assert table["schema_version"] == "archive.full128.master_table.v1"
     mpdd_results = [
         next(item for item in report.report["datasets"] if item["dataset"] == "mpdd")
         for report in reports

@@ -172,7 +172,7 @@ class UnifiedCanidSampleTests(unittest.TestCase):
 
     def test_generated_identity_does_not_become_ground_truth_identity(self) -> None:
         generated = create_provisional_identity(
-            "cvi.track-cluster:v1", "unlabeled-track:42", 5
+            "enrollment.track_cluster:v1", "unlabeled-track:42", 5
         )
         sample = UnifiedCanidSample(
             sample_id="t",

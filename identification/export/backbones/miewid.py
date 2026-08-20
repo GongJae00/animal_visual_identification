@@ -30,7 +30,7 @@ MIEWID_OUTPUT_DIM = 2152
 MIEWID_MEAN = np.asarray((0.485, 0.456, 0.406), dtype=np.float32)
 MIEWID_STD = np.asarray((0.229, 0.224, 0.225), dtype=np.float32)
 
-_MANIFEST_SCHEMA = "cvi.miewid_artifact_bundle.v1"
+_MANIFEST_SCHEMA = "identification.miewid_artifact_bundle.v1"
 _MAXIMUM_ONNX_BYTES = 2_147_483_648
 _SHA256_RE = re.compile(r"[0-9a-f]{64}")
 _PREPROCESSING = {

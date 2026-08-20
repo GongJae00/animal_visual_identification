@@ -28,8 +28,8 @@ from parsing.export.crops.roi import (
     square_padded_crop_with_mask,
 )
 
-_BUNDLE_SCHEMA = "cvi.canid_roi_manifest_bundle.v2"
-_MANIFEST_SCHEMA = "cvi.canid_roi_manifest.v2"
+_BUNDLE_SCHEMA = "parsing.canid_roi_manifest_bundle.v2"
+_MANIFEST_SCHEMA = "parsing.canid_roi_manifest.v2"
 _SHA256_LENGTH = 64
 
 

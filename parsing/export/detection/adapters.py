@@ -31,7 +31,7 @@ def _stage_verified_artifact(
     ):
         raise ValueError("model SHA256 must be a lowercase digest")
     source_path = Path(os.path.abspath(os.fspath(path)))
-    staging = tempfile.TemporaryDirectory(prefix="cvi-localizer-model-")
+    staging = tempfile.TemporaryDirectory(prefix="localizer-model-")
     staged_path = Path(staging.name) / f"model{source_path.suffix}"
     flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_CLOEXEC", 0)
     try:

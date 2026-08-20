@@ -73,7 +73,7 @@ from prototype.runtime import IdentityEngine, Match
 
 engine = IdentityEngine("/etc/canine-identity/retrieval.json")
 
-registered_dog_id = "877d96de-ba43-542d-9523-5c20213bfc09"
+registered_dog_id = "a627a960-f746-5dc5-b6e5-0c2dc713e72f"
 engine.enroll(
     Image.open("enrollment_crop.jpg").convert("RGB"),
     registered_dog_id,
@@ -86,8 +86,8 @@ engine.close()
 ```
 
 저장소에는 실행 가능한 retrieval config나 identity model이 없습니다. Channel
-artifact는 [Configuration](docs/CONFIGURATION.md)을 따릅니다. `cvi.*`는
-versioned schema identifier이며 Python 패키지 이름이 아닙니다.
+artifact는 [Configuration](docs/CONFIGURATION.md)을 따릅니다. 스키마 ID는
+`gallery.manifest.v5`처럼 단계 소유 문자열이며 Python 패키지 이름이 아닙니다.
 
 `IdentityEngine`이 하는 일: UUIDv5 enroll, required evidence fail-closed,
 explicit optional evidence, local gallery, available-intersection weighted

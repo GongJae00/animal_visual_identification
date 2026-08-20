@@ -33,10 +33,10 @@ class ParentBoundNestedArchiveReceipt:
     nested_archive_receipt: PublicDatasetArchiveReceipt
     decision: str = "PASS_PARENT_BOUND_NESTED_ARCHIVE"
     interpretation: str = "NESTED_ARCHIVE_INTAKE_ONLY_NOT_DATASET_ADMISSION"
-    schema_version: str = "cvi.parent_bound_nested_archive_receipt.v1"
+    schema_version: str = "shared.parent_bound_nested_archive_receipt.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.parent_bound_nested_archive_receipt.v1":
+        if self.schema_version != "shared.parent_bound_nested_archive_receipt.v1":
             raise ValueError("unsupported parent-bound nested archive receipt")
         for name in (
             "parent_extraction_receipt_sha256",

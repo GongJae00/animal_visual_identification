@@ -43,10 +43,10 @@ class TrainingCropRow:
     role: str
     crop_relative_path: str
     crop_artifact_sha256: str
-    schema_version: str = "cvi.training_crop_row.v1"
+    schema_version: str = "identification.training_crop_row.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.training_crop_row.v1":
+        if self.schema_version != "identification.training_crop_row.v1":
             raise ValueError("unsupported training crop row schema")
         for name in (
             "sample_token",
@@ -90,10 +90,10 @@ class TrainingAdmissionManifest:
     model_receipt_sha256: str
     rows: tuple[TrainingCropRow, ...]
     interpretation: str = "PUBLIC_SUBJECT_TRAINING_ONLY_NO_REGISTERED_DOG_ID"
-    schema_version: str = "cvi.training_admission_manifest.v1"
+    schema_version: str = "evaluation.training_admission_manifest.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.training_admission_manifest.v1":
+        if self.schema_version != "evaluation.training_admission_manifest.v1":
             raise ValueError("unsupported training admission manifest schema")
         for name in (
             "split_receipt_sha256",
@@ -176,10 +176,10 @@ class TrainingAdmissionReceipt:
     admitted_rows: int
     admitted_public_subjects: int
     state: str = "PASS"
-    schema_version: str = "cvi.training_admission_receipt.v1"
+    schema_version: str = "evaluation.training_admission_receipt.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.training_admission_receipt.v1":
+        if self.schema_version != "evaluation.training_admission_receipt.v1":
             raise ValueError("unsupported training admission receipt schema")
         for name in (
             "admission_manifest_sha256",

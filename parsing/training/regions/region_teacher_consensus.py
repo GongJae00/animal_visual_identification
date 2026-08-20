@@ -259,7 +259,7 @@ def _producer(
     policy: RegionConsensusPolicy,
 ) -> dict[str, Any]:
     body = {
-        "schema_version": "cvi.region_teacher_consensus_producer.v1",
+        "schema_version": "parsing.region_teacher_consensus_producer.v1",
         "teachers": [item.to_dict() for item in teachers],
         "normalized_teacher_weights": [float(item) for item in weights],
         "policy": policy.to_dict(),

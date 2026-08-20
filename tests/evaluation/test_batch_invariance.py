@@ -502,7 +502,7 @@ class BatchInvarianceTests(unittest.TestCase):
                 json.dumps(case["inventory"].to_dict()), encoding="utf-8"
             )
             artifact_paths_path.write_text(json.dumps({
-                "schema_version": "cvi.batch_artifact_paths.v1",
+                "schema_version": "operations.batch_artifact_paths.v1",
                 "entries": [
                     {"artifact_token": token, "path": str(path)}
                     for token, path in case["artifact_paths"].items()
@@ -647,7 +647,7 @@ class BatchInvarianceTests(unittest.TestCase):
                 legacy_receipt,
             )
             receipt_path.write_text(json.dumps({
-                "schema_version": "cvi.batch_invariance_bundle.v4",
+                "schema_version": "evaluation.batch_invariance_bundle.v4",
                 "receipt_sha256": receipt.receipt_sha256,
                 "receipt": receipt.to_dict(),
             }), encoding="utf-8")
@@ -698,7 +698,7 @@ class BatchInvarianceTests(unittest.TestCase):
                 supervised,
                 command=(
                     *supervised.command[:4],
-                    "cvi.other_worker",
+                    "operations.other_worker",
                     *supervised.command[5:],
                 ),
             )
@@ -719,7 +719,7 @@ class BatchInvarianceTests(unittest.TestCase):
             )
             self.assertNotEqual(rewritten.receipt_sha256, receipt.receipt_sha256)
             receipt_path.write_text(json.dumps({
-                "schema_version": "cvi.batch_invariance_bundle.v4",
+                "schema_version": "evaluation.batch_invariance_bundle.v4",
                 "receipt_sha256": rewritten.receipt_sha256,
                 "receipt": rewritten.to_dict(),
             }), encoding="utf-8")
@@ -740,7 +740,7 @@ class BatchInvarianceTests(unittest.TestCase):
                 )
 
             receipt_path.write_text(json.dumps({
-                "schema_version": "cvi.batch_invariance_bundle.v3",
+                "schema_version": "evaluation.batch_invariance_bundle.v3",
                 "receipt_sha256": batch_receipt.receipt_sha256,
                 "receipt": batch_receipt.to_dict(),
             }), encoding="utf-8")
@@ -856,7 +856,7 @@ class BatchInvarianceTests(unittest.TestCase):
                 path = root / f"discovery-{index}.json"
                 path.write_text(json.dumps({
                     "schema_version": (
-                        "cvi.batch_runtime_library_discovery_bundle.v2"
+                        "operations.batch_runtime_library_discovery_bundle.v2"
                     ),
                     "discovery_sha256": discovery.discovery_sha256,
                     "discovery": discovery.to_dict(),

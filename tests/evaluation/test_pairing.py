@@ -349,7 +349,7 @@ class PairingTests(unittest.TestCase):
             pairing_policy,
         )
         attributes_payload = {
-            "schema_version": "cvi.dog_attributes.v1",
+            "schema_version": "data.dog_attributes.v1",
             "dogs": [item.to_dict() for item in dog_attributes],
         }
         self.assertEqual(

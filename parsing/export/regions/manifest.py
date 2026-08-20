@@ -18,10 +18,10 @@ from shared.foundation.protected_io import read_strict_json_document
 from shared.foundation.provenance import content_sha256
 
 
-BUNDLE_SCHEMA = "cvi.nose_region_crop_manifest_bundle.v1"
-MANIFEST_SCHEMA = "cvi.nose_region_crop_manifest.v1"
-PLAN_SCHEMA = "cvi.nose_region_crop_protocol_plan.v1"
-SUMMARY_SCHEMA = "cvi.nose_region_crop_summary.v1"
+BUNDLE_SCHEMA = "identification.nose.nose_region_crop_manifest_bundle.v1"
+MANIFEST_SCHEMA = "identification.nose.nose_region_crop_manifest.v1"
+PLAN_SCHEMA = "identification.nose.nose_region_crop_protocol_plan.v1"
+SUMMARY_SCHEMA = "identification.nose.nose_region_crop_summary.v1"
 
 ROLE_TO_SPLIT = {
     "DOGFACE_FIT": "TRAIN",

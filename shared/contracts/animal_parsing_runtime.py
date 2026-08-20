@@ -9,10 +9,10 @@ from typing import Any
 from shared.contracts.model_file_binding import ModelFileBinding
 from shared.foundation.provenance import content_sha256
 
-LEGACY_BUNDLE_SCHEMA = "cvi.animal_parsing_runtime_bundle.v1"
-LEGACY_MANIFEST_SCHEMA = "cvi.animal_parsing_runtime_manifest.v1"
-BUNDLE_SCHEMA = "cvi.animal_parsing_runtime_bundle.v2"
-MANIFEST_SCHEMA = "cvi.animal_parsing_runtime_manifest.v2"
+LEGACY_BUNDLE_SCHEMA = "parsing.runtime_bundle.v1"
+LEGACY_MANIFEST_SCHEMA = "parsing.runtime_manifest.v1"
+BUNDLE_SCHEMA = "parsing.runtime_bundle.v2"
+MANIFEST_SCHEMA = "parsing.runtime_manifest.v2"
 SUPPORTED_BUNDLE_SCHEMAS = frozenset({LEGACY_BUNDLE_SCHEMA, BUNDLE_SCHEMA})
 QUALIFICATION = "CANDIDATE_NOT_HUMAN_PIXEL_MASK_VERIFIED"
 INTERPRETATION = (
@@ -186,16 +186,16 @@ class AnimalParsingRuntimeManifest:
             set(self.policy) != _POLICY_FIELDS
             or policy_schema
             not in {
-                "cvi.animal_parsing_policy.v4",
-                "cvi.animal_parsing_policy.v5",
-                "cvi.animal_parsing_policy.v6",
+                "parsing.policy.v4",
+                "parsing.policy.v5",
+                "parsing.policy.v6",
             }
             or not isinstance(policy_classes, list)
             or not policy_classes
             or any(not isinstance(name, str) or not name for name in policy_classes)
             or tuple(sorted(policy_classes)) != self.supported_classes
             or (
-                policy_schema == "cvi.animal_parsing_policy.v6"
+                policy_schema == "parsing.policy.v6"
                 and policy_classes != ["dog"]
             )
         ):

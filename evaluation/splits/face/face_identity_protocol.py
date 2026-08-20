@@ -17,12 +17,12 @@ from data.full_segment.route_plan import (
     validate_full128_route_plan_bundle,
 )
 
-PROTOCOL_SCHEMA = "cvi.face_identity_protocol.v1"
-IDENTITY_SCHEMA = "cvi.face_identity_protocol_identity.v1"
-SAMPLE_SCHEMA = "cvi.face_identity_protocol_sample.v1"
-CENSUS_SCHEMA = "cvi.face_identity_protocol_census.v1"
-BUNDLE_SCHEMA = "cvi.face_identity_protocol_bundle.v1"
-POLICY_SCHEMA = "cvi.face_identity_protocol_policy.v1"
+PROTOCOL_SCHEMA = "evaluation.face_identity_protocol.v1"
+IDENTITY_SCHEMA = "evaluation.face_identity_protocol_identity.v1"
+SAMPLE_SCHEMA = "evaluation.face_identity_protocol_sample.v1"
+CENSUS_SCHEMA = "evaluation.face_identity_protocol_census.v1"
+BUNDLE_SCHEMA = "evaluation.face_identity_protocol_bundle.v1"
+POLICY_SCHEMA = "evaluation.face_identity_protocol_policy.v1"
 
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 _IDENTITY_DATASETS = ("dogfacenet224", "mpdd")
@@ -326,7 +326,7 @@ def _duplicate_closed_blocks(
     return {
         identity: content_sha256(
             {
-                "schema_version": "cvi.face_identity_allocation_block.v1",
+                "schema_version": "evaluation.face_identity_allocation_block.v1",
                 "registered_identity_ids": block_members,
             }
         )
@@ -355,7 +355,7 @@ def _allocate_blocks(
 
     def rank(block: str) -> str:
         return hashlib.sha256(
-            f"CVI_B2_FV_BLOCK_ORDER_V1\0{protocol_name}\0{evidence_root}\0{block}".encode()
+            f"FACE_PROTOCOL_BLOCK_ORDER_V1\0{protocol_name}\0{evidence_root}\0{block}".encode()
         ).hexdigest()
 
     counts: Counter[str] = Counter()

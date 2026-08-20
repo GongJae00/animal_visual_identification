@@ -59,11 +59,11 @@ class PretrainedSupportingAssetSourceContract:
     license_usage_lane: PretrainedWeightUsageLane
     associated_pretrained_weight_receipt_sha256: str
     target_lane: PretrainedWeightUsageLane
-    schema_version: str = "cvi.pretrained_supporting_asset_source_contract.v1"
+    schema_version: str = "shared.pretrained_supporting_asset_source_contract.v1"
 
     def __post_init__(self) -> None:
         if self.schema_version != (
-            "cvi.pretrained_supporting_asset_source_contract.v1"
+            "shared.pretrained_supporting_asset_source_contract.v1"
         ):
             raise ValueError("unsupported pretrained supporting asset contract")
         for name in ("source_model_id", "source_revision", "license_id"):
@@ -167,11 +167,11 @@ class PretrainedSupportingAssetIntakeReceipt:
     admitted_lane: PretrainedWeightUsageLane
     decision: str
     interpretation: str = _INTERPRETATION
-    schema_version: str = "cvi.pretrained_supporting_asset_intake_receipt.v1"
+    schema_version: str = "shared.pretrained_supporting_asset_intake_receipt.v1"
 
     def __post_init__(self) -> None:
         if self.schema_version != (
-            "cvi.pretrained_supporting_asset_intake_receipt.v1"
+            "shared.pretrained_supporting_asset_intake_receipt.v1"
         ):
             raise ValueError("unsupported pretrained supporting asset receipt")
         for name in (

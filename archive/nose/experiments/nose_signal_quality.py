@@ -15,7 +15,7 @@ from PIL import Image
 from parsing.export.regions.manifest import frontality_components_from_keypoints
 
 
-NOSE_SIGNAL_QUALITY_SCHEMA = "cvi.nose_signal_quality_report.v1"
+NOSE_SIGNAL_QUALITY_SCHEMA = "identification.nose.nose_signal_quality_report.v1"
 _SIGNAL_FIELDS = (
     "blur_laplacian_variance",
     "blur_score",
@@ -128,7 +128,7 @@ def analyze_native_nose_signal(
 ) -> dict[str, Any]:
     """Aggregate quality attrition and mask topology without using identity labels."""
 
-    if manifest.get("schema_version") != "cvi.yt_native_nose_manifest.v1":
+    if manifest.get("schema_version") != "archive.nose.yt_native_nose_manifest.v1":
         raise ValueError("native Nose signal audit requires a validated YT v1 manifest")
     records = manifest.get("records")
     policy = manifest.get("policy")

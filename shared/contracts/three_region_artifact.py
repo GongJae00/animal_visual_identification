@@ -17,8 +17,8 @@ from shared.foundation.protected_io import read_strict_json_document
 from shared.foundation.provenance import content_sha256
 from shared.foundation.retained_file import read_retained_regular_file
 
-BUNDLE_SCHEMA = "cvi.three_region_artifact_bundle.v1"
-MANIFEST_SCHEMA = "cvi.three_region_artifact_manifest.v1"
+BUNDLE_SCHEMA = "parsing.three_region_artifact_bundle.v1"
+MANIFEST_SCHEMA = "parsing.three_region_artifact_manifest.v1"
 INTERPRETATION = (
     "REGION_EVIDENCE_ARTIFACT_NOT_SEGMENTATION_OR_BIOMETRIC_VALIDATION"
 )
@@ -614,7 +614,7 @@ def _validate_review_receipt(
         raise ValueError("review receipt byte digest differs")
     receipt = document.payload
     expected = {
-        "schema_version": "cvi.semantic_mask_review_receipt.v1",
+        "schema_version": "evaluation.semantic_mask_review_receipt.v1",
         "decision": "VERIFIED",
         "sample_id": sample_id,
         "instance_id": instance_id,

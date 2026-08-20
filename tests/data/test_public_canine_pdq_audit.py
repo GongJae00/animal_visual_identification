@@ -66,7 +66,7 @@ class PublicCaninePDQAuditTests(unittest.TestCase):
             policy=PDQSearchPolicy(),
         )
         self.assertEqual(
-            bundle["schema_version"], "cvi.public_canine_pdq_evidence_bundle.v1"
+            bundle["schema_version"], "data.public_canine_pdq_evidence_bundle.v1"
         )
         self.assertEqual(len(bundle["evidence"]["search_result"]["candidates"]), 3)
         with TemporaryDirectory() as temporary:

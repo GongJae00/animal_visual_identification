@@ -29,7 +29,7 @@ from enrollment.registry.identity_registry import (
 from shared.foundation.provenance import content_sha256
 
 
-_SCHEMA_VERSION = "cvi.split_registry_binding.v2"
+_SCHEMA_VERSION = "evaluation.split_registry_binding.v2"
 _ASSIGNMENT_KEYS = {
     "schema_version",
     "status",
@@ -244,7 +244,7 @@ def build_binding(
     if set(assignment_payload) != _ASSIGNMENT_KEYS:
         raise ValueError("protected split assignment schema keys differ")
     if assignment_payload.get("schema_version") != (
-        "cvi.protected_public_split_assignment.v1"
+        "evaluation.protected_public_split_assignment.v1"
     ):
         raise ValueError("unsupported protected split assignment schema")
     status = assignment_payload.get("status")
@@ -438,14 +438,14 @@ def _validate_assignment_receipt(
     expected_receipt_sha256: str,
 ) -> None:
     schema_version = receipt_payload.get("schema_version")
-    if schema_version == "cvi.protected_public_split_receipt.v3":
+    if schema_version == "evaluation.protected_public_split_receipt.v3":
         expected_keys = _RECEIPT_V3_KEYS
-    elif schema_version == "cvi.protected_public_split_receipt.v2":
+    elif schema_version == "evaluation.protected_public_split_receipt.v2":
         receipt_sha256 = receipt_payload.get("receipt_sha256")
         if receipt_sha256 not in _HISTORICAL_V2_RECEIPT_SHA256S:
             raise ValueError("protected split receipt v2 is not a persisted artifact")
         expected_keys = _RECEIPT_V2_KEYS
-    elif schema_version == "cvi.protected_public_split_receipt.v1":
+    elif schema_version == "evaluation.protected_public_split_receipt.v1":
         receipt_sha256 = receipt_payload.get("receipt_sha256")
         if receipt_sha256 not in _HISTORICAL_V1_RECEIPT_SHA256S:
             raise ValueError("protected split receipt v1 is not a persisted artifact")
@@ -455,8 +455,8 @@ def _validate_assignment_receipt(
     if set(receipt_payload) != expected_keys:
         raise ValueError("protected split receipt schema keys differ")
     if schema_version in {
-        "cvi.protected_public_split_receipt.v2",
-        "cvi.protected_public_split_receipt.v3",
+        "evaluation.protected_public_split_receipt.v2",
+        "evaluation.protected_public_split_receipt.v3",
     }:
         _require_sha256(
             receipt_payload["role_exposure_ledger_sha256"],
@@ -466,7 +466,7 @@ def _validate_assignment_receipt(
             receipt_payload["role_exposure_receipt_sha256"],
             "role_exposure_receipt_sha256",
         )
-    if schema_version == "cvi.protected_public_split_receipt.v3":
+    if schema_version == "evaluation.protected_public_split_receipt.v3":
         capacity = assignment_payload.get("capacity")
         if not isinstance(capacity, dict):
             raise ValueError("protected split assignment capacity differs")
@@ -554,7 +554,7 @@ def validate_assignment_and_evaluator_binding(
     ):
         raise ValueError("protected split evaluator binding schema keys differ")
     if evaluator_binding_payload["schema_version"] != (
-        "cvi.protected_public_split_evaluator_binding.v1"
+        "evaluation.protected_public_split_evaluator_binding.v1"
     ):
         raise ValueError("unsupported protected split evaluator binding schema")
     if evaluator_binding_payload["status"] != assignment_payload["status"] or (
@@ -759,7 +759,7 @@ def _validate_registry_manifest(
 ) -> str:
     if not isinstance(payload, dict) or set(payload) != _REGISTRY_MANIFEST_KEYS:
         raise ValueError("identity registry producer manifest schema keys differ")
-    if payload["schema_version"] != "cvi.identity_registry_manifest.v1":
+    if payload["schema_version"] != "enrollment.registry_manifest.v1":
         raise ValueError("unsupported identity registry producer manifest schema")
     if payload["namespace_uuid"] != str(REGISTERED_DOG_NAMESPACE):
         raise ValueError("identity registry namespace differs")

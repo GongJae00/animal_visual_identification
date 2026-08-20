@@ -136,7 +136,7 @@ def build_manifest(
     )
     source_provenance = build_source_provenance(
         (root.joinpath(*relative_path.split("/")) for relative_path in _SOURCE_PATHS),
-        logical_component="cvi.animal_parsing_runtime.v2",
+        logical_component="parsing.runtime.v2",
     )
     sources = tuple(
         ModelFileBinding(

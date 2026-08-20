@@ -157,7 +157,7 @@ class DecodeBenchmarkSummary:
         )
         p50_seconds = self.timing.p50_ns / 1_000_000_000
         return {
-            "schema_version": "cvi.decode_benchmark.v2",
+            "schema_version": "operations.decode_benchmark.v2",
             "source_id": self.source_id,
             "source_sha256": self.source_sha256,
             "config": self.config.to_dict(),

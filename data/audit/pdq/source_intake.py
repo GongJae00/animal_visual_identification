@@ -76,10 +76,10 @@ class PdqSourceIntakePolicy:
     maximum_path_depth: int = 24
     maximum_api_snapshot_bytes: int = 4_000_000
     read_chunk_bytes: int = 1_048_576
-    schema_version: str = "cvi.pdq_source_intake_policy.v1"
+    schema_version: str = "pdq.source_intake_policy.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.pdq_source_intake_policy.v1":
+        if self.schema_version != "pdq.source_intake_policy.v1":
             raise ValueError("unsupported PDQ source intake policy")
         for name in (
             "maximum_archive_bytes",
@@ -151,10 +151,10 @@ class PdqSourceContract:
     selected_members: tuple[PdqSelectedSourceMember, ...]
     forbidden_selected_paths: tuple[str, ...]
     policy: PdqSourceIntakePolicy
-    schema_version: str = "cvi.pdq_source_contract.v1"
+    schema_version: str = "pdq.source_contract.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.pdq_source_contract.v1":
+        if self.schema_version != "pdq.source_contract.v1":
             raise ValueError("unsupported PDQ source contract")
         if self.repository != "facebook/ThreatExchange":
             raise ValueError("PDQ source repository differs")
@@ -337,10 +337,10 @@ class PdqSourceIntakeReceipt:
     forbidden_selected_paths_absent: bool
     decision: str = "PASS_FIXED_COMMIT_BSD_3_CLAUSE_SOURCE_ONLY"
     interpretation: str = _INTERPRETATION
-    schema_version: str = "cvi.pdq_source_intake_receipt.v1"
+    schema_version: str = "pdq.source_intake_receipt.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.pdq_source_intake_receipt.v1":
+        if self.schema_version != "pdq.source_intake_receipt.v1":
             raise ValueError("unsupported PDQ source intake receipt")
         for name in (
             "source_contract_sha256",
@@ -584,7 +584,7 @@ def publish_pdq_source_bundle(
     _validate_output_target(output_directory)
     parent = output_directory.parent.resolve(strict=True)
     target = parent / output_directory.name
-    stage = Path(mkdtemp(prefix=".cvi-pdq-source-", dir=parent))
+    stage = Path(mkdtemp(prefix=".pdq-source-", dir=parent))
     try:
         source_root = stage / "source"
         source_root.mkdir(mode=0o700)
@@ -593,7 +593,7 @@ def publish_pdq_source_bundle(
             destination.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
             _write_new_file(destination, payload)
         bundle = {
-            "schema_version": "cvi.pdq_source_intake_bundle.v1",
+            "schema_version": "pdq.source_intake_bundle.v1",
             "source_contract_sha256": source.contract_sha256,
             "source_contract": source.to_dict(),
             "receipt_sha256": audit.receipt.receipt_sha256,

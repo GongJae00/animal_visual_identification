@@ -101,10 +101,10 @@ class PHashFingerprint:
     opaque_sample_id: str
     original_hash: int
     horizontal_flip_hash: int
-    schema_version: str = "cvi.phash_fingerprint.v1"
+    schema_version: str = "data.phash_fingerprint.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.phash_fingerprint.v1":
+        if self.schema_version != "data.phash_fingerprint.v1":
             raise ValueError("unsupported pHash fingerprint schema")
         _require_opaque_id(self.opaque_sample_id, "opaque sample ID")
         _require_uint64(self.original_hash, "original_hash")
@@ -124,10 +124,10 @@ class NearDuplicateCandidate:
     left_opaque_sample_id: str
     right_opaque_sample_id: str
     hamming_distance: int
-    schema_version: str = "cvi.phash_near_duplicate_candidate.v1"
+    schema_version: str = "data.phash_near_duplicate_candidate.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.phash_near_duplicate_candidate.v1":
+        if self.schema_version != "data.phash_near_duplicate_candidate.v1":
             raise ValueError("unsupported near-duplicate candidate schema")
         for value in (self.left_opaque_sample_id, self.right_opaque_sample_id):
             _require_opaque_id(value, "candidate sample ID")
@@ -150,7 +150,7 @@ def opaque_sample_id(value: str | bytes) -> str:
         payload = value
     else:
         raise TypeError("source identifier must be str or bytes")
-    return hashlib.sha256(b"CVI_PHASH_OPAQUE_SAMPLE_V1\0" + payload).hexdigest()
+    return hashlib.sha256(b"PHASH_OPAQUE_SAMPLE_V1\0" + payload).hexdigest()
 
 
 def fingerprint_luma32(

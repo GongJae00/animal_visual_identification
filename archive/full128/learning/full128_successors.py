@@ -32,10 +32,10 @@ from archive.full128.methods.models.successor_models import (
     reject_identity_metadata,
 )
 
-SUCCESSOR_CONFIG_SCHEMA = "cvi.full128_successor_training_config.v1"
-SUCCESSOR_FAMILY_SCHEMA = "cvi.full128_successor_family.v1"
-SUCCESSOR_CHECKPOINT_SCHEMA = "cvi.full128_successor_checkpoint.v1"
-SUCCESSOR_TOKEN_CACHE_SCHEMA = "cvi.full128_dinov2_token_cache.v1"
+SUCCESSOR_CONFIG_SCHEMA = "archive.full128.successor_training_config.v1"
+SUCCESSOR_FAMILY_SCHEMA = "archive.full128.successor_family.v1"
+SUCCESSOR_CHECKPOINT_SCHEMA = "archive.full128.successor_checkpoint.v1"
+SUCCESSOR_TOKEN_CACHE_SCHEMA = "archive.full128.dinov2_token_cache.v1"
 SUCCESSOR_SSL_OBJECTIVE = "TWO_VIEW_COSINE_DISTANCE"
 
 SUCCESSOR_CANDIDATES = (
@@ -802,7 +802,7 @@ def smoke_successor_execution(output_dir: Path) -> dict[str, Any]:
         )
         family = build_successor_family_manifest()
         receipt_payload = {
-            "schema_version": "cvi.full128_successor_smoke.v1",
+            "schema_version": "archive.full128.successor_smoke.v1",
             "config": config,
             "config_sha256": content_sha256(config),
             "family_manifest": family,

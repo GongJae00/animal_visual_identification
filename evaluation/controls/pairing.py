@@ -231,7 +231,7 @@ class PairingPolicy:
 
     def to_dict(self) -> dict[str, Any]:
         return {
-            "schema_version": "cvi.pairing_policy.v1",
+            "schema_version": "evaluation.pairing_policy.v1",
             "name": self.name,
             "stage": self.stage.value,
             "direction": self.direction.value,
@@ -267,7 +267,7 @@ class PairingPolicy:
             },
             "pairing policy",
         )
-        if payload["schema_version"] != "cvi.pairing_policy.v1":
+        if payload["schema_version"] != "evaluation.pairing_policy.v1":
             raise ValueError("unsupported pairing policy schema")
         quotas = payload["negative_quotas"]
         if not isinstance(quotas, list):
@@ -498,7 +498,7 @@ class PairConstructionResult:
 
     def to_dict(self) -> dict[str, Any]:
         return {
-            "schema_version": "cvi.pair_construction.v1",
+            "schema_version": "evaluation.pair_construction.v1",
             "split_manifest_sha256": self.split_manifest_sha256,
             "pairing_policy_sha256": self.pairing_policy_sha256,
             "attributes_sha256": self.attributes_sha256,
@@ -519,7 +519,7 @@ class PairConstructionResult:
 
     def scoring_payload(self) -> dict[str, Any]:
         return {
-            "schema_version": "cvi.pair_scoring_requests.v1",
+            "schema_version": "evaluation.pair_scoring_requests.v1",
             "pair_set_sha256": self.result_sha256,
             "split_manifest_sha256": self.split_manifest_sha256,
             "pairing_policy_sha256": self.pairing_policy_sha256,
@@ -530,7 +530,7 @@ class PairConstructionResult:
 
     def ground_truth_payload(self) -> dict[str, Any]:
         return {
-            "schema_version": "cvi.pair_ground_truth.v1",
+            "schema_version": "evaluation.pair_ground_truth.v1",
             "pair_set_sha256": self.result_sha256,
             "split_manifest_sha256": self.split_manifest_sha256,
             "pairing_policy_sha256": self.pairing_policy_sha256,
@@ -542,7 +542,7 @@ class PairConstructionResult:
 
     def artifact_binding_payload(self) -> dict[str, Any]:
         return {
-            "schema_version": "cvi.pair_artifact_bindings.v1",
+            "schema_version": "evaluation.pair_artifact_bindings.v1",
             "pair_set_sha256": self.result_sha256,
             "split_manifest_sha256": self.split_manifest_sha256,
             "bindings": [
@@ -552,7 +552,7 @@ class PairConstructionResult:
 
     def summary_payload(self) -> dict[str, Any]:
         return {
-            "schema_version": "cvi.pair_construction_summary.v1",
+            "schema_version": "evaluation.pair_construction_summary.v1",
             "pair_set_sha256": self.result_sha256,
             "split_manifest_sha256": self.split_manifest_sha256,
             "pairing_policy_sha256": self.pairing_policy_sha256,
@@ -805,7 +805,7 @@ def dog_attributes_from_payload(
         {"schema_version", "dogs"},
         "dog attribute manifest",
     )
-    if payload["schema_version"] != "cvi.dog_attributes.v1":
+    if payload["schema_version"] != "data.dog_attributes.v1":
         raise ValueError("unsupported dog attribute schema")
     dogs = payload["dogs"]
     if not isinstance(dogs, list):
@@ -871,10 +871,10 @@ def pair_construction_from_bundle_payloads(
         "pair construction summary",
     )
     expected_versions = (
-        (scoring_payload, "cvi.pair_scoring_requests.v1"),
-        (binding_payload, "cvi.pair_artifact_bindings.v1"),
-        (ground_truth_payload, "cvi.pair_ground_truth.v1"),
-        (summary_payload, "cvi.pair_construction_summary.v1"),
+        (scoring_payload, "evaluation.pair_scoring_requests.v1"),
+        (binding_payload, "evaluation.pair_artifact_bindings.v1"),
+        (ground_truth_payload, "evaluation.pair_ground_truth.v1"),
+        (summary_payload, "evaluation.pair_construction_summary.v1"),
     )
     for payload, expected in expected_versions:
         if payload["schema_version"] != expected:

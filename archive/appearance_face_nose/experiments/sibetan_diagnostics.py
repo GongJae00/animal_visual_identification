@@ -12,10 +12,10 @@ from archive.appearance_face_nose.experiments.sibetan_multievidence import BRANC
 from shared.foundation.provenance import content_sha256
 
 
-SOURCE_BUNDLE_SCHEMA = "cvi.sibetan_multievidence_evaluation_bundle.v2"
-SOURCE_REPORT_SCHEMA = "cvi.sibetan_multievidence_evaluation.v2"
-DIAGNOSTIC_SCHEMA = "cvi.sibetan_diagnostics.v1"
-DIAGNOSTIC_BUNDLE_SCHEMA = "cvi.sibetan_diagnostics_bundle.v1"
+SOURCE_BUNDLE_SCHEMA = "archive.sibetan.sibetan_multievidence_evaluation_bundle.v2"
+SOURCE_REPORT_SCHEMA = "archive.sibetan.sibetan_multievidence_evaluation.v2"
+DIAGNOSTIC_SCHEMA = "archive.sibetan.sibetan_diagnostics.v1"
+DIAGNOSTIC_BUNDLE_SCHEMA = "archive.sibetan.sibetan_diagnostics_bundle.v1"
 
 _METRICS = ("Rank-1", "Rank-5", "Rank-10", "reciprocal_rank")
 _REPORT_FIELDS = {

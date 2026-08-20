@@ -46,7 +46,7 @@ def main() -> None:
     }
     if (
         set(archive_bundle) != expected_archive_bundle_fields
-        or archive_bundle["schema_version"] != "cvi.public_dataset_archive_bundle.v2"
+        or archive_bundle["schema_version"] != "data.public_dataset_archive_bundle.v2"
     ):
         raise ValueError("public dataset archive bundle fields differ")
     if content_sha256(archive_bundle["tool_provenance"]) != archive_bundle[
@@ -72,14 +72,14 @@ def main() -> None:
     )
     tool_provenance = build_offline_tool_provenance(Path(__file__))
     receipt_bundle = {
-        "schema_version": "cvi.public_dataset_extraction_bundle.v2",
+        "schema_version": "data.public_dataset_extraction_bundle.v2",
         "receipt_sha256": receipt.receipt_sha256,
         "receipt": receipt.to_dict(),
         "tool_provenance": tool_provenance,
         "tool_provenance_sha256": content_sha256(tool_provenance),
     }
     manifest_payload = {
-        "schema_version": "cvi.public_dataset_file_manifest.v1",
+        "schema_version": "data.public_dataset_file_manifest.v1",
         "source_contract_sha256": source.contract_sha256,
         "archive_receipt_sha256": archive_receipt.receipt_sha256,
         "file_content_manifest_sha256": receipt.file_content_manifest_sha256,

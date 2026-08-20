@@ -352,7 +352,7 @@ class PackedCacheAdversarialTests(unittest.TestCase):
             valid = manifest.to_dict()
 
             malformed_manifests = (
-                ({**valid, "schema_version": "cvi.embedding_cache_manifest.v1"},
+                ({**valid, "schema_version": "operations.embedding_cache_manifest.v1"},
                  "unsupported packed embedding cache manifest schema"),
                 ({**valid, "unexpected": True}, "fields differ"),
                 ({key: value for key, value in valid.items() if key != "entries"},
@@ -397,7 +397,7 @@ class PackedCacheAdversarialTests(unittest.TestCase):
             for payload in (
                 {
                     **verification.to_dict(),
-                    "schema_version": "cvi.embedding_cache_verification.v1",
+                    "schema_version": "operations.embedding_cache_verification.v1",
                 },
                 {**verification.to_dict(), "unexpected": True},
             ):

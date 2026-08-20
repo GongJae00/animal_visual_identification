@@ -9,7 +9,7 @@ from uuid import UUID
 
 from search.scoring.roles import IdentityEvidenceKind
 
-_IDENTITY_POLICY_SCHEMA = "cvi.gallery_identity_policy.v1"
+_IDENTITY_POLICY_SCHEMA = "gallery.identity_policy.v1"
 _REGISTERED_ONLY = "REGISTERED_ONLY"
 
 

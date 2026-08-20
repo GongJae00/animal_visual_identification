@@ -29,9 +29,9 @@ from parsing.export.regions.manifest import frontality_from_keypoints, normalize
 from shared.foundation.provenance import content_sha256
 
 
-BUNDLE_SCHEMA = "cvi.yt_native_nose_manifest_bundle.v1"
-MANIFEST_SCHEMA = "cvi.yt_native_nose_manifest.v1"
-TEACHER_SCHEMA = "cvi.yt_native_nose_teacher_masks.v1"
+BUNDLE_SCHEMA = "archive.nose.yt_native_nose_manifest_bundle.v1"
+MANIFEST_SCHEMA = "archive.nose.yt_native_nose_manifest.v1"
+TEACHER_SCHEMA = "archive.nose.yt_native_nose_teacher_masks.v1"
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 _ALLOWED_COMPRESSION = {zipfile.ZIP_STORED, zipfile.ZIP_DEFLATED}
 _MAX_IMAGE_BYTES = 67_108_864
@@ -547,7 +547,7 @@ def load_localizer_checkpoint(checkpoint_bytes: bytes, device_name: str):
         "schema_version", "bindings", "selected_epoch", "model_state_dict"
     }:
         raise ValueError("nose localizer checkpoint schema differs")
-    if checkpoint["schema_version"] != "cvi.nose_localizer.checkpoint.v1":
+    if checkpoint["schema_version"] != "identification.nose.nose_localizer.checkpoint.v1":
         raise ValueError("unsupported nose localizer checkpoint")
     if isinstance(checkpoint["selected_epoch"], bool) or not isinstance(checkpoint["selected_epoch"], int) or checkpoint["selected_epoch"] <= 0:
         raise ValueError("nose localizer selected epoch differs")
@@ -564,7 +564,7 @@ def load_localizer_checkpoint(checkpoint_bytes: bytes, device_name: str):
             ensure_ascii=True,
         ).encode("ascii")
     ).hexdigest()
-    if bindings["schema_version"] != "cvi.nose_localizer.bindings.v1" or bindings["content_sha256"] != canonical:
+    if bindings["schema_version"] != "identification.nose.nose_localizer.bindings.v1" or bindings["content_sha256"] != canonical:
         raise ValueError("nose localizer checkpoint bindings digest differs")
     license_payload = bindings["license"]
     if not isinstance(license_payload, dict) or set(license_payload) != {"license_id", "usage_lane", "reason"} or license_payload["license_id"] != "CC-BY-NC-4.0-derived" or license_payload["usage_lane"] != "RESEARCH_ONLY" or not isinstance(license_payload["reason"], str) or not license_payload["reason"]:

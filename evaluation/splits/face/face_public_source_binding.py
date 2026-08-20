@@ -22,9 +22,9 @@ from data.full_segment.route_plan import (
     validate_full128_route_plan_bundle,
 )
 
-BINDING_SCHEMA = "cvi.face_public_source_binding.v1"
-RECORD_SCHEMA = "cvi.face_public_source_binding_record.v1"
-BUNDLE_SCHEMA = "cvi.face_public_source_binding_bundle.v1"
+BINDING_SCHEMA = "evaluation.face_public_source_binding.v1"
+RECORD_SCHEMA = "evaluation.face_public_source_binding_record.v1"
+BUNDLE_SCHEMA = "evaluation.face_public_source_binding_bundle.v1"
 
 _FACE_DATASETS = frozenset({"dogfacenet224", "mpdd"})
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")

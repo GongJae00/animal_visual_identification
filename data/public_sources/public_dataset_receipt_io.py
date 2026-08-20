@@ -21,7 +21,7 @@ def read_public_archive_receipt_bundle(path: Path) -> PublicDatasetArchiveReceip
         "tool_provenance_sha256",
     }
     if set(bundle) != expected or bundle["schema_version"] != (
-        "cvi.public_dataset_archive_bundle.v2"
+        "data.public_dataset_archive_bundle.v2"
     ):
         raise ValueError("public archive receipt bundle fields differ")
     if content_sha256(bundle["tool_provenance"]) != bundle["tool_provenance_sha256"]:

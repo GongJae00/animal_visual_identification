@@ -49,7 +49,7 @@ def build_static_index(figures: Iterable[FigureData], *, target_scope: str) -> s
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>CVI research visualizations</title>
+<title>Research visualizations</title>
 <style>
 :root {{ color-scheme: light; font-family: "DejaVu Sans", sans-serif; color: #17212b; background: #eeeae1; }}
 body {{ margin: 0 auto; max-width: 76rem; padding: 2rem; }}

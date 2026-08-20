@@ -10,7 +10,7 @@ from typing import Any
 import numpy as np
 
 
-EMBEDDING_DIAGNOSTICS_SCHEMA_VERSION = "cvi.embedding_diagnostics.v1"
+EMBEDDING_DIAGNOSTICS_SCHEMA_VERSION = "evaluation.embedding_diagnostics.v1"
 _DOMAIN_CONFOUNDING_WARNING = (
     "Descriptive domain centroid shift is confounded by identity and session "
     "composition; it is not evidence of causal bias."

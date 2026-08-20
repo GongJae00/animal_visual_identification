@@ -211,7 +211,7 @@ def _variant(bridge: dict[str, Any], *, variant: str = "B2") -> dict[str, Any]:
     }
     fit = {**fit_payload, "fit_population_sha256": content_sha256(fit_payload)}
     payload = {
-        "schema_version": "cvi.full128_variant_run.v1",
+        "schema_version": "archive.full128.variant_run.v1",
         "variant_id": variant,
         "method": "fixture",
         "initialization": "fixture",
@@ -245,7 +245,7 @@ def _graph_and_receipt(
     )
     provenance = {"tool": "fixture", "version": 1}
     receipt_payload = {
-        "schema_version": ("cvi.public_split_evidence_graph_assembly_receipt.v1"),
+        "schema_version": ("evaluation.public_split_evidence_graph_assembly_receipt.v1"),
         "source_bundle_sha256": PublicSplitSourceBundle.from_dict(source).bundle_sha256,
         "adjudication_ledger_sha256": _sha("ledger"),
         "candidate_set_sha256": _sha("candidates"),
@@ -368,7 +368,7 @@ def test_unresolved_exposure_is_auditable_and_blocks_protocol(
     route, overlay, source, receipts = _base_inputs()
     bridge = build_face_public_source_binding(route, overlay, source, receipts)
     unsupported = {
-        "schema_version": "cvi.face_identity_protocol_bundle.v1",
+        "schema_version": "evaluation.face_identity_protocol_bundle.v1",
         "protocol": {
             "sample_assignments": [
                 {"sample_token": bridge["binding"]["records"][0]["route_sample_token"]}
@@ -465,7 +465,7 @@ def test_masked_afn_projection_uses_report_bound_kfold_roles(
         SimpleNamespace(from_dict=lambda payload: kfold),
     )
     report_body = {
-        "schema_version": "cvi.masked_afn_kfold_report.v1",
+        "schema_version": "archive.appearance_face_nose.masked_afn_kfold_report.v1",
         "kfold_manifest_sha256": kfold.manifest_sha256,
         "candidate_manifest_sha256s": {},
         "candidate_source_token_binding": {
@@ -552,12 +552,12 @@ def test_masked_afn_projection_accepts_persisted_kfold_envelope(
     )
     manifest = {"fixture": True}
     envelope = {
-        "schema_version": "cvi.dataset_stratified_identity_kfold_manifest_bundle.v1",
+        "schema_version": "evaluation.dataset_stratified_identity_kfold_manifest_bundle.v1",
         "manifest_sha256": content_sha256(manifest),
         "manifest": manifest,
     }
     report_body = {
-        "schema_version": "cvi.masked_afn_kfold_report.v1",
+        "schema_version": "archive.appearance_face_nose.masked_afn_kfold_report.v1",
         "kfold_manifest_sha256": kfold.manifest_sha256,
         "candidate_manifest_sha256s": {},
         "candidate_source_token_binding": {

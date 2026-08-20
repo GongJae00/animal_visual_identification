@@ -195,7 +195,7 @@ def write_private_json_bundle(
         )
     created: list[Path] = []
     try:
-        with TemporaryDirectory(prefix=".cvi-json-bundle-", dir=parent) as temp:
+        with TemporaryDirectory(prefix=".json-bundle-", dir=parent) as temp:
             temp_root = Path(temp)
             staged: list[tuple[Path, Path]] = []
             for index, (target, payload) in enumerate(resolved):
@@ -244,7 +244,7 @@ def write_private_json_directory_bundle(
     parent = target.parent.resolve(strict=True)
     if not parent.is_dir():
         raise NotADirectoryError(parent)
-    with TemporaryDirectory(prefix=".cvi-json-directory-", dir=parent) as temporary:
+    with TemporaryDirectory(prefix=".json-directory-", dir=parent) as temporary:
         staging = Path(temporary) / "bundle"
         staging.mkdir(mode=0o700)
         for name, payload in outputs:

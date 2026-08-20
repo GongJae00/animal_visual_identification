@@ -21,10 +21,10 @@ from identification.export.nose.types import NOSE_KEYPOINTS
 from shared.foundation.provenance import content_sha256
 
 
-ACQUISITION_SCHEMA = "cvi.noseid.acquisition.v1"
-ANNOTATION_SCHEMA = "cvi.noseid.annotation.v1"
-ADMISSION_RECEIPT_SCHEMA = "cvi.noseid.annotation_admission_receipt.v1"
-ANNOTATION_TEMPLATE_SCHEMA = "cvi.noseid.annotation_template.v1"
+ACQUISITION_SCHEMA = "identification.nose.acquisition.v1"
+ANNOTATION_SCHEMA = "identification.nose.annotation.v1"
+ADMISSION_RECEIPT_SCHEMA = "identification.nose.annotation_admission_receipt.v1"
+ANNOTATION_TEMPLATE_SCHEMA = "identification.nose.annotation_template.v1"
 MINIMUM_NATIVE_NOSE_SHORT_SIDE = 224
 SPLIT_ROLES = ("TRAIN", "DEV", "FUSION_CAL", "TEST")
 USAGE_LANES = ("RESEARCH_ONLY", "COMMERCIAL_ALLOWED")

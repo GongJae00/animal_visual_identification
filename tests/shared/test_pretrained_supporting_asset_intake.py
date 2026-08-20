@@ -427,7 +427,7 @@ class PretrainedSupportingAssetIntakeTests(unittest.TestCase):
             )
             provenance = {"fixture": True}
             weight_bundle = {
-                "schema_version": "cvi.pretrained_weight_intake_bundle.v1",
+                "schema_version": "shared.pretrained_weight_intake_bundle.v1",
                 "source_contract_sha256": fixture[3].contract_sha256,
                 "source_contract": fixture[3].to_dict(),
                 "receipt_sha256": fixture[4].receipt_sha256,

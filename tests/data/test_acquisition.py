@@ -252,7 +252,7 @@ class AcquisitionTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "unknown fields"):
             AcquisitionManifest.from_dict(
                 {
-                    "schema_version": "cvi.acquisition.v1",
+                    "schema_version": "data.acquisition.v1",
                     "cameras": [],
                     "videos": [],
                     "identity_label": "must-not-enter-acquisition",

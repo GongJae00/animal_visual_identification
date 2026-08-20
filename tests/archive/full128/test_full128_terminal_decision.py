@@ -62,7 +62,7 @@ def _public_report(
     for metric in ("Rank-1", "Rank-5", "Rank-10", "MRR"):
         estimate = b5_rank1 - b3_rank1 if metric == "Rank-1" else 0.0
         payload = {
-            "schema_version": "cvi.full128_successor_paired_bootstrap.v1",
+            "schema_version": "archive.full128.successor_paired_bootstrap.v1",
             "metric": metric,
             "estimate": estimate,
             "lower_bound": lower_bound if metric == "Rank-1" else 0.0,
@@ -76,7 +76,7 @@ def _public_report(
         }
         intervals.append({**payload, "bootstrap_sha256": content_sha256(payload)})
     payload = {
-        "schema_version": "cvi.full128_successor_public_evaluation.v1",
+        "schema_version": "archive.full128.successor_public_evaluation.v1",
         "visibility": "PUBLIC_AGGREGATE",
         "source_private_report_sha256": _sha(f"private:{recorded_seed}"),
         "evaluation_panel_sha256": _sha("terminal-panel"),

@@ -49,11 +49,11 @@ from shared.foundation.protected_io import (
 from shared.foundation.protected_publication import fsync_directory, rename_directory_noreplace
 from shared.foundation.provenance import content_sha256
 
-CACHE_SCHEMA_VERSION = "cvi.n4_metric_embedding_cache.v1"
-CACHE_BUNDLE_SCHEMA_VERSION = "cvi.n4_metric_embedding_cache_bundle.v1"
-CHECKPOINT_SCHEMA_VERSION = "cvi.n4_metric_adapter_checkpoint.v1"
-REPORT_SCHEMA_VERSION = "cvi.n4_metric_adapter_evaluation.v1"
-REPORT_BUNDLE_SCHEMA_VERSION = "cvi.n4_metric_adapter_evaluation_bundle.v1"
+CACHE_SCHEMA_VERSION = "archive.nose_metric.n4_metric_embedding_cache.v1"
+CACHE_BUNDLE_SCHEMA_VERSION = "archive.nose_metric.n4_metric_embedding_cache_bundle.v1"
+CHECKPOINT_SCHEMA_VERSION = "archive.nose_metric.n4_metric_adapter_checkpoint.v1"
+REPORT_SCHEMA_VERSION = "archive.nose_metric.n4_metric_adapter_evaluation.v1"
+REPORT_BUNDLE_SCHEMA_VERSION = "archive.nose_metric.n4_metric_adapter_evaluation_bundle.v1"
 N3_BRANCH = METHODS[2]
 METRICS = ("Rank-1", "MRR", "Rank-5")
 MAXIMUM_SCALE = 0.1

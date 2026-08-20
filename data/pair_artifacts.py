@@ -86,10 +86,10 @@ class PairArtifactManifest:
     pair_set_sha256: str
     artifact_bindings_sha256: str
     entries: tuple[PairArtifactEntry, ...]
-    schema_version: str = "cvi.pair_artifact_manifest.v1"
+    schema_version: str = "evaluation.pair_artifact_manifest.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.pair_artifact_manifest.v1":
+        if self.schema_version != "evaluation.pair_artifact_manifest.v1":
             raise ValueError("unsupported pair artifact manifest schema")
         _validate_sha256(self.pair_set_sha256, "pair_set_sha256")
         _validate_sha256(
@@ -162,7 +162,7 @@ class PairArtifactVerification:
 
     def to_dict(self) -> dict[str, str | int]:
         return {
-            "schema_version": "cvi.pair_artifact_verification.v1",
+            "schema_version": "evaluation.pair_artifact_verification.v1",
             "artifact_manifest_sha256": self.artifact_manifest_sha256,
             "verified_files": self.verified_files,
             "verified_bytes": self.verified_bytes,
@@ -180,7 +180,7 @@ class PairArtifactVerification:
             },
             "pair artifact verification",
         )
-        if payload["schema_version"] != "cvi.pair_artifact_verification.v1":
+        if payload["schema_version"] != "evaluation.pair_artifact_verification.v1":
             raise ValueError("unsupported pair artifact verification schema")
         return cls(
             artifact_manifest_sha256=payload["artifact_manifest_sha256"],

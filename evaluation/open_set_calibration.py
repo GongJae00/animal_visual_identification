@@ -27,10 +27,10 @@ class OpenSetDisposition(StrEnum):
 class DistinctIdentityScore:
     identity_slot_token: str
     score: float
-    schema_version: str = "cvi.distinct_identity_score.v1"
+    schema_version: str = "evaluation.distinct_identity_score.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.distinct_identity_score.v1":
+        if self.schema_version != "evaluation.distinct_identity_score.v1":
             raise ValueError("unsupported distinct identity score schema")
         _sha256(self.identity_slot_token, "identity_slot_token")
         _cosine(self.score, "score")
@@ -55,10 +55,10 @@ class BlindOpenSetScoreRow:
     shot: int
     scores: tuple[DistinctIdentityScore, ...]
     score_semantics: str = "DISTINCT_GALLERY_IDENTITY_AGGREGATED_COSINE"
-    schema_version: str = "cvi.blind_open_set_score_row.v1"
+    schema_version: str = "evaluation.blind_open_set_score_row.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.blind_open_set_score_row.v1":
+        if self.schema_version != "evaluation.blind_open_set_score_row.v1":
             raise ValueError("unsupported blind open-set score row schema")
         _sha256(self.query_token, "query_token")
         _positive_int(self.gallery_size, "gallery_size")
@@ -110,10 +110,10 @@ class OpenSetCalibrationPolicy:
     tie_rule: str = "DISTINCT_IDENTITY_TOP_TIE_REVIEW_REQUIRED"
     threshold_rule: str = "EXACT_BINOMIAL_ORDER_STATISTIC_NEXTAFTER"
     threshold_interpolation: str = "PROHIBITED_RECALIBRATION_REQUIRED"
-    schema_version: str = "cvi.open_set_calibration_policy.v2"
+    schema_version: str = "evaluation.open_set_calibration_policy.v2"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.open_set_calibration_policy.v2":
+        if self.schema_version != "evaluation.open_set_calibration_policy.v2":
             raise ValueError("unsupported open-set calibration policy schema")
         _probability(self.target_fpir, "target_fpir")
         _probability(self.one_sided_alpha, "one_sided_alpha")
@@ -179,10 +179,10 @@ class AuthenticatedOpenSetCalibrationPanel:
     unknown_query_event_tokens: tuple[str, ...]
     protocol: str = "YT_CALIBRATION_OPEN_SET"
     episode: str = "N_300"
-    schema_version: str = "cvi.authenticated_open_set_calibration_panel.v1"
+    schema_version: str = "evaluation.authenticated_open_set_calibration_panel.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.authenticated_open_set_calibration_panel.v1":
+        if self.schema_version != "evaluation.authenticated_open_set_calibration_panel.v1":
             raise ValueError("unsupported authenticated calibration panel schema")
         for value, name in (
             (self.split_assignment_sha256, "split_assignment_sha256"),
@@ -215,14 +215,14 @@ class AuthenticatedOpenSetCalibrationPanel:
     @property
     def gallery_identity_set_sha256(self) -> str:
         return content_sha256({
-            "schema_version": "cvi.gallery_identity_set.v1",
+            "schema_version": "gallery.identity_set.v1",
             "identity_slot_tokens": list(self.gallery_identity_slot_tokens),
         })
 
     @property
     def query_event_set_sha256(self) -> str:
         return content_sha256({
-            "schema_version": "cvi.calibration_unknown_query_event_set.v1",
+            "schema_version": "evaluation.calibration_unknown_query_event_set.v1",
             "query_event_tokens": list(self.unknown_query_event_tokens),
         })
 
@@ -280,7 +280,7 @@ def authenticate_open_set_calibration_panel(
         "interpretation",
     }
     _exact_keys(assignment, expected_assignment_keys, "protected split assignment")
-    if assignment["schema_version"] != "cvi.protected_public_split_assignment.v1":
+    if assignment["schema_version"] != "evaluation.protected_public_split_assignment.v1":
         raise ValueError("protected split assignment schema differs")
     if assignment["status"] != "PASS_PROTECTED_SPLIT_CONSTRUCTION":
         raise ValueError("protected split assignment is not passing")
@@ -421,10 +421,10 @@ class FrozenOpenSetBoundary:
     precision: str
     score_dtype: str
     threshold_rule: str = "EFFECTIVE_SCORE_GREATER_THAN_OR_EQUAL"
-    schema_version: str = "cvi.frozen_open_set_boundary.v2"
+    schema_version: str = "evaluation.frozen_open_set_boundary.v2"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.frozen_open_set_boundary.v2":
+        if self.schema_version != "evaluation.frozen_open_set_boundary.v2":
             raise ValueError("unsupported frozen open-set boundary schema")
         for value, name in ((self.gallery_size, "gallery_size"), (self.shot, "shot")):
             _positive_int(value, name)
@@ -576,10 +576,10 @@ class OpenSetCalibrationReceipt:
     interpretation: str = (
         "CALIBRATION_UNKNOWN_ORDER_STATISTIC_ONLY_NOT_TEST_OR_PERFORMANCE_EVIDENCE"
     )
-    schema_version: str = "cvi.open_set_calibration_receipt.v2"
+    schema_version: str = "evaluation.open_set_calibration_receipt.v2"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.open_set_calibration_receipt.v2":
+        if self.schema_version != "evaluation.open_set_calibration_receipt.v2":
             raise ValueError("unsupported open-set calibration receipt schema")
         if not isinstance(self.panel, AuthenticatedOpenSetCalibrationPanel):
             raise TypeError("calibration receipt requires an authenticated panel")

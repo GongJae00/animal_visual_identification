@@ -1,6 +1,6 @@
 """Deterministic identity registry: dataset labels to registered UUIDv5 dog IDs.
 
-REGISTERED_DOG_NAMESPACE = uuid5(DNS, "cvi.registered_dog.v1").
+REGISTERED_DOG_NAMESPACE = uuid5(DNS, "enrollment.registered_dog.v1").
 registered_dog_id = uuid5(NAMESPACE, dataset_identity_id).
 The ID is a stable identifier, not an anonymity boundary.
 """
@@ -50,7 +50,7 @@ ON CONFLICT(identity_token) DO UPDATE SET
 """
 
 
-_SCHEMA_VERSION = "cvi.identity_registry.v1"
+_SCHEMA_VERSION = "enrollment.registry.v1"
 _MAXIMUM_REGISTRATIONS = 1_000_000
 _MAXIMUM_IMAGE_COUNT = 2**63 - 1
 _MAXIMUM_GENERATED_AT_BYTES = 64

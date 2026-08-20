@@ -15,7 +15,7 @@ from typing import Any
 from shared.foundation.provenance import content_sha256
 
 
-_PIXEL_HASH_DOMAIN = b"CVI_PIXEL_CANONICAL_RGB_V1\0"
+_PIXEL_HASH_DOMAIN = b"PIXEL_CANONICAL_RGB_V1\0"
 _FORMAT_SUFFIX = {"JPEG": ".jpg", "PNG": ".png", "WEBP": ".webp"}
 
 
@@ -57,10 +57,10 @@ class PublicCropArtifact:
     height: int
     mode: str
     format: str
-    schema_version: str = "cvi.public_crop_artifact.v1"
+    schema_version: str = "data.public_crop_artifact.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.public_crop_artifact.v1":
+        if self.schema_version != "data.public_crop_artifact.v1":
             raise ValueError("unsupported public crop artifact schema")
         for name in ("sample_token", "public_subject_token", "component_token"):
             _require_sha256(getattr(self, name), name)
@@ -96,10 +96,10 @@ class PublicCropArtifact:
 class PublicCropManifest:
     artifacts: tuple[PublicCropArtifact, ...]
     interpretation: str = "PUBLIC_EXPERIMENTAL_SUBJECTS_ONLY_NOT_REGISTERED_DOG_IDENTITIES"
-    schema_version: str = "cvi.public_crop_manifest.v1"
+    schema_version: str = "data.public_crop_manifest.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.public_crop_manifest.v1":
+        if self.schema_version != "data.public_crop_manifest.v1":
             raise ValueError("unsupported public crop manifest schema")
         if self.interpretation != (
             "PUBLIC_EXPERIMENTAL_SUBJECTS_ONLY_NOT_REGISTERED_DOG_IDENTITIES"
@@ -158,10 +158,10 @@ class PublicCropVerification:
     verified_bytes: int
     decoded_rgb_pixels_verified: bool
     state: str = "PASS"
-    schema_version: str = "cvi.public_crop_verification.v1"
+    schema_version: str = "data.public_crop_verification.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.public_crop_verification.v1":
+        if self.schema_version != "data.public_crop_verification.v1":
             raise ValueError("unsupported public crop verification schema")
         _require_sha256(self.crop_manifest_sha256, "crop_manifest_sha256")
         for name in ("verified_files", "verified_bytes"):

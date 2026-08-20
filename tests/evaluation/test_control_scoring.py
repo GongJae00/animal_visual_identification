@@ -114,7 +114,7 @@ class ControlScoringTests(unittest.TestCase):
         scoring_requests_sha256 = content_sha256(
             {
                 "schema_version": (
-                    "cvi.visual_control_scoring_requests.v1"
+                    "evaluation.visual_control_scoring_requests.v1"
                 ),
                 "plan_sha256": HASH_A,
                 "requests": [request.to_dict() for request in requests],
@@ -473,7 +473,7 @@ class ControlScoringTests(unittest.TestCase):
             payloads = {
                 "requests": {
                     "schema_version": (
-                        "cvi.visual_control_scoring_requests.v1"
+                        "evaluation.visual_control_scoring_requests.v1"
                     ),
                     "plan_sha256": HASH_A,
                     "requests": [request.to_dict() for request in requests],

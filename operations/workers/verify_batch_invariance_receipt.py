@@ -20,7 +20,7 @@ def main() -> None:
     receipt = BatchFreshWorkerReceipt.from_dict(
         read_content_hashed_json_bundle(
             args.receipt,
-            schema_version="cvi.batch_invariance_bundle.v4",
+            schema_version="evaluation.batch_invariance_bundle.v4",
             payload_field="receipt",
             sha256_field="receipt_sha256",
         )

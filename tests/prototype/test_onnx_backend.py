@@ -206,7 +206,7 @@ def _write_model(
                 [output_name],
             ),
         ],
-        "cvi-test-embedding",
+        "test-embedding",
         [
             helper.make_tensor_value_info(
                 input_name,
@@ -263,7 +263,7 @@ def _write_conv_model(path: Path) -> None:
                 axis=1,
             ),
         ],
-        "cvi-test-convolution",
+        "test-convolution",
         [
             helper.make_tensor_value_info(
                 "images",
@@ -577,7 +577,7 @@ class OnnxBackendTests(unittest.TestCase):
             pixels = np.arange(2 * 4 * 3, dtype=np.uint8).reshape(2, 4, 3)
             Image.fromarray(pixels, mode="RGB").save(path, format="PNG")
             config = _preprocessing(
-                schema_version="cvi.image_preprocessing.v2",
+                schema_version="shared.image_preprocessing.v2",
                 width=2,
                 height=2,
                 resize_policy=ImageResizePolicy.SHORTEST_EDGE_CENTER_CROP,

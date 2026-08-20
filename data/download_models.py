@@ -49,7 +49,7 @@ _MODELS: dict[str, dict[str, object]] = {
         "desc": "MiewID-msv3 wildlife ReID export (unadmitted)",
         "reason": (
             "MiewID export is disabled and unadmitted: this downloader cannot "
-            "produce the exact cvi.miewid_artifact_bundle.v1 runtime manifest "
+            "produce the exact identification.miewid_artifact_bundle.v1 runtime manifest "
             "(including external_data=False) and a genuine passing parity receipt"
         ),
     },

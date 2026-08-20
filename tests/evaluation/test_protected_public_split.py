@@ -243,7 +243,7 @@ class ProtectedPublicSplitTests(unittest.TestCase):
         self.assertGreater(role_counts["YT_TEST_KNOWN"], 300)
         self.assertEqual(
             result.receipt["schema_version"],
-            "cvi.protected_public_split_receipt.v3",
+            "evaluation.protected_public_split_receipt.v3",
         )
         self.assertEqual(
             result.receipt["capacity_mode"],

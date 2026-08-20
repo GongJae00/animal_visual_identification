@@ -9,12 +9,12 @@
   "maximum_worker_result_bytes": 1048576,
   "model_repeat_iterations": 50,
   "model_warmup_iterations": 10,
-  "schema_version": "cvi.onnx_inference_benchmark_policy.v1",
+  "schema_version": "operations.onnx_inference_benchmark_policy.v1",
   "supervisor": {
     "maximum_stderr_bytes": 65536,
     "maximum_stdout_bytes": 65536,
     "poll_interval_seconds": 0.01,
-    "schema_version": "cvi.process_supervisor_policy.v1",
+    "schema_version": "operations.process_supervisor_policy.v1",
     "termination_grace_seconds": 2.0,
     "timeout_seconds": 120.0
   },

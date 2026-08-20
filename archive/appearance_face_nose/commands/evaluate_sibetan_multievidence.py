@@ -64,10 +64,10 @@ else:
     )
 
 
-REPORT_SCHEMA = "cvi.sibetan_multievidence_evaluation.v2"
-BUNDLE_SCHEMA = "cvi.sibetan_multievidence_evaluation_bundle.v2"
-N4_REPORT_SCHEMA = "cvi.sibetan_n4_metric_adapter_evaluation.v1"
-N4_BUNDLE_SCHEMA = "cvi.sibetan_n4_metric_adapter_evaluation_bundle.v1"
+REPORT_SCHEMA = "archive.sibetan.sibetan_multievidence_evaluation.v2"
+BUNDLE_SCHEMA = "archive.sibetan.sibetan_multievidence_evaluation_bundle.v2"
+N4_REPORT_SCHEMA = "archive.sibetan.sibetan_n4_metric_adapter_evaluation.v1"
+N4_BUNDLE_SCHEMA = "archive.sibetan.sibetan_n4_metric_adapter_evaluation_bundle.v1"
 INTERPRETATION = (
     "EXPOSED_SIBETAN_CROSS_SEQUENCE_FROZEN_TRANSFER_DIAGNOSTIC_"
     "NOT_FINAL_OR_BIOMETRIC_VALIDATION"
@@ -225,7 +225,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     yt_document = read_strict_json_document(args.yt_policy_report)
     if yt_document.payload.get("report_sha256") != args.yt_policy_report_sha256:
         raise ValueError("YT fusion policy report differs from the external pin")
-    if yt_document.payload.get("schema_version") != "cvi.yt_masked_multievidence_policy_bundle.v2":
+    if yt_document.payload.get("schema_version") != "archive.nose.yt_masked_multievidence_policy_bundle.v2":
         raise ValueError("SiBeTan quality-aware transfer requires YT masked policy v2")
     transfer_weights = frozen_transfer_weights(yt_document.payload)
 

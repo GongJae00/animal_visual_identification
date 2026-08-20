@@ -18,7 +18,7 @@
   "diagnostic_shot_counts": [
     5
   ],
-  "schema_version": "cvi.protected_public_split_policy.v3",
+  "schema_version": "evaluation.protected_public_split_policy.v3",
   "shot_counts": [
     1,
     3

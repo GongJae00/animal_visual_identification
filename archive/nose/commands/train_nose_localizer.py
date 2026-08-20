@@ -288,7 +288,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         },
     }
     bindings = {
-        "schema_version": "cvi.nose_localizer.bindings.v1",
+        "schema_version": "identification.nose.nose_localizer.bindings.v1",
         "sources": source_hashes,
         "split_counts": split_counts,
         "training_config": training_config,
@@ -300,7 +300,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     checkpoint_path = args.output_dir / "checkpoint.pt"
     torch.save(
         {
-            "schema_version": "cvi.nose_localizer.checkpoint.v1",
+            "schema_version": "identification.nose.nose_localizer.checkpoint.v1",
             "bindings": bindings,
             "selected_epoch": best_epoch,
             "model_state_dict": best_state,
@@ -354,7 +354,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     _write_json(manifest_path, manifest.to_dict())
 
     summary = {
-        "schema_version": "cvi.nose_localizer.training_summary.v1",
+        "schema_version": "identification.nose.nose_localizer.training_summary.v1",
         "status": "RESEARCH_ONLY",
         "license": license_payload,
         "bindings": bindings,

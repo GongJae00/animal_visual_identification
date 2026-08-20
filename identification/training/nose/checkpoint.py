@@ -16,7 +16,7 @@ import numpy as np
 import torch
 
 
-SCHEMA_VERSION = "cvi.noseid.training_checkpoint.v1"
+SCHEMA_VERSION = "identification.nose.training_checkpoint.v1"
 _CHECKPOINT_KEYS = {
     "schema_version",
     "epoch",

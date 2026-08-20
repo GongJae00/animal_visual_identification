@@ -14,10 +14,10 @@ from evaluation.splits.face.face_identity_protocol_v2 import (
     validate_face_identity_protocol_v2_bundle,
 )
 
-PANEL_SCHEMA = "cvi.face_gallery_query_panel.v1"
-COHORT_SCHEMA = "cvi.face_gallery_query_cohort.v1"
-BUNDLE_SCHEMA = "cvi.face_gallery_query_panel_bundle.v1"
-POLICY_SCHEMA = "cvi.face_gallery_query_panel_policy.v1"
+PANEL_SCHEMA = "evaluation.face_gallery_query_panel.v1"
+COHORT_SCHEMA = "evaluation.face_gallery_query_cohort.v1"
+BUNDLE_SCHEMA = "evaluation.face_gallery_query_panel_bundle.v1"
+POLICY_SCHEMA = "evaluation.face_gallery_query_panel_policy.v1"
 
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 _K_VALUES = (1, 3, 5)
@@ -244,7 +244,7 @@ def _select_identity_panel(
 def _sample_rank(protocol_sha256: str, identity: str, sample: str, purpose: str) -> str:
     return hashlib.sha256(
         (
-            f"CVI_FACE_PANEL_V1\0{protocol_sha256}\0{identity}\0{purpose}\0{sample}"
+            f"FACE_PANEL_V1\0{protocol_sha256}\0{identity}\0{purpose}\0{sample}"
         ).encode("ascii")
     ).hexdigest()
 
@@ -328,7 +328,7 @@ def _census(cohort: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
     datasets = Counter(row["dataset_name"] for row in cohort)
     roles = Counter(row["protocol_role"] for row in cohort)
     return {
-        "schema_version": "cvi.face_gallery_query_panel_census.v1",
+        "schema_version": "evaluation.face_gallery_query_panel_census.v1",
         "common_k5_feasible_identity_count": len(cohort),
         "query_count": len(cohort),
         "gallery_entry_counts_by_k": {f"K{k}": len(cohort) * k for k in _K_VALUES},

@@ -403,7 +403,7 @@ class AcquisitionManifest:
 
     cameras: tuple[CameraSpecification, ...]
     videos: tuple[RawVideoRecord, ...]
-    schema_version: str = "cvi.acquisition.v1"
+    schema_version: str = "data.acquisition.v1"
 
     def __post_init__(self) -> None:
         if not self.cameras:
@@ -517,7 +517,7 @@ class AcquisitionManifest:
         allowed = {"schema_version", "cameras", "videos"}
         _reject_unknown_keys(payload, allowed, "acquisition manifest")
         schema_version = payload.get("schema_version")
-        if schema_version != "cvi.acquisition.v1":
+        if schema_version != "data.acquisition.v1":
             raise ValueError(f"unsupported acquisition schema: {schema_version!r}")
         cameras = payload.get("cameras")
         videos = payload.get("videos")

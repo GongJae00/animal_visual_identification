@@ -92,7 +92,7 @@ class BenchmarkReceipt:
     safety_metrics: tuple[MetricInterval, ...]
     resource_metrics: tuple[MetricInterval, ...]
     decision: PromotionDecision
-    schema_version: str = "cvi.benchmark.v1"
+    schema_version: str = "evaluation.benchmark.v1"
 
     def __post_init__(self) -> None:
         for field_name in (

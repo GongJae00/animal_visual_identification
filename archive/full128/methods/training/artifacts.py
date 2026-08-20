@@ -19,10 +19,10 @@ from shared.foundation.protected_io import read_strict_json_document
 from shared.foundation.provenance import content_sha256
 from archive.full128.methods.preparation.data import Full128Sample
 
-RUN_CONFIG_SCHEMA = "cvi.full128_training_run_config.v2"
-EMBEDDING_CACHE_SCHEMA = "cvi.full128_embedding_cache.v1"
-VARIANT_RUN_SCHEMA = "cvi.full128_variant_run.v1"
-FAMILY_RUN_SCHEMA = "cvi.full128_family_run.v1"
+RUN_CONFIG_SCHEMA = "archive.full128.training_run_config.v2"
+EMBEDDING_CACHE_SCHEMA = "archive.full128.embedding_cache.v1"
+VARIANT_RUN_SCHEMA = "archive.full128.variant_run.v1"
+FAMILY_RUN_SCHEMA = "archive.full128.family_run.v1"
 CURRENT_GROUP_QUOTAS = (
     {"dataset_name": "dogfacenet224", "view": "body", "identities": 9},
     {"dataset_name": "yt-bb-dog", "view": "body", "identities": 18},

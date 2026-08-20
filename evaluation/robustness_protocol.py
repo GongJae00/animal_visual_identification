@@ -14,7 +14,7 @@ import numpy as np
 from evaluation.splits.role_exposure import ExposureStage
 
 
-ROBUSTNESS_PROTOCOL_SCHEMA_VERSION = "cvi.robustness_protocol.v1"
+ROBUSTNESS_PROTOCOL_SCHEMA_VERSION = "evaluation.robustness_protocol.v1"
 _ALLOWED_TARGET_STAGES = {
     ExposureStage.MODEL_SELECTION_SCORED,
     ExposureStage.CALIBRATION_SCORED,
@@ -240,7 +240,7 @@ def _validate_historical_exposure(
 
 def _identity_order_digest(seed: int, dataset: str, identity: str) -> bytes:
     payload = json.dumps(
-        ["CVI_ROBUSTNESS_OOF_ORDER_V1", seed, dataset, identity],
+        ["ROBUSTNESS_OOF_ORDER_V1", seed, dataset, identity],
         ensure_ascii=False,
         separators=(",", ":"),
     ).encode("utf-8")

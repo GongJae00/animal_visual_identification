@@ -9,7 +9,7 @@ from typing import Any
 
 import numpy as np
 
-OOF_SIMPLEX_SCHEMA_VERSION = "cvi.oof_simplex_fusion.v1"
+OOF_SIMPLEX_SCHEMA_VERSION = "representation.oof_simplex_fusion.v1"
 
 
 class OOFSimplexError(ValueError):

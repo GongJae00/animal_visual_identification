@@ -43,7 +43,7 @@ def main() -> None:
     }
     if set(weight_bundle) != expected_bundle_keys or weight_bundle[
         "schema_version"
-    ] != "cvi.pretrained_weight_intake_bundle.v1":
+    ] != "shared.pretrained_weight_intake_bundle.v1":
         raise ValueError("associated pretrained weight bundle schema differs")
     weight_source = PretrainedWeightSourceContract.from_dict(
         weight_bundle["source_contract"]
@@ -69,7 +69,7 @@ def main() -> None:
     )
     tool_provenance = build_offline_tool_provenance(Path(__file__))
     bundle = {
-        "schema_version": "cvi.pretrained_supporting_asset_intake_bundle.v1",
+        "schema_version": "shared.pretrained_supporting_asset_intake_bundle.v1",
         "source_contract_sha256": source.contract_sha256,
         "source_contract": source.to_dict(),
         "receipt_sha256": receipt.receipt_sha256,

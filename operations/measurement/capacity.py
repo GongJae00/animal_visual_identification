@@ -146,7 +146,7 @@ class CapacityPlan:
             },
             "capacity plan",
         )
-        if payload["schema_version"] != "cvi.capacity_plan.v1":
+        if payload["schema_version"] != "operations.capacity_plan.v1":
             raise ValueError("unsupported capacity plan schema version")
         stages_payload = payload["stages"]
         capacities_payload = payload["capacities"]
@@ -284,7 +284,7 @@ class CapacityPlan:
 
     def to_dict(self) -> dict[str, Any]:
         return {
-            "schema_version": "cvi.capacity_plan.v1",
+            "schema_version": "operations.capacity_plan.v1",
             "camera_count": self.camera_count,
             "occupied_fraction": self.occupied_fraction,
             "stages": [stage.to_dict() for stage in self.stages],

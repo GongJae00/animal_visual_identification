@@ -14,11 +14,11 @@ from data.full_segment.route_plan import (
     validate_full128_route_plan_bundle,
 )
 
-OVERLAY_SCHEMA = "cvi.face_eligibility_overlay.v1"
-RECORD_SCHEMA = "cvi.face_eligibility_record.v1"
-CENSUS_SCHEMA = "cvi.face_eligibility_census.v1"
-BUNDLE_SCHEMA = "cvi.face_eligibility_overlay_bundle.v1"
-POLICY_SCHEMA = "cvi.face_eligibility_policy.v1"
+OVERLAY_SCHEMA = "evaluation.face_eligibility_overlay.v1"
+RECORD_SCHEMA = "evaluation.face_eligibility_record.v1"
+CENSUS_SCHEMA = "evaluation.face_eligibility_census.v1"
+BUNDLE_SCHEMA = "evaluation.face_eligibility_overlay_bundle.v1"
+POLICY_SCHEMA = "evaluation.face_eligibility_policy.v1"
 
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 _DATASETS = (

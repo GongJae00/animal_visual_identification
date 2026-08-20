@@ -36,8 +36,8 @@ def frozen_transfer_weights(yt_report: Mapping[str, Any]) -> dict[str, dict[str,
     """Extract externally calibrated weights without consulting SiBeTan labels."""
 
     if yt_report.get("schema_version") in {
-        "cvi.yt_masked_multievidence_policy_bundle.v1",
-        "cvi.yt_masked_multievidence_policy_bundle.v2",
+        "archive.nose.yt_masked_multievidence_policy_bundle.v1",
+        "archive.nose.yt_masked_multievidence_policy_bundle.v2",
     }:
         if set(yt_report) != {"schema_version", "report_sha256", "report"}:
             raise ValueError("YT masked policy bundle fields differ")
@@ -55,7 +55,7 @@ def frozen_transfer_weights(yt_report: Mapping[str, Any]) -> dict[str, dict[str,
         if (
             not isinstance(report, dict)
             or content_sha256(report) != yt_report["report_sha256"]
-            or report.get("schema_version") != f"cvi.yt_masked_multievidence_policy.{version}"
+            or report.get("schema_version") != f"archive.nose.yt_masked_multievidence_policy.{version}"
             or report.get("status") != "PASS_YT_DEV_MASKED_FUSION_POLICY"
             or report.get("calibration", {}).get("labels_used") != "DEVELOPMENT_ONLY"
             or report.get("policy_semantics") != expected_semantics

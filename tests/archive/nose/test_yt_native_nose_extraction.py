@@ -340,7 +340,7 @@ def test_assignment_source_identity_and_yt_fit_role_are_content_bound() -> None:
         ),),
     )
     assignment = {
-        "schema_version": "cvi.protected_public_split_assignment.v1",
+        "schema_version": "evaluation.protected_public_split_assignment.v1",
         "status": "PASS_PROTECTED_SPLIT_CONSTRUCTION",
         "records": [{
             "sample_token": sample_token,
@@ -353,7 +353,7 @@ def test_assignment_source_identity_and_yt_fit_role_are_content_bound() -> None:
         }],
     }
     receipt = {
-        "schema_version": "cvi.protected_public_split_receipt.v3",
+        "schema_version": "evaluation.protected_public_split_receipt.v3",
         "status": "PASS_PROTECTED_SPLIT_CONSTRUCTION",
         "assignment_sha256": content_sha256(assignment),
         "source_bundle_sha256": source.bundle_sha256,

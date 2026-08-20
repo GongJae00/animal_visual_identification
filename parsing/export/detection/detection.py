@@ -130,7 +130,7 @@ class DogDetector:
             )
         model_path = Path(self._cfg.model_path)
         self._model_staging = tempfile.TemporaryDirectory(
-            prefix="cvi-detector-model-"
+            prefix="detector-model-"
         )
         staged_path = Path(self._model_staging.name) / "model.pt"
         try:

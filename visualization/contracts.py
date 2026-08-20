@@ -11,8 +11,8 @@ from typing import Any, Self
 from shared.foundation.provenance import canonical_json_bytes, content_sha256
 from visualization.privacy import PublicationScope, validate_publishable_value
 
-FIGURE_DATA_SCHEMA = "cvi.figure_data.v1"
-FIGURE_DATA_BUNDLE_SCHEMA = "cvi.figure_data.bundle.v1"
+FIGURE_DATA_SCHEMA = "visualization.figure_data.v1"
+FIGURE_DATA_BUNDLE_SCHEMA = "visualization.figure_data.bundle.v1"
 _SHA256 = re.compile(r"[0-9a-f]{64}")
 
 

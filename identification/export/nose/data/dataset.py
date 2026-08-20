@@ -103,7 +103,7 @@ class NoseIDSample:
         }
         if not isinstance(payload, dict) or set(payload) != required:
             raise ValueError("NoseID sample keys differ")
-        if payload["schema_version"] != "cvi.noseid.sample.v1":
+        if payload["schema_version"] != "identification.nose.sample.v1":
             raise ValueError("unsupported NoseID sample schema")
         image = payload["image"]
         identity = payload["identity"]
@@ -214,7 +214,7 @@ def load_identity_split(path: Path) -> dict[str, frozenset[str]]:
     payload = json.loads(path.read_text(encoding="utf-8"), object_pairs_hook=_strict_object)
     if not isinstance(payload, dict) or set(payload) != {"schema_version", *_SPLIT_ROLES}:
         raise ValueError("NoseID split keys differ")
-    if payload["schema_version"] != "cvi.noseid.identity_split.v1":
+    if payload["schema_version"] != "identification.nose.identity_split.v1":
         raise ValueError("unsupported NoseID identity split schema")
     result: dict[str, frozenset[str]] = {}
     observed: set[str] = set()

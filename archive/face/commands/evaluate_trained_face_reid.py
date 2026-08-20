@@ -192,7 +192,7 @@ def main() -> None:
             gallery_identity_ids=gallery_result["identity_ids"],
         )
     report = {
-        "schema_version": "cvi.faceid_evaluation.v2",
+        "schema_version": "identification.face.faceid_evaluation.v2",
         "architecture": args.architecture,
         "interpretation": (
             "closed-set diagnostic on a manifest-distinct, training-identity-disjoint "

@@ -37,10 +37,10 @@ class ControlEvaluationPolicy:
     maximum_panels: int = 100
     maximum_total_auc_sort_items: int = 1_000_000
     require_original_control: bool = True
-    schema_version: str = "cvi.control_evaluation_policy.v1"
+    schema_version: str = "evaluation.control_evaluation_policy.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.control_evaluation_policy.v1":
+        if self.schema_version != "evaluation.control_evaluation_policy.v1":
             raise ValueError("unsupported control evaluation policy schema")
         for name in (
             "maximum_bindings",
@@ -184,7 +184,7 @@ class ControlEvaluationReceipt:
     panels: tuple[ControlPanelEvaluation, ...]
     cost: ControlEvaluationCost
     limitations: tuple[str, ...]
-    schema_version: str = "cvi.control_evaluation_receipt.v1"
+    schema_version: str = "evaluation.control_evaluation_receipt.v1"
 
     @property
     def receipt_sha256(self) -> str:
@@ -231,7 +231,7 @@ def control_evaluation_bindings_from_payload(
     )
     if (
         payload["schema_version"]
-        != "cvi.visual_control_evaluation_bindings.v1"
+        != "evaluation.visual_control_evaluation_bindings.v1"
     ):
         raise ValueError("unsupported control evaluation binding schema")
     _validate_sha256(payload["plan_sha256"], "plan_sha256")

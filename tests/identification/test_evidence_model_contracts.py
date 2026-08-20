@@ -330,7 +330,7 @@ class EvidenceModelContractTests(unittest.TestCase):
     @staticmethod
     def _miewid_manifest(model_path: Path, receipt_path: Path) -> MiewIDArtifactManifest:
         return MiewIDArtifactManifest.from_dict({
-            "schema_version": "cvi.miewid_artifact_bundle.v1",
+            "schema_version": "identification.miewid_artifact_bundle.v1",
             "model_id": MIEWID_MSV3_HF_REPO,
             "onnx_sha256": sha256(model_path.read_bytes()).hexdigest(),
             "source_revision": MIEWID_MSV3_REVISION,

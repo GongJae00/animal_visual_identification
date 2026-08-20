@@ -230,7 +230,7 @@ def _evaluation_population(args: argparse.Namespace) -> tuple[list[str], str]:
         raise ValueError("required successor sample population fields differ")
     tokens = value["required_sample_tokens"]
     if (
-        value["schema_version"] != "cvi.full128_successor_required_population.v1"
+        value["schema_version"] != "archive.full128.successor_required_population.v1"
         or not isinstance(tokens, list)
         or value["required_sample_tokens_sha256"] != content_sha256(tokens)
     ):

@@ -28,7 +28,7 @@ def adapt_master_results_table(
     }
     if (
         set(payload) != expected
-        or payload["schema_version"] != "cvi.master_results_table.v1"
+        or payload["schema_version"] != "visualization.master_results_table.v1"
     ):
         raise FigureContractError("master results table schema differs")
     without_hash = {key: payload[key] for key in expected - {"table_sha256"}}
@@ -176,7 +176,7 @@ def adapt_protected_evaluation_v3(
 
     payload = dict(value)
     _require_figure_kind(figure_id, "result_forest")
-    if payload.get("schema_version") != "cvi.evaluation.report.v3":
+    if payload.get("schema_version") != "evaluation.report.v3":
         raise FigureContractError("protected evaluation report schema differs")
     if scope is not PublicationScope.PRIVATE:
         raise PermissionError(

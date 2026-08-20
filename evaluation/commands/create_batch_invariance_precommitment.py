@@ -90,7 +90,7 @@ def _run_precommit(argv: list[str]) -> None:
         precommitment_sequence=args.precommitment_sequence,
     )
     output = {
-        "schema_version": "cvi.batch_invariance_precommitment_bundle.v1",
+        "schema_version": "evaluation.batch_invariance_precommitment_bundle.v1",
         "precommitment_sha256": precommitment.precommitment_sha256,
         "precommitment": precommitment.to_dict(),
     }
@@ -128,7 +128,7 @@ def _run_evaluate(argv: list[str]) -> None:
     precommitment = BatchInvariancePrecommitment.from_dict(
         read_content_hashed_json_bundle(
             args.precommitment,
-            schema_version="cvi.batch_invariance_precommitment_bundle.v1",
+            schema_version="evaluation.batch_invariance_precommitment_bundle.v1",
             payload_field="precommitment",
             sha256_field="precommitment_sha256",
         )
@@ -162,7 +162,7 @@ def _run_evaluate(argv: list[str]) -> None:
         if not isinstance(result, BatchFreshWorkerDiscovery):
             raise RuntimeError("batch discovery returned an admission receipt")
         output = {
-            "schema_version": "cvi.batch_runtime_library_discovery_bundle.v2",
+            "schema_version": "operations.batch_runtime_library_discovery_bundle.v2",
             "discovery_sha256": result.discovery_sha256,
             "discovery": result.to_dict(),
         }
@@ -184,7 +184,7 @@ def _run_evaluate(argv: list[str]) -> None:
     if not isinstance(result, BatchFreshWorkerReceipt):
         raise RuntimeError("batch strict evaluation returned discovery evidence")
     output = {
-        "schema_version": "cvi.batch_invariance_bundle.v4",
+        "schema_version": "evaluation.batch_invariance_bundle.v4",
         "receipt_sha256": result.receipt_sha256,
         "receipt": result.to_dict(),
     }

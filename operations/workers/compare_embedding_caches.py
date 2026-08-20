@@ -44,7 +44,7 @@ def main(argv: list[str] | None = None) -> None:
         ),
     )
     output = {
-        "schema_version": "cvi.numerical_admission_bundle.v1",
+        "schema_version": "evaluation.numerical_admission_bundle.v1",
         "receipt_sha256": receipt.receipt_sha256,
         "receipt": receipt.to_dict(),
     }

@@ -26,7 +26,7 @@ def _write_v3(source: Path) -> dict:
     faiss.write_index(index, str(paths["index"]))
     content_hash = "a" * 64
     template_id = hashlib.sha256(
-        f"cvi.gallery_template.v1\0{content_hash}".encode("ascii")
+        f"gallery.template.v1\0{content_hash}".encode("ascii")
     ).hexdigest()
     paths["metadata"].write_text(
         json.dumps(
@@ -38,7 +38,7 @@ def _write_v3(source: Path) -> dict:
                     "template_id": template_id,
                     "content_sha256": content_hash,
                     "idempotency_key": "request",
-                    "template_schema": "cvi.gallery_template.v1",
+                    "template_schema": "gallery.template.v1",
                     "metadata": {},
                 }
             }
@@ -47,10 +47,10 @@ def _write_v3(source: Path) -> dict:
     )
     paths["breeds"].write_text('{"0":"unknown"}', encoding="utf-8")
     manifest = {
-        "schema_version": "cvi.gallery_manifest.v3",
+        "schema_version": "gallery.manifest.v3",
         "dimension": 2,
         "embedding_contract": {
-            "schema_version": "cvi.gallery_embedding_contract.v1",
+            "schema_version": "gallery.embedding_contract.v1",
             "kind": "opaque",
             "dimension": 2,
         },
@@ -180,7 +180,7 @@ class GalleryMigrationSecurityTests(unittest.TestCase):
                 else:
                     manifest["unexpected"] = True
                     _write_manifest(source, manifest)
-                    message = "exact cvi.gallery_manifest.v3"
+                    message = "exact gallery.manifest.v3"
                 output = root / "v4"
                 with self.assertRaisesRegex(ValueError, message):
                     migration.migrate_gallery(source, output)

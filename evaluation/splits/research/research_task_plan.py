@@ -117,10 +117,10 @@ class ResearchTaskAssignment:
     task: ResearchTask
     role: ResearchTaskRole
     source_partition: str
-    schema_version: str = "cvi.research_task_assignment.v1"
+    schema_version: str = "evaluation.research_task_assignment.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.research_task_assignment.v1":
+        if self.schema_version != "evaluation.research_task_assignment.v1":
             raise ValueError("unsupported research task assignment schema")
         if self.dataset_name not in _ALLOWED:
             raise ValueError("unsupported research task dataset")
@@ -179,10 +179,10 @@ class ResearchTaskPlan:
     assignments: tuple[ResearchTaskAssignment, ...]
     final_evaluation_permitted: bool = False
     interpretation: str = _INTERPRETATION
-    schema_version: str = "cvi.research_task_plan.v1"
+    schema_version: str = "evaluation.research_task_plan.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.research_task_plan.v1":
+        if self.schema_version != "evaluation.research_task_plan.v1":
             raise ValueError("unsupported research task plan schema")
         if not isinstance(self.plan_name, str) or not self.plan_name.strip():
             raise ValueError("plan_name must be non-empty text")

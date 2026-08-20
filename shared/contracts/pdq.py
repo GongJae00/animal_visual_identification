@@ -52,10 +52,10 @@ class PDQFingerprint:
     opaque_sample_id: str
     d4_hashes: tuple[str, ...]
     quality: int
-    schema_version: str = "cvi.pdq_fingerprint.v1"
+    schema_version: str = "pdq.fingerprint.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.pdq_fingerprint.v1":
+        if self.schema_version != "pdq.fingerprint.v1":
             raise ValueError("unsupported PDQ fingerprint schema")
         _require_opaque_id(self.opaque_sample_id, "opaque sample ID")
         if not isinstance(self.d4_hashes, tuple):
@@ -115,10 +115,10 @@ class PDQNearDuplicateCandidate:
     minimum_quality: int
     distance_threshold: int
     quality_threshold: int
-    schema_version: str = "cvi.pdq_near_duplicate_candidate.v1"
+    schema_version: str = "pdq.near_duplicate_candidate.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.pdq_near_duplicate_candidate.v1":
+        if self.schema_version != "pdq.near_duplicate_candidate.v1":
             raise ValueError("unsupported PDQ candidate schema")
         _require_opaque_id(self.left_opaque_sample_id, "left candidate sample ID")
         _require_opaque_id(self.right_opaque_sample_id, "right candidate sample ID")
@@ -208,10 +208,10 @@ class PDQSearchPolicy:
     maximum_raw_posting_visits: int = 1_500_000_000
     maximum_unique_orientation_inspections: int = 800_000_000
     maximum_accepted_sample_candidates: int = 1_000_000
-    schema_version: str = "cvi.public_canine_pdq_policy.v1"
+    schema_version: str = "data.public_canine_pdq_policy.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.public_canine_pdq_policy.v1":
+        if self.schema_version != "data.public_canine_pdq_policy.v1":
             raise ValueError("unsupported public canine PDQ policy")
         _require_distance_threshold(self.distance_threshold)
         _require_quality(self.quality_threshold, "quality_threshold")
@@ -333,10 +333,10 @@ class PDQSearchResult:
     distance_threshold: int
     quality_threshold: int
     quality_threshold_status: str = PDQ_QUALITY_THRESHOLD_STATUS
-    schema_version: str = "cvi.pdq_search_result.v1"
+    schema_version: str = "pdq.search_result.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.pdq_search_result.v1":
+        if self.schema_version != "pdq.search_result.v1":
             raise ValueError("unsupported PDQ search-result schema")
         if self.quality_threshold_status != PDQ_QUALITY_THRESHOLD_STATUS:
             raise ValueError("PDQ search result misstates threshold admission")

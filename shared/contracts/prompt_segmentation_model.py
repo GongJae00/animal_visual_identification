@@ -13,8 +13,8 @@ from shared.foundation.protected_io import read_strict_json_document
 from shared.foundation.provenance import content_sha256
 from shared.foundation.retained_file import read_retained_regular_file
 
-BUNDLE_SCHEMA = "cvi.prompt_segmentation_model_bundle.v1"
-MANIFEST_SCHEMA = "cvi.prompt_segmentation_model_manifest.v1"
+BUNDLE_SCHEMA = "parsing.prompt_segmentation_model_bundle.v1"
+MANIFEST_SCHEMA = "parsing.prompt_segmentation_model_manifest.v1"
 INTERPRETATION = "EXACT_LOCAL_MODEL_BINDING_NOT_SEMANTIC_OR_PERFORMANCE_VALIDATION"
 
 

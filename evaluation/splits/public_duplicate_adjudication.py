@@ -87,10 +87,10 @@ class ExactDuplicatePair:
     right_sample_token: str
     pixel_sha256: str
     evidence_token: str
-    schema_version: str = "cvi.exact_duplicate_pair.v1"
+    schema_version: str = "data.exact_duplicate_pair.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.exact_duplicate_pair.v1":
+        if self.schema_version != "data.exact_duplicate_pair.v1":
             raise ValueError("unsupported exact duplicate pair schema")
         _ordered_pair(self.left_sample_token, self.right_sample_token)
         _sha256(self.pixel_sha256, "pixel SHA-256")
@@ -121,10 +121,10 @@ class ExactDuplicateGraph:
     pairs: tuple[ExactDuplicatePair, ...]
     decision: str = "PASS_AUTHENTICATED_PIXEL_EXACT_GRAPH"
     interpretation: str = "PIXEL_EXACT_COMPONENTS_ONLY_NOT_NEAR_DUPLICATE_ADJUDICATION"
-    schema_version: str = "cvi.exact_duplicate_graph.v2"
+    schema_version: str = "data.exact_duplicate_graph.v2"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.exact_duplicate_graph.v2":
+        if self.schema_version != "data.exact_duplicate_graph.v2":
             raise ValueError("unsupported exact duplicate graph schema")
         for name in (
             "source_corpus_sha256",
@@ -182,10 +182,10 @@ class CandidateAdjudication:
     outcome: CandidateOutcome
     reason: str
     decision_evidence_tokens: tuple[str, ...]
-    schema_version: str = "cvi.public_duplicate_candidate_adjudication.v1"
+    schema_version: str = "data.public_duplicate_candidate_adjudication.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.public_duplicate_candidate_adjudication.v1":
+        if self.schema_version != "data.public_duplicate_candidate_adjudication.v1":
             raise ValueError("unsupported candidate adjudication schema")
         _ordered_pair(self.left_sample_token, self.right_sample_token)
         _canonical_tokens(self.candidate_channels, "candidate channels", digest=False)
@@ -248,10 +248,10 @@ class AdjudicationChunk:
     global_blockers: tuple[str, ...]
     mode: AdjudicationMode = AdjudicationMode.STANDARD
     unbound_candidate_count: int = 0
-    schema_version: str = "cvi.public_duplicate_adjudication_chunk.v2"
+    schema_version: str = "data.public_duplicate_adjudication_chunk.v2"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.public_duplicate_adjudication_chunk.v2":
+        if self.schema_version != "data.public_duplicate_adjudication_chunk.v2":
             raise ValueError("unsupported adjudication chunk schema")
         _sha256(self.source_bundle_sha256, "source bundle SHA-256")
         _sha256(self.candidate_set_sha256, "candidate set SHA-256")
@@ -326,10 +326,10 @@ class AdjudicationLedger:
     promotion_status: str
     mode: AdjudicationMode = AdjudicationMode.STANDARD
     unbound_candidate_count: int = 0
-    schema_version: str = "cvi.public_duplicate_adjudication_ledger.v2"
+    schema_version: str = "data.public_duplicate_adjudication_ledger.v2"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.public_duplicate_adjudication_ledger.v2":
+        if self.schema_version != "data.public_duplicate_adjudication_ledger.v2":
             raise ValueError("unsupported adjudication ledger schema")
         _sha256(self.source_bundle_sha256, "source bundle SHA-256")
         _sha256(self.candidate_set_sha256, "candidate set SHA-256")
@@ -446,7 +446,7 @@ def build_exact_duplicate_graph(
             for left_index, left in enumerate(tokens):
                 for right in tokens[left_index + 1:]:
                     payload = {
-                        "schema_version": "cvi.exact_duplicate_pair.v1",
+                        "schema_version": "data.exact_duplicate_pair.v1",
                         "left_sample_token": left,
                         "right_sample_token": right,
                         "pixel_sha256": pixel_sha256,
@@ -474,7 +474,7 @@ def source_corpus_sha256(source: PublicSplitSourceBundle) -> str:
     """Hash immutable sample semantics without circular evidence bindings."""
 
     return content_sha256({
-        "schema_version": "cvi.public_split_source_corpus.v1",
+        "schema_version": "evaluation.public_split_source_corpus.v1",
         "samples": [
             item.to_dict()
             for item in sorted(source.samples, key=lambda value: value.sample_token)
@@ -762,7 +762,7 @@ def build_adjudication_chunk(
                 reason = "PDQ_COMPLETE_NEGATIVE"
                 decision_tokens = (
                     content_sha256({
-                        "schema_version": "cvi.pdq_complete_negative_decision.v1",
+                        "schema_version": "pdq.complete_negative_decision.v1",
                         "left_sample_token": pair[0],
                         "right_sample_token": pair[1],
                         "pdq_transform_admission_sha256": pdq_admission_sha256,
@@ -1043,7 +1043,7 @@ def publish_exact_graph(
     path: Path, graph: ExactDuplicateGraph, *, tool_provenance: Mapping[str, Any]
 ) -> str:
     bundle = _bundle(
-        "cvi.exact_duplicate_graph_bundle.v2",
+        "data.exact_duplicate_graph_bundle.v2",
         "graph",
         graph.to_dict(),
         "graph_sha256",
@@ -1057,7 +1057,7 @@ def publish_adjudication_chunk(
     path: Path, chunk: AdjudicationChunk, *, tool_provenance: Mapping[str, Any]
 ) -> str:
     bundle = _bundle(
-        "cvi.public_duplicate_adjudication_chunk_bundle.v2",
+        "data.public_duplicate_adjudication_chunk_bundle.v2",
         "chunk",
         chunk.to_dict(),
         "chunk_sha256",
@@ -1071,7 +1071,7 @@ def publish_adjudication_ledger(
     path: Path, ledger: AdjudicationLedger, *, tool_provenance: Mapping[str, Any]
 ) -> str:
     bundle = _bundle(
-        "cvi.public_duplicate_adjudication_ledger_bundle.v2",
+        "data.public_duplicate_adjudication_ledger_bundle.v2",
         "ledger",
         ledger.to_dict(),
         "ledger_sha256",
@@ -1146,7 +1146,7 @@ def build_review_queue(
         left = source_by_token[pair[0]]
         right = source_by_token[pair[1]]
         rows.append({
-            "schema_version": "cvi.public_duplicate_review_queue_record.v1",
+            "schema_version": "data.public_duplicate_review_queue_record.v1",
             "left_sample_token": pair[0],
             "right_sample_token": pair[1],
             "left_source": locations[left.source_sample_id],
@@ -1162,7 +1162,7 @@ def build_review_queue(
         row["right_sample_token"],
     ))
     return {
-        "schema_version": "cvi.public_duplicate_review_queue.v1",
+        "schema_version": "data.public_duplicate_review_queue.v1",
         "source_bundle_sha256": source.bundle_sha256,
         "adjudication_ledger_sha256": ledger.ledger_sha256,
         "candidate_set_sha256": ledger.candidate_set_sha256,
@@ -1177,7 +1177,7 @@ def publish_review_queue(
     path: Path, queue: Mapping[str, Any], *, tool_provenance: Mapping[str, Any]
 ) -> str:
     bundle = _bundle(
-        "cvi.public_duplicate_review_queue_bundle.v1",
+        "data.public_duplicate_review_queue_bundle.v1",
         "queue",
         dict(queue),
         "queue_sha256",
@@ -1194,7 +1194,7 @@ def read_source_bundle(path: Path) -> PublicSplitSourceBundle:
 def read_exact_graph(path: Path) -> ExactDuplicateGraph:
     payload = _read_bundle(
         path,
-        "cvi.exact_duplicate_graph_bundle.v2",
+        "data.exact_duplicate_graph_bundle.v2",
         "graph",
         "graph_sha256",
     )
@@ -1205,7 +1205,7 @@ def read_exact_graph(path: Path) -> ExactDuplicateGraph:
 def read_adjudication_chunk(path: Path) -> AdjudicationChunk:
     payload = _read_bundle(
         path,
-        "cvi.public_duplicate_adjudication_chunk_bundle.v2",
+        "data.public_duplicate_adjudication_chunk_bundle.v2",
         "chunk",
         "chunk_sha256",
     )
@@ -1215,7 +1215,7 @@ def read_adjudication_chunk(path: Path) -> AdjudicationChunk:
 def read_adjudication_ledger(path: Path) -> AdjudicationLedger:
     payload = _read_bundle(
         path,
-        "cvi.public_duplicate_adjudication_ledger_bundle.v2",
+        "data.public_duplicate_adjudication_ledger_bundle.v2",
         "ledger",
         "ledger_sha256",
     )
@@ -1230,7 +1230,7 @@ def _add_phash_candidates(
 ) -> None:
     _exact(bundle, {"schema_version", "evidence", "evidence_sha256"}, "pHash bundle")
     evidence = bundle["evidence"]
-    if bundle["schema_version"] != "cvi.public_canine_phash_evidence_bundle.v1" or not isinstance(
+    if bundle["schema_version"] != "data.public_canine_phash_evidence_bundle.v1" or not isinstance(
         evidence, Mapping
     ) or content_sha256(evidence) != bundle["evidence_sha256"]:
         raise ValueError("pHash evidence bundle binding differs")
@@ -1263,7 +1263,7 @@ def _add_pdq_candidates(
 ) -> PDQSearchResult:
     _exact(bundle, {"schema_version", "evidence", "evidence_sha256"}, "PDQ bundle")
     evidence = bundle["evidence"]
-    if bundle["schema_version"] != "cvi.public_canine_pdq_evidence_bundle.v1" or not isinstance(
+    if bundle["schema_version"] != "data.public_canine_pdq_evidence_bundle.v1" or not isinstance(
         evidence, Mapping
     ) or content_sha256(evidence) != bundle["evidence_sha256"]:
         raise ValueError("PDQ evidence bundle binding differs")
@@ -1284,7 +1284,7 @@ def _add_pdq_candidates(
         "interpretation",
     }
     _exact(evidence, expected, "PDQ corpus evidence")
-    if evidence["schema_version"] != "cvi.public_canine_pdq_evidence.v1":
+    if evidence["schema_version"] != "data.public_canine_pdq_evidence.v1":
         raise ValueError("unsupported PDQ corpus evidence schema")
     for name in (
         "fingerprint_manifest_sha256",
@@ -1355,7 +1355,7 @@ def _geometry_results(
                 raise ValueError("duplicate geometric result across chunks")
             results[pair] = item
     return results, content_sha256({
-        "schema_version": "cvi.geometric_evidence_set.v1",
+        "schema_version": "data.geometric_evidence_set.v1",
         "evidence_sha256s": sorted(digests),
     })
 
@@ -1376,7 +1376,7 @@ def _geometry_admitted(
     _exact(receipt, expected, "geometric admission receipt")
     unsigned = {key: value for key, value in receipt.items() if key != "receipt_sha256"}
     if (
-        receipt["schema_version"] != "cvi.geometric_policy_admission_receipt.v1"
+        receipt["schema_version"] != "data.geometric_policy_admission_receipt.v1"
         or content_sha256(unsigned) != receipt["receipt_sha256"]
         or receipt["decision"]
         != "ADMIT_GEOMETRIC_POLICY_FOR_PUBLIC_DUPLICATE_ADJUDICATION"
@@ -1404,7 +1404,7 @@ def _review_results(
     _exact(bundle, expected, "review adjudication bundle")
     unsigned = {key: value for key, value in bundle.items() if key != "bundle_sha256"}
     if (
-        bundle["schema_version"] != "cvi.public_duplicate_review_bundle.v1"
+        bundle["schema_version"] != "data.public_duplicate_review_bundle.v1"
         or bundle["candidate_set_sha256"] != candidate_set_sha256
         or content_sha256(unsigned) != bundle["bundle_sha256"]
     ):
@@ -1426,7 +1426,7 @@ def _review_results(
         _exact(raw, fields, "review record")
         pair = (raw["left_sample_token"], raw["right_sample_token"])
         _ordered_pair(*pair)
-        if raw["schema_version"] != "cvi.public_duplicate_review_record.v1" or raw[
+        if raw["schema_version"] != "data.public_duplicate_review_record.v1" or raw[
             "decision"
         ] not in {"REVIEW_CONFIRMED", "REVIEW_REJECTED", "REVIEW_UNRESOLVED"}:
             raise ValueError("review decision differs")
@@ -1444,7 +1444,7 @@ def _validate_opaque_binding(
 ) -> tuple[dict[str, str], str, str]:
     _exact(bundle, {"schema_version", "binding", "binding_sha256"}, "pHash binding bundle")
     binding = bundle["binding"]
-    if bundle["schema_version"] != "cvi.public_canine_phash_binding_bundle.v1" or not isinstance(
+    if bundle["schema_version"] != "data.public_canine_phash_binding_bundle.v1" or not isinstance(
         binding, Mapping
     ) or content_sha256(binding) != bundle["binding_sha256"]:
         raise ValueError("pHash binding bundle digest differs")
@@ -1482,7 +1482,7 @@ def _validate_image_bundle(bundle: Mapping[str, Any]) -> Mapping[str, Any]:
         "tool_provenance_sha256",
     }
     _exact(bundle, expected, "image-content bundle")
-    if bundle["schema_version"] != "cvi.image_content_audit_bundle.v1":
+    if bundle["schema_version"] != "data.image_content_audit_bundle.v1":
         raise ValueError("image-content bundle schema differs")
     for payload_name, digest_name in (
         ("policy", "policy_sha256"),
@@ -1512,7 +1512,7 @@ def _validate_image_bundle(bundle: Mapping[str, Any]) -> Mapping[str, Any]:
     for digest, ids in sorted(grouped.items()):
         if len(ids) > 1:
             expected_groups.append({
-                "schema_version": "cvi.pixel_exact_duplicate_group.v1",
+                "schema_version": "data.pixel_exact_duplicate_group.v1",
                 "pixel_sha256": digest,
                 "source_sample_ids": sorted(ids),
             })
@@ -1536,7 +1536,7 @@ def _validate_exact_graph_bundle(
     unsigned = dict(bundle)
     observed = unsigned.pop("bundle_sha256")
     if (
-        bundle["schema_version"] != "cvi.exact_duplicate_graph_bundle.v2"
+        bundle["schema_version"] != "data.exact_duplicate_graph_bundle.v2"
         or bundle["graph"] != graph.to_dict()
         or bundle["graph_sha256"] != graph.graph_sha256
         or content_sha256(bundle["tool_provenance"])
@@ -1598,7 +1598,7 @@ def _conservative_dependency_edges(
             right_sample_token=pair[1],
             relation=EvidenceRelation.DEPENDENCY,
             evidence_token=content_sha256({
-                "schema_version": "cvi.conservative_candidate_dependency.v1",
+                "schema_version": "parsing.conservative_candidate_dependency.v1",
                 "mode": ledger.mode.value,
                 "ledger_sha256": ledger_sha256,
                 "left_sample_token": pair[0],
@@ -1648,7 +1648,7 @@ def _pdq_admitted_dependency_edges(
             right_sample_token=pair[1],
             relation=EvidenceRelation.DEPENDENCY,
             evidence_token=content_sha256({
-                "schema_version": "cvi.pdq_admitted_candidate_dependency.v1",
+                "schema_version": "pdq.admitted_candidate_dependency.v1",
                 "mode": ledger.mode.value,
                 "ledger_sha256": ledger_sha256,
                 "left_sample_token": pair[0],
@@ -1694,7 +1694,7 @@ def _dinov2_admitted_dependency_edges(
             right_sample_token=pair[1],
             relation=EvidenceRelation.DEPENDENCY,
             evidence_token=content_sha256({
-                "schema_version": "cvi.dinov2_admitted_candidate_dependency.v1",
+                "schema_version": "identification.dinov2_admitted_candidate_dependency.v1",
                 "mode": ledger.mode.value,
                 "ledger_sha256": ledger_sha256,
                 "left_sample_token": pair[0],

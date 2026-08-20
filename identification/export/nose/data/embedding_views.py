@@ -28,7 +28,7 @@ from shared.foundation.protected_publication import fsync_directory, rename_dire
 from shared.foundation.provenance import content_sha256
 from parsing.export.regions.native_yt import validate_manifest_bundle
 
-MANIFEST_SCHEMA = "cvi.nose_embedding_views.v1"
+MANIFEST_SCHEMA = "identification.nose.nose_embedding_views.v1"
 MANIFEST_FILENAME = "nose-embedding-views.json"
 INTERPRETATION = "RESEARCH_ONLY_DERIVED_SUPPORT_CACHE_NOT_BIOMETRIC_VALIDATION"
 IMAGE_SIZE = 224

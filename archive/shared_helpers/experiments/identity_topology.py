@@ -12,13 +12,13 @@ from shared.foundation.provenance import content_sha256
 
 
 IDENTITY_TOPOLOGY_MANIFEST_SCHEMA_VERSION = (
-    "cvi.embedding_identity_topology_manifest.v1"
+    "evaluation.embedding_identity_topology_manifest.v1"
 )
 FIXED_PANEL_TOPOLOGY_MANIFEST_SCHEMA_VERSION = (
-    "cvi.fixed_multievidence_identity_topology_manifest.v1"
+    "archive.appearance_face_nose.fixed_multievidence_identity_topology_manifest.v1"
 )
 IDENTITY_TOPOLOGY_REPORT_SCHEMA_VERSION = (
-    "cvi.embedding_identity_topology_audit.v1"
+    "evaluation.embedding_identity_topology_audit.v1"
 )
 
 _REQUIRED_RECORD_FIELDS = {

@@ -90,7 +90,7 @@ def _fixed_worker_environment() -> dict[str, str]:
 
 
 _SEMANTICS = {
-    "schema_version": "cvi.worker_environment_semantics.v2",
+    "schema_version": "operations.worker_environment_semantics.v2",
     "controlled_parent_names": list(SANITIZED_WORKER_ENVIRONMENT_NAMES),
     "child_construction": "FIXED_ALLOWLIST_NO_PARENT_VALUES",
     "child_environment": _fixed_worker_environment(),
@@ -113,10 +113,10 @@ class WorkerEnvironmentIdentity:
     sanitized_names: tuple[str, ...] = SANITIZED_WORKER_ENVIRONMENT_NAMES
     isolated_python_flags: tuple[str, ...] = ISOLATED_PYTHON_FLAGS
     semantics_sha256: str = WORKER_ENVIRONMENT_SEMANTICS_SHA256
-    schema_version: str = "cvi.worker_environment_identity.v2"
+    schema_version: str = "operations.worker_environment_identity.v2"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.worker_environment_identity.v2":
+        if self.schema_version != "operations.worker_environment_identity.v2":
             raise ValueError("unsupported worker environment identity schema")
         if self.sanitized_names != SANITIZED_WORKER_ENVIRONMENT_NAMES:
             raise ValueError("worker controlled environment names differ")

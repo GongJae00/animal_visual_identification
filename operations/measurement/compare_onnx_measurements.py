@@ -22,7 +22,7 @@ def _benchmark_summary(path: Path) -> OnnxInferenceBenchmarkSummary:
     return OnnxInferenceBenchmarkSummary.from_dict(
         read_content_hashed_json_bundle(
             path,
-            schema_version="cvi.onnx_inference_benchmark_receipt.v3",
+            schema_version="operations.onnx_inference_benchmark_receipt.v3",
             payload_field="summary",
             sha256_field="summary_sha256",
         )
@@ -33,7 +33,7 @@ def _numerical_receipt(path: Path) -> NumericalAdmissionReceipt:
     return NumericalAdmissionReceipt.from_dict(
         read_content_hashed_json_bundle(
             path,
-            schema_version="cvi.numerical_admission_bundle.v1",
+            schema_version="evaluation.numerical_admission_bundle.v1",
             payload_field="receipt",
             sha256_field="receipt_sha256",
         )
@@ -89,7 +89,7 @@ def main() -> None:
         numerical_admission=_numerical_receipt(args.numerical_admission),
     )
     output = {
-        "schema_version": "cvi.paired_inference_measurement_bundle.v1",
+        "schema_version": "operations.paired_inference_measurement_bundle.v1",
         "receipt_sha256": receipt.receipt_sha256,
         "receipt": receipt.to_dict(),
     }

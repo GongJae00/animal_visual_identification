@@ -102,7 +102,7 @@ class ProtectedEvaluationTests(unittest.TestCase):
             },
         }
         assignment = {
-            "schema_version": "cvi.protected_public_split_assignment.v1",
+            "schema_version": "evaluation.protected_public_split_assignment.v1",
             "status": "PASS_PROTECTED_SPLIT_CONSTRUCTION",
             "records": [
                 {
@@ -137,7 +137,7 @@ class ProtectedEvaluationTests(unittest.TestCase):
         _write(paths["policy"], policy.to_dict())
         _write(paths["split_assignment"], assignment)
         _write(paths["split_receipt"], {
-            "schema_version": "cvi.protected_public_split_receipt.v2",
+            "schema_version": "evaluation.protected_public_split_receipt.v2",
             "assignment_sha256": content_sha256(assignment),
             "role_exposure_ledger_sha256": ledger.ledger_sha256,
             "role_exposure_receipt_sha256": receipt.receipt_sha256,
@@ -157,7 +157,7 @@ class ProtectedEvaluationTests(unittest.TestCase):
             "gallery_production_receipt_sha256": gallery.production_receipt_sha256,
             "queries_raw_sha256": raw["queries"],
             "queries_production_receipt_sha256": queries.production_receipt_sha256,
-            "schema_version": "cvi.protected_evaluation_external_pins.v1",
+            "schema_version": "evaluation.protected_evaluation_external_pins.v1",
         }
         _write(paths["external_pins"], pins)
         return {
@@ -245,7 +245,7 @@ class ProtectedEvaluationTests(unittest.TestCase):
             self.assertEqual(receipt.interpretation, REPORT_INTERPRETATION)
             self.assertEqual(
                 receipt.schema_version,
-                "cvi.protected_evaluation_output_receipt.v2",
+                "evaluation.protected_evaluation_output_receipt.v2",
             )
             self.assertEqual(receipt.report_raw_sha256, hashlib.sha256((output / "report.json").read_bytes()).hexdigest())
             with self.assertRaisesRegex(ValueError, "external output anchor"):
@@ -284,7 +284,7 @@ class ProtectedEvaluationTests(unittest.TestCase):
 
     def test_recursive_v3_schema_rejects_nested_unknown_key(self) -> None:
         report = {
-            "schema_version": "cvi.evaluation.report.v3",
+            "schema_version": "evaluation.report.v3",
             "protocol": "protected_retrieval",
             "protocol_status": REPORT_PROTOCOL_STATUS,
             "receipt_chain_verified": True,

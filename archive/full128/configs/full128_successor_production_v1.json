@@ -12,7 +12,7 @@
     "device": "cuda"
   },
   "samples_per_identity": 2,
-  "schema_version": "cvi.full128_successor_production_config.v1",
+  "schema_version": "archive.full128.successor_production_config.v1",
   "seed": 20260811,
   "ssl_objective": "TWO_VIEW_COSINE_DISTANCE",
   "ssl_steps": 2000,

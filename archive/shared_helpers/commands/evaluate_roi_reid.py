@@ -232,7 +232,7 @@ def main() -> None:
         ("git", "rev-parse", "HEAD"), text=True, cwd=find_repo_root(__file__)
     ).strip()
     report = {
-        "schema_version": "cvi.roi_reid_evaluation.v1",
+        "schema_version": "archive.roi_reid_evaluation.v1",
         "dataset": args.dataset,
         "channel": args.channel,
         "protocol": "one-gallery-per-video-track-remaining-query.v1",

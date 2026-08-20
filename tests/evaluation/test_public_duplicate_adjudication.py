@@ -75,7 +75,7 @@ def _binding(source: PublicSplitSourceBundle) -> dict[str, object]:
     ]
     binding = {"binding_count": len(rows), "bindings": rows}
     return {
-        "schema_version": "cvi.public_canine_phash_binding_bundle.v1",
+        "schema_version": "data.public_canine_phash_binding_bundle.v1",
         "binding": binding,
         "binding_sha256": content_sha256(binding),
     }
@@ -98,7 +98,7 @@ def _images(source: PublicSplitSourceBundle) -> dict[str, object]:
         ),
         "records": records,
         "exact_duplicate_groups": [{
-            "schema_version": "cvi.pixel_exact_duplicate_group.v1",
+            "schema_version": "data.pixel_exact_duplicate_group.v1",
             "pixel_sha256": _token(500),
             "source_sample_ids": sorted(
                 sample.source_sample_id for sample in source.samples[:2]
@@ -108,7 +108,7 @@ def _images(source: PublicSplitSourceBundle) -> dict[str, object]:
     policy = {"fixture": True}
     provenance = {"fixture": True}
     return {"mpdd": {
-        "schema_version": "cvi.image_content_audit_bundle.v1",
+        "schema_version": "data.image_content_audit_bundle.v1",
         "semantic_receipt_sha256": _token(600),
         "policy": policy,
         "policy_sha256": content_sha256(policy),
@@ -121,13 +121,13 @@ def _images(source: PublicSplitSourceBundle) -> dict[str, object]:
 def _phash() -> dict[str, object]:
     candidates = [
         {
-            "schema_version": "cvi.phash_near_duplicate_candidate.v1",
+            "schema_version": "data.phash_near_duplicate_candidate.v1",
             "left_opaque_sample_id": _token(50),
             "right_opaque_sample_id": _token(51),
             "hamming_distance": 0,
         },
         {
-            "schema_version": "cvi.phash_near_duplicate_candidate.v1",
+            "schema_version": "data.phash_near_duplicate_candidate.v1",
             "left_opaque_sample_id": _token(51),
             "right_opaque_sample_id": _token(52),
             "hamming_distance": 8,
@@ -139,7 +139,7 @@ def _phash() -> dict[str, object]:
         "candidates": candidates,
     }
     return {
-        "schema_version": "cvi.public_canine_phash_evidence_bundle.v1",
+        "schema_version": "data.public_canine_phash_evidence_bundle.v1",
         "evidence": evidence,
         "evidence_sha256": content_sha256(evidence),
     }
@@ -169,7 +169,7 @@ def _pdq() -> dict[str, object]:
     )
     policy = PDQSearchPolicy().to_dict()
     evidence = {
-        "schema_version": "cvi.public_canine_pdq_evidence.v1",
+        "schema_version": "data.public_canine_pdq_evidence.v1",
         "search_result": search.to_dict(),
         "sample_ids_sha256": content_sha256(list(search.eligible_sample_ids)),
         "fingerprint_count": 3,
@@ -188,7 +188,7 @@ def _pdq() -> dict[str, object]:
         ),
     }
     return {
-        "schema_version": "cvi.public_canine_pdq_evidence_bundle.v1",
+        "schema_version": "data.public_canine_pdq_evidence_bundle.v1",
         "evidence": evidence,
         "evidence_sha256": content_sha256(evidence),
     }

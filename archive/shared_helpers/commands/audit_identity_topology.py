@@ -19,7 +19,7 @@ from shared.foundation.protected_io import (
 )
 from shared.foundation.provenance import content_sha256
 
-REPORT_BUNDLE_SCHEMA_VERSION = "cvi.embedding_identity_topology_audit_bundle.v1"
+REPORT_BUNDLE_SCHEMA_VERSION = "evaluation.embedding_identity_topology_audit_bundle.v1"
 _DEFAULT_CONFIG = IdentityTopologyConfig()
 
 

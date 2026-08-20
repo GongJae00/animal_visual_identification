@@ -34,8 +34,8 @@ from identification.export.nose.signal.temporal import aggregate_nose_embeddings
 from identification.export.nose.data.embedding_views import student_masked_rgb
 from parsing.export.regions.native_yt import validate_manifest_bundle
 
-REPORT_SCHEMA = "cvi.yt_nose_architecture_evaluation.v2"
-REPORT_BUNDLE_SCHEMA = "cvi.yt_nose_architecture_evaluation_bundle.v2"
+REPORT_SCHEMA = "archive.nose.yt_nose_architecture_evaluation.v2"
+REPORT_BUNDLE_SCHEMA = "archive.nose.yt_nose_architecture_evaluation_bundle.v2"
 INTERPRETATION = (
     "WITHIN_VIDEO_TRACK_RESEARCH_ARCHITECTURE_DIAGNOSTIC_"
     "NOT_BIOLOGICAL_IDENTITY_VALIDATION_OR_FINAL_EVALUATION"

@@ -45,10 +45,10 @@ class RoleExposureDeclarationRecord:
     identity_token: str
     public_subject_token: str
     stage: ExposureStage
-    schema_version: str = "cvi.role_exposure_declaration_record.v1"
+    schema_version: str = "evaluation.role_exposure_declaration_record.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.role_exposure_declaration_record.v1":
+        if self.schema_version != "evaluation.role_exposure_declaration_record.v1":
             raise ValueError("unsupported role exposure declaration record schema")
         _require_entity_tokens(
             self.sample_token,
@@ -86,10 +86,10 @@ class RoleExposureDeclaration:
     revoked: bool
     records: tuple[RoleExposureDeclarationRecord, ...]
     interpretation: str = _DECLARATION_INTERPRETATION
-    schema_version: str = "cvi.role_exposure_declaration.v1"
+    schema_version: str = "evaluation.role_exposure_declaration.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.role_exposure_declaration.v1":
+        if self.schema_version != "evaluation.role_exposure_declaration.v1":
             raise ValueError("unsupported role exposure declaration schema")
         _require_sha256(self.source_artifact_sha256, "source_artifact_sha256")
         if not isinstance(self.kind, ExposureDeclarationKind):
@@ -159,10 +159,10 @@ class RoleExposureRecord:
     public_subject_token: str
     maximum_historical_stage: ExposureStage
     source_artifact_sha256s: tuple[str, ...]
-    schema_version: str = "cvi.role_exposure_record.v1"
+    schema_version: str = "evaluation.role_exposure_record.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.role_exposure_record.v1":
+        if self.schema_version != "evaluation.role_exposure_record.v1":
             raise ValueError("unsupported role exposure record schema")
         _require_entity_tokens(
             self.sample_token,
@@ -209,10 +209,10 @@ class RoleExposureLedger:
     declarations: tuple[RoleExposureDeclaration, ...]
     records: tuple[RoleExposureRecord, ...]
     interpretation: str = _LEDGER_INTERPRETATION
-    schema_version: str = "cvi.role_exposure_ledger.v1"
+    schema_version: str = "evaluation.role_exposure_ledger.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.role_exposure_ledger.v1":
+        if self.schema_version != "evaluation.role_exposure_ledger.v1":
             raise ValueError("unsupported role exposure ledger schema")
         if self.interpretation != _LEDGER_INTERPRETATION:
             raise ValueError("role exposure ledger interpretation differs")
@@ -292,10 +292,10 @@ class RoleExposureReceipt:
     declaration_count: int
     record_count: int
     interpretation: str = _RECEIPT_INTERPRETATION
-    schema_version: str = "cvi.role_exposure_receipt.v1"
+    schema_version: str = "evaluation.role_exposure_receipt.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.role_exposure_receipt.v1":
+        if self.schema_version != "evaluation.role_exposure_receipt.v1":
             raise ValueError("unsupported role exposure receipt schema")
         _require_sha256(self.ledger_sha256, "ledger_sha256")
         _require_sorted_sha256s(
@@ -367,10 +367,10 @@ class CandidateRoleRecord:
     identity_token: str
     public_subject_token: str
     assigned_stage: ExposureStage
-    schema_version: str = "cvi.candidate_role_record.v1"
+    schema_version: str = "evaluation.candidate_role_record.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.candidate_role_record.v1":
+        if self.schema_version != "evaluation.candidate_role_record.v1":
             raise ValueError("unsupported candidate role record schema")
         _require_entity_tokens(
             self.sample_token,
@@ -402,10 +402,10 @@ class CandidateRoleAssignment:
     source_artifact_sha256: str
     records: tuple[CandidateRoleRecord, ...]
     interpretation: str = _CANDIDATE_INTERPRETATION
-    schema_version: str = "cvi.candidate_role_assignment.v1"
+    schema_version: str = "evaluation.candidate_role_assignment.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.candidate_role_assignment.v1":
+        if self.schema_version != "evaluation.candidate_role_assignment.v1":
             raise ValueError("unsupported candidate role assignment schema")
         _require_sha256(self.source_artifact_sha256, "source_artifact_sha256")
         if self.interpretation != _CANDIDATE_INTERPRETATION:

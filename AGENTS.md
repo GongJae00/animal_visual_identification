@@ -22,7 +22,7 @@ Do not add performance, deployment, dataset-size, or model-license claims withou
 
 Do not change these:
 
-- Persisted `cvi.*` schema identifier strings (compatibility contracts, not Python package names)
+- Persisted schema identifier strings (`gallery.manifest.v5`, `search.config.v2`); they are compatibility contracts, not Python package names
 - Public field `dog_id` and env `CANINE_IDENTITY_DATA_DIR`
 - `IdentityEngine` + `Match` behavior described above
 - Root `LiteratureReview.md`
@@ -141,7 +141,7 @@ When touching a file: read implementation, tests, and persisted schemas first. C
 1. Enrollment identities are canonical UUIDv5 values, separate from display names, source labels, sample tokens, and track identifiers.
 2. Evaluation and training partitions must be identity-disjoint where the protocol requires it; random frame splitting is not an acceptable shortcut.
 3. Required evidence fails closed. Optional evidence is explicit in config v2 and remains auditable in gallery state.
-4. Model, preprocessing, gallery, source, and receipt schemas remain versioned and content-bound. Persisted `cvi.*` identifiers are compatibility contracts, not Python package names.
+4. Model, preprocessing, gallery, source, and receipt schemas remain versioned and content-bound. Persisted identifiers are capability-owned (`gallery.manifest.v5`, `search.config.v2`), not Python package names.
 5. External datasets, weights, caches, galleries, and experiment outputs stay outside Git. Acquisition is not admission: download and extraction fail closed, reject traversal and ambiguous archives, and never imply a dataset is admitted.
 6. CUDA behavior is optional and guarded. Portable CPU behavior must not import CUDA-only dependencies at package import time.
 7. Never commit secrets, private animal or owner data, credentials, or licensed artifacts.

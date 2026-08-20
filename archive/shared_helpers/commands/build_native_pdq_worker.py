@@ -24,7 +24,7 @@ def main() -> int:
         builder_tool_provenance=build_offline_tool_provenance(Path(__file__)),
     )
     print(json.dumps({
-        "schema_version": "cvi.pdq_native_build_tool_output.v4",
+        "schema_version": "pdq.native_build_tool_output.v4",
         "receipt_sha256": receipt.receipt_sha256,
         "binary_sha256": receipt.binary_sha256,
         "publication_strategy": strategy,

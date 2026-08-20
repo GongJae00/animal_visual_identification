@@ -43,10 +43,10 @@ from shared.foundation.protected_io import (
 from shared.foundation.provenance import content_sha256
 from parsing.export.regions.manifest import read_nose_region_manifest
 
-CHECKPOINT_SCHEMA = "cvi.nose_region_rgb_embedding_checkpoint.v1"
-LINEAGE_SCHEMA = "cvi.nose_region_rgb_embedding_artifact_bundle.v1"
-DEV_REPORT_SCHEMA = "cvi.nose_region_rgb_embedding_dev_selection.v1"
-MODEL_ID = "cvi.nose_region_rgb_embedding.dinov2-small-cls.v1"
+CHECKPOINT_SCHEMA = "identification.nose.nose_region_rgb_embedding_checkpoint.v1"
+LINEAGE_SCHEMA = "identification.nose.nose_region_rgb_embedding_artifact_bundle.v1"
+DEV_REPORT_SCHEMA = "identification.nose.nose_region_rgb_embedding_dev_selection.v1"
+MODEL_ID = "identification.nose.nose_region_rgb_embedding.dinov2-small-cls.v1"
 LICENSE_ID = "CC-BY-NC-4.0-derived"
 DEV_INTERPRETATION = (
     "IDENTITY_DISJOINT_SAME_SESSION_DEV_DIAGNOSTIC_NOT_CROSS_SESSION_"
@@ -895,7 +895,7 @@ def train_and_export(
         )
         processor = contract.preprocessor
         training_config = {
-            "schema_version": "cvi.nose_region_rgb_embedding_training_config.v1",
+            "schema_version": "identification.nose.nose_region_rgb_embedding_training_config.v1",
             "model": "DINOv2-small CLS L2-normalized 384D",
             "input": {
                 "shape": [3, IMAGE_SIZE, IMAGE_SIZE],
@@ -1656,7 +1656,7 @@ def _validate_checkpoint_training_config(config: object) -> None:
         raise ValueError("checkpoint training config keys differ")
     if (
         config["schema_version"]
-        != "cvi.nose_region_rgb_embedding_training_config.v1"
+        != "identification.nose.nose_region_rgb_embedding_training_config.v1"
         or config["model"] != "DINOv2-small CLS L2-normalized 384D"
         or config["selection_metric_order"] != list(SELECTION_METRICS)
         or config["selection_interpretation"] != DEV_INTERPRETATION

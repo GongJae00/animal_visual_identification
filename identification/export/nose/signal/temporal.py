@@ -21,7 +21,7 @@ class TemporalEmbeddingResult:
 
     def diagnostics(self) -> dict[str, Any]:
         return {
-            "schema_version": "cvi.nose_temporal_embedding.v1",
+            "schema_version": "identification.nose.nose_temporal_embedding.v1",
             "normalized_qualities": list(self.normalized_qualities),
             "consensus_cosines": list(self.consensus_cosines),
             "accepted_indices": list(self.accepted_indices),

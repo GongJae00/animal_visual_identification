@@ -78,8 +78,8 @@ else:  # pragma: no cover - exercised by source-checkout CLI invocation
     import evaluate_external_appearance as external
 
 
-PLAN_SCHEMA = "cvi.dogface_holdout_fusion_plan.v1"
-REPORT_SCHEMA = "cvi.dogface_holdout_fusion_evaluation.v1"
+PLAN_SCHEMA = "archive.face.dogface_holdout_fusion_plan.v1"
+REPORT_SCHEMA = "archive.face.dogface_holdout_fusion_evaluation.v1"
 _CALIBRATION_ROLE = "DOGFACE_DEVELOPMENT"
 _FINAL_ROLE = "DOGFACE_CALIBRATION"
 _EXPECTED_IDENTITIES = 125
@@ -783,7 +783,7 @@ def _load_models(
     )
     metadata = {
         "appearance_model_version": "Appearance-v3",
-        "appearance_checkpoint_schema": "cvi.training_checkpoint.v1",
+        "appearance_checkpoint_schema": "identification.training_checkpoint.v1",
         "appearance_checkpoint_sha256": args.appearance_checkpoint_sha256,
         "appearance_training_admission_receipt_sha256": appearance_provenance[
             "trained_checkpoint_training_admission_receipt_sha256"

@@ -29,7 +29,7 @@ _B2_SOURCE_CONTRACT_PATH = (
     / "torchvision-resnet18-imagenet1k-v1-336d36e8.json"
 )
 _B2_SOURCE_CONTRACT_SHA256 = (
-    "d6b36cb256ab2ecf1b16dd13ec8f929ad707c83439146e6313ee201faef04aa6"
+    "2dead90093be473357c2d28f3bda45a03279d83884a4d80ad905260734129fb6"
 )
 _INTAKE_BUNDLE_KEYS = {
     "schema_version",
@@ -189,7 +189,7 @@ def _load_b2_intake_bundle(
 
     bundle = read_strict_json_object(path)
     if set(bundle) != _INTAKE_BUNDLE_KEYS or bundle["schema_version"] != (
-        "cvi.pretrained_weight_intake_bundle.v1"
+        "shared.pretrained_weight_intake_bundle.v1"
     ):
         raise ValueError("B2 pretrained weight intake bundle schema differs")
     bundled_source = PretrainedWeightSourceContract.from_dict(bundle["source_contract"])

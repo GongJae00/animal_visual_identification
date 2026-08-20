@@ -232,12 +232,12 @@ class AP10KPoseMetricTests(unittest.TestCase):
         )
 
         self.assertEqual(
-            ap10k["schema_version"], "cvi.canid_localizer_benchmark_summary.v1"
+            ap10k["schema_version"], "parsing.canid_localizer_benchmark_summary.v1"
         )
         self.assertEqual(ap10k["detection"]["AP50"]["AP"], 1.0)
         self.assertEqual(
             ap10k["pose"]["schema_version"],
-            "cvi.ap10k_body17_pose_evaluation.v1",
+            "evaluation.ap10k_body17_pose_evaluation.v1",
         )
         self.assertIn("Custom metric", ap10k["pose"]["metric_note"])
         self.assertNotIn("pose", other)

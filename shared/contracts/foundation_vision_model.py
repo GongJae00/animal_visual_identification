@@ -14,8 +14,8 @@ from shared.foundation.protected_io import read_strict_json_document
 from shared.foundation.provenance import content_sha256
 from shared.foundation.retained_file import read_retained_regular_file
 
-BUNDLE_SCHEMA = "cvi.foundation_vision_model_bundle.v1"
-MANIFEST_SCHEMA = "cvi.foundation_vision_model_manifest.v1"
+BUNDLE_SCHEMA = "parsing.foundation_vision_model_bundle.v1"
+MANIFEST_SCHEMA = "parsing.foundation_vision_model_manifest.v1"
 INTERPRETATION = (
     "EXACT_LOCAL_MODEL_AND_EXECUTABLE_SOURCE_BINDING_NOT_PERFORMANCE_OR_SAFETY_ADMISSION"
 )

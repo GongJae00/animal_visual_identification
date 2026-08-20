@@ -700,7 +700,7 @@ def test_cache_exactness_gallery_reopen_private_public_and_tamper(
     )
     assert private["candidates"][0]["ranked_private_qkv_traces"]
     serialized_private = json.dumps(private, sort_keys=True)
-    assert private["schema_version"] == "cvi.full128_successor_private_evaluation.v2"
+    assert private["schema_version"] == "archive.full128.successor_private_evaluation.v2"
     assert '"embedding"' not in serialized_private
     assert all(
         binding["reopened_read_only"] and binding["exact_cosine"]

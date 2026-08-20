@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "cvi.evaluation.report.v3",
-  "title": "CVI Protected Evaluation Report v3",
+  "$id": "evaluation.report.v3",
+  "title": "Protected Evaluation Report v3",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -21,7 +21,7 @@
     "interpretation"
   ],
   "properties": {
-    "schema_version": {"const": "cvi.evaluation.report.v3"},
+    "schema_version": {"const": "evaluation.report.v3"},
     "protocol": {"const": "protected_retrieval"},
     "protocol_status": {"const": "RECEIPT_CHAIN_VERIFIED"},
     "receipt_chain_verified": {"const": true},

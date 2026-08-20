@@ -17,22 +17,22 @@ from enrollment.registry.generated_identity_registry import (
 from enrollment.registry.identity_registry import compute_registered_dog_id
 
 def test_generated_namespace_is_stable_and_separate() -> None:
-    assert str(GENERATED_DOG_NAMESPACE) == "6c7f371b-120e-530e-b814-a3f24a4d670a"
-    record = create_provisional_identity("cvi.track-cluster:v1", "video:1:cluster:2", 8)
+    assert str(GENERATED_DOG_NAMESPACE) == "f333e817-4dff-5897-8b8a-a84f937a6028"
+    record = create_provisional_identity("enrollment.track_cluster:v1", "video:1:cluster:2", 8)
     assert record.generated_identity_id != compute_registered_dog_id(
         "video:1:cluster:2"
     )
 
 def test_provisional_identity_is_deterministic_without_storing_source_label() -> None:
-    first = create_provisional_identity("cvi.track-cluster:v1", "private label", 4)
-    second = create_provisional_identity("cvi.track-cluster:v1", "private label", 4)
+    first = create_provisional_identity("enrollment.track_cluster:v1", "private label", 4)
+    second = create_provisional_identity("enrollment.track_cluster:v1", "private label", 4)
     assert first == second
     assert first.status is GeneratedIdentityStatus.PROVISIONAL
     assert first.source_cluster_token == compute_source_cluster_token("private label")
     assert "private label" not in str(first.to_dict())
 
 def test_transition_to_registered_requires_canonical_uuid5() -> None:
-    record = create_provisional_identity("cvi.track-cluster:v1", "cluster-a", 3)
+    record = create_provisional_identity("enrollment.track_cluster:v1", "cluster-a", 3)
     registered_id = compute_registered_dog_id("manual-enrollment:dog:1")
     merged = transition_generated_identity(
         record,
@@ -50,8 +50,8 @@ def test_transition_to_registered_requires_canonical_uuid5() -> None:
         )
 
 def test_superseded_target_must_exist_in_registry() -> None:
-    old = create_provisional_identity("cvi.track-cluster:v1", "cluster-old", 3)
-    current = create_provisional_identity("cvi.track-cluster:v1", "cluster-current", 7)
+    old = create_provisional_identity("enrollment.track_cluster:v1", "cluster-old", 3)
+    current = create_provisional_identity("enrollment.track_cluster:v1", "cluster-current", 7)
     superseded = transition_generated_identity(
         old,
         GeneratedIdentityStatus.SUPERSEDED,
@@ -63,8 +63,8 @@ def test_superseded_target_must_exist_in_registry() -> None:
         GeneratedIdentityRegistry(records=(superseded,))
 
 def test_registry_rejects_supersession_cycles() -> None:
-    first = create_provisional_identity("cvi.track-cluster:v1", "first", 2)
-    second = create_provisional_identity("cvi.track-cluster:v1", "second", 2)
+    first = create_provisional_identity("enrollment.track_cluster:v1", "first", 2)
+    second = create_provisional_identity("enrollment.track_cluster:v1", "second", 2)
     first_to_second = transition_generated_identity(
         first,
         GeneratedIdentityStatus.SUPERSEDED,
@@ -79,8 +79,8 @@ def test_registry_rejects_supersession_cycles() -> None:
         GeneratedIdentityRegistry(records=(first_to_second, second_to_first))
 
 def test_registry_rejects_generated_id_as_registered_target() -> None:
-    provisional = create_provisional_identity("cvi.track-cluster:v1", "first", 2)
-    other = create_provisional_identity("cvi.track-cluster:v1", "second", 2)
+    provisional = create_provisional_identity("enrollment.track_cluster:v1", "first", 2)
+    other = create_provisional_identity("enrollment.track_cluster:v1", "second", 2)
     confused = transition_generated_identity(
         provisional,
         GeneratedIdentityStatus.MERGED_TO_REGISTERED,
@@ -91,8 +91,8 @@ def test_registry_rejects_generated_id_as_registered_target() -> None:
 
 def test_registry_round_trip_is_strict_and_canonical() -> None:
     records = (
-        create_provisional_identity("cvi.track-cluster:v1", "cluster-a", 3),
-        create_provisional_identity("cvi.track-cluster:v1", "cluster-b", 5),
+        create_provisional_identity("enrollment.track_cluster:v1", "cluster-a", 3),
+        create_provisional_identity("enrollment.track_cluster:v1", "cluster-b", 5),
     )
     registry = GeneratedIdentityRegistry(records=records)
     payload = registry.to_dict()
@@ -113,6 +113,6 @@ def test_registry_round_trip_is_strict_and_canonical() -> None:
 
 def test_generated_identity_id_rejects_unbound_inputs() -> None:
     token = compute_source_cluster_token("cluster")
-    assert compute_generated_identity_id("cvi.track-cluster:v1", token)
+    assert compute_generated_identity_id("enrollment.track_cluster:v1", token)
     with pytest.raises(ValueError, match="generator_id"):
         compute_generated_identity_id("contains spaces", token)

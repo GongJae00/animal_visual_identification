@@ -42,7 +42,7 @@ from parsing.export.segmentation.animal_parsing import (
 )
 from parsing.export.segmentation.foreground_segmentation import ForegroundSegmentationRuntime
 
-REPORT_SCHEMA = "cvi.animal_parsing_panel.v1"
+REPORT_SCHEMA = "parsing.panel.v1"
 INTERPRETATION = (
     "UNASSISTED_MULTI_INSTANCE_VISIBLE_ANIMAL_CANDIDATES_NOT_HUMAN_MASK_VERIFIED"
 )
@@ -197,7 +197,7 @@ def run_panel(
                 parsed.instances, group.annotations, minimum_box_iou=0.5
             )
             token = hashlib.sha256(
-                b"cvi.animal_parsing_panel.source.v1\0"
+                b"parsing.panel.source.v1\0"
                 + group.source_group_id.encode("utf-8")
             ).hexdigest()[:20]
             overlay = _instance_overlay(source, parsed.instances)
@@ -389,7 +389,7 @@ def _select_ap10k_source_groups(
 def _group_order(group: AP10KSourceGroup) -> tuple[bytes, str]:
     return (
         hashlib.sha256(
-            b"cvi.animal_parsing_panel.ap10k.v1\0"
+            b"parsing.panel.ap10k.v1\0"
             + group.source_group_id.encode("utf-8")
         ).digest(),
         group.source_group_id,

@@ -19,7 +19,7 @@ from parsing.export.segmentation.animal_instance_segmentation import (
 )
 from parsing.export.segmentation.foreground_segmentation import ForegroundSegmentationRuntime
 
-PARSING_SCHEMA = "cvi.visible_animal_instance_parsing.v1"
+PARSING_SCHEMA = "parsing.visible_animal_instance_parsing.v1"
 PARSING_ONTOLOGY = "VISIBLE_ANIMAL_INSTANCE_APPEARANCE_V1"
 PARSING_ONTOLOGY_DESCRIPTION = (
     "Visible pixels assigned to one detected animal instance. Occluded pixels are not "
@@ -48,13 +48,13 @@ class AnimalParsingPolicy:
     minimum_ownership_retention: float = 0.5
     review_component_count: int = 4
     maximum_component_count: int = 16
-    schema_version: str = "cvi.animal_parsing_policy.v6"
+    schema_version: str = "parsing.policy.v6"
 
     def __post_init__(self) -> None:
         if self.schema_version not in {
-            "cvi.animal_parsing_policy.v4",
-            "cvi.animal_parsing_policy.v5",
-            "cvi.animal_parsing_policy.v6",
+            "parsing.policy.v4",
+            "parsing.policy.v5",
+            "parsing.policy.v6",
         }:
             raise ValueError("animal parsing policy schema differs")
         if (
@@ -64,7 +64,7 @@ class AnimalParsingPolicy:
             or len(self.class_names) != len(set(self.class_names))
         ):
             raise ValueError("animal parsing classes must be unique canonical names")
-        if self.schema_version == "cvi.animal_parsing_policy.v6" and self.class_names != (
+        if self.schema_version == "parsing.policy.v6" and self.class_names != (
             "dog",
         ):
             raise ValueError("animal parsing policy v6 must be dog-only")

@@ -33,7 +33,7 @@ from shared.foundation.provenance import content_sha256
 
 
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
-_PIXEL_HASH_DOMAIN = b"CVI_PIXEL_CANONICAL_RGB_V1\0"
+_PIXEL_HASH_DOMAIN = b"PIXEL_CANONICAL_RGB_V1\0"
 THRESHOLD_STATUS = "INITIALIZATION_ONLY_NOT_CALIBRATED"
 INPUT_INTERPRETATION = (
     "LABEL_BLIND_OPAQUE_CANDIDATES_AND_RECEIPT_BOUND_CANONICAL_RGB_ONLY"
@@ -98,10 +98,10 @@ class GeometricImageBinding:
     canonical_width: int
     canonical_height: int
     pixel_sha256: str
-    schema_version: str = "cvi.geometric_image_binding.v1"
+    schema_version: str = "data.geometric_image_binding.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.geometric_image_binding.v1":
+        if self.schema_version != "data.geometric_image_binding.v1":
             raise ValueError("unsupported geometric image binding schema")
         _digest(self.opaque_sample_id, "opaque sample ID")
         _digest(self.pixel_sha256, "pixel SHA-256")
@@ -124,10 +124,10 @@ class GeometricCandidatePair:
     candidate_channels: tuple[str, ...]
     candidate_evidence_tokens: tuple[str, ...]
     right_d4_hypotheses: tuple[str, ...] = ("ORIGINAL",)
-    schema_version: str = "cvi.geometric_candidate_pair.v1"
+    schema_version: str = "data.geometric_candidate_pair.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.geometric_candidate_pair.v1":
+        if self.schema_version != "data.geometric_candidate_pair.v1":
             raise ValueError("unsupported geometric candidate schema")
         _digest(self.left_opaque_sample_id, "left opaque sample ID")
         _digest(self.right_opaque_sample_id, "right opaque sample ID")
@@ -188,10 +188,10 @@ class GeometricVerifierRequest:
     images: tuple[GeometricImageBinding, ...]
     evidence_bindings: tuple[tuple[str, str], ...]
     interpretation: str = INPUT_INTERPRETATION
-    schema_version: str = "cvi.geometric_verifier_request.v1"
+    schema_version: str = "data.geometric_verifier_request.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.geometric_verifier_request.v1":
+        if self.schema_version != "data.geometric_verifier_request.v1":
             raise ValueError("unsupported geometric request schema")
         if self.interpretation != INPUT_INTERPRETATION:
             raise ValueError("geometric request interpretation differs")
@@ -324,10 +324,10 @@ class GeometricVerifierPolicy:
     confirmation_minimum_gradient_correlation: float = 0.65
     rejection_maximum_ssim: float = 0.36
     rejection_maximum_gradient_correlation: float = 0.28
-    schema_version: str = "cvi.geometric_verifier_policy.v1"
+    schema_version: str = "data.geometric_verifier_policy.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.geometric_verifier_policy.v1":
+        if self.schema_version != "data.geometric_verifier_policy.v1":
             raise ValueError("unsupported geometric verifier policy")
         if self.threshold_status != THRESHOLD_STATUS:
             raise ValueError("geometric thresholds are not marked initialization-only")
@@ -456,10 +456,10 @@ class GeometricPairResult:
     metrics: tuple[tuple[str, int | float | str], ...]
     candidate_evidence_tokens: tuple[str, ...]
     evidence_token: str
-    schema_version: str = "cvi.geometric_pair_result.v1"
+    schema_version: str = "data.geometric_pair_result.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.geometric_pair_result.v1":
+        if self.schema_version != "data.geometric_pair_result.v1":
             raise ValueError("unsupported geometric pair result schema")
         _digest(self.left_opaque_sample_id, "left result sample ID")
         _digest(self.right_opaque_sample_id, "right result sample ID")
@@ -562,10 +562,10 @@ class GeometricVerifierEvidence:
     counts: tuple[tuple[str, int], ...]
     evidence_bindings: tuple[tuple[str, str], ...]
     interpretation: str = OUTPUT_INTERPRETATION
-    schema_version: str = "cvi.geometric_verifier_evidence.v1"
+    schema_version: str = "data.geometric_verifier_evidence.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.geometric_verifier_evidence.v1":
+        if self.schema_version != "data.geometric_verifier_evidence.v1":
             raise ValueError("unsupported geometric evidence schema")
         _digest(self.request_sha256, "request SHA-256")
         if self.interpretation != OUTPUT_INTERPRETATION:
@@ -778,7 +778,7 @@ def publish_geometric_evidence(
         raise ValueError("tool provenance must be a nonempty object")
     provenance = dict(tool_provenance)
     bundle = {
-        "schema_version": "cvi.geometric_verifier_bundle.v1",
+        "schema_version": "data.geometric_verifier_bundle.v1",
         "evidence": evidence.to_dict(),
         "evidence_sha256": evidence.evidence_sha256,
         "tool_provenance": provenance,
@@ -804,7 +804,7 @@ def read_geometric_evidence_bundle(path: Path) -> GeometricVerifierEvidence:
         "bundle_sha256",
     }
     if set(bundle) != expected or bundle["schema_version"] != (
-        "cvi.geometric_verifier_bundle.v1"
+        "data.geometric_verifier_bundle.v1"
     ):
         raise ValueError("geometric verifier bundle fields differ")
     unsigned = dict(bundle)

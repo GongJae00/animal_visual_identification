@@ -169,7 +169,7 @@ class CropExportToolTests(unittest.TestCase):
             _write_json(
                 paths["sources"],
                 {
-                    "schema_version": "cvi.oracle_crop_sources.v1",
+                    "schema_version": "evaluation.oracle_crop_sources.v1",
                     "sources": [source.to_dict() for source in sources],
                 },
             )

@@ -26,9 +26,9 @@ from evaluation.splits.role_exposure import (
     verify_role_exposure_receipt,
 )
 
-HISTORY_SCHEMA = "cvi.face_exposure_history.v1"
-UNRESOLVED_SCHEMA = "cvi.face_exposure_unresolved_row.v1"
-BUNDLE_SCHEMA = "cvi.face_exposure_history_bundle.v1"
+HISTORY_SCHEMA = "evaluation.face_exposure_history.v1"
+UNRESOLVED_SCHEMA = "evaluation.face_exposure_unresolved_row.v1"
+BUNDLE_SCHEMA = "evaluation.face_exposure_history_bundle.v1"
 
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 _INTERPRETATION = (
@@ -58,7 +58,7 @@ def build_face_exposure_history(
     for artifact in full128_artifacts:
         source_hash = content_sha256(artifact)
         schema = artifact.get("schema_version")
-        if schema == "cvi.full128_variant_run.v1":
+        if schema == "archive.full128.variant_run.v1":
             records, failures = _project_full128_variant(
                 artifact, source_hash=source_hash, by_route=by_route
             )
@@ -410,7 +410,7 @@ def _project_masked_afn(
         "report_sha256",
     }
     if set(report) != expected or report["schema_version"] != (
-        "cvi.masked_afn_kfold_report.v1"
+        "archive.appearance_face_nose.masked_afn_kfold_report.v1"
     ):
         raise ValueError("Masked-AFN report schema or fields differ")
     body = {key: item for key, item in report.items() if key != "report_sha256"}
@@ -418,7 +418,7 @@ def _project_masked_afn(
         raise ValueError("Masked-AFN report digest differs")
     kfold_manifest_payload = kfold_payload
     if kfold_payload.get("schema_version") == (
-        "cvi.dataset_stratified_identity_kfold_manifest_bundle.v1"
+        "evaluation.dataset_stratified_identity_kfold_manifest_bundle.v1"
     ):
         if set(kfold_payload) != {"schema_version", "manifest_sha256", "manifest"}:
             raise ValueError("Masked-AFN K-fold bundle fields differ")

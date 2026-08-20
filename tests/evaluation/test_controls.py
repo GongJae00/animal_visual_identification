@@ -251,7 +251,7 @@ def policy() -> VisualControlPolicy:
             VisualControlRecipe(
                 kind,
                 content_sha256({"recipe": kind.value}),
-                "cvi-control-semantics-v1",
+                "evaluation.control_semantics.v1",
             )
             for kind in kinds
         ),

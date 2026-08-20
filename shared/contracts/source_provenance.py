@@ -28,7 +28,7 @@ def build_offline_tool_provenance(
     )
     runtime = _runtime_provenance()
     return {
-        "schema_version": "canine_identity.source_provenance.v3",
+        "schema_version": "source.provenance.v3",
         **{name: value for name, value in source.items() if name != "schema_version"},
         "runtime": runtime,
         "runtime_sha256": content_sha256(runtime),
@@ -55,7 +55,7 @@ def build_source_provenance(
     if not component or component != component.strip():
         raise ValueError("logical_component must be canonical non-empty text")
     return {
-        "schema_version": "canine_identity.source_closure.v3",
+        "schema_version": "source.closure.v3",
         "logical_component": component,
         "entrypoints": entrypoints,
         "code_source_manifest_sha256": content_sha256(rows),

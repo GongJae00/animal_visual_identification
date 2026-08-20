@@ -297,7 +297,7 @@ class PublicDatasetExtractionAdversarialTests(unittest.TestCase):
                 )
             self.assertFalse(output.exists())
             self.assertEqual(
-                list(output_parent.glob(".cvi-public-extract-*")),
+                list(output_parent.glob(".public-extract-*")),
                 [],
             )
 
@@ -437,7 +437,7 @@ class PublicDatasetExtractionAdversarialTests(unittest.TestCase):
                         output_directory=output_parent / output_name,
                     )
                 self.assertEqual(
-                    list(output_parent.glob(".cvi-public-extract-*")),
+                    list(output_parent.glob(".public-extract-*")),
                     [],
                 )
 

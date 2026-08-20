@@ -39,12 +39,12 @@ from archive.full128.methods.face_visible import (
     validate_score_blind_face_visible_panel,
 )
 
-CACHE_SCHEMA = "cvi.full128_successor_embedding_cache.v1"
-EVALUATION_PANEL_SCHEMA = "cvi.full128_successor_evaluation_panel.v1"
-AUTHORITATIVE_EVALUATION_PANEL_SCHEMA = "cvi.full128_successor_evaluation_panel.v2"
-PRIVATE_REPORT_SCHEMA = "cvi.full128_successor_private_evaluation.v2"
-LEGACY_PRIVATE_REPORT_SCHEMA = "cvi.full128_successor_private_evaluation.v1"
-TERMINAL_DECISION_SCHEMA = "cvi.full128_successor_multiseed_terminal_decision.v1"
+CACHE_SCHEMA = "archive.full128.successor_embedding_cache.v1"
+EVALUATION_PANEL_SCHEMA = "archive.full128.successor_evaluation_panel.v1"
+AUTHORITATIVE_EVALUATION_PANEL_SCHEMA = "archive.full128.successor_evaluation_panel.v2"
+PRIVATE_REPORT_SCHEMA = "archive.full128.successor_private_evaluation.v2"
+LEGACY_PRIVATE_REPORT_SCHEMA = "archive.full128.successor_private_evaluation.v1"
+TERMINAL_DECISION_SCHEMA = "archive.full128.successor_multiseed_terminal_decision.v1"
 EMBEDDING_DIMENSION = 128
 _VECTOR_BYTES = EMBEDDING_DIMENSION * 4
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
@@ -1611,7 +1611,7 @@ def _mapped_sha256(
 
 def _gallery_contract(descriptor: Mapping[str, Any]) -> dict[str, Any]:
     return {
-        "schema_version": "cvi.gallery_embedding_contract.v1",
+        "schema_version": "gallery.embedding_contract.v1",
         "kind": "FULL128_FACE_VISIBLE_SUCCESSOR",
         "dimension": EMBEDDING_DIMENSION,
         "dtype": "float32",

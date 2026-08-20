@@ -115,7 +115,7 @@ def _semantic_mask(
     }
     source = record["source"]
     receipt = {
-        "schema_version": "cvi.semantic_mask_review_receipt.v1",
+        "schema_version": "evaluation.semantic_mask_review_receipt.v1",
         "decision": "VERIFIED",
         "sample_id": record["sample_id"],
         "instance_id": record["instance_id"],

@@ -29,12 +29,12 @@ from parsing.export.segmentation.full_segment_contracts import (
     TerminalObservability,
 )
 
-FROZEN_PARSING_SCHEMA = "cvi.full_segment_frozen_animal_parsing.v1"
-FROZEN_PARSING_BINDING_SCHEMA = "cvi.full_segment_frozen_parsing_binding.v1"
-CACHE_SCHEMA = "cvi.full_segment_cache.v2"
-CACHE_BUNDLE_SCHEMA = "cvi.full_segment_cache_bundle.v2"
-LEGACY_CACHE_SCHEMA = "cvi.full_segment_cache.v1"
-LEGACY_CACHE_BUNDLE_SCHEMA = "cvi.full_segment_cache_bundle.v1"
+FROZEN_PARSING_SCHEMA = "parsing.full_segment_frozen_animal_parsing.v1"
+FROZEN_PARSING_BINDING_SCHEMA = "parsing.full_segment_frozen_parsing_binding.v1"
+CACHE_SCHEMA = "parsing.full_segment_cache.v2"
+CACHE_BUNDLE_SCHEMA = "parsing.full_segment_cache_bundle.v2"
+LEGACY_CACHE_SCHEMA = "parsing.full_segment_cache.v1"
+LEGACY_CACHE_BUNDLE_SCHEMA = "parsing.full_segment_cache_bundle.v1"
 
 _MAX_SOURCE_PIXELS = 33_554_432
 _MAX_INSTANCES = 32

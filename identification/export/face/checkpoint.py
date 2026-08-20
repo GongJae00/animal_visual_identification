@@ -10,7 +10,7 @@ from typing import Any
 from shared.contracts.source_provenance import build_source_provenance
 from shared.foundation.provenance import content_sha256
 
-CHECKPOINT_SCHEMA = "cvi.faceid_checkpoint.v2"
+CHECKPOINT_SCHEMA = "identification.face.faceid_checkpoint.v2"
 _LEGACY_SOURCE_SHA256 = {
     "regional_v4": (
         "fa27c749ab879ad55d73a4a01f4ec84694984ff630187bfb5927c743de1cfa76",
@@ -96,7 +96,7 @@ def build_faceid_contract(
 ) -> dict[str, Any]:
     if architecture in {"cls_residual_v5", "aligned_cls_residual_v5"}:
         return {
-            "schema_version": "cvi.faceid_architecture_input_contract.v2",
+            "schema_version": "identification.face.architecture_input_contract.v2",
             "architecture": architecture,
             "architecture_source_sha256": require_sha256(
                 architecture_source_sha256, "architecture_source_sha256"
@@ -130,7 +130,7 @@ def build_faceid_contract(
     if architecture != "regional_v4":
         raise ValueError("unsupported FaceID contract architecture")
     return {
-        "schema_version": "cvi.faceid_architecture_input_contract.v1",
+        "schema_version": "identification.face.architecture_input_contract.v1",
         "architecture_source_sha256": require_sha256(
             architecture_source_sha256, "architecture_source_sha256"
         ),
@@ -191,7 +191,7 @@ def build_faceid_source_contract(
     legacy_shape = build_faceid_contract("0" * 64, "0" * 64, architecture=architecture)
     legacy_shape.pop("architecture_source_sha256")
     legacy_shape.pop("input_source_sha256")
-    legacy_shape["schema_version"] = "canine_identity.faceid_architecture_input_contract.v3"
+    legacy_shape["schema_version"] = "identification.face.architecture_input_contract.v3"
     legacy_shape["source_provenance"] = source
     legacy_shape["source_provenance_sha256"] = content_sha256(source)
     return legacy_shape
@@ -206,7 +206,7 @@ def expected_faceid_contract_for_checkpoint(
     """Resolve current v3 or the concrete pre-move F4/F5 contract."""
 
     schema = checkpoint_contract.get("schema_version")
-    if schema == "canine_identity.faceid_architecture_input_contract.v3":
+    if schema == "identification.face.architecture_input_contract.v3":
         return build_faceid_source_contract(repository, architecture=architecture)
     architecture_sha256, input_sha256 = _LEGACY_SOURCE_SHA256[architecture]
     return build_faceid_contract(

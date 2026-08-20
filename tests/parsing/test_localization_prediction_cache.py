@@ -97,7 +97,7 @@ class PredictionCacheTests(unittest.TestCase):
             self.assertEqual(record["review_state"], "REVIEW")
             self.assertIsNone(record["face_roi_xyxy"])
             self.assertEqual(
-                manifest["schema_version"], "cvi.canid_roi_manifest_bundle.v2"
+                manifest["schema_version"], "parsing.canid_roi_manifest_bundle.v2"
             )
             self.assertEqual(
                 record["dog_crop_sha256"], _sha256(output / record["dog_crop_path"])

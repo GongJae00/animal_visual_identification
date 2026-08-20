@@ -83,7 +83,7 @@ runpy.run_path("data/download_models.py", run_name="__main__")
 
     assert completed.returncode == 2
     assert "MiewID export is disabled and unadmitted" in completed.stderr
-    assert "cvi.miewid_artifact_bundle.v1" in completed.stderr
+    assert "identification.miewid_artifact_bundle.v1" in completed.stderr
     assert "genuine passing parity receipt" in completed.stderr
     assert "blocked import reached" not in completed.stderr
     assert "Traceback" not in completed.stderr

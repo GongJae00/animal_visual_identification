@@ -20,8 +20,8 @@ import numpy as np
 
 from gallery.store.gallery import IdentityGallery
 
-_MANIFEST_SCHEMA = "cvi.gallery_manifest.v3"
-_TEMPLATE_SCHEMA = "cvi.gallery_template.v1"
+_MANIFEST_SCHEMA = "gallery.manifest.v3"
+_TEMPLATE_SCHEMA = "gallery.template.v1"
 _MAXIMUM_MANIFEST_BYTES = 2 * 1024 * 1024
 _MAXIMUM_SIDECAR_JSON_BYTES = 64 * 1024 * 1024
 _MAXIMUM_GALLERY_TEMPLATES = 1_000_000
@@ -193,7 +193,7 @@ def _validate_manifest(
         "template_count", "identity_count", "identity_aggregation", "files",
     }
     if set(manifest) != required or manifest["schema_version"] != _MANIFEST_SCHEMA:
-        raise ValueError("source gallery must be an exact cvi.gallery_manifest.v3")
+        raise ValueError("source gallery must be an exact gallery.manifest.v3")
     dimension = manifest["dimension"]
     if not _is_cardinality(dimension, minimum=1, maximum=_MAXIMUM_DIMENSION):
         raise ValueError("source v3 dimension is invalid")
@@ -304,7 +304,7 @@ def _validate_sidecars(
 def _migration_contract(
     contract: dict[str, Any], dimension: int
 ) -> tuple[dict[str, Any], tuple[tuple[str, int], ...]]:
-    if contract.get("schema_version") != "cvi.gallery_embedding_contract.v1":
+    if contract.get("schema_version") != "gallery.embedding_contract.v1":
         raise ValueError("source v3 embedding contract schema is invalid")
     if contract.get("dimension") != dimension:
         raise ValueError("source v3 embedding contract dimension is inconsistent")
@@ -505,7 +505,7 @@ def _sha256_stream(stream: BinaryIO) -> str:
 
 def _create_private_staging(parent_fd: int) -> str:
     for _ in range(100):
-        name = f".cvi-migrate-{secrets.token_hex(8)}"
+        name = f".migrate-{secrets.token_hex(8)}"
         try:
             os.mkdir(name, mode=0o700, dir_fd=parent_fd)
             return name

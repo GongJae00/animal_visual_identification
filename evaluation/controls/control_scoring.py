@@ -79,10 +79,10 @@ class ControlScoringInventory:
     base_artifact_verification_sha256: str
     control_transform_receipt_sha256: str
     entries: tuple[ScoringArtifactEntry, ...]
-    schema_version: str = "cvi.control_scoring_inventory.v1"
+    schema_version: str = "evaluation.control_scoring_inventory.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.control_scoring_inventory.v1":
+        if self.schema_version != "evaluation.control_scoring_inventory.v1":
             raise ValueError("unsupported control scoring inventory schema")
         for name in (
             "plan_sha256",
@@ -166,7 +166,7 @@ def control_scoring_requests_from_payload(
         {"schema_version", "plan_sha256", "requests"},
         "control scoring requests",
     )
-    if payload["schema_version"] != "cvi.visual_control_scoring_requests.v1":
+    if payload["schema_version"] != "evaluation.visual_control_scoring_requests.v1":
         raise ValueError("unsupported control scoring request schema")
     _validate_sha256(payload["plan_sha256"], "plan_sha256")
     requests = payload["requests"]
@@ -195,7 +195,7 @@ def build_control_scoring_inventory(
         raise ValueError("transform receipt belongs to another control plan")
     scoring_requests_sha256 = content_sha256(
         {
-            "schema_version": "cvi.visual_control_scoring_requests.v1",
+            "schema_version": "evaluation.visual_control_scoring_requests.v1",
             "plan_sha256": plan_sha256,
             "requests": [request.to_dict() for request in requests],
         }
@@ -370,10 +370,10 @@ class EmbeddingCacheManifest:
     bindings: tuple[ArtifactCacheBinding, ...]
     entries: tuple[EmbeddingCacheEntry, ...]
     vector_format: str = "float32_le"
-    schema_version: str = "cvi.embedding_cache_manifest.v1"
+    schema_version: str = "operations.embedding_cache_manifest.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.embedding_cache_manifest.v1":
+        if self.schema_version != "operations.embedding_cache_manifest.v1":
             raise ValueError("unsupported embedding cache manifest schema")
         for name in (
             "scoring_inventory_sha256",
@@ -548,10 +548,10 @@ class EmbeddingCachePolicy:
     maximum_total_cache_bytes: int = 8_589_934_592
     scan_chunk_floats: int = 4_096
     maximum_normalization_tolerance: float = 0.001
-    schema_version: str = "cvi.embedding_cache_policy.v1"
+    schema_version: str = "operations.embedding_cache_policy.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.embedding_cache_policy.v1":
+        if self.schema_version != "operations.embedding_cache_policy.v1":
             raise ValueError("unsupported embedding cache policy schema")
         for name in (
             "maximum_artifacts",
@@ -612,10 +612,10 @@ class EmbeddingCacheVerification:
     verified_bytes: int
     verified_vectors: int
     maximum_observed_norm_error: float
-    schema_version: str = "cvi.embedding_cache_verification.v1"
+    schema_version: str = "operations.embedding_cache_verification.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.embedding_cache_verification.v1":
+        if self.schema_version != "operations.embedding_cache_verification.v1":
             raise ValueError(
                 "unsupported embedding cache verification schema"
             )
@@ -769,10 +769,10 @@ class ControlScorePolicy:
     dot_chunk_floats: int = 4_096
     metric: str = "cosine_l2_dot"
     accumulation: str = "float64_chunk_fsum_neumaier"
-    schema_version: str = "cvi.control_score_policy.v1"
+    schema_version: str = "evaluation.control_score_policy.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.control_score_policy.v1":
+        if self.schema_version != "evaluation.control_score_policy.v1":
             raise ValueError("unsupported control score policy schema")
         for name in (
             "maximum_requests",
@@ -931,12 +931,12 @@ class ControlBlindScoreReceipt:
     score_policy_sha256: str
     scores: tuple[ControlBlindScore, ...]
     cost: ControlScoreCost
-    scorer_version: str = "cvi.cpu_cosine_reference.v1"
+    scorer_version: str = "search.cpu_cosine_reference.v1"
     device: str = "cpu"
-    schema_version: str = "cvi.control_blind_score_receipt.v1"
+    schema_version: str = "evaluation.control_blind_score_receipt.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.control_blind_score_receipt.v1":
+        if self.schema_version != "evaluation.control_blind_score_receipt.v1":
             raise ValueError("unsupported control score receipt schema")
         for name in (
             "plan_sha256",
@@ -948,7 +948,7 @@ class ControlBlindScoreReceipt:
             "score_policy_sha256",
         ):
             _validate_sha256(getattr(self, name), name)
-        if self.scorer_version != "cvi.cpu_cosine_reference.v1":
+        if self.scorer_version != "search.cpu_cosine_reference.v1":
             raise ValueError("unsupported control reference scorer")
         if self.device != "cpu":
             raise ValueError("reference control scorer device is fixed to cpu")
@@ -1051,7 +1051,7 @@ def score_control_requests_from_cache(
     _validate_sha256(gallery_sha256, "gallery_sha256")
     expected_request_hash = content_sha256(
         {
-            "schema_version": "cvi.visual_control_scoring_requests.v1",
+            "schema_version": "evaluation.visual_control_scoring_requests.v1",
             "plan_sha256": inventory.plan_sha256,
             "requests": [request.to_dict() for request in requests],
         }

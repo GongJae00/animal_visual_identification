@@ -34,7 +34,7 @@ from parsing.export.crops.full_segment_crop import (
     materialize_native_full_crop,
 )
 
-REQUEST_SCHEMA = "cvi.full_segment_materialization_request.v1"
+REQUEST_SCHEMA = "parsing.full_segment_materialization_request.v1"
 _REQUEST_FIELDS = {
     "schema_version",
     "source_id",

@@ -37,10 +37,10 @@ class OnnxPreprocessingContract:
     scale: float
     mean: tuple[float, float, float]
     std: tuple[float, float, float]
-    schema_version: str = "cvi.onnx_preprocessing_contract.v1"
+    schema_version: str = "shared.onnx_preprocessing_contract.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.onnx_preprocessing_contract.v1":
+        if self.schema_version != "shared.onnx_preprocessing_contract.v1":
             raise OnnxEvidenceContractError(
                 "unsupported ONNX preprocessing contract schema"
             )
@@ -137,10 +137,10 @@ class OnnxEvidenceModelManifest:
     model_kind: str = "generic_onnx"
     usage_lane: OnnxModelUsageLane = OnnxModelUsageLane.RESEARCH_ONLY
     license_state: OnnxModelLicenseState = OnnxModelLicenseState.UNVERIFIED
-    schema_version: str = "cvi.onnx_evidence_model_manifest.v1"
+    schema_version: str = "identification.onnx_evidence_model_manifest.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.onnx_evidence_model_manifest.v1":
+        if self.schema_version != "identification.onnx_evidence_model_manifest.v1":
             raise OnnxEvidenceContractError(
                 "unsupported ONNX evidence model manifest schema"
             )

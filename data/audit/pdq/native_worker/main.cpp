@@ -1,4 +1,4 @@
-// Portable, source-only CVI boundary around Meta ThreatExchange PDQ.
+// Portable, source-only boundary around Meta ThreatExchange PDQ.
 // The worker accepts canonical interleaved RGB bytes; image decoding stays in Python.
 
 #include <pdq/cpp/hashing/pdqhashing.h>
@@ -15,9 +15,9 @@
 namespace {
 
 constexpr std::array<std::uint8_t, 8> kRequestMagic = {
-    'C', 'V', 'I', 'P', 'D', 'Q', '0', '2'};
+    'P', 'D', 'Q', 'R', 'E', 'Q', '0', '2'};
 constexpr std::array<std::uint8_t, 8> kResponseMagic = {
-    'C', 'V', 'I', 'P', 'D', 'Q', 'R', '2'};
+    'P', 'D', 'Q', 'R', 'S', 'P', '0', '2'};
 constexpr std::uint32_t kProtocolVersion = 2;
 constexpr std::uint32_t kMaximumDimension = 16384;
 constexpr std::uint64_t kMaximumPixels = 33554432;
@@ -123,7 +123,7 @@ void store_u64_le(std::uint8_t* bytes, std::uint64_t value) {
 }
 
 int fail(const char* message) {
-  std::fprintf(stderr, "CVI PDQ worker: %s\n", message);
+  std::fprintf(stderr, "PDQ worker: %s\n", message);
   return 2;
 }
 

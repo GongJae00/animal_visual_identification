@@ -813,7 +813,7 @@ class TrainingArtifactTests(unittest.TestCase):
         with tempfile.NamedTemporaryFile(suffix=".pt") as file:
             torch.save(payload, file.name)
             loaded = torch.load(file.name, weights_only=True)
-        self.assertEqual(loaded["schema_version"], "cvi.training_checkpoint.v1")
+        self.assertEqual(loaded["schema_version"], "identification.training_checkpoint.v1")
         self.assertEqual(loaded["architecture"]["model_name"], "test-vector")
         self.assertEqual(loaded["label_to_index"], {"dog-a": 0, "dog-b": 1})
 
@@ -821,7 +821,7 @@ class TrainingArtifactTests(unittest.TestCase):
         cases = (
             ({}, "unsupported or legacy training checkpoint"),
             (
-                {"schema_version": "cvi.training_checkpoint.v1"},
+                {"schema_version": "identification.training_checkpoint.v1"},
                 "checkpoint is missing its training configuration",
             ),
         )
@@ -835,14 +835,14 @@ class TrainingArtifactTests(unittest.TestCase):
         from identification.training.appearance import onnx_export as export_onnx
 
         export_payload = {
-            "schema_version": "cvi.training_checkpoint.v1",
+            "schema_version": "identification.training_checkpoint.v1",
             "config": TrainConfig(model_name="unknown").to_dict(),
         }
         with self.assertRaisesRegex(RuntimeError, "unsupported checkpoint backbone"):
             export_onnx.reconstruct_model(export_payload)
 
         roi_payload = {
-            "schema_version": "cvi.training_checkpoint.v1",
+            "schema_version": "identification.training_checkpoint.v1",
             "config": TrainConfig(model_name="convnext-base").to_dict(),
         }
         with self.assertRaisesRegex(

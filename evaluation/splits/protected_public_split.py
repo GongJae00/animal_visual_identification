@@ -69,10 +69,10 @@ class PublicSplitSample:
     paired_source_sample_id: str | None
     in_no_mono_subset: bool | None
     region: str
-    schema_version: str = "cvi.public_split_sample.v1"
+    schema_version: str = "evaluation.public_split_sample.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.public_split_sample.v1":
+        if self.schema_version != "evaluation.public_split_sample.v1":
             raise ValueError("unsupported public split sample schema")
         for name in ("sample_token", "identity_token", "sequence_token"):
             _sha256(getattr(self, name), name)
@@ -114,10 +114,10 @@ class PublicSplitSourceBundle:
     evidence_bindings: tuple[tuple[str, str], ...]
     samples: tuple[PublicSplitSample, ...]
     interpretation: str = "SEMANTIC_LABEL_BINDING_ONLY_NOT_MODEL_INPUT"
-    schema_version: str = "cvi.public_split_source_bundle.v1"
+    schema_version: str = "evaluation.public_split_source_bundle.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.public_split_source_bundle.v1":
+        if self.schema_version != "evaluation.public_split_source_bundle.v1":
             raise ValueError("unsupported public split source bundle schema")
         if self.interpretation != "SEMANTIC_LABEL_BINDING_ONLY_NOT_MODEL_INPUT":
             raise ValueError("public split source interpretation differs")
@@ -206,10 +206,10 @@ class PublicSplitEvidenceEdge:
     right_sample_token: str
     relation: EvidenceRelation
     evidence_token: str
-    schema_version: str = "cvi.public_split_evidence_edge.v1"
+    schema_version: str = "evaluation.public_split_evidence_edge.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.public_split_evidence_edge.v1":
+        if self.schema_version != "evaluation.public_split_evidence_edge.v1":
             raise ValueError("unsupported split evidence edge schema")
         for name in ("left_sample_token", "right_sample_token", "evidence_token"):
             _sha256(getattr(self, name), name)
@@ -240,10 +240,10 @@ class FrozenPublicSplitEvidenceGraph:
     evidence_bindings: tuple[tuple[str, str], ...]
     edges: tuple[PublicSplitEvidenceEdge, ...]
     adjudication_state: str = "FROZEN_DUPLICATE_REVIEW_DEPENDENCY_GRAPH"
-    schema_version: str = "cvi.frozen_public_split_evidence_graph.v1"
+    schema_version: str = "evaluation.frozen_public_split_evidence_graph.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.frozen_public_split_evidence_graph.v1":
+        if self.schema_version != "evaluation.frozen_public_split_evidence_graph.v1":
             raise ValueError("unsupported frozen split evidence graph schema")
         if self.adjudication_state != "FROZEN_DUPLICATE_REVIEW_DEPENDENCY_GRAPH":
             raise ValueError("split evidence graph is not frozen")
@@ -349,10 +349,10 @@ class ProtectedPublicSplitPolicy:
     threshold_selection: str = "YT_CALIBRATION_ONLY_EXACT_ORDER_STATISTIC"
     development_reuse_policy: str = "PROHIBITED_AFTER_MARGIN_SELECTION"
     bootstrap_draws: int = 10_000
-    schema_version: str = "cvi.protected_public_split_policy.v3"
+    schema_version: str = "evaluation.protected_public_split_policy.v3"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.protected_public_split_policy.v3":
+        if self.schema_version != "evaluation.protected_public_split_policy.v3":
             raise ValueError("unsupported protected public split policy")
         expected = ProtectedPublicSplitPolicy.__dataclass_fields__
         for name in expected:
@@ -532,7 +532,7 @@ def validate_protected_split_output_paths(paths: tuple[Path, ...]) -> None:
 
 def seed_commitment(secret: bytes) -> str:
     _secret(secret)
-    return hashlib.sha256(b"CVI_PROTECTED_SPLIT_SEED_V1\0" + secret).hexdigest()
+    return hashlib.sha256(b"PROTECTED_SPLIT_SEED_V1\0" + secret).hexdigest()
 
 
 def create_split_secret(path: Path) -> bytes:
@@ -733,7 +733,7 @@ def build_protected_public_split(
 
     cohort_summary = _protocol_cohort_summary(assignment_records)
     assignment = {
-        "schema_version": "cvi.protected_public_split_assignment.v1",
+        "schema_version": "evaluation.protected_public_split_assignment.v1",
         "status": status,
         "seed_commitment": seed_commitment(secret),
         "evidence_root_sha256": evidence_root,
@@ -748,7 +748,7 @@ def build_protected_public_split(
     }
     _assert_assignment_is_label_free(assignment)
     evaluator_binding = {
-        "schema_version": "cvi.protected_public_split_evaluator_binding.v1",
+        "schema_version": "evaluation.protected_public_split_evaluator_binding.v1",
         "status": status,
         "seed_commitment": seed_commitment(secret),
         "evidence_root_sha256": evidence_root,
@@ -764,7 +764,7 @@ def build_protected_public_split(
             ledger=role_exposure_ledger,
         )
     receipt_payload = {
-        "schema_version": "cvi.protected_public_split_receipt.v3",
+        "schema_version": "evaluation.protected_public_split_receipt.v3",
         "status": status,
         "seed_commitment": seed_commitment(secret),
         "evidence_root_sha256": evidence_root,
@@ -889,7 +889,7 @@ def _close_components(
     by_sample: dict[str, str] = {}
     for members in grouped.values():
         ordered = tuple(sorted(members, key=lambda item: item.sample_token))
-        token = content_sha256({"domain": "CVI_PUBLIC_SPLIT_COMPONENT_V1", "members": [item.sample_token for item in ordered]})
+        token = content_sha256({"domain": "PUBLIC_SPLIT_COMPONENT_V1", "members": [item.sample_token for item in ordered]})
         components.append(_Component(token, ordered))
         by_sample.update((item.sample_token, token) for item in ordered)
     components.sort(key=lambda item: item.token)
@@ -927,7 +927,7 @@ def _build_allocation_blocks(
             (
                 _AllocationBlock(
                     token=content_sha256({
-                        "domain": "CVI_PUBLIC_SPLIT_ALLOCATION_BLOCK_V1",
+                        "domain": "PUBLIC_SPLIT_ALLOCATION_BLOCK_V1",
                         "identities": sorted(grouped_identities[root]),
                         "components": sorted(component_tokens_by_root[root]),
                     }),
@@ -2360,7 +2360,7 @@ def _add_use(
 ) -> None:
     event = hmac.new(
         key,
-        b"CVI_EVENT_V2\0"
+        b"EVENT_V2\0"
         + protocol.encode()
         + b"\0"
         + episode.encode()
@@ -2382,7 +2382,7 @@ def _add_use(
         query_scope = primary_query_scope or episode
         primary_query_event = hmac.new(
             key,
-            b"CVI_PRIMARY_QUERY_EVENT_V1\0"
+            b"PRIMARY_QUERY_EVENT_V1\0"
             + protocol.encode()
             + b"\0"
             + query_scope.encode()
@@ -2396,7 +2396,7 @@ def _add_use(
         ).hexdigest()
         bootstrap_cluster = hmac.new(
             key,
-            b"CVI_BOOTSTRAP_IDENTITY_CLUSTER_V1\0"
+            b"BOOTSTRAP_IDENTITY_CLUSTER_V1\0"
             + protocol.encode()
             + b"\0"
             + identity_token.encode(),
@@ -2442,13 +2442,13 @@ def _rank_tokens(tokens: Iterable[str], key: bytes, domain: bytes) -> list[str]:
 
 
 def _hmac_digest(key: bytes, domain: bytes, token: str) -> bytes:
-    return hmac.new(key, b"CVI_RANK_V1\0" + domain + b"\0" + token.encode("ascii"), hashlib.sha256).digest()
+    return hmac.new(key, b"RANK_V1\0" + domain + b"\0" + token.encode("ascii"), hashlib.sha256).digest()
 
 
 def _derive_keys(secret: bytes, evidence_root: str) -> dict[str, bytes]:
-    master = hmac.new(secret, b"CVI_SPLIT_MASTER_V1\0" + bytes.fromhex(evidence_root), hashlib.sha256).digest()
+    master = hmac.new(secret, b"SPLIT_MASTER_V1\0" + bytes.fromhex(evidence_root), hashlib.sha256).digest()
     return {
-        domain: hmac.new(master, b"CVI_SPLIT_KEY_V1\0" + domain.encode("ascii"), hashlib.sha256).digest()
+        domain: hmac.new(master, b"SPLIT_KEY_V1\0" + domain.encode("ascii"), hashlib.sha256).digest()
         for domain in (
             "identity_roles",
             "development_episodes",

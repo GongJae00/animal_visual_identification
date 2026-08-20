@@ -436,7 +436,12 @@ def test_panel_window_and_partition_tampering_fail_closed(
         build_n4_report(panel, topology, bootstrap_resamples=2)
 
     panel = copy.deepcopy(source_panel)
-    panel["panel"]["records"][0]["partition"] = "EVAL"
+    target = next(
+        record
+        for record in panel["panel"]["records"]
+        if record["partition"] == "DEV"
+    )
+    target["partition"] = "EVAL"
     panel["panel_sha256"] = content_sha256(panel["panel"])
     with pytest.raises(ValueError, match="partition"):
         build_n4_report(panel, topology, bootstrap_resamples=2)

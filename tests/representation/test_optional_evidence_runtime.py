@@ -63,7 +63,7 @@ class _ConfiguredNoseEvidence(AbstractEvidencer):
 
 def _contract() -> dict:
     return {
-        "schema_version": "cvi.gallery_embedding_contract.v1",
+        "schema_version": "gallery.embedding_contract.v1",
         "dimension": 4,
         "channels": [
             {"name": "required", "dimension": 2, "optional": False},
@@ -274,7 +274,7 @@ class ExactOptionalGalleryTests(unittest.TestCase):
         manifest = json.loads(
             (self.root / "gallery_manifest.json").read_text(encoding="utf-8")
         )
-        self.assertEqual(manifest["schema_version"], "cvi.gallery_manifest.v4")
+        self.assertEqual(manifest["schema_version"], "gallery.manifest.v4")
         self.assertTrue(manifest["scorer"]["exact"])
         availability_path = self.root / manifest["files"]["availability"]["name"]
         availability = json.loads(availability_path.read_text(encoding="utf-8"))
@@ -419,7 +419,7 @@ class ConfigAndMigrationTests(unittest.TestCase):
             IdentityEngine, "_build_evidence", return_value=fixed
         ):
             config = {
-                "schema_version": "cvi.retrieval_config.v2",
+                "schema_version": "search.config.v2",
                 "mode": "closed_set_retrieval",
                 "index_dir": directory,
                 "channels": {"required": {}, "optional": {}},
@@ -452,7 +452,7 @@ class ConfigAndMigrationTests(unittest.TestCase):
             IdentityEngine, "_build_evidence", return_value=fixed
         ):
             runtime = IdentityEngine({
-                "schema_version": "cvi.retrieval_config.v1",
+                "schema_version": "search.config.v1",
                 "mode": "closed_set_retrieval",
                 "index_dir": directory,
                 "channels": {"required": {}},
@@ -540,7 +540,7 @@ class ConfigAndMigrationTests(unittest.TestCase):
             faiss.write_index(index, str(index_path))
             content_hash = "a" * 64
             template_id = hashlib.sha256(
-                f"cvi.gallery_template.v1\0{content_hash}".encode("ascii")
+                f"gallery.template.v1\0{content_hash}".encode("ascii")
             ).hexdigest()
             registered_dog_id = compute_registered_dog_id(
                 "fixture:v1:migration:dog"
@@ -550,7 +550,7 @@ class ConfigAndMigrationTests(unittest.TestCase):
                 "template_id": template_id,
                 "content_sha256": content_hash,
                 "idempotency_key": "request",
-                "template_schema": "cvi.gallery_template.v1",
+                "template_schema": "gallery.template.v1",
                 "metadata": {},
             }}), encoding="utf-8")
             breeds_path.write_text(json.dumps({"0": "unknown"}), encoding="utf-8")
@@ -564,10 +564,10 @@ class ConfigAndMigrationTests(unittest.TestCase):
                     "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
                 }
             (source / "gallery_manifest.json").write_text(json.dumps({
-                "schema_version": "cvi.gallery_manifest.v3",
+                "schema_version": "gallery.manifest.v3",
                 "dimension": 2,
                 "embedding_contract": {
-                    "schema_version": "cvi.gallery_embedding_contract.v1",
+                    "schema_version": "gallery.embedding_contract.v1",
                     "kind": "opaque",
                     "dimension": 2,
                 },

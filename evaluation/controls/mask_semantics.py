@@ -31,10 +31,10 @@ class MaskSemanticPolicy:
     raw_scan_chunk_bytes: int = 1_048_576
     timeout_seconds_per_mask: float = 30.0
     maximum_accessory_outside_dog_fraction: float = 0.0
-    schema_version: str = "cvi.mask_semantic_policy.v1"
+    schema_version: str = "evaluation.mask_semantic_policy.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.mask_semantic_policy.v1":
+        if self.schema_version != "evaluation.mask_semantic_policy.v1":
             raise ValueError("unsupported mask semantic policy schema")
         for name in ("maximum_mask_pixels", "raw_scan_chunk_bytes"):
             _require_positive_int(getattr(self, name), name)
@@ -271,10 +271,10 @@ class MaskSemanticVerification:
     policy_sha256: str
     ffmpeg_version: str
     entries: tuple[MaskEntrySemanticReceipt, ...]
-    schema_version: str = "cvi.mask_semantic_verification.v1"
+    schema_version: str = "evaluation.mask_semantic_verification.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.mask_semantic_verification.v1":
+        if self.schema_version != "evaluation.mask_semantic_verification.v1":
             raise ValueError(
                 "unsupported mask semantic verification schema"
             )
@@ -425,7 +425,7 @@ def verify_mask_pixel_semantics(
         timeout=10.0,
     ).stdout.splitlines()[0]
     receipts: list[MaskEntrySemanticReceipt] = []
-    with TemporaryDirectory(prefix=".cvi-mask-semantic-") as temporary:
+    with TemporaryDirectory(prefix=".mask-semantic-") as temporary:
         temporary_root = Path(temporary)
         for entry in mask_manifest.entries:
             verified = tuple(

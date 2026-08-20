@@ -50,7 +50,7 @@ def main() -> None:
     variants = receipt.variants
     tool_provenance = build_offline_tool_provenance(Path(__file__))
     bundle = {
-        "schema_version": "cvi.public_canine_semantic_bundle.v1",
+        "schema_version": "data.public_canine_semantic_bundle.v1",
         "receipt_sha256": receipt.receipt_sha256,
         "receipt": receipt.to_dict(),
         "tool_provenance": tool_provenance,

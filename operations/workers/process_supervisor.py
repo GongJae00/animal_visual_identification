@@ -32,10 +32,10 @@ class ProcessSupervisorPolicy:
     poll_interval_seconds: float
     maximum_stdout_bytes: int
     maximum_stderr_bytes: int
-    schema_version: str = "cvi.process_supervisor_policy.v1"
+    schema_version: str = "operations.process_supervisor_policy.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.process_supervisor_policy.v1":
+        if self.schema_version != "operations.process_supervisor_policy.v1":
             raise ValueError("unsupported process supervisor policy schema")
         for name in (
             "timeout_seconds",
@@ -109,10 +109,10 @@ class SupervisedProcessResult:
     termination_signal_sent: bool
     kill_signal_sent: bool
     fresh_process: bool = True
-    schema_version: str = "cvi.supervised_process_result.v1"
+    schema_version: str = "operations.supervised_process_result.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.supervised_process_result.v1":
+        if self.schema_version != "operations.supervised_process_result.v1":
             raise ValueError("unsupported supervised process result schema")
         if not self.command or any(not item for item in self.command):
             raise ValueError("supervised command must be non-empty")
@@ -264,7 +264,7 @@ def run_supervised_process(
                 output_limit_exceeded,
                 capture_errors,
             ),
-            name="cvi-supervised-stdout",
+            name="supervised-stdout",
             daemon=True,
         ),
         threading.Thread(
@@ -276,7 +276,7 @@ def run_supervised_process(
                 output_limit_exceeded,
                 capture_errors,
             ),
-            name="cvi-supervised-stderr",
+            name="supervised-stderr",
             daemon=True,
         ),
     )

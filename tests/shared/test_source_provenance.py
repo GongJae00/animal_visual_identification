@@ -20,7 +20,7 @@ def test_v2_source_closure_is_recursive_logical_and_deterministic() -> None:
     second = build_offline_tool_provenance(tool)
 
     assert first == second
-    assert first["schema_version"] == "canine_identity.source_provenance.v3"
+    assert first["schema_version"] == "source.provenance.v3"
     assert first["entrypoints"] == ["evaluation.splits.registry_cli"]
     paths = [row["relative_path"] for row in first["code_source_files"]]
     assert "enrollment/registry/identity_registry.py" in paths
@@ -51,7 +51,7 @@ def test_v3_source_closure_binds_parent_package_initializers(tmp_path: Path) -> 
 def test_face_v3_uses_source_closure_and_legacy_hashes_are_narrow() -> None:
     current = build_faceid_source_contract(ROOT, architecture="cls_residual_v5")
     assert current["schema_version"] == (
-        "canine_identity.faceid_architecture_input_contract.v3"
+        "identification.face.architecture_input_contract.v3"
     )
     assert current["source_provenance"] == build_source_provenance(
         (
@@ -62,7 +62,7 @@ def test_face_v3_uses_source_closure_and_legacy_hashes_are_narrow() -> None:
     )
 
     legacy = expected_faceid_contract_for_checkpoint(
-        {"schema_version": "cvi.faceid_architecture_input_contract.v2"},
+        {"schema_version": "identification.face.architecture_input_contract.v2"},
         ROOT,
         architecture="cls_residual_v5",
     )

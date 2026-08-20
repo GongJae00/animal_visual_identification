@@ -59,7 +59,7 @@ def main() -> None:
         discovery.runtime_library_policy,
         manifests,
     )
-    with TemporaryDirectory(prefix="cvi-test-strict-runtime-") as temporary:
+    with TemporaryDirectory(prefix="test-strict-runtime-") as temporary:
         strict_path = Path(temporary) / "strict-policy.json"
         write_private_json_bundle(((strict_path, strict_policy.to_dict()),))
         strict = benchmark_onnx_inference(
@@ -73,7 +73,7 @@ def main() -> None:
                 args.receipt,
                 {
                     "schema_version": (
-                        "cvi.onnx_inference_benchmark_receipt.v3"
+                        "operations.onnx_inference_benchmark_receipt.v3"
                     ),
                     "summary_sha256": strict.summary_sha256,
                     "summary": strict.to_dict(),

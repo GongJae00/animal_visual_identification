@@ -75,7 +75,7 @@ def main() -> None:
     )
     tool_provenance = build_offline_tool_provenance(Path(__file__))
     bundle = {
-        "schema_version": "cvi.image_content_audit_bundle.v1",
+        "schema_version": "data.image_content_audit_bundle.v1",
         "semantic_receipt_sha256": derived_semantic.receipt_sha256,
         "policy": policy.to_dict(),
         "policy_sha256": policy.policy_sha256,
@@ -110,7 +110,7 @@ def _read_semantic_bundle(path: Path) -> dict[str, object]:
         "tool_provenance_sha256",
     }
     if set(bundle) != expected or bundle["schema_version"] != (
-        "cvi.public_canine_semantic_bundle.v1"
+        "data.public_canine_semantic_bundle.v1"
     ):
         raise ValueError("public canine semantic bundle fields differ")
     if content_sha256(bundle["tool_provenance"]) != bundle["tool_provenance_sha256"]:

@@ -281,7 +281,7 @@ def test_audit_is_deterministic_for_same_manifest() -> None:
     ("mutation", "message"),
     (
         (
-            lambda bundle: bundle.__setitem__("schema_version", "cvi.unknown.v1"),
+            lambda bundle: bundle.__setitem__("schema_version", "unknown.v1"),
             "unsupported Nose evidence bundle schema",
         ),
         (
@@ -307,7 +307,7 @@ def test_invalid_schema_lineage_dimensions_and_duplicate_tokens_fail_closed(
 ) -> None:
     bundle = _sibetan_v1_bundle()
     mutation(bundle)
-    if bundle["schema_version"] != "cvi.unknown.v1":
+    if bundle["schema_version"] != "unknown.v1":
         _rehash(bundle)
 
     with pytest.raises(ValueError, match=message):

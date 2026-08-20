@@ -32,7 +32,7 @@ _VIEW_INTERPRETATION = (
     "ONE_EXPOSED_CROSS_VALIDATION_VIEW_NOT_AN_INDEPENDENT_FINAL_TEST"
 )
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
-_BUNDLE_SCHEMA = "cvi.dataset_stratified_identity_kfold_manifest_bundle.v1"
+_BUNDLE_SCHEMA = "evaluation.dataset_stratified_identity_kfold_manifest_bundle.v1"
 
 
 class FoldStage(StrEnum):
@@ -60,10 +60,10 @@ class DatasetStratifiedKFoldPolicy:
     minimum_query_images: int = 1
     minimum_identities_per_fold: int = 1
     minimum_retrieval_identities_per_fold: int = 1
-    schema_version: str = "cvi.dataset_stratified_identity_kfold_policy.v1"
+    schema_version: str = "evaluation.dataset_stratified_identity_kfold_policy.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.dataset_stratified_identity_kfold_policy.v1":
+        if self.schema_version != "evaluation.dataset_stratified_identity_kfold_policy.v1":
             raise ValueError("unsupported dataset-stratified K-fold policy schema")
         for name in (
             "fold_count",
@@ -117,10 +117,10 @@ class IdentityFoldAssignment:
     component_tokens: tuple[str, ...]
     historical_maximum_exposure: ExposureStage | None
     quarantine_reasons: tuple[str, ...]
-    schema_version: str = "cvi.identity_fold_assignment.v1"
+    schema_version: str = "evaluation.identity_fold_assignment.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.identity_fold_assignment.v1":
+        if self.schema_version != "evaluation.identity_fold_assignment.v1":
             raise ValueError("unsupported identity fold assignment schema")
         _require_sha256(self.identity_token, "identity_token")
         _require_text(self.dataset_identity_id, "dataset_identity_id")
@@ -201,10 +201,10 @@ class SampleFoldAssignment:
     home_fold: int | None
     held_out_role: HeldOutSampleRole
     training_eligible: bool
-    schema_version: str = "cvi.sample_fold_assignment.v1"
+    schema_version: str = "evaluation.sample_fold_assignment.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.sample_fold_assignment.v1":
+        if self.schema_version != "evaluation.sample_fold_assignment.v1":
             raise ValueError("unsupported sample fold assignment schema")
         for value, name in (
             (self.sample_token, "sample_token"),
@@ -288,10 +288,10 @@ class DatasetStratifiedIdentityKFoldManifest:
     score_inputs_used: bool = False
     final_evaluation_permitted: bool = False
     interpretation: str = _INTERPRETATION
-    schema_version: str = "cvi.dataset_stratified_identity_kfold_manifest.v1"
+    schema_version: str = "evaluation.dataset_stratified_identity_kfold_manifest.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.dataset_stratified_identity_kfold_manifest.v1":
+        if self.schema_version != "evaluation.dataset_stratified_identity_kfold_manifest.v1":
             raise ValueError("unsupported dataset-stratified K-fold manifest schema")
         _require_text(self.protocol_name, "protocol_name")
         if not isinstance(self.policy, DatasetStratifiedKFoldPolicy):
@@ -779,7 +779,7 @@ def materialize_identity_fold(
     for row in identity_rows:
         counts[row["dataset_name"]][row["stage"]] += 1
     view = {
-        "schema_version": "cvi.dataset_stratified_identity_kfold_view.v1",
+        "schema_version": "evaluation.dataset_stratified_identity_kfold_view.v1",
         "parent_manifest_sha256": manifest.manifest_sha256,
         "fold_index": fold_index,
         "dataset_stage_counts": {
@@ -795,7 +795,7 @@ def materialize_identity_fold(
         "interpretation": _VIEW_INTERPRETATION,
     }
     return {
-        "schema_version": "cvi.dataset_stratified_identity_kfold_view_bundle.v1",
+        "schema_version": "evaluation.dataset_stratified_identity_kfold_view_bundle.v1",
         "view_sha256": content_sha256(view),
         "view": view,
     }
@@ -883,7 +883,7 @@ def _assign_home_folds(
     def rank(block: str) -> str:
         return hashlib.sha256(
             (
-                "CVI_DATASET_STRATIFIED_KFOLD_BLOCK_ORDER_V1\0"
+                "DATASET_STRATIFIED_KFOLD_BLOCK_ORDER_V1\0"
                 + protocol_name
                 + "\0"
                 + evidence_root
@@ -1002,7 +1002,7 @@ def _select_gallery_components(
     def rank(component: str) -> str:
         return hashlib.sha256(
             (
-                "CVI_KFOLD_GALLERY_COMPONENT_ORDER_V1\0"
+                "KFOLD_GALLERY_COMPONENT_ORDER_V1\0"
                 + evidence_root
                 + "\0"
                 + identity_token

@@ -67,12 +67,12 @@ from identification.export.nose.data.embedding_views import (
 from parsing.export.regions.manifest import read_nose_region_manifest
 from parsing.export.regions.native_yt import validate_manifest_bundle
 
-CHECKPOINT_SCHEMA = "cvi.nose_region_rgb_embedding_consistency_checkpoint.v3"
-LINEAGE_SCHEMA = "cvi.nose_region_rgb_embedding_consistency_artifact_bundle.v3"
-CONFIG_SCHEMA = "cvi.nose_region_rgb_embedding_consistency_training_config.v3"
-SELECTION_SCHEMA = "cvi.nose_region_rgb_embedding_consistency_dev_selection.v3"
-EVALUATION_SCHEMA = "cvi.nose_region_rgb_embedding_consistency_evaluation.v3"
-MODEL_ID = "cvi.nose_region_rgb_embedding.dinov2-small-cls.v3"
+CHECKPOINT_SCHEMA = "identification.nose.nose_region_rgb_embedding_consistency_checkpoint.v3"
+LINEAGE_SCHEMA = "identification.nose.nose_region_rgb_embedding_consistency_artifact_bundle.v3"
+CONFIG_SCHEMA = "identification.nose.nose_region_rgb_embedding_consistency_training_config.v3"
+SELECTION_SCHEMA = "identification.nose.nose_region_rgb_embedding_consistency_dev_selection.v3"
+EVALUATION_SCHEMA = "identification.nose.nose_region_rgb_embedding_consistency_evaluation.v3"
+MODEL_ID = "identification.nose.nose_region_rgb_embedding.dinov2-small-cls.v3"
 LICENSE_ID = "CC-BY-NC-4.0-derived"
 INTERPRETATION = (
     "RESEARCH_ONLY_RAW_MASKED_DEGRADED_CONSISTENCY_NOT_BIOMETRIC_VALIDATION"
@@ -229,7 +229,7 @@ def build_identity_partitions(
     ) or set(dev_identities) & set(eval_identities):
         raise RuntimeError("native identity partitions overlap")
     body = {
-        "schema_version": "cvi.nose_region_embedding_consistency_splits.v1",
+        "schema_version": "identification.nose.nose_region_embedding_consistency_splits.v1",
         "rule": {
             "parent_seen": "old TRAIN yt-bb-dog registered_dog_id",
             "minimum_localized_frames_for_dev_eval": MIN_EVALUATION_FRAMES,

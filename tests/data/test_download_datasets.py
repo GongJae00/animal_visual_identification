@@ -122,7 +122,7 @@ class DatasetDownloaderTests(unittest.TestCase):
                 self.assertFalse(root.exists())
 
     def test_destinations_use_content_names_not_admission_directories(self) -> None:
-        root = Path("/tmp/cvi-data")
+        root = Path("/tmp/data")
         self.assertEqual(
             download_datasets._dataset_destination("ap10k-dog", root),
             root / "datasets" / "ap10k",

@@ -80,7 +80,7 @@ def main() -> None:
     if set(precommitment_payload) != {
         "schema_version", "precommitment_sha256", "precommitment"
     } or precommitment_payload["schema_version"] != (
-        "cvi.embedding_production_precommitment_bundle.v1"
+        "operations.embedding_production_precommitment_bundle.v1"
     ):
         raise ValueError("embedding worker precommitment bundle differs")
     precommitment = EmbeddingProductionPrecommitment.from_dict(
@@ -219,7 +219,7 @@ def main() -> None:
         raise ValueError("embedding runtime library decision differs")
     actual_providers = tuple(backend.actual_providers)
     result = {
-        "schema_version": "cvi.embedding_fresh_worker_result.v2",
+        "schema_version": "operations.embedding_fresh_worker_result.v2",
         "request_sha256": request_sha256,
         "backend": request["backend"],
         "worker_environment_identity": observed_environment.to_dict(),
@@ -251,7 +251,7 @@ def _validate_request(payload: dict[str, Any]) -> None:
         "code_snapshot_root", "code_snapshot_manifest_sha256",
     }
     if set(payload) != expected or payload["schema_version"] != (
-        "cvi.embedding_fresh_worker_request.v2"
+        "operations.embedding_fresh_worker_request.v2"
     ):
         raise ValueError("embedding fresh-worker request schema differs")
     if payload["backend"] not in {"cpu", "cuda"} or not isinstance(

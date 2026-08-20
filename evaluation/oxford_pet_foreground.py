@@ -39,7 +39,7 @@ from parsing.export.segmentation.animal_parsing import (
 )
 from parsing.export.segmentation.foreground_segmentation import ForegroundSegmentationRuntime
 
-REPORT_SCHEMA = "cvi.oxford_pet_foreground_evaluation.v3"
+REPORT_SCHEMA = "evaluation.oxford_pet_foreground_evaluation.v3"
 INTERPRETATION = (
     "UNASSISTED_MULTI_INSTANCE_INFERENCE_POSTHOC_TRIMAP_MATCHING_"
     "EMPTY_GROUND_TRUTH_EXCLUDED_NOT_PRODUCTION_VALIDATION"
@@ -162,9 +162,9 @@ def run_evaluation(
         class_names=("dog", "cat") if species in {"all", "cat"} else ("dog",),
         foreground_threshold=threshold,
         schema_version=(
-            "cvi.animal_parsing_policy.v5"
+            "parsing.policy.v5"
             if species in {"all", "cat"}
-            else "cvi.animal_parsing_policy.v6"
+            else "parsing.policy.v6"
         ),
     )
     parsing_runtime = AnimalParsingRuntime(
@@ -411,7 +411,7 @@ def _load_split_samples(
     if sample_count is not None:
         rows.sort(
             key=lambda item: hashlib.sha256(
-                b"cvi.oxford_pet_foreground.v1\0" + item.name.encode("ascii")
+                b"evaluation.oxford_pet_foreground.v1\0" + item.name.encode("ascii")
             ).digest()
         )
         if len(rows) < sample_count:

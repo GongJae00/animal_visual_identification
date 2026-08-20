@@ -32,11 +32,11 @@ from archive.full128.methods.preparation.inventory import (
 from archive.full128.methods.training.manifests import build_baseline_family_manifest
 from search.scoring.roles import FULL128_CHANNEL, SCORER_ALGORITHM
 
-PANEL_SCHEMA = "cvi.full128_evaluation_panel.v1"
-CACHE_DESCRIPTOR_SCHEMA = "cvi.full128_packed_embedding_cache_descriptor.v1"
-REPORT_SCHEMA = "cvi.full128_evaluation_report.v1"
-FAMILY_INDEX_SCHEMA = "cvi.full128_evaluation_family_index.v1"
-MASTER_TABLE_SCHEMA = "cvi.full128_master_table.v1"
+PANEL_SCHEMA = "archive.full128.evaluation_panel.v1"
+CACHE_DESCRIPTOR_SCHEMA = "archive.full128.packed_embedding_cache_descriptor.v1"
+REPORT_SCHEMA = "archive.full128.evaluation_report.v1"
+FAMILY_INDEX_SCHEMA = "archive.full128.evaluation_family_index.v1"
+MASTER_TABLE_SCHEMA = "archive.full128.master_table.v1"
 EMBEDDING_DIMENSION = 128
 VARIANT_IDS = ("B0", "B1", "B2")
 ENROLLMENT_KS = (1, 3, 5)
@@ -485,7 +485,7 @@ def build_full128_gallery_embedding_contract(
         "cache_descriptor_sha256",
     )
     return {
-        "schema_version": "cvi.gallery_embedding_contract.v1",
+        "schema_version": "gallery.embedding_contract.v1",
         "kind": "FULL128_VARIANT_BOUND",
         "dimension": EMBEDDING_DIMENSION,
         "dtype": "float32",
@@ -1724,7 +1724,7 @@ def _validate_training_run_manifest(
     payload = {
         key: item for key, item in manifest.items() if key != "run_manifest_sha256"
     }
-    if manifest["schema_version"] != "cvi.full128_training_run.v1" or manifest[
+    if manifest["schema_version"] != "archive.full128.training_run.v1" or manifest[
         "run_manifest_sha256"
     ] != content_sha256(payload):
         raise Full128EvaluationError("Full128 training run manifest differs")
@@ -1810,7 +1810,7 @@ def _validate_training_family_run(
     payload = {key: item for key, item in family.items() if key != "family_run_sha256"}
     variants = family["variants"]
     if (
-        family["schema_version"] != "cvi.full128_family_run.v1"
+        family["schema_version"] != "archive.full128.family_run.v1"
         or family["family_id"] != "FULL128_B0_B1_B2"
         or family["status"] != "COMPLETE_EXACT_THREE_VARIANT_FAMILY"
         or family["family_run_sha256"] != content_sha256(payload)
@@ -1865,7 +1865,7 @@ def _validate_variant_run_for_evaluation(root: Path, value: object) -> dict[str,
     payload = {
         key: item for key, item in manifest.items() if key != "variant_run_sha256"
     }
-    if manifest["schema_version"] != "cvi.full128_variant_run.v1" or manifest[
+    if manifest["schema_version"] != "archive.full128.variant_run.v1" or manifest[
         "variant_run_sha256"
     ] != content_sha256(payload):
         raise Full128EvaluationError("Full128 variant run manifest differs")
@@ -1984,7 +1984,7 @@ def _validate_embedding_cache_manifest_shape(value: object) -> dict[str, Any]:
     vector_count = manifest["vector_count"]
     pack_byte_size = manifest["pack_byte_size"]
     if (
-        manifest["schema_version"] != "cvi.full128_embedding_cache.v1"
+        manifest["schema_version"] != "archive.full128.embedding_cache.v1"
         or manifest["cache_manifest_sha256"] != content_sha256(payload)
         or manifest["dtype"] != "float32_little_endian"
         or manifest["dimension"] != EMBEDDING_DIMENSION

@@ -133,10 +133,10 @@ class PackedEmbeddingCacheManifest:
     bindings: tuple[ArtifactCacheBinding, ...]
     entries: tuple[PackedEmbeddingCacheEntry, ...]
     vector_format: str = "float32_le"
-    schema_version: str = "cvi.embedding_cache_manifest.v2"
+    schema_version: str = "operations.embedding_cache_manifest.v2"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.embedding_cache_manifest.v2":
+        if self.schema_version != "operations.embedding_cache_manifest.v2":
             raise ValueError("unsupported packed embedding cache manifest schema")
         for name in (
             "scoring_inventory_sha256",
@@ -213,7 +213,7 @@ class PackedEmbeddingCacheManifest:
 
         return content_sha256(
             {
-                "schema_version": "cvi.logical_embedding_cache.v1",
+                "schema_version": "operations.logical_embedding_cache.v1",
                 "scoring_inventory_sha256": self.scoring_inventory_sha256,
                 "model_sha256": self.model_sha256,
                 "inference_config_sha256": self.inference_config_sha256,
@@ -310,10 +310,10 @@ class PackedEmbeddingCacheVerification:
     verified_bytes: int
     verified_vectors: int
     maximum_observed_norm_error: float
-    schema_version: str = "cvi.embedding_cache_verification.v2"
+    schema_version: str = "operations.embedding_cache_verification.v2"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.embedding_cache_verification.v2":
+        if self.schema_version != "operations.embedding_cache_verification.v2":
             raise ValueError("unsupported packed cache verification schema")
         for name in (
             "cache_manifest_sha256",

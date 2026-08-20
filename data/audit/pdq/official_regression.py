@@ -170,10 +170,10 @@ class PDQOfficialRegressionReceipt:
     tool_provenance_sha256: str
     decision: str
     interpretation: str = _INTERPRETATION
-    schema_version: str = "cvi.pdq_official_regression_receipt.v1"
+    schema_version: str = "pdq.official_regression_receipt.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.pdq_official_regression_receipt.v1":
+        if self.schema_version != "pdq.official_regression_receipt.v1":
             raise ValueError("unsupported official PDQ regression receipt")
         canonical = (
             self.regression_bundle_sha256,
@@ -442,7 +442,7 @@ def publish_official_pdq_regression(
     if content_sha256(tool_provenance) != receipt.tool_provenance_sha256:
         raise ValueError("official PDQ tool provenance binding differs")
     write_private_json_bundle(((output_path, {
-        "schema_version": "cvi.pdq_official_regression_bundle.v1",
+        "schema_version": "pdq.official_regression_bundle.v1",
         "receipt": receipt.to_dict(),
         "receipt_sha256": receipt.receipt_sha256,
         "tool_provenance": tool_provenance,

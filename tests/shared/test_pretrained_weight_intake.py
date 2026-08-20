@@ -430,7 +430,7 @@ class PretrainedWeightIntakeTests(unittest.TestCase):
         self.assertIn("Supervised ImageNet-1K ResNet18", contract.training_description)
         self.assertEqual(
             contract.contract_sha256,
-            "d6b36cb256ab2ecf1b16dd13ec8f929ad707c83439146e6313ee201faef04aa6",
+            "2dead90093be473357c2d28f3bda45a03279d83884a4d80ad905260734129fb6",
         )
 
 if __name__ == "__main__":

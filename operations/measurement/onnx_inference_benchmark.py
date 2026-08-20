@@ -70,10 +70,10 @@ class OnnxInferenceBenchmarkPolicy:
     gpu_device_index: int | None = None
     gpu_telemetry_interval_seconds: float | None = None
     unrelated_gpu_work_excluded_by_operator: bool | None = None
-    schema_version: str = "cvi.onnx_inference_benchmark_policy.v1"
+    schema_version: str = "operations.onnx_inference_benchmark_policy.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.onnx_inference_benchmark_policy.v1":
+        if self.schema_version != "operations.onnx_inference_benchmark_policy.v1":
             raise ValueError("unsupported ONNX benchmark policy schema")
         _positive_int(self.fresh_processes, "fresh_processes")
         if self.fresh_processes > 32:
@@ -263,10 +263,10 @@ class OnnxInferenceBenchmarkSummary:
     interpretation: str = (
         "MEASUREMENT_ONLY_NOT_OPTIMIZATION_PROMOTION_OR_BIOMETRIC_EVIDENCE"
     )
-    schema_version: str = "cvi.onnx_inference_benchmark_summary.v3"
+    schema_version: str = "operations.onnx_inference_benchmark_summary.v3"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.onnx_inference_benchmark_summary.v3":
+        if self.schema_version != "operations.onnx_inference_benchmark_summary.v3":
             raise ValueError("unsupported ONNX benchmark summary schema")
         if self.interpretation != (
             "MEASUREMENT_ONLY_NOT_OPTIMIZATION_PROMOTION_OR_BIOMETRIC_EVIDENCE"
@@ -608,7 +608,7 @@ def benchmark_onnx_inference(
         build_sanitized_worker_environment(os.environ)
     )
     request = {
-        "schema_version": "cvi.onnx_inference_worker_request.v3",
+        "schema_version": "operations.onnx_inference_worker_request.v3",
         "backend": backend.value,
         "model_path": str(model),
         "model_sha256": model_sha256,
@@ -652,7 +652,7 @@ def benchmark_onnx_inference(
     }
     request_sha256 = content_sha256(request)
 
-    with TemporaryDirectory(prefix="cvi-onnx-benchmark-") as temporary:
+    with TemporaryDirectory(prefix="onnx-benchmark-") as temporary:
         root = Path(temporary)
         request_path = root / "request.json"
         request_path.write_text(
@@ -1066,7 +1066,7 @@ def run_worker(request_path: Path, result_path: Path) -> None:
         raise RuntimeError("worker produced no inference output")
     host_identity = _host_identity()
     result = {
-        "schema_version": "cvi.onnx_inference_worker_result.v3",
+        "schema_version": "operations.onnx_inference_worker_result.v3",
         "request_sha256": request_sha256,
         "backend": request["backend"],
         "model_sha256": request["model_sha256"],
@@ -1205,7 +1205,7 @@ def _validate_worker_request(payload: dict[str, Any]) -> None:
     }
     if set(payload) != expected:
         raise ValueError("worker request keys mismatch")
-    if payload["schema_version"] != "cvi.onnx_inference_worker_request.v3":
+    if payload["schema_version"] != "operations.onnx_inference_worker_request.v3":
         raise ValueError("unsupported ONNX worker request schema")
     OnnxBenchmarkBackend(payload["backend"])
     for name in (
@@ -1424,7 +1424,7 @@ def _validate_worker_result(
             raise ValueError(f"worker result {name} mismatch")
     if payload["artifact_content_sha256"] != list(artifact_content_sha256):
         raise ValueError("worker result artifact contents mismatch")
-    if payload["schema_version"] != "cvi.onnx_inference_worker_result.v3":
+    if payload["schema_version"] != "operations.onnx_inference_worker_result.v3":
         raise ValueError("unsupported ONNX worker result schema")
     for name in (
         "actual_provider_options_sha256",

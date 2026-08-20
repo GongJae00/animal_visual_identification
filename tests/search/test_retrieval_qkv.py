@@ -198,7 +198,7 @@ def test_qkv_values_snapshot_mutable_inputs() -> None:
         template_id="1" * 64,
         content_sha256="2" * 64,
         idempotency_key="request-1",
-        template_schema="cvi.gallery_template.v1",
+        template_schema="gallery.template.v1",
         breed="test-breed",
         metadata=metadata,
     )
@@ -220,7 +220,7 @@ def test_qkv_values_snapshot_mutable_inputs() -> None:
 
 def _full128_contract() -> dict[str, object]:
     return {
-        "schema_version": "cvi.gallery_embedding_contract.v1",
+        "schema_version": "gallery.embedding_contract.v1",
         "kind": "Full128",
         "dimension": 128,
         "channels": [
@@ -474,7 +474,7 @@ def test_bulk_k_view_generation_and_block_size_are_batch_invariant(
         second_manifest = json.loads(
             (tmp_path / "second" / "gallery_manifest.json").read_text(encoding="utf-8")
         )
-        assert first_manifest["schema_version"] == "cvi.gallery_manifest.v5"
+        assert first_manifest["schema_version"] == "gallery.manifest.v5"
         assert {
             key: value["sha256"] for key, value in first_manifest["files"].items()
         } == {

@@ -82,14 +82,14 @@ def matplotlib_version() -> str:
 
 def _metadata(extension: str) -> dict[str, Any]:
     if extension == "svg":
-        return {"Creator": "cvi.vis.renderer.v1", "Date": None}
+        return {"Creator": "visualization.renderer.v1", "Date": None}
     if extension == "pdf":
         return {
-            "Creator": "cvi.vis.renderer.v1",
-            "Producer": "cvi.vis.renderer.v1",
+            "Creator": "visualization.renderer.v1",
+            "Producer": "visualization.renderer.v1",
             "CreationDate": _FIXED_TIME,
             "ModDate": _FIXED_TIME,
         }
     if extension == "png":
-        return {"Software": "cvi.vis.renderer.v1"}
+        return {"Software": "visualization.renderer.v1"}
     raise ValueError(f"unsupported static format: {extension}")

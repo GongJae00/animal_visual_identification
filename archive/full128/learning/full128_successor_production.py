@@ -52,11 +52,11 @@ from archive.full128.learning.full128_successors import (
     write_successor_checkpoint,
 )
 
-PRODUCTION_CONFIG_SCHEMA = "cvi.full128_successor_production_config.v1"
-PRODUCTION_RUN_SCHEMA = "cvi.full128_successor_production_run.v1"
-PRODUCTION_CANDIDATE_SCHEMA = "cvi.full128_successor_candidate_run.v1"
-PRODUCTION_FAMILY_SCHEMA = "cvi.full128_successor_production_family.v1"
-PRODUCTION_TOKEN_CACHE_SCHEMA = "cvi.full128_successor_dinov2_cache.v2"
+PRODUCTION_CONFIG_SCHEMA = "archive.full128.successor_production_config.v1"
+PRODUCTION_RUN_SCHEMA = "archive.full128.successor_production_run.v1"
+PRODUCTION_CANDIDATE_SCHEMA = "archive.full128.successor_candidate_run.v1"
+PRODUCTION_FAMILY_SCHEMA = "archive.full128.successor_production_family.v1"
+PRODUCTION_TOKEN_CACHE_SCHEMA = "archive.full128.successor_dinov2_cache.v2"
 PRODUCTION_CANDIDATES = (
     "B0-FV",
     "B1-FV",
@@ -945,7 +945,7 @@ def _publish_candidate(
             np.ascontiguousarray(evaluation_matrix, dtype="<f4").tobytes()
         )
         population_manifest_payload = {
-            "schema_version": "cvi.full128_successor_population_embeddings.v1",
+            "schema_version": "archive.full128.successor_population_embeddings.v1",
             "candidate_id": candidate_id,
             "sample_tokens": list(population_tokens),
             "sample_tokens_sha256": content_sha256(list(population_tokens)),
@@ -1291,13 +1291,13 @@ def _candidate_manifests(
     candidate_id: str, *, parent_id: str | None
 ) -> dict[str, dict[str, Any]]:
     model = {
-        "schema_version": "cvi.full128_successor_model.v1",
+        "schema_version": "archive.full128.successor_model.v1",
         "candidate_id": candidate_id,
         "architecture": _architecture(candidate_id),
         "parent_id": parent_id,
     }
     preprocessing = {
-        "schema_version": "cvi.full128_successor_preprocessing.v1",
+        "schema_version": "archive.full128.successor_preprocessing.v1",
         "candidate_id": candidate_id,
         "input": "EXISTING_224X224_FULL128_RGB_AND_BINARY_MASK",
         "recrop_permitted": False,
@@ -1305,7 +1305,7 @@ def _candidate_manifests(
         "patch_occupancy": "AREA" if candidate_id in _DINO_CANDIDATES else None,
     }
     embedding = {
-        "schema_version": "cvi.full128_successor_embedding.v1",
+        "schema_version": "archive.full128.successor_embedding.v1",
         "candidate_id": candidate_id,
         "dimension": 128,
         "dtype": "float32",
@@ -1334,7 +1334,7 @@ def _simple_checkpoint_manifest(
     training: Mapping[str, Any],
 ) -> dict[str, Any]:
     payload = {
-        "schema_version": "cvi.full128_successor_checkpoint.v1",
+        "schema_version": "archive.full128.successor_checkpoint.v1",
         "candidate_id": candidate_id,
         "state": {"relative_path": state_path.name, **file_binding(state_path)},
         "parameter_partition": {"trainable": [], "frozen": []},
@@ -1383,7 +1383,7 @@ def _checkpoint_candidate_id(candidate_id: str) -> str:
 
 def _legacy_config(config: Mapping[str, Any]) -> dict[str, Any]:
     return {
-        "schema_version": "cvi.full128_successor_training_config.v1",
+        "schema_version": "archive.full128.successor_training_config.v1",
         "seed": config["seed"],
         "supervised_steps": config["supervised_steps"],
         "ssl_steps": config["ssl_steps"],

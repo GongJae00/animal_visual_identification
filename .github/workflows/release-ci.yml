@@ -74,7 +74,7 @@ jobs:
           assert any(name.endswith(".dist-info/licenses/LICENSE") for name in names)
           assert "shared/__init__.py" in names
           assert "shared/foundation/__init__.py" in names
-          assert "shared/contracts/schemas/cvi.evaluation.report.v3.schema.json" in names
+          assert "shared/contracts/schemas/evaluation.report.v3.schema.json" in names
           assert "shared/contracts/intake/pretrained_weight_intake.py" in names
           assert "shared/contracts/pdq.py" in names
           assert "shared/contracts/pretrained_weight_intake.py" not in names
@@ -179,13 +179,13 @@ jobs:
           import torch
 
           schema = resources.files("shared.contracts").joinpath(
-              "schemas/cvi.evaluation.report.v3.schema.json"
+              "schemas/evaluation.report.v3.schema.json"
           )
           assert schema.is_file()
           assert resources.files("data").joinpath(
               "configs/crop_export_policy.example.json"
           ).is_file()
-          assert embedding_views.MANIFEST_SCHEMA == "cvi.nose_embedding_views.v1"
+          assert embedding_views.MANIFEST_SCHEMA == "identification.nose.nose_embedding_views.v1"
           assert tracklet_split.SplitManifest.__module__ == (
               "evaluation.splits.tracklet_split"
           )

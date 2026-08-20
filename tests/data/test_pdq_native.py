@@ -416,7 +416,8 @@ class NativePdqContractTests(unittest.TestCase):
                 ).encode("utf-8")
             ).hexdigest()
             with self.subTest(path_prefix=path_prefix):
-                assert BuilderToolProvenance.from_dict(payload).to_dict() == payload
+                with self.assertRaisesRegex(ValueError, "required implementation source"):
+                    BuilderToolProvenance.from_dict(payload)
 
         mixed = copy.deepcopy(current)
         native = next(

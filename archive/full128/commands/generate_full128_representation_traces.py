@@ -195,7 +195,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         traces.append(trace)
 
     generation_payload = {
-        "schema_version": "cvi.full128_representation_trace_generation.v1",
+        "schema_version": "archive.full128.representation_trace_generation.v1",
         "visibility": "PRIVATE",
         "selection_policy": "FIRST_SORTED_AVAILABLE_COHORT_AND_QUERY;EXACT_TOP1_TEMPLATE",
         "trace_count": len(traces),

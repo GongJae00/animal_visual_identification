@@ -28,13 +28,13 @@ from shared.foundation.protected_io import (
 )
 from shared.foundation.provenance import content_sha256
 
-PANEL_SCHEMA_VERSION = "cvi.fixed_multievidence_panel.v1"
-PANEL_BUNDLE_SCHEMA_VERSION = "cvi.fixed_multievidence_panel_bundle.v1"
-REPORT_SCHEMA_VERSION = "cvi.fixed_multievidence_evaluation.v1"
-REPORT_BUNDLE_SCHEMA_VERSION = "cvi.fixed_multievidence_evaluation_bundle.v1"
+PANEL_SCHEMA_VERSION = "archive.appearance_face_nose.fixed_multievidence_panel.v1"
+PANEL_BUNDLE_SCHEMA_VERSION = "archive.appearance_face_nose.fixed_multievidence_panel_bundle.v1"
+REPORT_SCHEMA_VERSION = "archive.appearance_face_nose.fixed_multievidence_evaluation.v1"
+REPORT_BUNDLE_SCHEMA_VERSION = "archive.appearance_face_nose.fixed_multievidence_evaluation_bundle.v1"
 F5_ARCHITECTURE = "cls_residual_v5"
 F5_TRAINING_SEED = 42
-SPLIT_COMMITMENT = "cvi.fixed_multievidence.publisher-test.v1:DEV"
+SPLIT_COMMITMENT = "archive.appearance_face_nose.fixed_multievidence.publisher-test.v1:DEV"
 DEV_FRACTION = 0.30
 MINIMUM_DEV_IDENTITIES = 40
 MINIMUM_EVAL_IDENTITIES = 100

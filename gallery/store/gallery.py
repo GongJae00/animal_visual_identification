@@ -34,10 +34,10 @@ from search.scoring.roles import (
     ScoredGalleryValue,
 )
 
-_MANIFEST_SCHEMA_V4 = "cvi.gallery_manifest.v4"
-_MANIFEST_SCHEMA_V5 = "cvi.gallery_manifest.v5"
-_TEMPLATE_SCHEMA_V1 = "cvi.gallery_template.v1"
-_TEMPLATE_SCHEMA_V2 = "cvi.gallery_template.v2"
+_MANIFEST_SCHEMA_V4 = "gallery.manifest.v4"
+_MANIFEST_SCHEMA_V5 = "gallery.manifest.v5"
+_TEMPLATE_SCHEMA_V1 = "gallery.template.v1"
+_TEMPLATE_SCHEMA_V2 = "gallery.template.v2"
 _TEMPLATE_ID_DOMAIN = _TEMPLATE_SCHEMA_V1
 _IDENTITY_AGGREGATION = "max"
 _SEARCH_BLOCK_ROWS = 65_536
@@ -1873,7 +1873,7 @@ def _canonical_embedding_contract(
     dimension: int,
 ) -> dict[str, Any]:
     value = contract or {
-        "schema_version": "cvi.gallery_embedding_contract.v1",
+        "schema_version": "gallery.embedding_contract.v1",
         "kind": "opaque",
         "dimension": dimension,
     }
@@ -1886,7 +1886,7 @@ def _canonical_embedding_contract(
     except (TypeError, ValueError) as exc:
         raise ValueError("embedding contract must be finite JSON") from exc
     canonical = json.loads(encoded)
-    if canonical.get("schema_version") != "cvi.gallery_embedding_contract.v1":
+    if canonical.get("schema_version") != "gallery.embedding_contract.v1":
         raise ValueError("unsupported gallery embedding contract schema")
     if canonical.get("dimension") != dimension:
         raise ValueError("embedding contract dimension differs from index")

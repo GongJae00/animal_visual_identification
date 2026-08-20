@@ -31,7 +31,7 @@ class EvaluateMultichannelCliTest(unittest.TestCase):
     maxDiff = None
 
     def setUp(self):
-        self.td = tempfile.mkdtemp(prefix="cvi_e2e_")
+        self.td = tempfile.mkdtemp(prefix="eval_")
 
     def _path(self, *parts):
         return Path(self.td, *parts)
@@ -320,7 +320,7 @@ class EvaluateMultichannelCliTest(unittest.TestCase):
         self.assertIn("schema_version", report["provenance"])
         self.assertEqual(
             report["provenance"]["schema_version"],
-            "cvi.evaluation.report.v2",
+            "evaluation.report.v2",
         )
 
     def test_retrieval_bootstrap_ci_present(self):

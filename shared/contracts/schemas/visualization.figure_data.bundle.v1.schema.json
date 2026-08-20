@@ -1,19 +1,19 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "cvi.figure_data.bundle.v1",
-  "title": "CVI normalized figure data bundle v1",
+  "$id": "visualization.figure_data.bundle.v1",
+  "title": "normalized figure data bundle v1",
   "type": "object",
   "additionalProperties": false,
   "required": ["schema_version", "figure_data", "figure_data_sha256"],
   "properties": {
-    "schema_version": {"const": "cvi.figure_data.bundle.v1"},
+    "schema_version": {"const": "visualization.figure_data.bundle.v1"},
     "figure_data_sha256": {"$ref": "#/$defs/sha256"},
     "figure_data": {
       "type": "object",
       "additionalProperties": false,
       "required": ["schema_version", "figure_id", "kind", "scope", "title", "caption", "limitations", "source_bindings", "payload"],
       "properties": {
-        "schema_version": {"const": "cvi.figure_data.v1"},
+        "schema_version": {"const": "visualization.figure_data.v1"},
         "figure_id": {"type": "string", "pattern": "^(0[0-9]|1[0-7])_[a-z0-9_]+$"},
         "kind": {"enum": ["architecture", "ladder", "model_ladder", "census", "result_forest", "cosine_distribution", "embedding_spectrum", "pca_projection", "embedding_topology", "gallery_composition", "ranked_retrieval", "embedding_diagnostics", "score_rank_distributions"]},
         "scope": {"enum": ["public", "paper", "private"]},

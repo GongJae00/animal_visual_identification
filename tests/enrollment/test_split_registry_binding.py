@@ -79,7 +79,7 @@ def _make_assignment(records: list[dict]) -> dict:
     for role in identity_roles.values():
         actual_role_counts[role] = actual_role_counts.get(role, 0) + 1
     return {
-        "schema_version": "cvi.protected_public_split_assignment.v1",
+        "schema_version": "evaluation.protected_public_split_assignment.v1",
         "records": normalized,
         "status": "PASS_PROTECTED_SPLIT_CONSTRUCTION",
         "seed_commitment": "1" * 64,
@@ -117,7 +117,7 @@ def _make_assignment(records: list[dict]) -> dict:
 
 def _make_receipt(assignment: dict, *, version: int = 3) -> dict:
     receipt = {
-        "schema_version": f"cvi.protected_public_split_receipt.v{version}",
+        "schema_version": f"evaluation.protected_public_split_receipt.v{version}",
         "status": assignment["status"],
         "seed_commitment": assignment["seed_commitment"],
         "evidence_root_sha256": assignment["evidence_root_sha256"],
@@ -159,7 +159,7 @@ def _make_registry(db_path: Path, identity_ids: list[str]) -> None:
 def _make_registry_manifest(db_path: Path, source_bundle_sha256: str = "4" * 64) -> dict:
     registry = load_registry_manifest(db_path)
     manifest = {
-        "schema_version": "cvi.identity_registry_manifest.v1",
+        "schema_version": "enrollment.registry_manifest.v1",
         "generated_at": "2026-07-26T00:00:00+00:00",
         "namespace_uuid": str(REGISTERED_DOG_NAMESPACE),
         "registrations": [record.to_dict() for record in registry.records],
@@ -191,7 +191,7 @@ def _build_binding(
 
 class BuildBindingTests(unittest.TestCase):
     def _db(self) -> Path:
-        fd, path = tempfile.mkstemp(suffix=".db", prefix="cvi_split_test_")
+        fd, path = tempfile.mkstemp(suffix=".db", prefix="split_test_")
         return Path(path)
 
     def test_empty_assignment(self) -> None:
@@ -596,7 +596,7 @@ class SplitRegistryBindingContractTests(unittest.TestCase):
             registry_manifest_sha256="a" * 64,
         )
         d = binding.to_dict()
-        self.assertEqual(d["schema_version"], "cvi.split_registry_binding.v2")
+        self.assertEqual(d["schema_version"], "evaluation.split_registry_binding.v2")
         self.assertTrue(d["is_valid"])
         self.assertEqual(len(d["bindings"]), 1)
         self.assertEqual(len(d["identity_summaries"]), 1)

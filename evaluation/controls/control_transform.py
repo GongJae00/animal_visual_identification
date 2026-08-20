@@ -38,7 +38,7 @@ from evaluation.controls.scoring import (
 )
 from shared.foundation.provenance import content_sha256
 
-SUPPORTED_SEMANTICS_VERSION = "cvi.visual_control_transform.v1"
+SUPPORTED_SEMANTICS_VERSION = "evaluation.visual_control_transform.v1"
 _SAFE_TOKEN = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}")
 
 
@@ -51,10 +51,10 @@ class ControlTransformConfig:
     minimum_blur_sigma_pixels: float | None = None
     maximum_blur_sigma_pixels: float | None = None
     blur_steps: int | None = None
-    schema_version: str = "cvi.control_transform_config.v1"
+    schema_version: str = "evaluation.control_transform_config.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.control_transform_config.v1":
+        if self.schema_version != "evaluation.control_transform_config.v1":
             raise ValueError("unsupported control transform config schema")
         if self.kind is VisualControlKind.ORIGINAL:
             raise ValueError("ORIGINAL does not require a transform config")
@@ -169,10 +169,10 @@ class ControlTransformConfig:
 @dataclass(frozen=True, slots=True)
 class ControlTransformConfigManifest:
     configs: tuple[ControlTransformConfig, ...]
-    schema_version: str = "cvi.control_transform_config_manifest.v1"
+    schema_version: str = "evaluation.control_transform_config_manifest.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.control_transform_config_manifest.v1":
+        if self.schema_version != "evaluation.control_transform_config_manifest.v1":
             raise ValueError(
                 "unsupported control transform config manifest schema"
             )
@@ -228,12 +228,12 @@ class ControlTransformExecutionPolicy:
     ir_pixel_format: str = "gray"
     output_media_type: str = "image/png"
     png_prediction: str = "mixed"
-    schema_version: str = "cvi.control_transform_execution_policy.v1"
+    schema_version: str = "evaluation.control_transform_execution_policy.v1"
 
     def __post_init__(self) -> None:
         if (
             self.schema_version
-            != "cvi.control_transform_execution_policy.v1"
+            != "evaluation.control_transform_execution_policy.v1"
         ):
             raise ValueError(
                 "unsupported control transform execution policy schema"
@@ -327,10 +327,10 @@ class ControlArtifactManifest:
     transform_tasks_sha256: str
     transform_config_manifest_sha256: str
     entries: tuple[PairArtifactEntry, ...]
-    schema_version: str = "cvi.control_artifact_manifest.v1"
+    schema_version: str = "evaluation.control_artifact_manifest.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.control_artifact_manifest.v1":
+        if self.schema_version != "evaluation.control_artifact_manifest.v1":
             raise ValueError("unsupported control artifact manifest schema")
         _validate_sha256(
             self.transform_tasks_sha256,
@@ -393,10 +393,10 @@ class ControlArtifactVerification:
     artifact_manifest_sha256: str
     verified_files: int
     verified_bytes: int
-    schema_version: str = "cvi.control_artifact_verification.v1"
+    schema_version: str = "evaluation.control_artifact_verification.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.control_artifact_verification.v1":
+        if self.schema_version != "evaluation.control_artifact_verification.v1":
             raise ValueError(
                 "unsupported control artifact verification schema"
             )
@@ -516,10 +516,10 @@ class ControlTransformReceipt:
     artifact_manifest: ControlArtifactManifest
     verification: ControlArtifactVerification
     cost: ControlTransformCost
-    schema_version: str = "cvi.control_transform_receipt.v1"
+    schema_version: str = "evaluation.control_transform_receipt.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.control_transform_receipt.v1":
+        if self.schema_version != "evaluation.control_transform_receipt.v1":
             raise ValueError("unsupported control transform receipt schema")
         for name in (
             "plan_sha256",
@@ -670,7 +670,7 @@ def control_transform_tasks_from_payload(
         },
         "visual control transform tasks",
     )
-    if payload["schema_version"] != "cvi.visual_control_transform_tasks.v1":
+    if payload["schema_version"] != "evaluation.visual_control_transform_tasks.v1":
         raise ValueError("unsupported visual control transform task schema")
     _validate_sha256(payload["plan_sha256"], "plan_sha256")
     _validate_sha256(
@@ -914,7 +914,7 @@ def execute_control_transforms(
     subprocess_calls = 0
 
     with TemporaryDirectory(
-        prefix=".cvi-control-transform-",
+        prefix=".control-transform-",
         dir=output_root.parent,
     ) as temporary:
         temporary_root = Path(temporary)

@@ -51,7 +51,7 @@ def _main_benchmark() -> None:
     summary = OnnxInferenceBenchmarkSummary.from_dict(
         read_content_hashed_json_bundle(
             args.discovery_receipt,
-            schema_version="cvi.onnx_inference_benchmark_receipt.v3",
+            schema_version="operations.onnx_inference_benchmark_receipt.v3",
             payload_field="summary",
             sha256_field="summary_sha256",
         )
@@ -67,7 +67,7 @@ def _main_benchmark() -> None:
         manifests,
     )
     receipt = {
-        "schema_version": "cvi.runtime_library_policy_freeze_receipt.v1",
+        "schema_version": "operations.runtime_library_policy_freeze_receipt.v1",
         "discovery_summary_sha256": summary.summary_sha256,
         "discovery_policy_sha256": (
             summary.runtime_library_policy.policy_sha256
@@ -129,7 +129,7 @@ def _main_embedding(argv: list[str]) -> None:
         if set(payload) != {
             "schema_version", "discovery_sha256", "discovery"
         } or payload["schema_version"] != (
-            "cvi.embedding_runtime_discovery_bundle.v1"
+            "operations.embedding_runtime_discovery_bundle.v1"
         ):
             raise ValueError("embedding runtime discovery bundle differs")
         discovery = EmbeddingFreshWorkerDiscovery.from_dict(payload["discovery"])
@@ -167,7 +167,7 @@ def _main_embedding(argv: list[str]) -> None:
         tuple(item.runtime_library_manifest for item in discoveries),
     )
     receipt = {
-        "schema_version": "cvi.embedding_runtime_policy_freeze_receipt.v1",
+        "schema_version": "operations.embedding_runtime_policy_freeze_receipt.v1",
         "discovery_policy_sha256": discovery_policy.policy_sha256,
         "discovery_receipt_sha256": [
             item.discovery_sha256 for item in discoveries
@@ -260,7 +260,7 @@ def _main_batch(argv: list[str]) -> None:
         if set(payload) != {
             "schema_version", "discovery_sha256", "discovery"
         } or payload["schema_version"] != (
-            "cvi.batch_runtime_library_discovery_bundle.v2"
+            "operations.batch_runtime_library_discovery_bundle.v2"
         ):
             raise ValueError("batch runtime discovery bundle schema differs")
         discovery = BatchFreshWorkerDiscovery.from_dict(payload["discovery"])
@@ -294,7 +294,7 @@ def _main_batch(argv: list[str]) -> None:
         tuple(manifests),
     )
     receipt = {
-        "schema_version": "cvi.batch_runtime_library_policy_freeze_receipt.v1",
+        "schema_version": "operations.batch_runtime_library_policy_freeze_receipt.v1",
         "discovery_policy_sha256": discovery_policy.policy_sha256,
         "discovery_precommitment_sha256": precommitment_hashes,
         "discovery_receipt_sha256": discovery_hashes,

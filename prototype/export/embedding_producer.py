@@ -37,10 +37,10 @@ class EmbeddingBackendIdentity:
     precision: str
     determinism_mode: str
     backend_config_sha256: str
-    schema_version: str = "cvi.embedding_backend_identity.v1"
+    schema_version: str = "prototype.embedding_backend_identity.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.embedding_backend_identity.v1":
+        if self.schema_version != "prototype.embedding_backend_identity.v1":
             raise ValueError("unsupported embedding backend identity schema")
         for name in (
             "backend_name",
@@ -116,10 +116,10 @@ class EmbeddingProducerConfig:
     normalization_tolerance: float
     warmup_batches: int = 0
     output_vector_format: str = "float32_le"
-    schema_version: str = "cvi.embedding_producer_config.v1"
+    schema_version: str = "prototype.embedding_producer_config.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.embedding_producer_config.v1":
+        if self.schema_version != "prototype.embedding_producer_config.v1":
             raise ValueError("unsupported embedding producer config schema")
         for name in (
             "model_sha256",
@@ -242,10 +242,10 @@ class EmbeddingProductionPolicy:
     maximum_provenance_file_bytes: int = 1_073_741_824
     maximum_batch_wall_time_ns: int = 3_600_000_000_000
     maximum_total_wall_time_ns: int = 86_400_000_000_000
-    schema_version: str = "cvi.embedding_production_policy.v1"
+    schema_version: str = "operations.embedding_production_policy.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.embedding_production_policy.v1":
+        if self.schema_version != "operations.embedding_production_policy.v1":
             raise ValueError("unsupported embedding production policy schema")
         for name in (
             "maximum_artifacts",
@@ -336,10 +336,10 @@ class EmbeddingRuntimeResources:
     energy_millijoules: float | None
     measurement_scope: str
     measurement_method: str
-    schema_version: str = "cvi.embedding_runtime_resources.v1"
+    schema_version: str = "operations.embedding_runtime_resources.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.embedding_runtime_resources.v1":
+        if self.schema_version != "operations.embedding_runtime_resources.v1":
             raise ValueError("unsupported embedding resource schema")
         for name in ("cpu_peak_rss_bytes", "device_peak_memory_bytes"):
             value = getattr(self, name)
@@ -448,10 +448,10 @@ class EmbeddingProductionCost:
     peak_batch_input_bytes: int
     peak_nominal_input_tensor_bytes: int
     peak_batch_output_bytes: int
-    schema_version: str = "cvi.embedding_production_cost.v1"
+    schema_version: str = "operations.embedding_production_cost.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.embedding_production_cost.v1":
+        if self.schema_version != "operations.embedding_production_cost.v1":
             raise ValueError("unsupported embedding production cost schema")
         for name in (
             "artifact_bindings",
@@ -592,10 +592,10 @@ class EmbeddingProductionReceipt:
     timing_interpretation: str = (
         "OBSERVATIONAL_CACHE_PRODUCTION_ONLY_NOT_PROMOTION_EVIDENCE"
     )
-    schema_version: str = "cvi.embedding_production_receipt.v1"
+    schema_version: str = "operations.embedding_production_receipt.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.embedding_production_receipt.v1":
+        if self.schema_version != "operations.embedding_production_receipt.v1":
             raise ValueError("unsupported embedding production receipt schema")
         for name in (
             "scoring_inventory_sha256",
@@ -847,7 +847,7 @@ def produce_embedding_cache(
     linked_paths: list[Path] = []
     first_output_observed = False
     with TemporaryDirectory(
-        prefix=".cvi-embedding-cache-",
+        prefix=".embedding-cache-",
         dir=output_root.parent,
     ) as temporary:
         temporary_root = Path(temporary)

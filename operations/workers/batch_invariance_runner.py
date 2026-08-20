@@ -44,10 +44,10 @@ _CURRENT_BATCH_WORKER_MODULE = "operations.workers.batch_invariance_worker"
 class BatchWorkerExecutionPolicy:
     supervisor: ProcessSupervisorPolicy
     maximum_worker_result_bytes: int = 67_108_864
-    schema_version: str = "cvi.batch_worker_execution_policy.v1"
+    schema_version: str = "operations.batch_worker_execution_policy.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.batch_worker_execution_policy.v1":
+        if self.schema_version != "operations.batch_worker_execution_policy.v1":
             raise ValueError("unsupported batch worker execution policy schema")
         if (
             isinstance(self.maximum_worker_result_bytes, bool)
@@ -96,10 +96,10 @@ class BatchFreshWorkerReceipt:
     interpretation: str = (
         "FRESH_WORKER_BATCH_INVARIANCE_ONLY_NOT_OPTIMIZATION_PROMOTION"
     )
-    schema_version: str = "cvi.batch_fresh_worker_receipt.v1"
+    schema_version: str = "operations.batch_fresh_worker_receipt.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.batch_fresh_worker_receipt.v1":
+        if self.schema_version != "operations.batch_fresh_worker_receipt.v1":
             raise ValueError("unsupported batch fresh-worker receipt schema")
         for name in (
             "worker_request_sha256",
@@ -235,10 +235,10 @@ class BatchFreshWorkerDiscovery:
     interpretation: str = (
         "DISCOVERY_ONLY_REQUIRES_REVIEW_FREEZE_AND_STRICT_RERUN"
     )
-    schema_version: str = "cvi.batch_fresh_worker_discovery.v1"
+    schema_version: str = "operations.batch_fresh_worker_discovery.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.batch_fresh_worker_discovery.v1":
+        if self.schema_version != "operations.batch_fresh_worker_discovery.v1":
             raise ValueError("unsupported batch worker discovery schema")
         for name in (
             "worker_request_sha256", "precommitment_sha256",
@@ -380,12 +380,12 @@ def run_batch_invariance_fresh_worker(
         environment_identity.identity_sha256
     ):
         raise ValueError("batch worker environment differs from precommitment")
-    with TemporaryDirectory(prefix="cvi-batch-worker-") as temporary:
+    with TemporaryDirectory(prefix="batch-worker-") as temporary:
         root = Path(temporary)
         scratch = root / "scratch"
         scratch.mkdir(mode=0o700)
         request = {
-            "schema_version": "cvi.batch_fresh_worker_request.v1",
+            "schema_version": "operations.batch_fresh_worker_request.v1",
             "backend": backend,
             "files": bindings,
             "expected_precommitment_sha256": expected_precommitment_sha256,
@@ -501,7 +501,7 @@ def _validate_common_worker_result(
         if discovery else {"batch_receipt", "batch_receipt_sha256"}
     )
     if set(payload) != expected or payload["schema_version"] != (
-        "cvi.batch_fresh_worker_result.v1"
+        "operations.batch_fresh_worker_result.v1"
     ):
         raise ValueError("batch worker result schema differs")
     if payload["request_sha256"] != request_sha256:

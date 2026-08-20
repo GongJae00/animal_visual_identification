@@ -104,7 +104,7 @@ def _checkpoint() -> dict:
 
 def _manifest(*, role: str = "test", identity: str = "evaluation-dog") -> dict:
     return {
-        "schema_version": "cvi.canid_roi_manifest.v2",
+        "schema_version": "parsing.canid_roi_manifest.v2",
         "source_sample_ids": ["sample-a"],
         "records": [
             {

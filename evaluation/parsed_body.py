@@ -67,8 +67,8 @@ from parsing.export.segmentation.animal_parsing import (
 )
 from parsing.export.segmentation.foreground_segmentation import ForegroundSegmentationRuntime
 
-REPORT_SCHEMA = "cvi.parsed_body_reid_diagnostic.v2"
-GENERATOR_ID = "cvi.yt-bb-dog.video-track:v1"
+REPORT_SCHEMA = "evaluation.parsed_body_diagnostic.v2"
+GENERATOR_ID = "data.yt_bb_dog.video_track:v1"
 INTERPRETATION = (
     "WITHIN_VIDEO_TRACK_CLOSED_SET_FROZEN_FEATURE_DIAGNOSTIC_NOT_LIFELONG_"
     "IDENTITY_OR_CROSS_SESSION_VALIDATION"

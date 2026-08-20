@@ -33,8 +33,8 @@ from identification.export.nose.signal.temporal import aggregate_nose_embeddings
 from parsing.export.regions.native_yt import validate_manifest_bundle
 from parsing.export.regions.roi_manifest import read_roi_manifest
 
-REPORT_SCHEMA = "cvi.yt_unified_multievidence_evaluation.v2"
-REPORT_BUNDLE_SCHEMA = "cvi.yt_unified_multievidence_evaluation_bundle.v2"
+REPORT_SCHEMA = "archive.yt_unified_multievidence_evaluation.v2"
+REPORT_BUNDLE_SCHEMA = "archive.yt_unified_multievidence_evaluation_bundle.v2"
 INTERPRETATION = (
     "WITHIN_VIDEO_TRACK_FROZEN_APPEARANCE_FACE_NOSE_RESEARCH_DIAGNOSTIC_"
     "NOT_CROSS_SESSION_BIOMETRIC_VALIDATION_OR_FINAL_EVALUATION"

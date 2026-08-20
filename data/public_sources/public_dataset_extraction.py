@@ -72,10 +72,10 @@ class PublicDatasetExtractionReceipt:
     publication_strategy: str
     decision: str = "PASS_EXTRACTED_CONTENT_MANIFEST"
     interpretation: str = "EXTRACTION_ONLY_NOT_DATASET_OR_MODEL_ADMISSION"
-    schema_version: str = "cvi.public_dataset_extraction_receipt.v1"
+    schema_version: str = "data.public_dataset_extraction_receipt.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.public_dataset_extraction_receipt.v1":
+        if self.schema_version != "data.public_dataset_extraction_receipt.v1":
             raise ValueError("unsupported public dataset extraction receipt")
         for name in (
             "source_contract_sha256",
@@ -181,7 +181,7 @@ def extract_audited_public_dataset_zip(
     if hasattr(os, "O_NOFOLLOW"):
         flags |= os.O_NOFOLLOW
     descriptor = os.open(archive, flags)
-    temporary = Path(mkdtemp(prefix=".cvi-public-extract-", dir=parent))
+    temporary = Path(mkdtemp(prefix=".public-extract-", dir=parent))
     published = False
     try:
         initial = os.fstat(descriptor)

@@ -37,7 +37,7 @@ def batch_artifact_paths_from_dict(payload: dict[str, Any]) -> dict[str, Path]:
 
     if set(payload) != {"schema_version", "entries"} or payload[
         "schema_version"
-    ] != "cvi.batch_artifact_paths.v1":
+    ] != "operations.batch_artifact_paths.v1":
         raise ValueError("batch artifact path schema differs")
     if not isinstance(payload["entries"], list) or not payload["entries"]:
         raise ValueError("batch artifact paths must be a nonempty list")
@@ -86,10 +86,10 @@ class BatchInvariancePolicy:
     maximum_anchor_temporary_bytes: int = 1_073_741_824
     require_repeated_composition_exact: bool = True
     padding_policy: str = "FORBIDDEN"
-    schema_version: str = "cvi.batch_invariance_policy.v1"
+    schema_version: str = "evaluation.batch_invariance_policy.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.batch_invariance_policy.v1":
+        if self.schema_version != "evaluation.batch_invariance_policy.v1":
             raise ValueError("unsupported batch invariance policy schema")
         for name in (
             "absolute_tolerance",
@@ -148,10 +148,10 @@ class BatchInvariancePrecommitment:
     candidate_attempt_token: str
     precommitment_sequence: int
     selection_blind_to_candidate_outputs: bool = True
-    schema_version: str = "cvi.batch_invariance_precommitment.v3"
+    schema_version: str = "evaluation.batch_invariance_precommitment.v3"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.batch_invariance_precommitment.v3":
+        if self.schema_version != "evaluation.batch_invariance_precommitment.v3":
             raise ValueError("unsupported batch precommitment schema")
         for name in (
             "inventory_sha256",
@@ -253,10 +253,10 @@ class BatchScenarioSummary:
     maximum_raw_l2_drift: float
     maximum_normalized_l2_drift: float
     maximum_cosine_drift: float
-    schema_version: str = "cvi.batch_scenario_summary.v1"
+    schema_version: str = "operations.batch_scenario_summary.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.batch_scenario_summary.v1":
+        if self.schema_version != "operations.batch_scenario_summary.v1":
             raise ValueError("unsupported batch scenario summary schema")
         if self.scenario not in _SCENARIOS:
             raise ValueError("unknown batch invariance scenario")
@@ -305,10 +305,10 @@ class BatchInvarianceSummary:
     scenario_summaries: tuple[BatchScenarioSummary, ...]
     anchor_digest: str
     output_digest: str
-    schema_version: str = "cvi.batch_invariance_summary.v1"
+    schema_version: str = "evaluation.batch_invariance_summary.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.batch_invariance_summary.v1":
+        if self.schema_version != "evaluation.batch_invariance_summary.v1":
             raise ValueError("unsupported batch invariance summary schema")
         for name in (
             "artifacts", "vector_dimension", "backend_calls",
@@ -380,10 +380,10 @@ class BatchInvarianceCost:
     artifact_evaluations: int
     peak_nominal_input_tensor_bytes: int
     peak_nominal_output_bytes: int
-    schema_version: str = "cvi.batch_invariance_cost.v1"
+    schema_version: str = "evaluation.batch_invariance_cost.v1"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.batch_invariance_cost.v1":
+        if self.schema_version != "evaluation.batch_invariance_cost.v1":
             raise ValueError("unsupported batch invariance cost schema")
         for name in self.__dataclass_fields__:
             if name != "schema_version":
@@ -425,10 +425,10 @@ class BatchInvarianceReceipt:
         "BATCH_INVARIANCE_ONLY_NOT_BIOMETRIC_NONINFERIORITY_"
         "OR_OPTIMIZATION_PROMOTION"
     )
-    schema_version: str = "cvi.batch_invariance_receipt.v3"
+    schema_version: str = "evaluation.batch_invariance_receipt.v3"
 
     def __post_init__(self) -> None:
-        if self.schema_version != "cvi.batch_invariance_receipt.v3":
+        if self.schema_version != "evaluation.batch_invariance_receipt.v3":
             raise ValueError("unsupported batch invariance receipt schema")
         for name in (
             "precommitment_sha256", "runtime_library_policy_sha256",
@@ -733,7 +733,7 @@ def evaluate_batch_composition_invariance(
     scenario_summaries: list[BatchScenarioSummary] = []
     full_digests: dict[int, str] = {}
     with TemporaryDirectory(
-        prefix="cvi-batch-anchor-",
+        prefix="batch-anchor-",
         dir=temporary_directory_parent,
     ) as temporary:
         anchor_root = Path(temporary)
@@ -923,7 +923,7 @@ def _schedule_manifest(
     schedules: tuple[tuple[str, tuple[tuple[int, ...], ...]], ...],
 ) -> dict[str, Any]:
     return {
-        "schema_version": "cvi.batch_invariance_schedule.v1",
+        "schema_version": "evaluation.batch_invariance_schedule.v1",
         "artifact_content_sha256": [item[0] for item in ordered],
         "batch_size": batch_size,
         "padding_policy": "FORBIDDEN",

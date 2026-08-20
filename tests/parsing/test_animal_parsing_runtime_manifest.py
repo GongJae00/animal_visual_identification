@@ -66,7 +66,7 @@ def _manifest() -> AnimalParsingRuntimeManifest:
         evaluation_reports=(
             ParsingEvaluationBinding(
                 "evaluation",
-                "cvi.test.v1",
+                "test.v1",
                 "TEST_ONLY",
                 6,
                 report_sha,
@@ -100,7 +100,7 @@ def test_animal_parsing_runtime_manifest_accepts_bound_v5_policy() -> None:
     manifest = _manifest()
     legacy = AnimalParsingPolicy(
         class_names=("dog", "cat"),
-        schema_version="cvi.animal_parsing_policy.v5",
+        schema_version="parsing.policy.v5",
     )
     payload = manifest.to_dict()
     payload["supported_classes"] = ["cat", "dog"]
@@ -112,7 +112,7 @@ def test_animal_parsing_runtime_manifest_accepts_persisted_v4_policy() -> None:
     manifest = _manifest()
     persisted = AnimalParsingPolicy(
         class_names=("dog", "cat"),
-        schema_version="cvi.animal_parsing_policy.v4",
+        schema_version="parsing.policy.v4",
     )
     payload = manifest.to_dict()
     payload["supported_classes"] = ["cat", "dog"]

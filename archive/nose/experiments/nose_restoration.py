@@ -26,8 +26,8 @@ from identification.export.nose.signal.restoration import RestorationConfig, res
 from identification.export.nose.signal.temporal import aggregate_nose_embeddings
 from parsing.export.regions.native_yt import validate_manifest_bundle
 
-REPORT_SCHEMA = "cvi.yt_nose_raw_restored_evaluation.v1"
-REPORT_BUNDLE_SCHEMA = "cvi.yt_nose_raw_restored_evaluation_bundle.v1"
+REPORT_SCHEMA = "archive.nose.yt_nose_raw_restored_evaluation.v1"
+REPORT_BUNDLE_SCHEMA = "archive.nose.yt_nose_raw_restored_evaluation_bundle.v1"
 INTERPRETATION = (
     "WITHIN_VIDEO_TRACK_DIAGNOSTIC_NOT_BIOLOGICAL_IDENTITY_VALIDATION_OR_FINAL_EVALUATION"
 )

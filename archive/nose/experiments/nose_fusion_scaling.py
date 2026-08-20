@@ -28,8 +28,8 @@ from shared.foundation.provenance import content_sha256
 from identification.export.nose.signal.temporal import aggregate_nose_embeddings
 from parsing.export.regions.native_yt import validate_manifest_bundle
 
-REPORT_SCHEMA = "cvi.yt_nose_fusion_scaling_evaluation.v1"
-REPORT_BUNDLE_SCHEMA = "cvi.yt_nose_fusion_scaling_evaluation_bundle.v1"
+REPORT_SCHEMA = "archive.nose.yt_nose_fusion_scaling_evaluation.v1"
+REPORT_BUNDLE_SCHEMA = "archive.nose.yt_nose_fusion_scaling_evaluation_bundle.v1"
 INTERPRETATION = (
     "WITHIN_VIDEO_TRACK_TEMPORAL_FUSION_SCALING_DIAGNOSTIC_"
     "NOT_BIOLOGICAL_IDENTITY_VALIDATION_OR_FINAL_EVALUATION"
