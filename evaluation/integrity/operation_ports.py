@@ -10,7 +10,7 @@ from evaluation.controls.control_scoring import (
     EmbeddingCacheManifest,
     EmbeddingCacheVerification,
 )
-from foundation.timing import TimingSummary
+from shared.foundation.timing import TimingSummary
 
 
 class EmbeddingBackendIdentity(Protocol):

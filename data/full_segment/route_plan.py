@@ -21,7 +21,7 @@ from PIL import Image, UnidentifiedImageError
 from data.adapters import ADAPTERS
 from data.source_lock import SOURCE_REGISTRY, get_record
 from data.types import DatasetAdmission, UnifiedCanidSample
-from foundation.provenance import content_sha256
+from shared.foundation.provenance import content_sha256
 
 ROUTE_PLAN_SCHEMA = "cvi.full128_route_plan.v3"
 ROUTE_PLAN_RECORD_SCHEMA = "cvi.full128_route_plan_record.v3"

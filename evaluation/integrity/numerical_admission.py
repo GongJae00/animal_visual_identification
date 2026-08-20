@@ -12,7 +12,7 @@ from typing import Any
 
 from evaluation.controls.control_scoring import EmbeddingCacheManifest
 from evaluation.integrity.operation_ports import EmbeddingProducerConfig
-from foundation.provenance import content_sha256
+from shared.foundation.provenance import content_sha256
 
 
 class NumericalAdmissionDecision(StrEnum):

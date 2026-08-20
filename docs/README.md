@@ -9,7 +9,6 @@
 - [Known Limitations](KNOWN_LIMITATIONS.md)
 - [Ablation results](RESEARCH_PROGRESS.md)
 - [Roadmap](ROADMAP.md)
-- [Workflows](../workflows/README.md)
 - [Changelog](../CHANGELOG.md)
 
-Ablation sets: [legacy/version/](../legacy/version/README.md).
+Ablation sets: [archive/](../archive/README.md).

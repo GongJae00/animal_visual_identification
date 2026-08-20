@@ -7,8 +7,8 @@ from typing import Any
 
 import numpy as np
 
-from parsing.roi import compute_iou
-from parsing.types import DetectionBox, Keypoint, KeypointSet
+from parsing.export.crops.roi import compute_iou
+from parsing.export.types import DetectionBox, Keypoint, KeypointSet
 
 
 def pixel_correct_keypoint(

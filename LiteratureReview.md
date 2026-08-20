@@ -241,7 +241,7 @@ point estimate는 모두 양수지만 CI가 0을 포함한다. 따라서 "fusion
 
 - `nose-region-embedding-consistency-v3-20260730`, lineage payload `lineage_sha256=46b70a9222d154a5661b221f64ea8f2a9451eeec050e10621806c38dcab1c15e`
 - `yt-nose-architecture-eval-v4-consistency-heldout-20260730.json`, report payload `report_sha256=7d9fa6ea1f2010fcaa764893d59e9870c35a0375a6b266e108b09adc58e59e0e`
-- 구현: `embedding/methods/nose/training/embedding_consistency_training.py`, `experiments/nose_architecture.py`
+- 구현: `identification/training/nose/embedding_consistency_training.py`, `archive/nose/experiments/nose_architecture.py`
 
 ## 7. 선행연구와 최근 CVI Nose subarchitecture의 성능 비교
 

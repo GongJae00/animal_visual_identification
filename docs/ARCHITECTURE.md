@@ -4,7 +4,7 @@ This document is the authority for repository ownership and dependency direction
 
 ## Public Runtime
 
-`runtime.IdentityEngine` is the only public runtime. It accepts caller-provided `PIL.Image` crops and performs strict closed-set enrollment and retrieval. It does not decode video or invoke detection, tracking, temporal aggregation, open-set rejection, or a serving facade.
+`prototype.runtime.IdentityEngine` is the only public runtime. It accepts caller-provided `PIL.Image` crops and performs strict closed-set enrollment and search. It does not decode video or invoke detection, tracking, temporal aggregation, open-set rejection, or a serving facade. The public import is `from prototype.runtime import IdentityEngine, Match`. Persisted `cvi.*` values remain schema identifiers, not Python namespaces.
 
 ```text
 explicit config v2
@@ -18,27 +18,31 @@ explicit config v2
     -> ordered Match values
 ```
 
-The supported public Python export surface is `IdentityEngine` and `Match`, implemented by `runtime/__init__.py` and `engine.py`. Gallery bytes, scorer ordering, identity aggregation, and UUID rules remain versioned contracts.
+The supported public Python export surface is `IdentityEngine` and `Match`, implemented by `prototype/runtime/__init__.py` and `engine.py`. Gallery bytes, scorer ordering, identity aggregation, and UUID rules remain versioned contracts.
 
 ## Research Pipeline
 
-Stage names used in discussion map onto these packages. Import paths stay as listed.
+Target order: `parsing → identification → representation → enrollment → gallery → search → evaluation`. 등록 is `enrollment/`. 검색 is `search/`. GenID and ReID are not stage names. Vendor names (Pet-ReID, MiewID) stay. Visualization observes from outside; prototype composes `export/` only.
 
-| Stage | Package | Runtime meaning |
+Current code still lives in the packages below. The target tree is [AGENTS.md](../AGENTS.md).
+
+| Stage | Current package | Runtime meaning |
 |---|---|---|
 | Parsing | `parsing/` | Frozen detection/segmentation that materializes crops and masks. Not invoked by `IdentityEngine`. |
-| Identification | `embedding/` | Encoders that emit per-channel embeddings and explicit evidence state. |
-| GenID | `retrieval/` enroll, `identity/` | Persist GalleryKey / GalleryValue rows for a registry UUIDv5. |
-| ReID | `retrieval/` search | Score a RetrievalQuery against stored keys with exact cosine, then aggregate by identity. |
+| Identification | `identification/` | Encoders that emit per-channel embeddings. Appearance is the live channel. |
+| Representation | `representation/` | Evidence contracts, quality, and channel packing. |
+| 등록 | `enrollment/` | Persist GalleryKey / GalleryValue rows for a registry UUIDv5. |
+| Gallery | `gallery/` | Store and v3→v4 migration. |
+| 검색 | `search/` | Score a RetrievalQuery against stored keys with exact cosine, then aggregate by identity. |
 | Evaluation | `evaluation/` | Identity-disjoint protocols and metrics. Algorithm packages must not import it. |
 
-Checkout commands that orchestrate these packages live under `workflows/` and are indexed in `workflows/README.md`. First-user environment setup lives under `setup/`.
+Commands: `uv run python -m parsing.commands.parse --help`, `identification.commands.train`, `identification.commands.export`, `representation.commands.embed`, `enrollment.commands.enroll`, `gallery.commands.migrate`, `evaluation.commands.evaluate`, `visualization.commands.render`, `prototype.commands.export`, `data.commands.download`, `data.commands.audit`, `operations.commands.measure`. Search has no extra CLI; the product is `IdentityEngine.search`. First-user environment setup lives under `setup/`.
 
 ## Retrieval Roles
 
-QKV names describe retrieval roles, not an attention mechanism. There are no
-learned Q/K/V projections, attention matrices, softmax weights, or value mixing in
-the canonical runtime.
+Query, gallery-key, and gallery-value names describe retrieval roles, not an
+attention mechanism. There are no learned Q/K/V projections, attention matrices,
+softmax weights, or value mixing in the canonical runtime.
 
 | Role | Runtime meaning |
 |---|---|
@@ -61,38 +65,41 @@ same representation path has run for query or enrollment input.
 
 | Path | Responsibility |
 |---|---|
-| `foundation/` | Deterministic hashing, protected I/O, publication, and retained-file primitives |
-| `contracts/` | Model, source, runtime-library, parity, PDQ, and cross-domain evidence contracts; external model-asset intake lives under `contracts/intake/` |
-| `data/` | Dataset adapters, acquisition, crop export, source route planning, and shared data primitives; public-corpus intake lives under `data/public/` |
-| `identity/` | UUID registries, exposure, tracklet and protected splits, duplicate adjudication, admission, face governance, and retrospective research protocols |
-| `parsing/` | Detection, unsupervised ROI quality, geometry, and core localization; full-animal parsing and region candidates use dedicated subpackages |
-| `embedding/` | Embedding methods, representation learning, and evidence contracts under `methods/`, `learning/`, and `evidence/`; nose training and derived embedding views remain embedding-owned |
-| `retrieval/` | QKV retrieval contracts, K/V gallery persistence, exact QK scoring, identity aggregation, and crop enrollment/search pipelines |
-| `evaluation/` | Verification, retrieval, calibration, robustness, protected evaluation, localization protocols and metrics, controls, integrity, and Full128 evaluation |
-| `runtime/` | Public crop-level runtime only |
-| `systems/` | Offline inference, isolated workers, runtime discovery, supervision, decode/capacity measurement, and telemetry |
-| `workflows/` | Functional checkout commands for the current Parsing → Appearance → GenID/ReID path |
-| `legacy/version/` | Frozen ablation sets (`full128`, `afn`, `n4`, `nose`, `face`) plus `common` helpers |
-| `visualization/` | Contract-bound research figures with separated rendering and publication; generated reports remain outside Git |
+| `shared/foundation/` | Deterministic hashing, protected I/O, publication, and retained-file primitives |
+| `shared/contracts/` | Model, source, runtime-library, parity, PDQ, and cross-domain evidence contracts; external model-asset intake lives under `shared/contracts/intake/` |
+| `data/` | Dataset adapters, acquisition, crop export, source route planning, and shared data primitives; public-corpus intake lives under `data/public_sources/` |
+| `enrollment/` | Canonical UUIDv5 registry, registered-only gallery policy, and crop/vector write |
+| `gallery/` | On-disk key/value store and v3→v4 migration |
+| `search/` | Query / gallery-key / gallery-value scoring and crop matching. Not attention. |
+| `parsing/` | Detection, segmentation, regions, quality, and crops. `training/` vs `export/`; commands at `parsing/commands/parse.py`. Identity embedding trainers are not parsing-owned. |
+| `identification/` | Channel encoders. `training/` vs `export/` for appearance, face, and nose. Commands at `identification/commands/`. |
+| `representation/` | Evidence contracts, quality observations, and channel packing. No trainers. |
+| `archive/` | Completed comparison families: `full128`, `appearance_face_nose`, `nose_metric`, `nose`, `face`, `shared_helpers`. Live identification path is Appearance. |
+| `data/audit/` | PDQ, pHash, and geometry audit helpers. Not a pipeline stage. |
+| `evaluation/` | Verification, search metrics, calibration, robustness, protected evaluation, localization, controls, integrity, and identity-disjoint splits |
+| `prototype/` | Public crop-level runtime and ONNX export backends |
+| `operations/` | Isolated workers, decode/ONNX/capacity measurement, and video helpers |
+| `visualization/` | Pipeline observer (`Visualization/vis/00_parsing` … `05_search`) and paper rasters (`Visualization/paper/`). Stages do not import it. |
 | `setup/` | Environment, bootstrap, and release guidance |
-| `tests/` | Behavioral, contract, security, numerical, packaging, and dependency-boundary tests |
+| `tests/` | Behavioral, contract, security, numerical, packaging, and dependency-boundary tests, split by stage under `tests/<stage>/` |
 
 `Visualization/` is an ignored local-output directory. `paper/` is guidance only.
 
 ## Dependency Direction
 
-`tests/test_dependency_boundaries.py` enforces these rules with an AST import scan:
+`tests/test_dependency_boundaries.py` enforces these rules with an AST import scan. Tests are split by stage under `tests/<stage>/`; completed-comparison tests live under `tests/archive/<family>/`.
 
-1. `foundation` imports no other internal package.
-2. `contracts` depends only on itself and `foundation`.
-3. `data` does not import identity, parsing, embedding, retrieval, evaluation, systems, or workflows.
-4. `identity` does not import embedding, evaluation, systems, or workflows.
-5. Algorithm packages do not import `evaluation` or `systems`.
-   Parsing additionally does not import embedding or retrieval.
-6. `runtime` does not import learning, evaluation, systems, experiments, or workflows.
-7. `evaluation` may consume all algorithm packages.
-8. `systems` may wrap algorithms and evaluation, but algorithms do not import it.
-9. The complete top-level internal package graph must remain acyclic.
+1. `shared.foundation` imports no other internal package.
+2. `shared.contracts` depends only on itself and `shared.foundation`.
+3. `data` does not import enrollment, gallery, search, parsing, identification, representation, evaluation, operations, prototype, or visualization.
+4. Algorithm packages do not import `evaluation`, `operations`, `archive`, or `visualization`.
+   Parsing additionally does not import identification, representation, enrollment, gallery, search, prototype, or operations.
+   `identification.export` does not import `identification.training`.
+   Visualization imports `export/` only, never `training/`.
+5. `prototype.runtime` does not import training, evaluation, operations, visualization, or parsing.
+6. `evaluation` may consume all algorithm packages.
+7. `operations` may wrap algorithms, prototype export, and evaluation, but algorithms do not import it.
+8. The complete top-level internal package graph must remain acyclic.
 
 ## Versioned Compatibility
 

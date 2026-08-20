@@ -5,7 +5,7 @@ datasets, model weights, or services. Installed Python dependencies retain
 their own license terms; the resolved dependency set is recorded in
 `uv.lock`.
 
-Detection is not part of the canonical `runtime.IdentityEngine` runtime. Detectors supplied
+Detection is not part of the canonical `prototype.runtime.IdentityEngine` runtime. Detectors supplied
 or installed by users, including separately obtained Ultralytics software,
 are not project dependencies and remain subject to their own open-source or
 commercial terms.

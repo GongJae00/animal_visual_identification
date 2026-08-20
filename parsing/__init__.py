@@ -1,6 +1,19 @@
-"""Parsing stage: frozen detection, segmentation, ROI, and crop materialization.
+"""Parsing: detection, segmentation, regions, quality, and crops.
 
-Full-animal runtime lives in ``parsing.full_segment``. Types live in
-``parsing.types``. ``runtime.IdentityEngine`` does not import this
-package; it still accepts caller-provided crops.
+``training/`` holds student/teacher loops. ``export/`` is the runtime path.
+``prototype.runtime.IdentityEngine`` does not import this package.
 """
+
+from parsing.export.types import (
+    DetectionBox,
+    Keypoint,
+    KeypointSet,
+    LocalizationResult,
+)
+
+__all__ = [
+    "DetectionBox",
+    "Keypoint",
+    "KeypointSet",
+    "LocalizationResult",
+]

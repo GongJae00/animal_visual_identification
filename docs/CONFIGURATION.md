@@ -55,7 +55,7 @@ no public opt-in for the unpinned Torch Hub loader. For DINOv2, only the exact
 `preprocessor_intake_bundle` must refer to admitted local artifacts, and
 `device` must be explicitly `cpu` or `cuda`.
 
-The exact accepted keys are enforced in `runtime/engine.py`; extra keys are errors.
+The exact accepted keys are enforced in `prototype/runtime/engine.py`; extra keys are errors.
 Artifact presence alone is not performance or deployment admission. See
 [Data and Models](DATA_AND_MODELS.md) and
 [Known Limitations](KNOWN_LIMITATIONS.md).
@@ -74,10 +74,11 @@ committed.
 
 ## Other Config Files
 
-Tracked configs live with their owning packages: operational policies
-under `systems/configs/`, data policies under `data/configs/`, schemas
-under `contracts/configs/`, and research definitions under
-`legacy/version/common/configs/`. Their independent schemas are not
+Tracked configs live with their owning packages: ONNX backend examples
+under `prototype/export/configs/`, operational policies under
+`operations/configs/`, data policies under `data/configs/`, schemas
+under `shared/contracts/configs/`, and research definitions under
+`archive/shared_helpers/configs/`. Their independent schemas are not
 interchangeable with retrieval config v2 and must not be passed to
 `IdentityEngine` unless they explicitly declare that schema. The public
 runtime takes a retrieval-config v2 object; it does not ship example JSON.

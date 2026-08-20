@@ -11,7 +11,7 @@ from typing import Any
 
 import numpy as np
 
-from identity.exposure.role_exposure import ExposureStage
+from evaluation.splits.role_exposure import ExposureStage
 
 
 ROBUSTNESS_PROTOCOL_SCHEMA_VERSION = "cvi.robustness_protocol.v1"

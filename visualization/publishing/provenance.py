@@ -7,7 +7,7 @@ from collections.abc import Iterable
 from pathlib import Path
 from typing import Any
 
-from foundation.provenance import content_sha256
+from shared.foundation.provenance import content_sha256
 from visualization.contracts import FigureData
 from visualization.rendering.style import STYLE_FINGERPRINT
 

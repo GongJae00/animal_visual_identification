@@ -9,29 +9,33 @@ The repository's Apache-2.0 license does not relicense third-party material.
 
 Data, admitted checkpoints, receipts, and experiment roots resolve from
 `CANINE_IDENTITY_DATA_DIR`, defaulting to `~/canine_identity_data`.
+Dataset files resolve from `CANINE_IDENTITY_DATASETS_DIR` when set, otherwise
+`$CANINE_IDENTITY_DATA_DIR/datasets`.
 `CANINE_IDENTITY_MODELS_DIR`, defaulting to
 `~/.cache/canine_identity/models`, is a candidate-model cache used only by disabled
 or unadmitted acquisition paths; cataloged artifacts live under
 `$CANINE_IDENTITY_DATA_DIR/checkpoints`.
 
 ```bash
-export CANINE_IDENTITY_DATA_DIR=/path/to/canine-identity-data
-export CANINE_IDENTITY_MODELS_DIR=/path/to/canine-identity-model-cache
+export CANINE_IDENTITY_DATA_DIR=/path/to/identity-data
+export CANINE_IDENTITY_DATASETS_DIR=/path/to/datasets
+export CANINE_IDENTITY_MODELS_DIR=/path/to/identity-model-cache
 ```
 
-Both values above are placeholders for user-controlled directories.
+Those values are placeholders for user-controlled directories.
 
 Use one content-oriented directory per dataset. License and workflow admission
 belong in registry metadata rather than directory names:
 
 ```text
 $CANINE_IDENTITY_DATA_DIR/
-  datasets/{ap10k,dogflw,dogfacenet224,mpdd,sibetan,yt-bb-dog}/
   checkpoints/<model-artifact-id>/
   experiments/
   receipts/
   manifests/
   cache/
+  artifacts/
+$CANINE_IDENTITY_DATASETS_DIR/{ap10k,dogflw,dogfacenet224,mpdd,sibetan,yt-bb-dog}/
 ```
 
 ## Dataset Downloader
@@ -39,8 +43,8 @@ $CANINE_IDENTITY_DATA_DIR/
 Inspect the current status first:
 
 ```bash
-uv run python workflows/download_datasets.py --list
-uv run python workflows/download_datasets.py --help
+uv run python -m data.commands.download datasets --list
+uv run python -m data.commands.download datasets --help
 ```
 
 Current behavior is deliberately narrower than the command's name suggests:
@@ -54,7 +58,7 @@ Current behavior is deliberately narrower than the command's name suggests:
 | `sibetan` | Disabled/manual | Displays a manual source tip in `--list`; selecting it fails without network access or directory creation |
 | `mpdd` | Disabled/manual | Displays a manual source tip in `--list`; selecting it fails without network access or directory creation |
 
-Use `--data-root /path/to/canine-identity-data` to override the root for this command. The
+Use `--data-root /path/to/identity-data` to override the working root for this command. The
 no-argument and `--dataset all` forms are intentional successful no-ops because
 there are no admitted automatic downloads. They print that no network request
 or filesystem change was attempted. Every named selector fails with manual
@@ -78,8 +82,8 @@ canonical registered dog ID; rejected and superseded records remain auditable.
 Inspect model acquisition status before model work:
 
 ```bash
-uv run python workflows/download_models.py --list
-uv run python workflows/download_models.py --help
+uv run python -m data.commands.download models --list
+uv run python -m data.commands.download models --help
 ```
 
 Current model behavior:
@@ -104,7 +108,7 @@ expected by its channel implementation.
 
 ## Artifact Handling
 
-Known local model artifacts are inventoried by `contracts.model_catalog`. Call
+Known local model artifacts are inventoried by `shared.contracts.model_catalog`. Call
 `get_model_artifact("<role>")` for logical selection and
 `verify_model_artifact("<role>")` when exact bytes are required. Role aliases
 are logical lookups, not filesystem symlinks. Current roles include

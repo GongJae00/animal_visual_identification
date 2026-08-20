@@ -33,7 +33,7 @@ Run the smallest relevant test target while developing, then run the complete
 suite when the required optional dependencies are available.
 
 ```bash
-uv run pytest tests/test_public_runtime_contracts.py
+uv run pytest tests/prototype/test_public_runtime_contracts.py
 uv run pytest
 git diff --check
 ```

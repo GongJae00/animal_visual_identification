@@ -12,7 +12,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any
 
-from contracts.contracts import Modality
+from shared.contracts.contracts import Modality
 from data.acquisition import sha256_file
 from data.pair_artifacts import (
     PairArtifactEntry,
@@ -21,7 +21,7 @@ from data.pair_artifacts import (
     PairConstructionView,
     verify_pair_artifact_files,
 )
-from foundation.provenance import content_sha256
+from shared.foundation.provenance import content_sha256
 
 
 @dataclass(frozen=True, slots=True)

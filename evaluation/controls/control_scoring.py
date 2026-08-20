@@ -16,7 +16,7 @@ from evaluation.controls.control_transform import (
     ControlTransformReceipt,
     verify_control_artifact_files,
 )
-from foundation.provenance import content_sha256
+from shared.foundation.provenance import content_sha256
 from evaluation.controls.scoring import (
     PairArtifactManifest,
     PairArtifactVerification,

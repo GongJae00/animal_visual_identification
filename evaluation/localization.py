@@ -11,13 +11,13 @@ import numpy as np
 from PIL import Image, ImageDraw
 
 from data.types import UnifiedCanidSample
-from parsing.adapters import AbstractLocalizationAdapter
+from parsing.export.detection.adapters import AbstractLocalizationAdapter
 from evaluation.localization_metrics import (
     detection_summary,
     greedy_bipartite_match,
 )
-from parsing.roi import compute_iou
-from parsing.types import (
+from parsing.export.crops.roi import compute_iou
+from parsing.export.types import (
     AP10K_BODY_17_KEYPOINT_NAMES,
     AP10K_BODY_17_SCHEMA,
     DetectionBox,

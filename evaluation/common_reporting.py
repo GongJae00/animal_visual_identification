@@ -11,8 +11,8 @@ from typing import Any
 import numpy as np
 
 from evaluation.embedding_diagnostics import compute_embedding_diagnostics
-from evaluation.retrieval import identity_clustered_bootstrap_ci
-from foundation.provenance import canonical_json_bytes, content_sha256
+from evaluation.search_metrics.metrics import identity_clustered_bootstrap_ci
+from shared.foundation.provenance import canonical_json_bytes, content_sha256
 
 CACHED_PROTOCOL_INPUT_SCHEMA_VERSION = "cvi.cached_protocol_input.v1"
 COMMON_REPORT_SCHEMA_VERSION = "cvi.common_evaluation_report.v1"

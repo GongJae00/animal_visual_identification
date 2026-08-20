@@ -13,7 +13,7 @@ from data.pair_artifacts import (
     validate_pair_artifact_manifest,
     verify_pair_artifact_files,
 )
-from evaluation import (
+from evaluation.protected_verification import (
     ClusterBootstrapConfig,
     FrozenVerificationThreshold,
     ScoredVerificationPair,
@@ -21,7 +21,7 @@ from evaluation import (
     evaluate_frozen_verification_threshold,
 )
 from evaluation.controls.pairing import PairConstructionResult, PairingPolicy
-from foundation.provenance import content_sha256
+from shared.foundation.provenance import content_sha256
 
 
 @dataclass(frozen=True, slots=True)

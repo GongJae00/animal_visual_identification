@@ -18,30 +18,58 @@ Linux, Python 3.12, [`uv`](https://docs.astral.sh/uv/). 안내는 [setup/](setup
 
 ## 파이프라인
 
-연구 단계는 아래 패키지에 대응합니다. import 경로를 단계 이름에 맞춰 바꾸지 않습니다.
+단계는 `parsing → identification → representation → enrollment → gallery → search → evaluation`입니다.
+등록은 `enrollment/`, 검색은 `search/`입니다. GenID와 ReID는 단계 이름이 아닙니다.
+Pet-ReID, MiewID 같은 공급업체 이름은 유지합니다. visualization은 파이프라인 밖에서
+관찰하고, prototype은 `export/`만 조합합니다.
 
-| 단계 | 패키지 | 역할 |
+현재 구현은 아래 패키지에 있습니다. 대상 트리는 [AGENTS.md](AGENTS.md)입니다.
+
+| 단계 | 현재 패키지 | 역할 |
 |---|---|---|
 | Parsing | `parsing/` | Frozen detection/segmentation. 배경 shortcut을 줄인 crop/mask. `IdentityEngine`은 호출하지 않음. |
-| Identification | `embedding/` | Channel embedding. 현재 E2E 기준은 Appearance. Face/Nose는 연구 후보. |
-| GenID | `retrieval/` enroll | Crop → representation → gallery K/V. identity는 UUIDv5. |
-| ReID | `retrieval/` search | QKV는 역할 이름이다. 교집합 채널 weighted cosine. attention 아님. |
+| Identification | `identification/` | Channel embedding. 현재 E2E 기준은 Appearance. Face/Nose는 연구 후보. |
+| Representation | `representation/` | Evidence, quality, channel packing. |
+| 등록 | `enrollment/` | Crop/vector → gallery K/V. identity는 canonical UUIDv5. |
+| Gallery | `gallery/` | Store, schema, migration. |
+| 검색 | `search/` | Query/gallery-key/gallery-value는 역할 이름이다. 교집합 채널 weighted cosine. attention 아님. |
 | Evaluation | `evaluation/` | 분할, pairing, metric. 알고리즘 패키지는 evaluation을 import하지 않음. |
+| Prototype | `prototype/` | 공개 runtime과 ONNX export. |
+| Operations | `operations/` | workers, measurement, video. IdentityEngine은 import하지 않음. |
 
-데이터 adapter는 `data/`, canonical ID와 split은 `identity/`, 스키마는 `contracts/`.
-명령은 `workflows/<command>.py`이며 색인은 [workflows/README.md](workflows/README.md).
+데이터 adapter는 `data/`, canonical ID는 `enrollment/registry/`, split은 `evaluation/splits/`, 스키마는 `shared/contracts/`.
+명령의 법은 `<stage>/commands/<verb>.py`입니다.
+
+```bash
+uv run python -m parsing.commands.parse --help
+uv run python -m identification.commands.train --help
+uv run python -m identification.commands.export --help
+uv run python -m representation.commands.embed --help
+uv run python -m enrollment.commands.enroll --help
+uv run python -m gallery.commands.migrate --help
+uv run python -m evaluation.commands.evaluate --help
+uv run python -m visualization.commands.render --help
+uv run python -m prototype.commands.export --help
+uv run python -m data.commands.download --help
+uv run python -m data.commands.audit --help
+uv run python -m operations.commands.measure --help
+```
+
+검색 CLI는 없고 `IdentityEngine.search`가 제품입니다. 각 단계 README가 하위 명령을 색인합니다.
 
 연구 diagnostic E2E: parser materialize → Appearance embed →
-`workflows/evaluate_parsed_body_reid.py`. 완료된 ablation은
-[legacy/version/](legacy/version/README.md), 결과 표는
+`evaluation/parsed_body.py`. 완료된 ablation은
+[archive/](archive/README.md), 결과 표는
 [연구 진행 요약](docs/RESEARCH_PROGRESS.md). 제품 경로는 아래 API입니다.
 
 ## 공개 API
 
+공개 import:
+
 ```python
 from PIL import Image
 
-from runtime import IdentityEngine, Match
+from prototype.runtime import IdentityEngine, Match
 
 engine = IdentityEngine("/etc/canine-identity/retrieval.json")
 
@@ -71,7 +99,7 @@ service deployment.
 ## 검증
 
 ```bash
-uv run pytest tests/test_public_runtime_contracts.py
+uv run pytest tests/prototype/test_public_runtime_contracts.py
 uv run pytest
 git diff --check
 ```

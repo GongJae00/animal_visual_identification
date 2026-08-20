@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from foundation.provenance import content_sha256
+from shared.foundation.provenance import content_sha256
 
 STYLE_VERSION = "cvi.vis.style.v1"
 FONT_FAMILY = "DejaVu Sans"

@@ -36,7 +36,7 @@ from evaluation.controls.scoring import (
     PairArtifactVerification,
     verify_pair_artifact_files,
 )
-from foundation.provenance import content_sha256
+from shared.foundation.provenance import content_sha256
 
 SUPPORTED_SEMANTICS_VERSION = "cvi.visual_control_transform.v1"
 _SAFE_TOKEN = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}")

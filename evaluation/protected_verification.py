@@ -9,13 +9,13 @@ from random import Random
 from statistics import NormalDist
 from typing import Any
 
-from foundation.binomial import (
+from shared.foundation.binomial import (
     required_zero_event_trials as _required_zero_event_trials,
 )
-from foundation.binomial import (
+from shared.foundation.binomial import (
     zero_event_exact_upper_bound as _zero_event_exact_upper_bound,
 )
-from foundation.provenance import content_sha256
+from shared.foundation.provenance import content_sha256
 
 required_zero_event_trials = _required_zero_event_trials
 zero_event_exact_upper_bound = _zero_event_exact_upper_bound

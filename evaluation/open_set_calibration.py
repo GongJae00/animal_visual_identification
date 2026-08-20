@@ -13,8 +13,8 @@ from dataclasses import dataclass
 from enum import StrEnum
 from typing import Any
 
-from foundation.provenance import content_sha256
-from identity.splits.protected_public_split import ProtectedPublicSplitPolicy
+from shared.foundation.provenance import content_sha256
+from evaluation.splits.protected_public_split import ProtectedPublicSplitPolicy
 
 
 class OpenSetDisposition(StrEnum):

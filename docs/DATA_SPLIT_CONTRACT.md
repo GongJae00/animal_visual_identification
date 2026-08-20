@@ -63,7 +63,7 @@ scores are observed.
 ## Validation
 
 ```bash
-uv run python workflows/build_identity_registry.py check \
+uv run python -m enrollment.commands.enroll check \
   /protected/manifests/split.json
 ```
 

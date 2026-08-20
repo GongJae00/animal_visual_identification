@@ -19,7 +19,7 @@ from pathlib import Path, PurePosixPath
 
 from PIL import Image
 
-from data.public.public_canine_manifest import (
+from data.public_sources.public_canine_manifest import (
     DOGFACE_TEST_MD5,
     DOGFACE_TEST_SHA256,
     DOGFACE_TRAIN_MD5,
@@ -30,7 +30,7 @@ from data.types import (
     CaptureGroupKind,
     UnifiedCanidSample,
 )
-from contracts.identity_ids import (
+from shared.contracts.identity_ids import (
     compute_registered_dog_id,
     compute_sample_token,
 )
@@ -68,8 +68,6 @@ def _verified_path(root: Path, relative: str) -> Path:
         raise ValueError(f"not a regular file: {resolved}")
     if not resolved.is_relative_to(resolved_root):
         raise ValueError(f"path traversal: {relative}")
-    # Preserve the caller's absolute root spelling so relative paths remain
-    # stable when CANINE_IDENTITY_DATA_DIR itself is a symlink to protected storage.
     return candidate
 
 

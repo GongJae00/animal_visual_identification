@@ -2,6 +2,8 @@
 
 This roadmap defines future evidence gates, not completed work, a schedule, or a performance promise. The public runtime remains crop-level closed-set retrieval until a gate is implemented, artifact-bound, tested, and independently evaluated.
 
+`search/` is the working directory name for 검색. A more precise term may replace the folder later. Do not revert the stage name to ReID or GenID.
+
 ## Data Gate
 
 - Keep source archives and extracted data outside Git.

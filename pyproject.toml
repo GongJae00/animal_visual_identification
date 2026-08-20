@@ -1,6 +1,6 @@
 [project]
 name = "animal-visual-identification"
-version = "0.5.0"
+version = "0.6.0"
 description = "Research infrastructure for contract-bound animal visual identification"
 readme = "README.md"
 authors = [
@@ -105,16 +105,18 @@ conflicts = [
 
 [tool.uv.build-backend]
 module-name = [
-    "contracts",
-    "runtime",
+    "prototype",
+    "archive",
     "data",
     "evaluation",
-    "embedding",
-    "foundation",
-    "identity",
-    "retrieval",
+    "identification",
+    "enrollment",
+    "gallery",
+    "search",
     "parsing",
-    "systems",
+    "representation",
+    "shared",
+    "operations",
     "visualization",
 ]
 module-root = ""
@@ -124,11 +126,10 @@ source-include = [
     "SECURITY.md",
     "THIRD_PARTY_LICENSES.md",
     "docs/**",
-    "legacy/**",
+    "archive/**",
     "paper/**",
     "setup/**",
     "tests/**",
-    "workflows/**",
 ]
 
 [tool.pytest.ini_options]

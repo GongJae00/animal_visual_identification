@@ -12,7 +12,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any
 
-from contracts.runtime_library_provenance import (
+from shared.contracts.runtime_library_provenance import (
     RuntimeLibraryManifest,
     RuntimeLibraryPhase,
     RuntimeLibraryTracker,
@@ -20,8 +20,8 @@ from contracts.runtime_library_provenance import (
 from data.acquisition import sha256_file
 from evaluation.controls.control_scoring import ControlScoringInventory
 from evaluation.integrity.operation_ports import EmbeddingBatchBackend, EmbeddingProducerConfig
-from foundation.provenance import content_sha256
-from embedding.learning.optimization import PromotionDecision
+from shared.foundation.provenance import content_sha256
+from identification.training.appearance.optimization import PromotionDecision
 
 _SCENARIOS = (
     "FULL_BATCH",

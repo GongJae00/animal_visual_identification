@@ -8,7 +8,7 @@ from pathlib import Path, PurePosixPath
 from typing import Any, Protocol
 
 from data.acquisition import sha256_file
-from foundation.provenance import content_sha256
+from shared.foundation.provenance import content_sha256
 
 
 class PairArtifactBindingView(Protocol):

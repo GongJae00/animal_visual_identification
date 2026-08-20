@@ -2,8 +2,8 @@
 
 Receipt-bound research diagnostics only. Not cross-session biometric validation,
 open-set assurance, or deployment performance. Frozen functional path:
-parser policy v6 + Appearance A0 + cosine retrieval. Ablation sets live in [legacy/version/](../legacy/version/README.md)
-(`full128`, `afn`, `n4`, `nose`, `face`).
+parser policy v6 + Appearance A0 + cosine retrieval. Ablation sets live in [archive/](../archive/README.md)
+(`full128`, `appearance_face_nose`, `nose_metric`, `nose`, `face`).
 
 ## Current path
 
@@ -11,7 +11,7 @@ parser policy v6 + Appearance A0 + cosine retrieval. Ablation sets live in [lega
 |---|---|---|
 | Parsing | dog-only policy v6, route-plan v3, batch 4 | v5 cat+dog and extra-candidate rejects dropped usable single-dog crops. Batch 8/16 changed semantics. |
 | Identification | Appearance A0 (DINOv2-small, receipt-bound) | Strongest closed-set diagnostic. Face/Nose fusion did not beat A0. |
-| GenID / ReID | Gallery K/V, available-intersection weighted cosine | Not attention. Identity = max template. |
+| 등록 / 검색 | Gallery K/V, available-intersection weighted cosine | Not attention. Identity = max template. |
 | Evaluation | identity-disjoint protocols | Random frame splits are forbidden. |
 
 ## Appearance / Face / Nose
@@ -64,12 +64,12 @@ Git-external `report_sha256` values. Re-run CLIs live under the matching set.
 
 | Report | digest | Set / CLI |
 |---|---|---|
-| fixed A0/F5/N3 eval | `89de7113…833e1` | `afn/workflows/evaluate_fixed_multievidence.py` |
-| topology audit | `c5ef81f8…695eaa` | `common/workflows/audit_identity_topology.py` |
-| N4 publisher eval | `a0cb0880…7e7041a` | `n4/workflows/evaluate_n4_metric_adapter.py` |
-| N4 SiBeTan swap | `59cd6c75…25fea6c1` | `afn/workflows/evaluate_sibetan_multievidence.py` |
-| Full128 public report | `c09c622c…4de4d2b` | `full128/workflows/evaluate_full128_successors.py` |
-| three-seed decision | `2eb46ff4…d8ad63a` | `full128/workflows/decide_full128_successor_multiseed.py` |
-| representation traces | `b08eabe7…a683a51` | `full128/workflows/generate_full128_representation_traces.py` |
+| fixed A0/F5/N3 eval | `89de7113…833e1` | `archive/appearance_face_nose/commands/evaluate_fixed_multievidence.py` |
+| topology audit | `c5ef81f8…695eaa` | `archive/shared_helpers/commands/audit_identity_topology.py` |
+| N4 publisher eval | `a0cb0880…7e7041a` | `archive/nose_metric/commands/evaluate_n4_metric_adapter.py` |
+| N4 SiBeTan swap | `59cd6c75…25fea6c1` | `archive/appearance_face_nose/commands/evaluate_sibetan_multievidence.py` |
+| Full128 public report | `c09c622c…4de4d2b` | `archive/full128/commands/evaluate_full128_successors.py` |
+| three-seed decision | `2eb46ff4…d8ad63a` | `archive/full128/commands/decide_full128_successor_multiseed.py` |
+| representation traces | `b08eabe7…a683a51` | `archive/full128/commands/generate_full128_representation_traces.py` |
 
 Still open: cross-session cohort, target association, manual Nose subset, independent unknown-dog open-set. Gates: [Roadmap](ROADMAP.md). Software scope: [Architecture](ARCHITECTURE.md).

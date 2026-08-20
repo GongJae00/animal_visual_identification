@@ -12,14 +12,14 @@ from typing import Any, ClassVar
 
 from jsonschema import Draft202012Validator
 
-from foundation.protected_io import (
+from shared.foundation.protected_io import (
     StrictJsonDocument,
     json_document_bytes,
     read_strict_json_document,
     write_private_json_directory_bundle,
 )
-from foundation.provenance import content_sha256
-from identity.exposure.role_exposure import (
+from shared.foundation.provenance import content_sha256
+from evaluation.splits.role_exposure import (
     CandidateRoleAssignment,
     CandidateRoleRecord,
     ExposureDeclarationKind,
@@ -821,7 +821,7 @@ def load_protected_evaluation(
 
 
 def validate_protected_report(report: dict[str, Any]) -> StrictJsonDocument:
-    resource = files("contracts").joinpath("schemas").joinpath(
+    resource = files("shared.contracts").joinpath("schemas").joinpath(
         REPORT_SCHEMA_FILENAME
     )
     with as_file(resource) as schema_path:

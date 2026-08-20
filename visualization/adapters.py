@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
-from foundation.provenance import content_sha256
+from shared.foundation.provenance import content_sha256
 from visualization.contracts import FigureContractError, FigureData, SourceBinding
 from visualization.privacy import PublicationScope
 from visualization.registry import FIGURE_BY_ID

@@ -6,20 +6,22 @@ Keep source code separate from private datasets, embeddings, checkpoints, and
 experiment outputs. Configure the data root explicitly for each machine:
 
 ```bash
-export CANINE_IDENTITY_DATA_DIR=/path/to/canine-identity-data
+export CANINE_IDENTITY_DATA_DIR=/path/to/identity-data
+export CANINE_IDENTITY_DATASETS_DIR=/path/to/datasets
 ```
 
-The configured root may use this layout:
+The configured roots may use this layout:
 
 ```text
 $CANINE_IDENTITY_DATA_DIR/
   downloads/
-  datasets/<dataset-name>/
   checkpoints/<model-artifact-id>/
   experiments/
   receipts/
   manifests/
   cache/
+  artifacts/
+$CANINE_IDENTITY_DATASETS_DIR/<dataset-name>/
 ```
 
 Dataset and checkpoint directory names identify content, not permission or

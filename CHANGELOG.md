@@ -7,6 +7,81 @@ contracts remain readable.
 
 ## Unreleased
 
+### Compact follow-up
+
+- Dataset files resolve from `CANINE_IDENTITY_DATASETS_DIR` when set, otherwise
+  `$CANINE_IDENTITY_DATA_DIR/datasets`. Checkpoints, receipts, caches, and
+  experiment state stay under `CANINE_IDENTITY_DATA_DIR`.
+- Split tests by stage under `tests/<stage>/`. Completed-comparison tests live
+  under `tests/archive/{full128,appearance_face_nose,nose_metric,nose,face,shared_helpers}/`.
+  Cross-cutting scans stay at `tests/test_dependency_boundaries.py` and
+  `tests/test_packaging_import_surfaces.py`. Tests locate the repository through
+  `tests/repo_root.py`.
+- Renamed `data/public/` to `data/public_sources/`.
+- Packaged `evaluation/verification/` (`metrics.py` plus public re-exports).
+- Moved independently runnable command siblings out of `commands/` into owner
+  packages. Stage verbs remain `parse`, `train`/`export`, `embed`, `enroll`,
+  `migrate`, `evaluate`, `render`, `download`/`audit`, and `measure`. Evaluation
+  still keeps `compare_score_drift` and `create_batch_invariance_precommitment`
+  next to `evaluate.py` because those CLIs import `operations`.
+
+### Structure Overhaul
+
+Version `0.6.0`. Public import is `from prototype.runtime import IdentityEngine, Match`.
+
+- Recorded the capability-noun tree as contributor law in `AGENTS.md`. Pipeline
+  stage names are Parsing, Identification, Representation, 등록
+  (`enrollment/`), gallery, 검색 (`search/`), and Evaluation. GenID and ReID
+  are not stage names. Vendor names (Pet-ReID, MiewID) stay.
+- Public import is `from prototype.runtime import IdentityEngine, Match`.
+  Persisted `cvi.*` identifiers, public field `dog_id`, env
+  `CANINE_IDENTITY_DATA_DIR`, `IdentityEngine` behavior, and root
+  `LiteratureReview.md` are unchanged.
+- Commands live at `<stage>/commands/<verb>.py`. Do not add
+  `workflows/`, `utils/`, `misc/`, `helpers/`, or `common/` dumps.
+- Nested `foundation/` and `contracts/` under `shared/`. Imports are
+  `shared.foundation` and `shared.contracts`. Persisted `cvi.*`
+  identifiers are unchanged. Physical path moves create new source
+  provenance.
+- Split `parsing/` into `training/` and `export/` (detect → segment →
+  region → quality → crop). Commands live at
+  `python -m parsing.commands.parse`. Identity embedding trainers stay
+  outside parsing.
+- Split `embedding/` into `identification/` and `representation/`.
+  Appearance/Face/Nose live under identification `training/` vs `export/`.
+  Evidence and channel packing live under `representation/`. Full128 moved
+  to `archive/full128/`. PDQ/pHash moved to `data/audit/`. The `embedding/`
+  package is gone.
+- Split `retrieval/` and `identity/` into `enrollment/`, `gallery/`, and
+  `search/`. Identity-disjoint splits, exposure, admission, leakage, face
+  governance, and research kfold live under `evaluation/splits/`. Scoring
+  lives in `search/scoring/roles.py` (query / gallery-key / gallery-value
+  roles, not attention). Commands:
+  `python -m enrollment.commands.enroll` and
+  `python -m gallery.commands.migrate`. Search has no extra CLI.
+  `identity/` and `retrieval/` are gone.
+- Moved `runtime/` to `prototype/runtime/` and `systems/` to
+  `prototype/export/` (ONNX backends) plus `operations/{workers,measurement,video}`.
+  Commands: `python -m prototype.commands.export` and
+  `python -m operations.commands.measure` (`onnx`, `probe`, `decode`,
+  `capacity`). `runtime/` and `systems/` are gone. `pyproject.toml` is `0.6.0`.
+- Moved `evaluation/retrieval.py` to `evaluation/search_metrics/metrics.py`.
+  Commands live at `python -m evaluation.commands.evaluate`. Completed
+  comparison sets live under `archive/{full128,appearance_face_nose,nose_metric,nose,face,shared_helpers}`
+  with `commands/` not `workflows/`. `legacy/` is gone.
+- Visualization writes `Visualization/vis/00_parsing` … `05_search` via
+  `python -m visualization.commands.render --stage`. Paper
+  `FIGURE_REGISTRY` 00–17 stays a separate sequence (`--paper` writes
+  `Visualization/paper/`). Leftover `workflows/` CLIs moved into stage
+  `commands/` (or archive PDQ worker/regression). `workflows/` is gone.
+- Sweep leftover imports and current-path docs. `embedding`, `identity`,
+  `retrieval`, `runtime`, `systems`, `workflows`, and `legacy` are gone.
+  Historical provenance families (`embedding.methods.face.*` logical
+  component, PDQ `workflows.build_native_pdq_worker` entrypoints,
+  `foundation/` path inventories) stay readable. Vendor Pet-ReID/MiewID
+  and provisional GenID identity records stay. `dist/` old
+  `canine_video_identity` wheels remain gitignored.
+
 ### Compactness
 
 - Moved environment bootstrap from `scripts/check_env.sh` to

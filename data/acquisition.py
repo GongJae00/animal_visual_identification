@@ -13,7 +13,7 @@ from fractions import Fraction
 from pathlib import Path
 from typing import Any
 
-from foundation.provenance import content_sha256
+from shared.foundation.provenance import content_sha256
 
 
 class IRMechanism(StrEnum):

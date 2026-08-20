@@ -10,8 +10,8 @@ from dataclasses import dataclass
 from typing import Any
 
 from data.types import UnifiedCanidSample
-from foundation.protected_io import read_strict_json_document
-from foundation.provenance import content_sha256
+from shared.foundation.protected_io import read_strict_json_document
+from shared.foundation.provenance import content_sha256
 
 _DATASETS = frozenset({"ap10k-dog", "dogflw"})
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")

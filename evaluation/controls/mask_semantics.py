@@ -22,7 +22,7 @@ from evaluation.controls.scoring import (
     PairArtifactVerification,
     verify_pair_artifact_files,
 )
-from foundation.provenance import content_sha256
+from shared.foundation.provenance import content_sha256
 
 
 @dataclass(frozen=True, slots=True)

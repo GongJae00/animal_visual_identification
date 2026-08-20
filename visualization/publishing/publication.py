@@ -9,7 +9,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any
 
-from foundation.protected_publication import fsync_directory, rename_directory_noreplace
+from shared.foundation.protected_publication import fsync_directory, rename_directory_noreplace
 from visualization.contracts import FigureContractError, FigureData
 from visualization.privacy import PublicationScope, scope_allows
 from visualization.publishing.provenance import build_inventory, build_provenance

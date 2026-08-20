@@ -8,7 +8,7 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any, Self
 
-from foundation.provenance import canonical_json_bytes, content_sha256
+from shared.foundation.provenance import canonical_json_bytes, content_sha256
 from visualization.privacy import PublicationScope, validate_publishable_value
 
 FIGURE_DATA_SCHEMA = "cvi.figure_data.v1"

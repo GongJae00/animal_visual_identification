@@ -15,7 +15,7 @@ from evaluation.full128_successor_reporting import (
     Full128SuccessorEvaluationError,
     validate_public_successor_evaluation_report,
 )
-from foundation.provenance import content_sha256
+from shared.foundation.provenance import content_sha256
 from visualization.contracts import FigureContractError, FigureData, SourceBinding
 from visualization.privacy import PublicationScope
 
@@ -77,13 +77,13 @@ def adapt_successor_family(
         public = validate_public_successor_evaluation_report(public_report)
     except Full128SuccessorEvaluationError as exc:
         raise FigureContractError(str(exc)) from exc
-    from identity.face.face_gallery_query_panel import (
+    from evaluation.splits.face.face_gallery_query_panel import (
         validate_face_gallery_query_panel_bundle,
     )
-    from identity.face.face_identity_protocol_v2 import (
+    from evaluation.splits.face.face_identity_protocol_v2 import (
         validate_face_identity_protocol_v2_bundle,
     )
-    from embedding.methods.full_segment.face_visible import (
+    from archive.full128.methods.face_visible import (
         validate_face_visible_successor_inventory_bundle,
     )
 
@@ -94,7 +94,7 @@ def adapt_successor_family(
         verify_artifacts=False,
     )
     _validate_governance_closure(protocol, panel, inventory)
-    from evaluation.full_segment.full128_successors import build_authoritative_fixed_evaluation_panel
+    from archive.full128.evaluation.full128_successors import build_authoritative_fixed_evaluation_panel
 
     effective_panel = build_authoritative_fixed_evaluation_panel(
         inventory, protocol, panel
@@ -785,7 +785,7 @@ def _embedding_diagnostics(
     aliases: Mapping[str, str],
     bindings: tuple[SourceBinding, ...],
 ) -> FigureData:
-    from evaluation.full_segment.full128_successors import open_successor_embedding_cache
+    from archive.full128.evaluation.full128_successors import open_successor_embedding_cache
 
     candidate_hashes = {
         candidate["successor_id"]: candidate["cache_descriptor_sha256"]
@@ -1007,7 +1007,7 @@ def _private_ranked_qkv(
     asset_root: Path,
     bindings: tuple[SourceBinding, ...],
 ) -> FigureData:
-    from evaluation.full_segment.full128_successors import sanitize_successor_evaluation_report
+    from archive.full128.evaluation.full128_successors import sanitize_successor_evaluation_report
 
     sanitized = sanitize_successor_evaluation_report(private_report)
     sanitized_comparable = {

@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import numpy as np
 from sklearn.metrics import brier_score_loss
-from embedding.evidence.calibrator import CalibrationError
-from embedding.evidence.calibrator import (
+from representation.evidence.calibrator import CalibrationError
+from representation.evidence.calibrator import (
     fit_isotonic_calibration as fit_isotonic_calibration,
 )
 

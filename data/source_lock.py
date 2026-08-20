@@ -5,7 +5,7 @@ Admission decisions are versioned and must not be silently changed.
 
 from __future__ import annotations
 
-from contracts.model_paths import DATASETS_DIR
+from shared.contracts.model_paths import DATASETS_DIR
 from data.types import (
     CanidDatasetRecord,
     CaptureGroupKind,

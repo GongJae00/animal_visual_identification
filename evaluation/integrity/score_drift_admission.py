@@ -30,8 +30,8 @@ from evaluation.integrity.operation_ports import (
     EmbeddingProducerConfig,
     EmbeddingProductionReceipt,
 )
-from foundation.provenance import content_sha256
-from embedding.learning.optimization import PromotionDecision
+from shared.foundation.provenance import content_sha256
+from identification.training.appearance.optimization import PromotionDecision
 
 
 class ScoreDriftDecision(StrEnum):

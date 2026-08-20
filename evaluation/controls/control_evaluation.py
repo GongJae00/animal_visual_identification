@@ -15,7 +15,7 @@ from evaluation.controls.control_scoring import (
     ControlBlindScoreReceipt,
     EmbeddingCacheManifest,
 )
-from evaluation import (
+from evaluation.protected_verification import (
     ClusterBootstrapConfig,
     FrozenVerificationThreshold,
     ScoredVerificationPair,
@@ -28,7 +28,7 @@ from evaluation.controls.pairing import (
     PairingPolicy,
     PairStratum,
 )
-from foundation.provenance import content_sha256
+from shared.foundation.provenance import content_sha256
 
 
 @dataclass(frozen=True, slots=True)

@@ -7,7 +7,7 @@ import re
 from collections.abc import Mapping
 from typing import Any
 
-from foundation.provenance import content_sha256
+from shared.foundation.provenance import content_sha256
 
 PUBLIC_REPORT_SCHEMA = "cvi.full128_successor_public_evaluation.v1"
 DEV_SELECTION_SCHEMA = "cvi.full128_successor_dev_selection_receipt.v1"

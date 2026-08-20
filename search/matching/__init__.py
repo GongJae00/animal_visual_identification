@@ -1,0 +1,1 @@
+"""Crop-to-gallery matching."""

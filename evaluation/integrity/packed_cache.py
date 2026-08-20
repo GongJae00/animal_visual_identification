@@ -18,7 +18,7 @@ from evaluation.controls.control_scoring import (
     EmbeddingCachePolicy,
     embedding_cache_key,
 )
-from foundation.provenance import content_sha256
+from shared.foundation.provenance import content_sha256
 
 
 PACKED_VECTOR_FILE_NAME = "vectors.f32le.pack"

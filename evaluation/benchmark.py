@@ -8,9 +8,9 @@ from math import isfinite
 from time import perf_counter_ns
 from typing import Any
 
-from foundation.provenance import content_sha256
-from foundation.timing import TimingSummary
-from embedding.learning.optimization import PromotionDecision
+from shared.foundation.provenance import content_sha256
+from shared.foundation.timing import TimingSummary
+from identification.training.appearance.optimization import PromotionDecision
 
 
 def measure_operation[T](

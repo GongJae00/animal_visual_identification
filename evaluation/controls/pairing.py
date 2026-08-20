@@ -8,15 +8,15 @@ from hashlib import sha256
 from math import isfinite
 from typing import Any, Iterable
 
-from contracts.contracts import Modality
-from identity.splits.tracklet_split import (
+from shared.contracts.contracts import Modality
+from evaluation.splits.tracklet_split import (
     EvaluationStage,
     SplitManifest,
     SplitRole,
     TrackletRecord,
 )
-from evaluation import VerificationDirection
-from foundation.provenance import content_sha256
+from evaluation.protected_verification import VerificationDirection
+from shared.foundation.provenance import content_sha256
 
 
 class PairStratum(StrEnum):
