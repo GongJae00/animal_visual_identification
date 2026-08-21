@@ -2,13 +2,17 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from types import SimpleNamespace
 
-import numpy as np
-from jsonschema import Draft202012Validator
 import pytest
+from jsonschema import Draft202012Validator
 
 from evaluation.comparable_transfer import (
     REPORT_SCHEMA,
+    _keep_detection_candidates,
+    _keep_segmentation_candidates,
+    _ordered_segmentation_candidates,
+    _ParserVisualizationCandidate,
     assert_backbone_only_comparison,
     load_split,
     main,
@@ -16,6 +20,7 @@ from evaluation.comparable_transfer import (
     score_comparable_transfer,
     smoke_embeddings,
     smoke_samples,
+    visualization_traces,
     write_split,
 )
 from evaluation.splits.comparable_transfer import (
@@ -24,6 +29,8 @@ from evaluation.splits.comparable_transfer import (
     SPLIT_SEED,
     ComparableTransferSplit,
     bind_crops,
+)
+from evaluation.splits.comparable_transfer import (
     freeze_comparable_transfer as freeze_split,
 )
 from tests.repo_root import REPO_ROOT as ROOT
@@ -130,6 +137,39 @@ def test_bind_crops_fails_closed_when_a_frozen_sample_is_missing() -> None:
         bind_crops(split, crops)
 
 
+def test_parser_visualization_selection_uses_detection_and_quality_extremes() -> None:
+    def candidate(index: int) -> _ParserVisualizationCandidate:
+        return _ParserVisualizationCandidate(
+            row=SimpleNamespace(sample_id=f"sample-{index}"),
+            image=None,
+            prediction=None,
+            quality_key=(1, float(index), 1.0, 0, 1, 1.0, 0),
+        )
+
+    detected = ()
+    for index in (7, 2, 5, 1, 6):
+        detected = _keep_detection_candidates(detected, candidate(index))
+    assert tuple(item.row.sample_id for item in detected) == (
+        "sample-1",
+        "sample-2",
+        "sample-5",
+    )
+
+    segmentation = ()
+    for index in range(8):
+        segmentation = _keep_segmentation_candidates(segmentation, candidate(index))
+    assert tuple(
+        item.row.sample_id for item in _ordered_segmentation_candidates(segmentation)
+    ) == (
+        "sample-7",
+        "sample-6",
+        "sample-5",
+        "sample-0",
+        "sample-1",
+        "sample-2",
+    )
+
+
 def test_smoke_cli_writes_split_report_and_traces(tmp_path: Path) -> None:
     output = tmp_path / "smoke"
     result = run_smoke(output)
@@ -140,7 +180,6 @@ def test_smoke_cli_writes_split_report_and_traces(tmp_path: Path) -> None:
     assert (output / "report.json").is_file()
     for stage in (
         "parsing",
-        "identification",
         "representation",
         "enrollment",
         "gallery",
@@ -148,3 +187,22 @@ def test_smoke_cli_writes_split_report_and_traces(tmp_path: Path) -> None:
     ):
         assert (output / "traces" / f"{stage}.json").is_file()
     assert main(["smoke", "--output-dir", str(tmp_path / "cli-smoke")]) == 0
+
+
+def test_visualization_trace_preserves_row_detection_status() -> None:
+    train, eval_samples = smoke_samples()
+    split = _bound(freeze_split(train, eval_samples))
+    embeddings = smoke_embeddings(split)
+    report = score_comparable_transfer(split, embeddings, backbone_id="backbone")
+    rows = (*split.gallery, *split.query)
+    detection = {
+        row.sample_id: (
+            "detected_samples" if index % 2 == 0 else "undetected_samples"
+        )
+        for index, row in enumerate(rows)
+    }
+    trace = visualization_traces(
+        split, embeddings, report, detection_by_sample=detection
+    )
+    channels = trace["representation"]["substages"]["01_channels"]
+    assert channels["detection"] == [detection[row.sample_id] for row in rows]

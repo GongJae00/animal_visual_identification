@@ -19,7 +19,6 @@ from visualization.rendering.pipeline import STAGE_LAYOUT
 
 _CALLERS = {
     "parsing": "visualization.parsing",
-    "identification": "visualization.identification",
     "representation": "visualization.representation",
     "enrollment": "visualization.enrollment",
     "gallery": "visualization.gallery",
@@ -53,6 +52,11 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--asset-root", type=Path)
     parser.add_argument(
+        "--clean",
+        action="store_true",
+        help="Remove the existing pipeline visualization tree before rendering.",
+    )
+    parser.add_argument(
         "--scope",
         choices=[item.value for item in PublicationScope],
         default=PublicationScope.PRIVATE.value,
@@ -67,6 +71,10 @@ def _render_stage(args: argparse.Namespace) -> int:
     if args.trace is None:
         raise SystemExit("--trace is required with --stage")
     output = args.output or Path("Visualization")
+    if args.clean:
+        from visualization.rendering.pipeline import clear_visualizations
+
+        clear_visualizations(output)
     payload = json.loads(args.trace.read_text(encoding="utf-8"))
     if not isinstance(payload, dict):
         raise ValueError("trace must be a JSON object")
@@ -96,6 +104,8 @@ def _render_stage(args: argparse.Namespace) -> int:
 
 
 def _render_paper(args: argparse.Namespace) -> int:
+    if args.clean:
+        raise SystemExit("--clean is only valid with --stage")
     if args.input is None:
         raise SystemExit("--input is required with --paper")
     from visualization.contracts import FigureData

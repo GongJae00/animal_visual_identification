@@ -11,6 +11,7 @@ import json
 import subprocess
 import sys
 from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -35,7 +36,10 @@ from evaluation.splits.comparable_transfer import (
     bind_crops,
     freeze_comparable_transfer,
 )
-from shared.contracts.identity_ids import compute_registered_dog_id, compute_sample_token
+from shared.contracts.identity_ids import (
+    compute_registered_dog_id,
+    compute_sample_token,
+)
 from shared.foundation.protected_io import (
     read_strict_json_object,
     write_private_json_bundle,
@@ -51,14 +55,69 @@ SCHEMA_PATH = (
     / "evaluation.comparable_transfer.v1.schema.json"
 )
 _SMOKE_DIM = 8
+_VISUAL_SAMPLES_PER_GROUP = 3
 _VIS_STAGES = (
     "parsing",
-    "identification",
     "representation",
     "enrollment",
     "gallery",
     "search",
 )
+
+
+@dataclass(frozen=True, slots=True)
+class DetectionVisualizationSample:
+    dataset_name: str
+    source_image: str
+    segment_image: str | None
+    detector_boxes: tuple[tuple[int, int, int, int], ...]
+
+
+@dataclass(frozen=True, slots=True)
+class SegmentationVisualizationSample:
+    dataset_name: str
+    segment_input_image: str
+    segment_output_image: str
+    background_image: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class _ParserVisualizationCandidate:
+    row: ComparableTransferRow
+    image: Image.Image
+    prediction: Any
+    quality_key: tuple[int, float, float, int, int, float, int] | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class DetectionMetrics:
+    dataset_name: str
+    input_images: int
+    detected_samples: int
+    undetected_samples: int
+    multi_box_samples: int
+
+
+@dataclass(frozen=True, slots=True)
+class SegmentationMetrics:
+    dataset_name: str
+    detected_inputs: int
+    parsed_instances: int
+    usable: int
+    review: int
+    unusable: int
+    mean_shape_iou: float
+    mean_ownership_retention: float
+
+
+@dataclass(frozen=True, slots=True)
+class ParserCropMaterialization:
+    crop_hashes: dict[str, str]
+    detection_by_sample: dict[str, str]
+    detection_samples: tuple[DetectionVisualizationSample, ...] = ()
+    segmentation_samples: tuple[SegmentationVisualizationSample, ...] = ()
+    detection_metrics: DetectionMetrics | None = None
+    segmentation_metrics: SegmentationMetrics | None = None
 
 
 def _sha256_bytes(payload: bytes) -> str:
@@ -210,7 +269,9 @@ def _sample(
     )
 
 
-def smoke_samples() -> tuple[tuple[UnifiedCanidSample, ...], tuple[UnifiedCanidSample, ...]]:
+def smoke_samples() -> tuple[
+    tuple[UnifiedCanidSample, ...], tuple[UnifiedCanidSample, ...]
+]:
     train = tuple(
         _sample(
             dataset="yt-bb-dog",
@@ -252,8 +313,12 @@ def _digest_vector(token: str, dim: int) -> np.ndarray:
     return raw[:dim].astype(np.float64)
 
 
-def _unit_from_tokens(identity_id: str, sample_id: str, *, dim: int = _SMOKE_DIM) -> np.ndarray:
-    acc = 32.0 * _digest_vector(identity_id, dim) + 0.05 * _digest_vector(sample_id, dim)
+def _unit_from_tokens(
+    identity_id: str, sample_id: str, *, dim: int = _SMOKE_DIM
+) -> np.ndarray:
+    acc = 32.0 * _digest_vector(identity_id, dim) + 0.05 * _digest_vector(
+        sample_id, dim
+    )
     norm = float(np.linalg.norm(acc))
     if not np.isfinite(norm) or norm <= 1e-8:
         raise ValueError("smoke embedding is degenerate")
@@ -287,17 +352,18 @@ def _write_smoke_crops(
     return bound
 
 
-def _ordered_embeddings(
-    rows: Sequence[ComparableTransferRow],
-    embeddings: Mapping[str, np.ndarray],
-) -> list[list[float]]:
-    return [embeddings[row.sample_id].astype(np.float64).tolist() for row in rows]
-
-
 def visualization_traces(
     split: ComparableTransferSplit,
     embeddings: Mapping[str, np.ndarray],
     report: Mapping[str, Any],
+    *,
+    detection_samples: Sequence[DetectionVisualizationSample] = (),
+    segmentation_samples: Sequence[SegmentationVisualizationSample] = (),
+    detection_metrics: Sequence[DetectionMetrics] = (),
+    segmentation_metrics: Sequence[SegmentationMetrics] = (),
+    detection_by_sample: Mapping[str, str] | None = None,
+    detection_backbone: str | None = None,
+    foreground_backbone: str | None = None,
 ) -> dict[str, dict[str, Any]]:
     eval_rows = tuple(split.gallery) + tuple(split.query)
     eval_matrix = [embeddings[row.sample_id].tolist() for row in eval_rows]
@@ -309,9 +375,69 @@ def visualization_traces(
         "identity": identities,
         "dataset": datasets,
         "view": views,
-        "channels": {"appearance": eval_matrix},
+        "backbone_id": report.get("backbone_id"),
     }
+    if detection_by_sample is not None:
+        missing = [
+            row.sample_id for row in eval_rows if row.sample_id not in detection_by_sample
+        ]
+        if missing:
+            raise ValueError(
+                f"detection status missing {len(missing)} frozen sample(s); "
+                f"first={missing[0]}"
+            )
+        vector_payload["detection"] = [
+            detection_by_sample[row.sample_id] for row in eval_rows
+        ]
     metrics = report["metrics"]
+    detection_by_dataset: dict[str, list[dict[str, Any]]] = {}
+    for sample in detection_samples:
+        detection_by_dataset.setdefault(sample.dataset_name, []).append(
+            {
+                "source_image": sample.source_image,
+                "segment_image": sample.segment_image,
+                "detector_boxes": [list(box) for box in sample.detector_boxes],
+            }
+        )
+    detection_metric_payload = [
+        {
+            "dataset_name": metric.dataset_name,
+            "input_images": metric.input_images,
+            "detected_samples": metric.detected_samples,
+            "undetected_samples": metric.undetected_samples,
+            "multi_box_samples": metric.multi_box_samples,
+        }
+        for metric in detection_metrics
+    ]
+    segmentation_metric_payload = [
+        {
+            "dataset_name": metric.dataset_name,
+            "detected_inputs": metric.detected_inputs,
+            "parsed_instances": metric.parsed_instances,
+            "usable": metric.usable,
+            "review": metric.review,
+            "unusable": metric.unusable,
+            "mean_shape_iou": metric.mean_shape_iou,
+            "mean_ownership_retention": metric.mean_ownership_retention,
+        }
+        for metric in segmentation_metrics
+    ]
+    parser_backbones = " + ".join(
+        backbone.rsplit("/", 1)[-1]
+        .replace("rf-detr-segmentation", "RF-DETR")
+        .replace("BiRefNet_dynamic", "BiRefNet")
+        for backbone in (detection_backbone, foreground_backbone)
+        if backbone
+    )
+    segmentation_by_dataset: dict[str, list[dict[str, Any]]] = {}
+    for sample in segmentation_samples:
+        segmentation_by_dataset.setdefault(sample.dataset_name, []).append(
+            {
+                "segment_input_image": sample.segment_input_image,
+                "segment_output_image": sample.segment_output_image,
+                "background_image": sample.background_image,
+            }
+        )
     return {
         "parsing": {
             "stage": "parsing",
@@ -321,10 +447,16 @@ def visualization_traces(
                         f"parser policy v6; "
                         f"{len(split.train_samples)} train + "
                         f"{len(eval_rows)} eval source images"
-                    )
+                    ),
+                    "samples": detection_by_dataset,
+                    "metrics": detection_metric_payload,
+                    "detection_backbone": detection_backbone,
                 },
                 "01_segmentation": {
-                    "summary": "dog-only policy v6 visible-instance masks"
+                    "summary": "dog-only policy v6 visible-instance masks",
+                    "samples": segmentation_by_dataset,
+                    "segmentation_metrics": segmentation_metric_payload,
+                    "parser_backbones": parser_backbones or None,
                 },
                 "02_regions": {"summary": "body crop from single usable dog"},
                 "03_quality": {"summary": "USABLE dog instance required"},
@@ -334,14 +466,6 @@ def visualization_traces(
                         f"gallery {len(split.gallery)}; query {len(split.query)}"
                     )
                 },
-            },
-        },
-        "identification": {
-            "stage": "identification",
-            "substages": {
-                "00_appearance": dict(vector_payload),
-                "01_face": {},
-                "02_nose": {},
             },
         },
         "representation": {
@@ -415,21 +539,31 @@ def write_traces(
     return written
 
 
-def render_traces(trace_paths: Mapping[str, Path], vis_root: Path) -> None:
+def render_traces(
+    trace_paths: Mapping[str, Path],
+    vis_root: Path,
+    *,
+    asset_root: Path | None = None,
+) -> None:
     vis_root.mkdir(parents=True, exist_ok=True)
-    for stage, path in trace_paths.items():
+    for index, (stage, path) in enumerate(trace_paths.items()):
+        command = [
+            sys.executable,
+            "-m",
+            "visualization.commands.render",
+            "--stage",
+            stage,
+            "--trace",
+            str(path),
+            "--output",
+            str(vis_root),
+        ]
+        if index == 0:
+            command.append("--clean")
+        if asset_root is not None:
+            command.extend(("--asset-root", str(asset_root)))
         completed = subprocess.run(
-            [
-                sys.executable,
-                "-m",
-                "visualization.commands.render",
-                "--stage",
-                stage,
-                "--trace",
-                str(path),
-                "--output",
-                str(vis_root),
-            ],
+            command,
             check=False,
             capture_output=True,
             text=True,
@@ -483,12 +617,6 @@ def _file_binding(path: Path) -> Any:
 
 
 def _load_parser_runtime(args: argparse.Namespace) -> Any:
-    from shared.contracts.foreground_segmentation_model import (
-        ForegroundSegmentationArtifact,
-    )
-    from shared.contracts.instance_segmentation_model import (
-        InstanceSegmentationArtifact,
-    )
     from parsing.export.segmentation.animal_instance_segmentation import (
         AnimalInstanceSegmentationRuntime,
     )
@@ -498,6 +626,12 @@ def _load_parser_runtime(args: argparse.Namespace) -> Any:
     )
     from parsing.export.segmentation.foreground_segmentation import (
         ForegroundSegmentationRuntime,
+    )
+    from shared.contracts.foreground_segmentation_model import (
+        ForegroundSegmentationArtifact,
+    )
+    from shared.contracts.instance_segmentation_model import (
+        InstanceSegmentationArtifact,
     )
 
     foreground = ForegroundSegmentationArtifact.load(
@@ -538,6 +672,171 @@ def _usable_dog_instance(prediction: Any) -> Any:
     return dogs[0]
 
 
+def _segmentation_quality_key(
+    prediction: Any,
+) -> tuple[int, float, float, int, int, float, int] | None:
+    if not prediction.instances:
+        return None
+    primary = max(
+        prediction.instances,
+        key=lambda instance: (instance.class_score, -instance.instance_index),
+    )
+    quality = primary.quality
+    state_rank = {"UNUSABLE": 0, "REVIEW": 1, "USABLE": 2}[quality.state]
+    return (
+        state_rank,
+        quality.semantic_shape_iou,
+        quality.ownership_retention,
+        -quality.component_count,
+        int(not quality.touches_source_border),
+        primary.class_score,
+        -primary.instance_index,
+    )
+
+
+def _keep_detection_candidates(
+    candidates: Sequence[_ParserVisualizationCandidate],
+    candidate: _ParserVisualizationCandidate,
+) -> tuple[_ParserVisualizationCandidate, ...]:
+    return tuple(
+        sorted(
+            (*candidates, candidate),
+            key=lambda item: item.row.sample_id,
+        )[:_VISUAL_SAMPLES_PER_GROUP]
+    )
+
+
+def _keep_segmentation_candidates(
+    candidates: Sequence[_ParserVisualizationCandidate],
+    candidate: _ParserVisualizationCandidate,
+) -> tuple[_ParserVisualizationCandidate, ...]:
+    ordered = sorted(
+        (*candidates, candidate),
+        key=lambda item: (item.quality_key, item.row.sample_id),
+    )
+    if len(ordered) <= 2 * _VISUAL_SAMPLES_PER_GROUP:
+        return tuple(ordered)
+    return (
+        *ordered[:_VISUAL_SAMPLES_PER_GROUP],
+        *ordered[-_VISUAL_SAMPLES_PER_GROUP:],
+    )
+
+
+def _ordered_segmentation_candidates(
+    candidates: Sequence[_ParserVisualizationCandidate],
+) -> tuple[_ParserVisualizationCandidate, ...]:
+    ordered = sorted(
+        candidates,
+        key=lambda item: (item.quality_key, item.row.sample_id),
+    )
+    high = tuple(reversed(ordered[-_VISUAL_SAMPLES_PER_GROUP:]))
+    high_ids = {item.row.sample_id for item in high}
+    low = tuple(
+        item
+        for item in ordered[:_VISUAL_SAMPLES_PER_GROUP]
+        if item.row.sample_id not in high_ids
+    )
+    return (*high, *low)
+
+
+def _detection_asset_path(
+    visualization_root: Path,
+    row: ComparableTransferRow,
+    suffix: str,
+) -> tuple[Path, str]:
+    token = hashlib.sha256(
+        f"comparable-transfer.detection.v1\0{row.dataset_name}\0{row.sample_id}".encode()
+    ).hexdigest()[:20]
+    relative = (
+        Path("visualization")
+        / "parsing"
+        / "detection"
+        / row.dataset_name
+        / f"{token}-{suffix}.png"
+    )
+    return visualization_root / relative, relative.as_posix()
+
+
+def _segmentation_asset_path(
+    visualization_root: Path,
+    row: ComparableTransferRow,
+    suffix: str,
+) -> tuple[Path, str]:
+    token = hashlib.sha256(
+        f"comparable-transfer.segmentation.v1\0{row.dataset_name}\0{row.sample_id}".encode()
+    ).hexdigest()[:20]
+    relative = (
+        Path("visualization")
+        / "parsing"
+        / "segmentation"
+        / row.dataset_name
+        / f"{token}-{suffix}.png"
+    )
+    return visualization_root / relative, relative.as_posix()
+
+
+def _write_detection_visualization_sample(
+    *,
+    visualization_root: Path,
+    row: ComparableTransferRow,
+    image: Image.Image,
+    prediction: Any,
+) -> tuple[DetectionVisualizationSample, SegmentationVisualizationSample | None]:
+    from parsing.export.segmentation.animal_parsing import materialize_identity_crop
+
+    source_path, source_asset = _detection_asset_path(visualization_root, row, "source")
+    source_path.parent.mkdir(parents=True, exist_ok=True)
+    image.save(source_path, format="PNG", optimize=False)
+    instances = tuple(prediction.instances)
+    detector_boxes = tuple(
+        tuple(int(coordinate) for coordinate in instance.detector_box_xyxy)
+        for instance in instances
+    )
+    segment_image: str | None = None
+    segment_box: tuple[int, int, int, int] | None = None
+    segmentation_sample: SegmentationVisualizationSample | None = None
+    if instances:
+        primary = max(
+            instances,
+            key=lambda instance: (instance.class_score, -instance.instance_index),
+        )
+        segment_box = tuple(
+            int(coordinate) for coordinate in primary.refinement_box_xyxy
+        )
+        segment_path, segment_image = _detection_asset_path(
+            visualization_root, row, "segment"
+        )
+        image.crop(segment_box).save(segment_path, format="PNG", optimize=False)
+        mask_path, mask_asset = _segmentation_asset_path(
+            visualization_root, row, "mask"
+        )
+        mask_path.parent.mkdir(parents=True, exist_ok=True)
+        mask = Image.fromarray(primary.hard_mask * 255, mode="L").crop(segment_box)
+        mask.save(mask_path, format="PNG", optimize=False)
+        background_asset: str | None = None
+        if primary.mask_box_xyxy is not None:
+            background_path, background_asset = _segmentation_asset_path(
+                visualization_root, row, "background"
+            )
+            crop = materialize_identity_crop(image, primary, require_usable=False)
+            crop.masked_rgb.save(background_path, format="PNG", optimize=False)
+        segmentation_sample = SegmentationVisualizationSample(
+            dataset_name=row.dataset_name,
+            segment_input_image=segment_image,
+            segment_output_image=mask_asset,
+            background_image=background_asset,
+        )
+    return (
+        DetectionVisualizationSample(
+            dataset_name=row.dataset_name,
+            source_image=source_asset,
+            segment_image=segment_image,
+            detector_boxes=detector_boxes,
+        ),
+        segmentation_sample,
+    )
+
+
 def materialize_parser_v6_crops(
     rows: Sequence[ComparableTransferRow],
     *,
@@ -545,13 +844,28 @@ def materialize_parser_v6_crops(
     runtime: Any,
     crop_dir: Path,
     parser_batch_size: int = 4,
-) -> dict[str, str]:
+    visualization_root: Path | None = None,
+) -> ParserCropMaterialization:
     from parsing.export.segmentation.animal_parsing import materialize_identity_crop
 
     if parser_batch_size <= 0:
         raise ValueError("parser_batch_size must be positive")
     crop_dir.mkdir(parents=True, exist_ok=True)
     bound: dict[str, str] = {}
+    detection_by_sample: dict[str, str] = {}
+    detection_samples: list[DetectionVisualizationSample] = []
+    segmentation_samples: list[SegmentationVisualizationSample] = []
+    detected_candidates: tuple[_ParserVisualizationCandidate, ...] = ()
+    undetected_candidates: tuple[_ParserVisualizationCandidate, ...] = ()
+    segmentation_candidates: tuple[_ParserVisualizationCandidate, ...] = ()
+    detected_samples = 0
+    multi_box_samples = 0
+    parsed_instances = 0
+    usable_instances = 0
+    review_instances = 0
+    unusable_instances = 0
+    shape_iou_total = 0.0
+    ownership_retention_total = 0.0
     root = dataset_root.resolve(strict=True)
     row_list = tuple(rows)
     for offset in range(0, len(row_list), parser_batch_size):
@@ -572,17 +886,116 @@ def materialize_parser_v6_crops(
             foreground_batch_size=parser_batch_size,
         )
         for row, image, prediction in zip(chunk, images, predictions, strict=True):
+            box_count = len(prediction.instances)
+            detected_samples += int(box_count > 0)
+            detection_by_sample[row.sample_id] = (
+                "detected_samples" if box_count else "undetected_samples"
+            )
+            multi_box_samples += int(box_count > 1)
+            for instance in prediction.instances:
+                quality = instance.quality
+                parsed_instances += 1
+                shape_iou_total += quality.semantic_shape_iou
+                ownership_retention_total += quality.ownership_retention
+                if quality.state == "USABLE":
+                    usable_instances += 1
+                elif quality.state == "REVIEW":
+                    review_instances += 1
+                else:
+                    unusable_instances += 1
             instance = _usable_dog_instance(prediction)
             target = crop_dir / f"{row.sample_id}.png"
             if instance is None:
                 image.save(target, format="PNG")
             else:
-                crop = materialize_identity_crop(
-                    image, instance, require_usable=False
-                )
+                crop = materialize_identity_crop(image, instance, require_usable=False)
                 crop.masked_rgb.save(target, format="PNG")
+            if visualization_root is not None:
+                candidate = _ParserVisualizationCandidate(
+                    row=row,
+                    image=image,
+                    prediction=prediction,
+                    quality_key=_segmentation_quality_key(prediction),
+                )
+                if box_count:
+                    detected_candidates = _keep_detection_candidates(
+                        detected_candidates, candidate
+                    )
+                else:
+                    undetected_candidates = _keep_detection_candidates(
+                        undetected_candidates, candidate
+                    )
+                if candidate.quality_key is not None:
+                    segmentation_candidates = _keep_segmentation_candidates(
+                        segmentation_candidates, candidate
+                    )
             bound[row.sample_id] = _sha256_bytes(target.read_bytes())
-    return bound
+    if visualization_root is not None:
+        detection_candidates = (*detected_candidates, *undetected_candidates)
+        segmentation_candidates = _ordered_segmentation_candidates(
+            segmentation_candidates
+        )
+        written: dict[
+            str,
+            tuple[
+                DetectionVisualizationSample,
+                SegmentationVisualizationSample | None,
+            ],
+        ] = {}
+        for candidate in (*detection_candidates, *segmentation_candidates):
+            sample_id = candidate.row.sample_id
+            if sample_id in written:
+                continue
+            written[sample_id] = _write_detection_visualization_sample(
+                visualization_root=visualization_root,
+                row=candidate.row,
+                image=candidate.image,
+                prediction=candidate.prediction,
+            )
+        for candidate in detection_candidates:
+            detection_samples.append(written[candidate.row.sample_id][0])
+        for candidate in segmentation_candidates:
+            segmentation_sample = written[candidate.row.sample_id][1]
+            if segmentation_sample is not None:
+                segmentation_samples.append(segmentation_sample)
+    metrics = None
+    if row_list:
+        dataset_names = {row.dataset_name for row in row_list}
+        if len(dataset_names) != 1:
+            raise ValueError("parser materialization rows must share one dataset")
+        metrics = DetectionMetrics(
+            dataset_name=next(iter(dataset_names)),
+            input_images=len(row_list),
+            detected_samples=detected_samples,
+            undetected_samples=len(row_list) - detected_samples,
+            multi_box_samples=multi_box_samples,
+        )
+        segmentation_metrics = SegmentationMetrics(
+            dataset_name=next(iter(dataset_names)),
+            detected_inputs=detected_samples,
+            parsed_instances=parsed_instances,
+            usable=usable_instances,
+            review=review_instances,
+            unusable=unusable_instances,
+            mean_shape_iou=(
+                shape_iou_total / parsed_instances if parsed_instances else 0.0
+            ),
+            mean_ownership_retention=(
+                ownership_retention_total / parsed_instances
+                if parsed_instances
+                else 0.0
+            ),
+        )
+    else:
+        segmentation_metrics = None
+    return ParserCropMaterialization(
+        crop_hashes=bound,
+        detection_by_sample=detection_by_sample,
+        detection_samples=tuple(detection_samples),
+        segmentation_samples=tuple(segmentation_samples),
+        detection_metrics=metrics,
+        segmentation_metrics=segmentation_metrics,
+    )
 
 
 def embed_crops(
@@ -838,11 +1251,13 @@ def _cmd_score(args: argparse.Namespace) -> int:
     if overlap:
         raise ValueError("gallery and query embedding files share sample_ids")
     embeddings = {**gallery, **query}
-    report = score_comparable_transfer(
-        split, embeddings, backbone_id=args.backbone_id
-    )
+    report = score_comparable_transfer(split, embeddings, backbone_id=args.backbone_id)
     write_private_json_bundle(((args.output, report),))
-    print(json.dumps({"event": "comparable_transfer_scored", **report["metrics"]}, sort_keys=True))
+    print(
+        json.dumps(
+            {"event": "comparable_transfer_scored", **report["metrics"]}, sort_keys=True
+        )
+    )
     return 0
 
 
@@ -892,27 +1307,38 @@ def _cmd_run(args: argparse.Namespace) -> int:
     if args.yt_bb_dog is None or args.sibetan is None:
         raise ValueError("run requires --yt-bb-dog and --sibetan dataset roots")
     runtime = _load_parser_runtime(args)
+    detection_backbone = runtime.instance_runtime.artifact.manifest.model_id
+    foreground_backbone = runtime.foreground_runtime.artifact.manifest.model_id
     eval_rows = tuple(split.gallery) + tuple(split.query)
-    train_bound = materialize_parser_v6_crops(
+    train_materialization = materialize_parser_v6_crops(
         split.train_samples,
         dataset_root=args.yt_bb_dog,
         runtime=runtime,
         crop_dir=args.output_dir / "crops" / "train",
         parser_batch_size=args.parser_batch_size,
+        visualization_root=args.output_dir,
     )
-    eval_bound = materialize_parser_v6_crops(
+    eval_materialization = materialize_parser_v6_crops(
         eval_rows,
         dataset_root=args.sibetan,
         runtime=runtime,
         crop_dir=args.output_dir / "crops" / "eval",
         parser_batch_size=args.parser_batch_size,
+        visualization_root=args.output_dir,
     )
     del runtime
     if args.device == "cuda":
         import torch
 
         torch.cuda.empty_cache()
-    split = bind_crops(split, {**train_bound, **eval_bound}, include_train=True)
+    split = bind_crops(
+        split,
+        {
+            **train_materialization.crop_hashes,
+            **eval_materialization.crop_hashes,
+        },
+        include_train=True,
+    )
     write_split(args.output_dir / "split.json", split)
     from identification.export.appearance import ReceiptBoundDinov2Small
 
@@ -936,10 +1362,41 @@ def _cmd_run(args: argparse.Namespace) -> int:
         backbone_id=f"dinov2-small:{evidencer.weight_receipt_sha256}",
     )
     write_private_json_bundle(((args.output_dir / "report.json", report),))
-    traces = visualization_traces(split, embeddings, report)
+    traces = visualization_traces(
+        split,
+        embeddings,
+        report,
+        detection_samples=(
+            *train_materialization.detection_samples,
+            *eval_materialization.detection_samples,
+        ),
+        segmentation_samples=(
+            *train_materialization.segmentation_samples,
+            *eval_materialization.segmentation_samples,
+        ),
+        detection_metrics=tuple(
+            metric
+            for metric in (
+                train_materialization.detection_metrics,
+                eval_materialization.detection_metrics,
+            )
+            if metric is not None
+        ),
+        segmentation_metrics=tuple(
+            metric
+            for metric in (
+                train_materialization.segmentation_metrics,
+                eval_materialization.segmentation_metrics,
+            )
+            if metric is not None
+        ),
+        detection_by_sample=eval_materialization.detection_by_sample,
+        detection_backbone=detection_backbone,
+        foreground_backbone=foreground_backbone,
+    )
     trace_paths = write_traces(args.output_dir, traces)
     if args.vis_root is not None:
-        render_traces(trace_paths, args.vis_root)
+        render_traces(trace_paths, args.vis_root, asset_root=args.output_dir)
     print(
         json.dumps(
             {

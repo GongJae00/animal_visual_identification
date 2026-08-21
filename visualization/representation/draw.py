@@ -1,24 +1,23 @@
-"""Representation observer. Writes Visualization/vis/02_representation/.
-
-Caption-free PCA and cosine views of packed channel embeddings.
-"""
+"""Representation stage adapter."""
 
 from pathlib import Path
 from typing import Any
 
-from visualization.rendering.embeddings import render_vector_stage
-from visualization.rendering.pipeline import STAGE_LAYOUT
+from visualization.rendering.pipeline import STAGE_LAYOUT, render_stage
+from visualization.representation.channels import render as render_channels
 
 STAGE = "representation"
-VIS_DIR, SUBSTAGES = STAGE_LAYOUT[STAGE]
+VIS_DIR, _ = STAGE_LAYOUT[STAGE]
+SUBSTAGES = ("01_channels",)
+_RENDERERS = {"01_channels": render_channels}
 
 
 def render(trace: dict[str, Any], output_root: Path, **kwargs: Any) -> tuple[Path, ...]:
-    return render_vector_stage(
+    return render_stage(
         STAGE,
         trace,
         output_root,
-        substages=SUBSTAGES,
-        vis_dir=VIS_DIR,
         **kwargs,
+        renderers=_RENDERERS,
+        substage_names=SUBSTAGES,
     )
